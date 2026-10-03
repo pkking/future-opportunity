@@ -1,0 +1,28 @@
+apiVersion: arbitrage.dev/v1alpha1
+kind: StrategyPlan
+
+metadata:
+  name: quickstart-btc-funding
+
+spec:
+  strategy:
+    name: funding-carry
+    version: 1.0.0
+
+  asset:
+    base: BTC
+    quote: USDT
+
+  venue:
+    name: binance
+
+  capital:
+    amount: 1000
+    currency: USDT
+
+  execution:
+    mode: paper
+
+  risk:
+    maxDeltaPct: 0.005
+    maxLeverage: 1.2
