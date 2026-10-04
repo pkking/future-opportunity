@@ -3,7 +3,10 @@ from decimal import Decimal
 
 import pytest
 
-from future_opportunity.adapters.persistence.memory import MemoryOpportunityRepository
+from future_opportunity.adapters.persistence.memory import (
+    MemoryOpportunityRepository,
+    MemorySimulationRepository,
+)
 from future_opportunity.application.discover.cash_and_carry import DiscoverCashAndCarry
 from future_opportunity.application.discover.funding_carry import DiscoverFundingCarry
 from future_opportunity.application.simulate.cash_and_carry import SimulateCashAndCarry
@@ -78,7 +81,8 @@ class CashData:
 @pytest.mark.asyncio
 async def test_funding_simulation_preserves_decision_evidence_chain() -> None:
     result = await SimulateFundingCarry(
-        DiscoverFundingCarry(FundingData(), MemoryOpportunityRepository())
+        DiscoverFundingCarry(FundingData(), MemoryOpportunityRepository()),
+        MemorySimulationRepository(),
     ).execute(
         base="BTC",
         capital=Decimal(10_000),
@@ -92,7 +96,8 @@ async def test_funding_simulation_preserves_decision_evidence_chain() -> None:
 @pytest.mark.asyncio
 async def test_cash_simulation_preserves_decision_evidence_chain() -> None:
     result = await SimulateCashAndCarry(
-        DiscoverCashAndCarry(CashData(), MemoryOpportunityRepository())
+        DiscoverCashAndCarry(CashData(), MemoryOpportunityRepository()),
+        MemorySimulationRepository(),
     ).execute(
         base="BTC",
         future_instrument_id="fake:future",
