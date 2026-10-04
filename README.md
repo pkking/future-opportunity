@@ -194,6 +194,60 @@ uv run uvicorn future_opportunity.api:app --reload
 
 When `DATABASE_URL` is present, the API uses the PostgreSQL Repository adapter. Without it, the same application use cases run against the in-memory adapter.
 
+## Manage paper positions
+
+The Web/API management lifecycle is:
+
+```text
+HEDGED
+  -> refresh
+ACTIVE / DEGRADED
+  -> close
+CLOSED
+```
+
+Refresh uses current public order books and the **capital/fee policies frozen in the original StrategyPlan**. It never silently reuses today's defaults.
+
+API:
+
+```text
+GET  /v1/positions
+GET  /v1/positions/{id}
+POST /v1/positions/{id}/refresh
+POST /v1/positions/{id}/close
+GET  /v1/history
+```
+
+Persistent CLI management requires `DATABASE_URL`:
+
+```bash
+uv run arb positions
+uv run arb position-show <position-id>
+uv run arb position-refresh <position-id>
+uv run arb position-close <position-id>
+```
+
+A paper close creates a separate immutable `CLOSE` execution with exit fills. The closed Position itself has no remaining legs and zero delta; open/close fills remain the historical evidence.
+
+### Expected vs Current / Realized
+
+Every StrategyPlan freezes:
+
+- expected return character
+- expected horizon
+- expected net return / PnL
+- expected costs
+- capital policy
+- execution fee policy
+
+History compares this entry-time expectation with the current assessed return.
+
+For Funding Carry, public market data does not prove exact accrued funding cash flow for the simulated position. Until explicit settlement evidence is available, the `funding` return component is marked **unassessed** rather than assumed to be zero. A closed Funding Carry paper position is therefore reported as `realized_partial`.
+
+Cash-and-Carry can be marked `realized` when the close evidence is complete.
+
+See [ADR-0003](docs/adr/0003-unassessed-return-components.md).
+
 ## Architecture
 
 The system follows a domain-centric Ports & Adapters design.
@@ -202,5 +256,7 @@ See:
 
 - [System Design Baseline v0.1](docs/design-baseline-v0.1.md)
 - [ADR-0001: Conservative Isolated Capital Model](docs/adr/0001-isolated-capital-model.md)
+- [ADR-0002: Explicit Unassessed Risk State](docs/adr/0002-unassessed-risk-state.md)
+- [ADR-0003: Explicit Unassessed Return Components](docs/adr/0003-unassessed-return-components.md)
 
 Changes to frozen domain boundaries, return semantics, capital semantics, or the paper/live safety boundary require an ADR.
