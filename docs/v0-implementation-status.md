@@ -31,8 +31,8 @@ Real public market data
 | Cash-and-Carry | Implemented | Discover / simulate / refresh / live close / expiry delivery close |
 | Opportunity lifecycle | Implemented | Active lifecycle + immutable observations |
 | StrategyDefinition | Implemented | Versioned strategy catalog |
-| StrategyPlan | Implemented | Observation reference + frozen economics/policies |
-| Paper execution | Implemented | Real order-book walk, immutable fills, public delivery settlement evidence |
+| StrategyPlan | Implemented | Observation reference + frozen economics/capital/fees/liquidity deployment |
+| Paper execution | Implemented | Real order-book walk, liquidity-impact bound, immutable fills, public delivery settlement evidence |
 | Position lifecycle | Implemented | HEDGED / ACTIVE / DEGRADED / CLOSED |
 | Return attribution | Implemented | Evidence-aware components |
 | Risk invariants | Implemented | Explainable invariant reports |
@@ -43,6 +43,23 @@ Real public market data
 | REST API | Implemented | Discovery / simulation / position management / history |
 | Basic Web UI | Implemented | Discover / Analyze / Positions / History |
 | Live trading | Not in V0 | Explicit safety boundary |
+
+## Liquidity deployment boundary
+
+ADR-0005 makes liquidity capacity part of Opportunity qualification.
+
+```text
+STRICT (default):
+  oversized capital intent -> unqualified -> no execution
+
+PARTIAL (explicit):
+  actual notional = safe capacity
+  unused capital  = explicit
+  return denominator = requested total capital
+```
+
+The frozen deployment travels with StrategyPlan and is reused by simulation,
+refresh, close, persistence, API, CLI, and Web.
 
 ## Deliberately unassessed evidence
 
