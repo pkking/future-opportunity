@@ -11,6 +11,12 @@ class FillSource(StrEnum):
     EXCHANGE = "exchange"
 
 
+class ExecutionState(StrEnum):
+    STARTED = "started"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
 @dataclass(frozen=True, slots=True)
 class Fill:
     instrument_id: str
@@ -24,3 +30,14 @@ class Fill:
     slippage_quote: Decimal
     filled_at: datetime
     source: FillSource
+
+
+@dataclass(frozen=True, slots=True)
+class Execution:
+    id: str
+    strategy_plan_id: str
+    state: ExecutionState
+    mode: str
+    started_at: datetime
+    finished_at: datetime | None
+    fills: tuple[Fill, ...]
