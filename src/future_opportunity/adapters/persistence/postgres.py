@@ -549,6 +549,23 @@ class PostgresSimulationRepository(SimulationRepository):
                         ),
                     )
 
+                await _append_domain_event(
+                    conn,
+                    aggregate_type="Position",
+                    aggregate_id=position.id,
+                    aggregate_version=position.version,
+                    event_type="PositionHedged",
+                    occurred_at=observed_at,
+                    payload={
+                        "position_id": position.id,
+                        "strategy_plan_id": plan.id,
+                        "execution_id": execution.id,
+                        "state": position.state.value,
+                        "net_pnl": str(attribution.net_pnl),
+                        "return_complete": attribution.complete,
+                    },
+                )
+
     async def update_position(
         self,
         position: Position,
@@ -650,6 +667,24 @@ class PostgresSimulationRepository(SimulationRepository):
                             ),
                         ),
                     )
+
+                await _append_domain_event(
+                    conn,
+                    aggregate_type="Position",
+                    aggregate_id=position.id,
+                    aggregate_version=position.version + 1,
+                    event_type="PositionRefreshed",
+                    occurred_at=observed_at,
+                    payload={
+                        "position_id": position.id,
+                        "state": position.state.value,
+                        "net_pnl": str(current_return.net_pnl),
+                        "return_complete": current_return.complete,
+                        "unassessed_components": list(
+                            current_return.unassessed_components
+                        ),
+                    },
+                )
 
         position.version += 1
 
@@ -842,6 +877,25 @@ class PostgresSimulationRepository(SimulationRepository):
                             ),
                         ),
                     )
+
+                await _append_domain_event(
+                    conn,
+                    aggregate_type="Position",
+                    aggregate_id=position.id,
+                    aggregate_version=position.version + 1,
+                    event_type="PositionClosed",
+                    occurred_at=observed_at,
+                    payload={
+                        "position_id": position.id,
+                        "execution_id": execution.id,
+                        "state": position.state.value,
+                        "net_pnl": str(current_return.net_pnl),
+                        "return_complete": current_return.complete,
+                        "unassessed_components": list(
+                            current_return.unassessed_components
+                        ),
+                    },
+                )
 
         position.version += 1
 
