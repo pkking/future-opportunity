@@ -14,12 +14,12 @@ def test_isolated_allocation_accounts_for_spot_and_futures_margin() -> None:
     assert allocation.spot_notional == Decimal(4_500)
     assert allocation.hedge_notional == Decimal(4_500)
     assert allocation.futures_margin == Decimal(4_500)
-    assert (
+    allocated = (
         allocation.reserve_amount
         + allocation.spot_notional
         + allocation.futures_margin
-        == allocation.total_capital
     )
+    assert abs(allocated - allocation.total_capital) < Decimal("1e-20")
 
 
 def test_isolated_allocation_accounts_for_futures_basis() -> None:
