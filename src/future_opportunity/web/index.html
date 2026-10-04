@@ -364,7 +364,9 @@ $("strategy").addEventListener("change", () => {
     '<td>'+badge(record.return_complete ? "satisfied" : "unassessed")+' '+evidence+'</td>'+
     '<td>'+esc(record.position.opened_at || "")+'</td>'+
     '<td>'+badge(record.risk.invariants.some(x=>x.state==="violated") ? "violated" : "satisfied")+'</td>'+
-    '<td><button onclick="refreshPosition(\''+esc(record.position.id)+'\')">Refresh</button></td></tr>';
+    '<td><button onclick="refreshPosition(\''+esc(record.position.id)+'\')">Refresh</button> '+
+    (record.position.state === "closed" ? "" : '<button onclick="closePosition(\''+esc(record.position.id)+'\')">Close</button>')+
+    '</td></tr>';
   }).join("");
   $("positions").innerHTML =
     '<table><thead><tr><th>Strategy</th><th>State</th><th>Capital</th><th>Current assessed PnL</th>'+
@@ -375,6 +377,16 @@ $("strategy").addEventListener("change", () => {
 async function refreshPosition(positionId) {
   try {
     await json('/v1/positions/'+encodeURIComponent(positionId)+'/refresh', {method:"POST"});
+    await loadPositions();
+    await loadHistory();
+  } catch (error) {
+    $("positions").innerHTML = '<div class="error">'+esc(error.message)+'</div>';
+  }
+}
+
+async function closePosition(positionId) {
+  try {
+    await json('/v1/positions/'+encodeURIComponent(positionId)+'/close', {method:"POST"});
     await loadPositions();
     await loadHistory();
   } catch (error) {
