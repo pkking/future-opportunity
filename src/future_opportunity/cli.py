@@ -191,7 +191,7 @@ def simulate(
 
     async def run() -> None:
         async with _cli_repositories() as (repository, simulations):
-                if strategy == "funding-carry":
+            if strategy == "funding-carry":
                 simulated = await SimulateFundingCarry(
                     DiscoverFundingCarry(
                         funding_market_data_for(venue),
