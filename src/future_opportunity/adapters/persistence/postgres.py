@@ -697,7 +697,8 @@ class PostgresSimulationRepository(SimulationRepository):
                 SELECT *
                 FROM executions
                 WHERE strategy_plan_id = %s
-                ORDER BY started_at DESC
+                  AND purpose = 'open'
+                ORDER BY started_at ASC
                 LIMIT 1
                 """,
                 (plan.id,),
@@ -738,6 +739,7 @@ class PostgresSimulationRepository(SimulationRepository):
             started_at=execution_row["started_at"],
             finished_at=execution_row["finished_at"],
             fills=fills,
+            purpose=ExecutionPurpose(execution_row["purpose"]),
         )
 
         leg_rows = await (
@@ -827,6 +829,60 @@ class PostgresSimulationRepository(SimulationRepository):
             )
         )
 
+        management_rows = await (
+            await conn.execute(
+                """
+                SELECT *
+                FROM executions
+                WHERE strategy_plan_id = %s
+                  AND purpose <> 'open'
+                ORDER BY started_at ASC
+                """,
+                (plan.id,),
+            )
+        ).fetchall()
+        management_executions: list[Execution] = []
+        for management_row in management_rows:
+            management_fill_rows = await (
+                await conn.execute(
+                    """
+                    SELECT *
+                    FROM fills
+                    WHERE execution_id = %s
+                    ORDER BY filled_at, instrument_id
+                    """,
+                    (management_row["id"],),
+                )
+            ).fetchall()
+            management_fills = tuple(
+                Fill(
+                    instrument_id=fill["instrument_id"],
+                    side=fill["side"],
+                    quantity=fill["quantity"],
+                    price=fill["price"],
+                    reference_price=fill["reference_price"],
+                    notional=fill["notional"],
+                    fee=fill["fee"],
+                    slippage_bps=fill["slippage_bps"],
+                    slippage_quote=fill["slippage_quote"],
+                    filled_at=fill["filled_at"],
+                    source=FillSource(fill["source"]),
+                )
+                for fill in management_fill_rows
+            )
+            management_executions.append(
+                Execution(
+                    id=str(management_row["id"]),
+                    strategy_plan_id=str(management_row["strategy_plan_id"]),
+                    state=ExecutionState(management_row["state"]),
+                    mode=management_row["mode"],
+                    started_at=management_row["started_at"],
+                    finished_at=management_row["finished_at"],
+                    fills=management_fills,
+                    purpose=ExecutionPurpose(management_row["purpose"]),
+                )
+            )
+
         return SimulationRecord(
             plan=plan,
             execution=execution,
@@ -834,4 +890,5 @@ class PostgresSimulationRepository(SimulationRepository):
             entry_return=entry_return,
             current_return=current_return,
             risk=risk,
+            management_executions=tuple(management_executions),
         )
