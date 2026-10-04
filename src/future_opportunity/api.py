@@ -36,6 +36,7 @@ from future_opportunity.application.simulate.cash_and_carry import (
 from future_opportunity.application.simulate.errors import OpportunityNotQualified
 from future_opportunity.application.simulate.funding_carry import SimulateFundingCarry
 from future_opportunity.domain.strategy.cash_and_carry import CashAndCarryAssumptions
+from future_opportunity.domain.deployment.model import LiquidityPolicy
 from future_opportunity.domain.strategy.definition import STRATEGIES, strategy_definition
 from future_opportunity.domain.strategy.funding_carry import FundingCarryAssumptions
 
@@ -144,6 +145,7 @@ def _discovery_view(result: object) -> dict[str, object]:
         "observation": asdict(result.observation),
         "qualification": asdict(result.qualification),
         "evaluation": asdict(result.evaluation),
+        "deployment": asdict(result.deployment),
     }
 
 
@@ -374,6 +376,8 @@ async def discover(
     reserve_ratio: Decimal = Query(default=Decimal("0.10"), ge=0, lt=1),
     futures_leverage: Decimal = Query(default=Decimal(1), gt=0, le=Decimal("1.2")),
     exit_buffer_bps: Decimal = Query(default=Decimal(5), ge=0),
+    liquidity_policy: LiquidityPolicy = Query(default=LiquidityPolicy.STRICT),
+    max_impact_bps: Decimal = Query(default=Decimal(10), ge=0),
 ) -> dict[str, object]:
     repository: OpportunityRepository = request.app.state.opportunity_repository
 
@@ -390,6 +394,8 @@ async def discover(
                 reserve_ratio,
                 futures_leverage,
             ),
+            liquidity_policy=liquidity_policy,
+            max_impact_bps=max_impact_bps,
         )
         return {
             "strategy": strategy,
@@ -411,6 +417,8 @@ async def discover(
                 futures_leverage,
                 exit_buffer_bps,
             ),
+            liquidity_policy=liquidity_policy,
+            max_impact_bps=max_impact_bps,
         )
         return {
             "strategy": strategy,
@@ -433,6 +441,8 @@ async def simulate(
     reserve_ratio: Decimal = Query(default=Decimal("0.10"), ge=0, lt=1),
     futures_leverage: Decimal = Query(default=Decimal(1), gt=0, le=Decimal("1.2")),
     exit_buffer_bps: Decimal = Query(default=Decimal(5), ge=0),
+    liquidity_policy: LiquidityPolicy = Query(default=LiquidityPolicy.STRICT),
+    max_impact_bps: Decimal = Query(default=Decimal(10), ge=0),
     future_instrument_id: str | None = Query(default=None),
 ) -> dict[str, object]:
     repository: OpportunityRepository = request.app.state.opportunity_repository
@@ -456,6 +466,8 @@ async def simulate(
                 base=base,
                 capital=capital,
                 assumptions=configured,
+                liquidity_policy=liquidity_policy,
+                max_impact_bps=max_impact_bps,
             )
         except OpportunityNotQualified as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
@@ -465,6 +477,8 @@ async def simulate(
             "opportunity": asdict(simulated.discovered.opportunity),
             "observation": asdict(simulated.discovered.observation),
             "evaluation": asdict(simulated.discovered.evaluation),
+            "deployment": asdict(simulated.discovered.deployment),
+            "deployment": asdict(simulated.discovered.deployment),
             "plan": asdict(simulated.plan),
             "position": asdict(simulated.execution.position),
             "fills": [asdict(fill) for fill in simulated.execution.fills],
@@ -503,6 +517,8 @@ async def simulate(
                 future_instrument_id=future_instrument_id,
                 capital=capital,
                 assumptions=configured,
+                liquidity_policy=liquidity_policy,
+                max_impact_bps=max_impact_bps,
             )
         except FutureInstrumentNotFound as error:
             raise HTTPException(
