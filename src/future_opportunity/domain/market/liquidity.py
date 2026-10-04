@@ -111,3 +111,23 @@ def max_visible_quantity_at_impact(
         break
 
     return quantity
+
+
+def hedged_visible_spot_notional_capacity(
+    spot_book: OrderBook,
+    hedge_book: OrderBook,
+    max_impact_bps: Decimal,
+) -> Decimal:
+    """Visible spot-side notional that both hedge legs can absorb at the threshold."""
+    spot_quantity = max_visible_quantity_at_impact(
+        spot_book,
+        "buy",
+        max_impact_bps,
+    )
+    hedge_quantity = max_visible_quantity_at_impact(
+        hedge_book,
+        "sell",
+        max_impact_bps,
+    )
+    base_quantity = min(spot_quantity, hedge_quantity)
+    return base_quantity * spot_book.best_ask
