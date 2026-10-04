@@ -5,6 +5,7 @@ from decimal import Decimal
 
 from future_opportunity.adapters.execution.paper import simulate_market_fill
 from future_opportunity.domain.capital.model import allocate_isolated_hedge
+from future_opportunity.domain.deployment.model import DeploymentAssessment
 from future_opportunity.domain.execution.model import Fill
 from future_opportunity.domain.market.snapshot import FundingCarryMarketSnapshot
 from future_opportunity.domain.position.model import LegPosition, Position, PositionState
@@ -37,12 +38,17 @@ def execute_paper_funding_carry(
     snapshot: FundingCarryMarketSnapshot,
     capital: Decimal,
     assumptions: FundingCarryAssumptions,
+    deployment: DeploymentAssessment | None = None,
 ) -> PaperFundingCarryResult:
-    target_notional = allocate_isolated_hedge(
-        capital,
-        assumptions.reserve_ratio,
-        assumptions.futures_leverage,
-    ).hedged_notional
+    target_notional = (
+        deployment.actual_spot_notional
+        if deployment is not None
+        else allocate_isolated_hedge(
+            capital,
+            assumptions.reserve_ratio,
+            assumptions.futures_leverage,
+        ).hedged_notional
+    )
     spot_quantity = target_notional / snapshot.spot_book.best_ask
 
     spot = simulate_market_fill(
@@ -60,6 +66,11 @@ def execute_paper_funding_carry(
         book=snapshot.perpetual_book,
         fee_bps=assumptions.perpetual_taker_fee_bps,
     ).fill
+
+    if deployment is not None:
+        max_impact = deployment.max_impact_bps
+        if spot.slippage_bps > max_impact or perpetual.slippage_bps > max_impact:
+            raise ValueError("entry fill exceeds frozen liquidity impact limit")
 
     base_delta = spot.quantity - perpetual.quantity
     delta_notional = base_delta * snapshot.mark_price
