@@ -3,6 +3,7 @@ from decimal import Decimal
 
 import pytest
 
+from future_opportunity.adapters.persistence.memory import MemoryOpportunityRepository
 from future_opportunity.application.discover.funding_carry import DiscoverFundingCarry
 from future_opportunity.domain.market.snapshot import (
     FundingCarryMarketSnapshot,
@@ -16,7 +17,7 @@ from future_opportunity.domain.strategy.funding_carry import FundingCarryAssumpt
 
 class FakeFundingMarketData:
     def __init__(self, rate: Decimal) -> None:
-        self._rate = rate
+        self.rate = rate
 
     async def snapshot(self, base: str, quote: str = "USDT") -> FundingCarryMarketSnapshot:
         now = datetime.now(UTC)
@@ -51,7 +52,8 @@ class FakeFundingMarketData:
 @pytest.mark.asyncio
 async def test_positive_net_carry_is_qualified() -> None:
     result = await DiscoverFundingCarry(
-        FakeFundingMarketData(Decimal("0.0002"))
+        FakeFundingMarketData(Decimal("0.0002")),
+        MemoryOpportunityRepository(),
     ).execute(
         base="BTC",
         capital=Decimal(10_000),
@@ -65,7 +67,8 @@ async def test_positive_net_carry_is_qualified() -> None:
 @pytest.mark.asyncio
 async def test_negative_funding_is_discovered_but_not_qualified() -> None:
     result = await DiscoverFundingCarry(
-        FakeFundingMarketData(Decimal("-0.0001"))
+        FakeFundingMarketData(Decimal("-0.0001")),
+        MemoryOpportunityRepository(),
     ).execute(
         base="BTC",
         capital=Decimal(10_000),
