@@ -36,7 +36,24 @@ class MemoryOpportunityRepository(OpportunityRepository):
         self._opportunities[opportunity.key] = opportunity
         self._observations.setdefault(observation.opportunity_id, []).append(observation)
 
+    async def get(self, opportunity_id: str) -> Opportunity | None:
+        return next(
+            (
+                opportunity
+                for opportunity in self._opportunities.values()
+                if opportunity.id == opportunity_id
+            ),
+            None,
+        )
+
+    async def observations(
+        self,
+        opportunity_id: str,
+    ) -> tuple[OpportunityObservation, ...]:
+        return tuple(self._observations.get(opportunity_id, ()))
+
     def observations_for(self, opportunity_id: str) -> tuple[OpportunityObservation, ...]:
+        """Test/helper compatibility wrapper."""
         return tuple(self._observations.get(opportunity_id, ()))
 
 
