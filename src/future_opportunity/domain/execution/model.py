@@ -17,6 +17,12 @@ class ExecutionState(StrEnum):
     FAILED = "failed"
 
 
+class ExecutionPurpose(StrEnum):
+    OPEN = "open"
+    CLOSE = "close"
+    REBALANCE = "rebalance"
+
+
 @dataclass(frozen=True, slots=True)
 class Fill:
     instrument_id: str
@@ -41,3 +47,4 @@ class Execution:
     started_at: datetime
     finished_at: datetime | None
     fills: tuple[Fill, ...]
+    purpose: ExecutionPurpose = ExecutionPurpose.OPEN
