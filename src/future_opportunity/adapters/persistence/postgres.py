@@ -187,6 +187,18 @@ class PostgresOpportunityRepository(OpportunityRepository):
 
         async with self._pool.connection() as conn:
             async with conn.transaction():
+                existing = await (
+                    await conn.execute(
+                        """
+                        SELECT state, version
+                        FROM opportunities
+                        WHERE id = %s
+                        FOR UPDATE
+                        """,
+                        (opportunity.id,),
+                    )
+                ).fetchone()
+
                 await conn.execute(
                     """
                     INSERT INTO opportunities (
@@ -251,6 +263,41 @@ class PostgresOpportunityRepository(OpportunityRepository):
                     WHERE id = %s
                     """,
                     (observation.id, opportunity.id),
+                )
+
+                aggregate_version = (
+                    0 if existing is None else int(existing["version"]) + 1
+                )
+                if existing is None:
+                    event_type = (
+                        "OpportunityQualified"
+                        if opportunity.state.value == "qualified"
+                        else "OpportunityDiscovered"
+                    )
+                elif existing["state"] != opportunity.state.value:
+                    event_type = {
+                        "qualified": "OpportunityQualified",
+                        "expired": "OpportunityExpired",
+                        "discovered": "OpportunityDiscovered",
+                    }[opportunity.state.value]
+                else:
+                    event_type = "OpportunityObserved"
+
+                await _append_domain_event(
+                    conn,
+                    aggregate_type="Opportunity",
+                    aggregate_id=opportunity.id,
+                    aggregate_version=aggregate_version,
+                    event_type=event_type,
+                    occurred_at=observation.observed_at,
+                    payload={
+                        "opportunity_id": opportunity.id,
+                        "observation_id": observation.id,
+                        "state": opportunity.state.value,
+                        "strategy_type": opportunity.strategy_type,
+                        "expected_net_return": str(estimate.expected_net_return),
+                        "annualized_equivalent": str(estimate.annualized_equivalent),
+                    },
                 )
 
 
