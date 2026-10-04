@@ -306,6 +306,47 @@ async def get_position(
     return _simulation_record_view(record)
 
 
+@app.get("/v1/opportunities/{opportunity_id}")
+async def get_opportunity(
+    request: Request,
+    opportunity_id: str,
+) -> dict[str, object]:
+    repository: OpportunityRepository = request.app.state.opportunity_repository
+    opportunity = await repository.get(opportunity_id)
+    if opportunity is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"opportunity not found: {opportunity_id}",
+        )
+    observations = await repository.observations(opportunity_id)
+    return {
+        "opportunity": asdict(opportunity),
+        "observation_count": len(observations),
+        "latest_observation": (
+            asdict(observations[-1]) if observations else None
+        ),
+    }
+
+
+@app.get("/v1/opportunities/{opportunity_id}/observations")
+async def get_opportunity_observations(
+    request: Request,
+    opportunity_id: str,
+) -> dict[str, object]:
+    repository: OpportunityRepository = request.app.state.opportunity_repository
+    opportunity = await repository.get(opportunity_id)
+    if opportunity is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"opportunity not found: {opportunity_id}",
+        )
+    observations = await repository.observations(opportunity_id)
+    return {
+        "opportunity_id": opportunity_id,
+        "results": [asdict(observation) for observation in observations],
+    }
+
+
 @app.get("/v1/opportunities/{venue}/{strategy}/{base}")
 async def discover(
     request: Request,
