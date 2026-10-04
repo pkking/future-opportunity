@@ -7,6 +7,7 @@ from future_opportunity.application.repositories import (
     OpportunityRepository,
     SimulationRecord,
 )
+from future_opportunity.domain.execution.model import Execution
 from future_opportunity.domain.opportunity.model import (
     Opportunity,
     OpportunityObservation,
@@ -68,7 +69,7 @@ class MemorySimulationRepository:
     async def close_position(
         self,
         position: Position,
-        execution: object,
+        execution: Execution,
         current_return: ReturnAttribution,
         risk: RiskReport,
         observed_at: datetime,
