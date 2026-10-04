@@ -3,6 +3,7 @@ from __future__ import annotations
 from decimal import Decimal
 
 from future_opportunity.domain.market.snapshot import CashAndCarryMarketSnapshot
+from future_opportunity.domain.strategy.definition import CASH_AND_CARRY
 from future_opportunity.domain.strategy.cash_and_carry import (
     CashAndCarryAssumptions,
     cash_and_carry_allocation,
@@ -26,7 +27,7 @@ def build_cash_and_carry_plan(
 
     return StrategyPlan(
         id=plan_id,
-        strategy=StrategyRef(name="cash-and-carry", version="1.0.0"),
+        strategy=StrategyRef(name=CASH_AND_CARRY.name, version=CASH_AND_CARRY.version),
         opportunity_observation_id=opportunity_observation_id,
         capital=Money(amount=capital, currency=snapshot.quote),
         legs=(
