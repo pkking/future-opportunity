@@ -4,6 +4,7 @@ from decimal import Decimal
 
 from future_opportunity.domain.capital.model import allocate_isolated_hedge
 from future_opportunity.domain.market.snapshot import FundingCarryMarketSnapshot
+from future_opportunity.domain.strategy.definition import FUNDING_CARRY
 from future_opportunity.domain.strategy.funding_carry import FundingCarryAssumptions
 from future_opportunity.domain.strategy.model import Money, PlanLeg, StrategyPlan, StrategyRef
 
@@ -28,7 +29,7 @@ def build_funding_carry_plan(
 
     return StrategyPlan(
         id=plan_id,
-        strategy=StrategyRef(name="funding-carry", version="1.0.0"),
+        strategy=StrategyRef(name=FUNDING_CARRY.name, version=FUNDING_CARRY.version),
         opportunity_observation_id=opportunity_observation_id,
         capital=Money(amount=capital, currency=snapshot.quote),
         legs=(
