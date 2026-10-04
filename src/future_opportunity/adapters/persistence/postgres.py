@@ -34,6 +34,7 @@ from future_opportunity.domain.risk.model import (
     RiskReport,
 )
 from future_opportunity.domain.strategy.model import (
+    ExpectedEconomics,
     Money,
     PlanLeg,
     StrategyPlan,
@@ -620,6 +621,32 @@ class PostgresSimulationRepository(SimulationRepository):
             max_delta_pct=Decimal(str(document["max_delta_pct"])),
             max_leverage=Decimal(str(document["max_leverage"])),
             execution_mode=row["execution_mode"],
+            expected_economics=(
+                ExpectedEconomics(
+                    return_character=document["expected_economics"]["return_character"],
+                    horizon_type=document["expected_economics"]["horizon_type"],
+                    horizon_days=Decimal(
+                        str(document["expected_economics"]["horizon_days"])
+                    ),
+                    expected_net_return=Decimal(
+                        str(document["expected_economics"]["expected_net_return"])
+                    ),
+                    annualized_equivalent=Decimal(
+                        str(document["expected_economics"]["annualized_equivalent"])
+                    ),
+                    expected_cost_return=Decimal(
+                        str(document["expected_economics"]["expected_cost_return"])
+                    ),
+                    expected_net_pnl=Decimal(
+                        str(document["expected_economics"]["expected_net_pnl"])
+                    ),
+                    expected_cost_pnl=Decimal(
+                        str(document["expected_economics"]["expected_cost_pnl"])
+                    ),
+                )
+                if document.get("expected_economics") is not None
+                else None
+            ),
         )
 
         execution_row = await (
