@@ -1,0 +1,1 @@
+"""Opportunity discovery use cases."""
