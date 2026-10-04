@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from dataclasses import replace
+from datetime import datetime
+
 from future_opportunity.application.repositories import (
     OpportunityRepository,
     SimulationRecord,
@@ -39,6 +42,24 @@ class MemorySimulationRepository:
 
     async def record(self, simulation: SimulationRecord) -> None:
         self._simulations[simulation.position.id] = simulation
+
+    async def update_position(
+        self,
+        position: object,
+        current_return: object,
+        risk: object,
+        observed_at: datetime,
+    ) -> None:
+        del observed_at
+        existing = self._simulations.get(position.id)
+        if existing is None:
+            raise KeyError(position.id)
+        self._simulations[position.id] = replace(
+            existing,
+            position=position,
+            current_return=current_return,
+            risk=risk,
+        )
 
     async def get(self, position_id: str) -> SimulationRecord | None:
         return self._simulations.get(position_id)
