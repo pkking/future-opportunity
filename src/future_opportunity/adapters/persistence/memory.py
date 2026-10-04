@@ -65,6 +65,27 @@ class MemorySimulationRepository:
             risk=risk,
         )
 
+    async def close_position(
+        self,
+        position: Position,
+        execution: object,
+        current_return: ReturnAttribution,
+        risk: RiskReport,
+        observed_at: datetime,
+    ) -> None:
+        del observed_at
+        existing = self._simulations.get(position.id)
+        if existing is None:
+            raise KeyError(position.id)
+        persisted_position = replace(position, version=position.version + 1)
+        self._simulations[position.id] = replace(
+            existing,
+            position=persisted_position,
+            current_return=current_return,
+            risk=risk,
+            management_executions=existing.management_executions + (execution,),
+        )
+
     async def get(self, position_id: str) -> SimulationRecord | None:
         return self._simulations.get(position_id)
 
