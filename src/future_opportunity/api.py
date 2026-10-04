@@ -4,9 +4,11 @@ import os
 from contextlib import asynccontextmanager
 from dataclasses import asdict
 from decimal import Decimal
+from pathlib import Path
 from typing import AsyncIterator
 
 from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi.responses import FileResponse
 
 from future_opportunity.adapters.exchanges.factory import (
     cash_and_carry_market_data_for,
@@ -70,6 +72,14 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+WEB_ROOT = Path(__file__).with_name("web")
+
+
+
+
+@app.get("/", include_in_schema=False)
+def web_index() -> FileResponse:
+    return FileResponse(WEB_ROOT / "index.html")
 
 
 @app.get("/healthz")
