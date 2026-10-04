@@ -144,7 +144,7 @@ def discover(
     spot_fee_value = _decimal_cli("spot_fee_bps", spot_fee_bps)
     derivative_fee_value = _decimal_cli(
         "derivative_fee_bps",
-        derivative_fee_value,
+        derivative_fee_bps,
     )
     reserve_value = _decimal_cli("reserve_ratio", reserve_ratio)
     leverage_value = _decimal_cli("futures_leverage", futures_leverage)
@@ -210,7 +210,7 @@ def simulate(
     spot_fee_value = _decimal_cli("spot_fee_bps", spot_fee_bps)
     derivative_fee_value = _decimal_cli(
         "derivative_fee_bps",
-        derivative_fee_value,
+        derivative_fee_bps,
     )
     reserve_value = _decimal_cli("reserve_ratio", reserve_ratio)
     leverage_value = _decimal_cli("futures_leverage", futures_leverage)
