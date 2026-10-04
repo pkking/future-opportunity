@@ -43,7 +43,7 @@ def discover(
     """Discover a funding-carry opportunity from public market data."""
 
     async def run() -> None:
-        use_case = DiscoverFundingCarry(funding_market_data_for(venue))
+        use_case = DiscoverFundingCarry(\n            funding_market_data_for(venue),\n            MemoryOpportunityRepository(),\n        )
         result = await use_case.execute(
             base=base,
             capital=capital,
