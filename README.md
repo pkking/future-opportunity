@@ -19,21 +19,18 @@ V0 is intentionally **paper-trading only**.
 
 It reads real public market data, but the repository contains no live-order API path and requires no exchange API key.
 
-## V0 scope
+## V0 implementation status
 
-Strategies:
+Implemented vertical slices:
 
 - Funding Carry: long spot + short perpetual
+  - Binance BTC / ETH
+  - OKX BTC / ETH
 - Cash-and-Carry: long spot + short dated future
+  - OKX USDT-settled linear futures
+  - BTC / ETH
 
-Venues/assets:
-
-- Binance
-- OKX
-- BTC
-- ETH
-
-Current implementation supports the Funding Carry vertical slice on Binance and OKX for BTC/ETH.
+Both strategies share the same Opportunity, StrategyPlan, Position, Capital Allocation, Risk, and Paper Fill domain objects.
 
 ## Quickstart
 
@@ -42,26 +39,107 @@ Requires Python 3.12+ and [uv](https://docs.astral.sh/uv/).
 ```bash
 uv sync --all-extras --dev
 
+# Funding Carry
 uv run arb quickstart funding-carry
-uv run arb discover BTC --capital 1000
-uv run arb simulate BTC --capital 1000
+uv run arb discover funding-carry --venue binance --base BTC --capital 1000
+uv run arb simulate funding-carry --venue binance --base BTC --capital 1000
+
+# Cash-and-Carry
+uv run arb quickstart cash-and-carry
+uv run arb discover cash-and-carry --venue okx --base BTC --capital 1000
 ```
 
-`discover` reads public spot/perpetual market data through a Venue adapter and produces an Opportunity-level funding-carry evaluation. OKX swap contract sizes are normalized from contract count into base-asset quantity before entering the domain model.
-
-`simulate` walks the real order book to create simulated fills and a delta-neutral paper Position. V0 uses a conservative isolated-capital model: capital is split between reserve, spot purchase, and futures margin instead of assuming that spot collateral automatically funds the futures leg.
-
-Fee values are explicit assumptions. The defaults are examples for simulation and are **not** a claim about the fee tier of any Binance account:
+Cash-and-Carry discovery can return multiple dated futures. Each expiry is a distinct Opportunity. Simulation therefore requires an explicit future instrument:
 
 ```bash
-uv run arb discover BTC \
+uv run arb simulate cash-and-carry \
+  --venue okx \
+  --base BTC \
+  --capital 1000 \
+  --future-instrument-id 'okx:BTC-USDT-XXXXXX:future'
+```
+
+The simulator uses the **same market snapshot and OpportunityObservation** that generated the StrategyPlan. It does not invent a new observation ID or silently select another expiry.
+
+## Business semantics
+
+### Funding Carry
+
+```text
+BUY  Spot
+SELL Perpetual
+```
+
+Return character: **Variable**
+
+Primary return source: funding payments.
+
+The estimator derives the recent funding cadence from exchange history rather than assuming that every venue always settles at an eight-hour interval.
+
+### Cash-and-Carry
+
+```text
+BUY  Spot
+SELL Dated Future
+```
+
+Return character: **Convergent**
+
+Primary return source: positive futures basis converging toward spot at expiry.
+
+The system reports both:
+
+- expected net return **to expiry**
+- annualized equivalent for comparison
+
+The annualized value is not presented as a promised yield.
+
+## Capital model
+
+V0 uses the conservative isolated-capital model defined by [ADR-0001](docs/adr/0001-isolated-capital-model.md).
+
+Capital is explicitly split into:
+
+```text
+Reserve
++
+Spot purchase
++
+Futures margin
+```
+
+For a dated future with basis, the futures quote-notional may differ from the spot quote-notional even when base-asset quantity is exactly hedged. The capital allocator accounts for this ratio.
+
+Defaults:
+
+```text
+Reserve ratio     10%
+Futures leverage   1x
+Maximum leverage 1.2x
+```
+
+This intentionally avoids assuming exchange-specific unified/portfolio-margin collateral behavior.
+
+## Costs
+
+Fee values are **explicit assumptions**. Defaults are examples for paper simulation and are not claims about the fee tier of a specific exchange account.
+
+Funding example:
+
+```bash
+uv run arb discover funding-carry \
   --venue binance \
+  --base BTC \
   --capital 10000 \
   --spot-fee-bps 10 \
-  --perpetual-fee-bps 5 \
+  --derivative-fee-bps 5 \
   --reserve-ratio 0.10 \
   --futures-leverage 1
 ```
+
+Cash-and-Carry additionally exposes `--exit-buffer-bps` for uncertain expiry/exit friction.
+
+Paper execution walks the real order book instead of filling at the mid price.
 
 ## API
 
@@ -69,24 +147,33 @@ uv run arb discover BTC \
 uv run uvicorn future_opportunity.api:app --reload
 ```
 
-Then use:
+Examples:
 
 ```text
 GET  /healthz
-GET  /v1/opportunities/funding-carry/BTC
-POST /v1/simulations/funding-carry/BTC
+
+GET  /v1/opportunities/binance/funding-carry/BTC
+POST /v1/simulations/binance/funding-carry/BTC
+
+GET  /v1/opportunities/okx/cash-and-carry/BTC
+POST /v1/simulations/okx/cash-and-carry/BTC?future_instrument_id=<id>
 ```
 
-## Architecture
+## Exchange anti-corruption layer
 
-The system follows a domain-centric Ports & Adapters design. Exchange naming and API semantics are isolated behind adapters.
+Exchange-specific instrument naming and quantity units do not enter the domain model.
 
-See `docs/design-baseline-v0.1.md` for the frozen V0 design baseline.
+For example, OKX derivative order-book `sz` is contract count. The OKX adapter uses public instrument metadata such as `ctVal` / `ctValCcy` to normalize derivative liquidity into base-asset quantity before passing it to strategy code.
 
-## Development policy
+## Opportunity lifecycle
 
-Changes to the frozen domain boundaries or paper/live safety boundary require an ADR.
+A continuously valid market condition reuses the same active Opportunity aggregate and appends immutable OpportunityObservations.
 
+```text
+DISCOVERED -> QUALIFIED -> EXPIRED
+```
+
+If the opportunity disappears and later reappears, a new Opportunity lifecycle begins.
 
 ## Optional PostgreSQL persistence
 
@@ -105,4 +192,15 @@ uv sync --all-extras --dev
 uv run uvicorn future_opportunity.api:app --reload
 ```
 
-When `DATABASE_URL` is present, the API uses the PostgreSQL Repository adapter. Without it, the same application use case runs against the in-memory adapter.
+When `DATABASE_URL` is present, the API uses the PostgreSQL Repository adapter. Without it, the same application use cases run against the in-memory adapter.
+
+## Architecture
+
+The system follows a domain-centric Ports & Adapters design.
+
+See:
+
+- [System Design Baseline v0.1](docs/design-baseline-v0.1.md)
+- [ADR-0001: Conservative Isolated Capital Model](docs/adr/0001-isolated-capital-model.md)
+
+Changes to frozen domain boundaries, return semantics, capital semantics, or the paper/live safety boundary require an ADR.
