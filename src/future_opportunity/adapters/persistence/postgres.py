@@ -27,6 +27,8 @@ from future_opportunity.domain.opportunity.model import (
     Opportunity,
     OpportunityObservation,
     OpportunityState,
+    ReturnCharacter,
+    ReturnEstimate,
 )
 from future_opportunity.domain.position.model import LegPosition, Position, PositionState
 from future_opportunity.domain.returns.model import ReturnAttribution
@@ -176,6 +178,73 @@ class PostgresOpportunityRepository(OpportunityRepository):
             discovered_at=row["discovered_at"],
             qualified_at=row["qualified_at"],
             expired_at=row["expired_at"],
+        )
+
+    async def get(self, opportunity_id: str) -> Opportunity | None:
+        async with self._pool.connection() as conn:
+            row = await (
+                await conn.execute(
+                    """
+                    SELECT
+                        id,
+                        opportunity_key,
+                        strategy_type,
+                        state,
+                        discovered_at,
+                        qualified_at,
+                        expired_at
+                    FROM opportunities
+                    WHERE id = %s
+                    """,
+                    (opportunity_id,),
+                )
+            ).fetchone()
+
+        if row is None:
+            return None
+
+        return Opportunity(
+            id=str(row["id"]),
+            key=row["opportunity_key"],
+            strategy_type=row["strategy_type"],
+            state=OpportunityState(row["state"]),
+            discovered_at=row["discovered_at"],
+            qualified_at=row["qualified_at"],
+            expired_at=row["expired_at"],
+        )
+
+    async def observations(
+        self,
+        opportunity_id: str,
+    ) -> tuple[OpportunityObservation, ...]:
+        async with self._pool.connection() as conn:
+            rows = await (
+                await conn.execute(
+                    """
+                    SELECT *
+                    FROM opportunity_observations
+                    WHERE opportunity_id = %s
+                    ORDER BY observed_at ASC, id ASC
+                    """,
+                    (opportunity_id,),
+                )
+            ).fetchall()
+
+        return tuple(
+            OpportunityObservation(
+                id=str(row["id"]),
+                opportunity_id=str(row["opportunity_id"]),
+                observed_at=row["observed_at"],
+                return_estimate=ReturnEstimate(
+                    character=ReturnCharacter(row["return_character"]),
+                    expected_net_return=row["expected_net_return"],
+                    annualized_equivalent=row["annualized_equivalent"],
+                    expected_cost=row["expected_cost"],
+                ),
+                capacity_5bps=row["capacity_5bps"],
+                capacity_10bps=row["capacity_10bps"],
+            )
+            for row in rows
         )
 
     async def record(
