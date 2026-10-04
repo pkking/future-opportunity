@@ -33,6 +33,7 @@ from future_opportunity.application.simulate.cash_and_carry import (
     FutureInstrumentNotFound,
     SimulateCashAndCarry,
 )
+from future_opportunity.application.simulate.errors import OpportunityNotQualified
 from future_opportunity.application.simulate.funding_carry import SimulateFundingCarry
 from future_opportunity.domain.strategy.cash_and_carry import CashAndCarryAssumptions
 from future_opportunity.domain.strategy.definition import STRATEGIES, strategy_definition
@@ -430,17 +431,20 @@ async def simulate(
             reserve_ratio,
             futures_leverage,
         )
-        simulated = await SimulateFundingCarry(
-            DiscoverFundingCarry(
-                funding_market_data_for(venue),
-                repository,
-            ),
-            simulation_repository,
-        ).execute(
-            base=base,
-            capital=capital,
-            assumptions=configured,
-        )
+        try:
+            simulated = await SimulateFundingCarry(
+                DiscoverFundingCarry(
+                    funding_market_data_for(venue),
+                    repository,
+                ),
+                simulation_repository,
+            ).execute(
+                base=base,
+                capital=capital,
+                assumptions=configured,
+            )
+        except OpportunityNotQualified as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
         return {
             "mode": "paper",
             "live_orders": False,
@@ -491,6 +495,8 @@ async def simulate(
                 status_code=404,
                 detail=f"future instrument not found: {error}",
             ) from error
+        except OpportunityNotQualified as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
 
         return {
             "mode": "paper",
