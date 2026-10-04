@@ -87,6 +87,16 @@ async def test_postgres_round_trip_rebuilds_complete_simulation() -> None:
         )
 
         stored = await simulations.get(simulated.execution.position.id)
+        opportunity = await opportunities.get(simulated.discovered.opportunity.id)
+        observations = await opportunities.observations(
+            simulated.discovered.opportunity.id
+        )
+
+        assert opportunity is not None
+        assert opportunity.id == simulated.discovered.opportunity.id
+        assert [item.id for item in observations] == [
+            simulated.discovered.observation.id
+        ]
 
         assert stored is not None
         assert stored.plan.id == simulated.plan.id
