@@ -27,6 +27,15 @@ class OpportunityRepository(Protocol):
         """Persist aggregate state and its observation atomically."""
         ...
 
+    async def get(self, opportunity_id: str) -> Opportunity | None:
+        ...
+
+    async def observations(
+        self,
+        opportunity_id: str,
+    ) -> tuple[OpportunityObservation, ...]:
+        ...
+
 
 @dataclass(frozen=True, slots=True)
 class SimulationRecord:
