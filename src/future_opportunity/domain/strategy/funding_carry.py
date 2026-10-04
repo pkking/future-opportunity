@@ -107,6 +107,7 @@ def evaluate_funding_carry(
     snapshot: FundingCarryMarketSnapshot,
     capital: Decimal,
     assumptions: FundingCarryAssumptions,
+    deployed_spot_notional: Decimal | None = None,
 ) -> FundingCarryEvaluation:
     rates_1d = _rates_within(snapshot, 1)
     rates_7d = _rates_within(snapshot, 7)
@@ -130,7 +131,13 @@ def evaluate_funding_carry(
         assumptions.reserve_ratio,
         assumptions.futures_leverage,
     )
-    deployed_notional = allocation.hedged_notional
+    deployed_notional = (
+        allocation.hedged_notional
+        if deployed_spot_notional is None
+        else deployed_spot_notional
+    )
+    if deployed_notional < 0:
+        raise ValueError("deployed_spot_notional must be non-negative")
     notional_to_capital = deployed_notional / capital
 
     gross_return = expected_rate * periods * notional_to_capital
@@ -141,16 +148,20 @@ def evaluate_funding_carry(
     round_trip_fee_return = one_way_fee_rate * Decimal(2) * notional_to_capital
 
     spot_quantity = deployed_notional / snapshot.spot_book.best_ask
-    spot_impact = estimate_market_fill(
-        snapshot.spot_book,
-        "buy",
-        spot_quantity,
-    ).impact_bps
-    perpetual_impact = estimate_market_fill(
-        snapshot.perpetual_book,
-        "sell",
-        spot_quantity,
-    ).impact_bps
+    if spot_quantity > 0:
+        spot_impact = estimate_market_fill(
+            snapshot.spot_book,
+            "buy",
+            spot_quantity,
+        ).impact_bps
+        perpetual_impact = estimate_market_fill(
+            snapshot.perpetual_book,
+            "sell",
+            spot_quantity,
+        ).impact_bps
+    else:
+        spot_impact = Decimal(0)
+        perpetual_impact = Decimal(0)
     entry_slippage_rate = (spot_impact + perpetual_impact) / BPS
     round_trip_slippage_return = (
         entry_slippage_rate * Decimal(2) * notional_to_capital
@@ -170,7 +181,7 @@ def evaluate_funding_carry(
         capital=capital,
         reserve_amount=allocation.reserve_amount,
         deployed_notional=deployed_notional,
-        futures_margin=allocation.futures_margin,
+        futures_margin=deployed_notional / assumptions.futures_leverage,
         visible_capacity_5bps=hedged_visible_spot_notional_capacity(
             snapshot.spot_book,
             snapshot.perpetual_book,
