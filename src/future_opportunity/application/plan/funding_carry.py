@@ -2,11 +2,9 @@ from __future__ import annotations
 
 from decimal import Decimal
 
+from future_opportunity.domain.capital.model import allocate_isolated_hedge
 from future_opportunity.domain.market.snapshot import FundingCarryMarketSnapshot
-from future_opportunity.domain.strategy.funding_carry import (
-    FundingCarryAssumptions,
-    target_hedged_notional,
-)
+from future_opportunity.domain.strategy.funding_carry import FundingCarryAssumptions
 from future_opportunity.domain.strategy.model import Money, PlanLeg, StrategyPlan, StrategyRef
 
 
@@ -19,7 +17,11 @@ def build_funding_carry_plan(
     max_delta_pct: Decimal = Decimal("0.005"),
     max_leverage: Decimal = Decimal("1.2"),
 ) -> StrategyPlan:
-    deployed_notional = target_hedged_notional(capital, assumptions)
+    deployed_notional = allocate_isolated_hedge(
+        capital,
+        assumptions.reserve_ratio,
+        assumptions.futures_leverage,
+    ).hedged_notional
 
     if assumptions.futures_leverage > max_leverage:
         raise ValueError("configured futures leverage exceeds plan risk limit")
