@@ -124,6 +124,20 @@ def cash_assumptions(
     )
 
 
+def _funding_market_data_or_400(venue: str) -> object:
+    try:
+        return funding_market_data_for(venue)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+
+def _cash_market_data_or_400(venue: str) -> object:
+    try:
+        return cash_and_carry_market_data_for(venue)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+
 def _discovery_view(result: object) -> dict[str, object]:
     return {
         "opportunity": asdict(result.opportunity),
@@ -365,7 +379,7 @@ async def discover(
 
     if strategy == "funding-carry":
         result = await DiscoverFundingCarry(
-            funding_market_data_for(venue),
+            _funding_market_data_or_400(venue),
             repository,
         ).execute(
             base=base,
@@ -385,7 +399,7 @@ async def discover(
 
     if strategy == "cash-and-carry":
         results = await DiscoverCashAndCarry(
-            cash_and_carry_market_data_for(venue),
+            _cash_market_data_or_400(venue),
             repository,
         ).execute(
             base=base,
@@ -434,7 +448,7 @@ async def simulate(
         try:
             simulated = await SimulateFundingCarry(
                 DiscoverFundingCarry(
-                    funding_market_data_for(venue),
+                    _funding_market_data_or_400(venue),
                     repository,
                 ),
                 simulation_repository,
@@ -480,7 +494,7 @@ async def simulate(
         try:
             simulated = await SimulateCashAndCarry(
                 DiscoverCashAndCarry(
-                    cash_and_carry_market_data_for(venue),
+                    _cash_market_data_or_400(venue),
                     repository,
                 ),
                 simulation_repository,
