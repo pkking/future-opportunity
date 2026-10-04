@@ -25,6 +25,8 @@ from future_opportunity.application.repositories import (
     SimulationRecord,
     SimulationRepository,
 )
+from future_opportunity.application.manage.cash_and_carry import RefreshCashAndCarry
+from future_opportunity.application.manage.funding_carry import RefreshFundingCarry
 from future_opportunity.application.simulate.cash_and_carry import (
     FutureInstrumentNotFound,
     SimulateCashAndCarry,
@@ -147,6 +149,11 @@ def _history_record_view(record: SimulationRecord) -> dict[str, object]:
     capital = record.plan.capital.amount
     current_return = current_net_pnl / capital if capital else Decimal(0)
     closed = record.position.state.value == "closed"
+    complete = record.current_return.complete
+    if closed:
+        progress_state = "realized" if complete else "realized_partial"
+    else:
+        progress_state = "in_progress" if complete else "in_progress_partial"
 
     return {
         "position_id": record.position.id,
@@ -155,7 +162,7 @@ def _history_record_view(record: SimulationRecord) -> dict[str, object]:
         "base": record.plan.base,
         "quote": record.plan.quote,
         "position_state": record.position.state.value,
-        "progress_state": "realized" if closed else "in_progress",
+        "progress_state": progress_state,
         "opened_at": record.position.opened_at,
         "closed_at": record.position.closed_at,
         "expected": (
@@ -166,6 +173,8 @@ def _history_record_view(record: SimulationRecord) -> dict[str, object]:
         "current": {
             "net_pnl": current_net_pnl,
             "net_return": current_return,
+            "complete": complete,
+            "unassessed_components": record.current_return.unassessed_components,
             "attribution": asdict(record.current_return),
         },
         "variance": (
@@ -212,6 +221,38 @@ async def list_positions(request: Request) -> dict[str, object]:
     repository: SimulationRepository = request.app.state.simulation_repository
     records = await repository.list()
     return {"results": [_simulation_record_view(record) for record in records]}
+
+
+@app.post("/v1/positions/{position_id}/refresh")
+async def refresh_position(
+    request: Request,
+    position_id: str,
+) -> dict[str, object]:
+    repository: SimulationRepository = request.app.state.simulation_repository
+    record = await repository.get(position_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"position not found: {position_id}")
+
+    try:
+        if record.plan.strategy.name == "funding-carry":
+            refreshed = await RefreshFundingCarry(
+                funding_market_data_for(record.plan.venue),
+                repository,
+            ).execute(position_id)
+        elif record.plan.strategy.name == "cash-and-carry":
+            refreshed = await RefreshCashAndCarry(
+                cash_and_carry_market_data_for(record.plan.venue),
+                repository,
+            ).execute(position_id)
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail=f"unsupported strategy: {record.plan.strategy.name}",
+            )
+    except (ValueError, KeyError) as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+
+    return _simulation_record_view(refreshed)
 
 
 @app.get("/v1/positions/{position_id}")
