@@ -12,7 +12,10 @@ from future_opportunity.adapters.exchanges.factory import (
     cash_and_carry_market_data_for,
     funding_market_data_for,
 )
-from future_opportunity.adapters.persistence.memory import MemoryOpportunityRepository
+from future_opportunity.adapters.persistence.memory import (
+    MemoryOpportunityRepository,
+    MemorySimulationRepository,
+)
 from future_opportunity.application.discover.cash_and_carry import DiscoverCashAndCarry
 from future_opportunity.application.discover.funding_carry import DiscoverFundingCarry
 from future_opportunity.application.repositories import OpportunityRepository
@@ -42,6 +45,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         repository = MemoryOpportunityRepository()
 
     app.state.opportunity_repository = repository
+    app.state.simulation_repository = MemorySimulationRepository()
     yield
 
     if postgres_repository is not None:
@@ -115,6 +119,7 @@ async def discover(
     exit_buffer_bps: Decimal = Query(default=Decimal(5), ge=0),
 ) -> dict[str, object]:
     repository: OpportunityRepository = request.app.state.opportunity_repository
+    simulation_repository = request.app.state.simulation_repository
 
     if strategy == "funding-carry":
         result = await DiscoverFundingCarry(
@@ -187,7 +192,8 @@ async def simulate(
             DiscoverFundingCarry(
                 funding_market_data_for(venue),
                 repository,
-            )
+            ),
+            simulation_repository,
         ).execute(
             base=base,
             capital=capital,
@@ -230,7 +236,8 @@ async def simulate(
                 DiscoverCashAndCarry(
                     cash_and_carry_market_data_for(venue),
                     repository,
-                )
+                ),
+                simulation_repository,
             ).execute(
                 base=base,
                 future_instrument_id=future_instrument_id,
