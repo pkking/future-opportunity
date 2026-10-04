@@ -7,6 +7,8 @@ from future_opportunity.domain.market.snapshot import FundingCarryMarketSnapshot
 from future_opportunity.domain.strategy.definition import FUNDING_CARRY
 from future_opportunity.domain.strategy.funding_carry import FundingCarryAssumptions
 from future_opportunity.domain.strategy.model import (
+    CapitalPolicy,
+    ExecutionCostPolicy,
     ExpectedEconomics,
     Money,
     PlanLeg,
@@ -59,5 +61,15 @@ def build_funding_carry_plan(
         max_delta_pct=max_delta_pct,
         max_leverage=max_leverage,
         execution_mode="paper",
+        capital_policy=CapitalPolicy(
+            reserve_ratio=assumptions.reserve_ratio,
+            futures_leverage=assumptions.futures_leverage,
+        ),
+        execution_cost_policy=ExecutionCostPolicy(
+            spot_entry_fee_bps=assumptions.spot_taker_fee_bps,
+            derivative_entry_fee_bps=assumptions.perpetual_taker_fee_bps,
+            spot_exit_fee_bps=assumptions.spot_taker_fee_bps,
+            derivative_exit_fee_bps=assumptions.perpetual_taker_fee_bps,
+        ),
         expected_economics=expected_economics,
     )
