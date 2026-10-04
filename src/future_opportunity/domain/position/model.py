@@ -31,6 +31,6 @@ class Position:
     legs: tuple[LegPosition, ...]
     delta_notional: Decimal
     delta_pct: Decimal
-    realized_pnl: Decimal = Decimal("0")
-    unrealized_pnl: Decimal = Decimal("0")
+    realized_pnl: Decimal = Decimal(0)
+    unrealized_pnl: Decimal = Decimal(0)
     version: int = 0
