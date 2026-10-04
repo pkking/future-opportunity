@@ -11,6 +11,9 @@ from future_opportunity.domain.opportunity.model import (
     Opportunity,
     OpportunityObservation,
 )
+from future_opportunity.domain.position.model import Position
+from future_opportunity.domain.returns.model import ReturnAttribution
+from future_opportunity.domain.risk.model import RiskReport
 
 
 class MemoryOpportunityRepository(OpportunityRepository):
@@ -45,9 +48,9 @@ class MemorySimulationRepository:
 
     async def update_position(
         self,
-        position: object,
-        current_return: object,
-        risk: object,
+        position: Position,
+        current_return: ReturnAttribution,
+        risk: RiskReport,
         observed_at: datetime,
     ) -> None:
         del observed_at
