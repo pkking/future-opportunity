@@ -7,7 +7,11 @@ from future_opportunity.domain.capital.model import (
     IsolatedHedgeAllocation,
     allocate_isolated_hedge,
 )
-from future_opportunity.domain.market.liquidity import BPS, estimate_market_fill
+from future_opportunity.domain.market.liquidity import (
+    BPS,
+    estimate_market_fill,
+    hedged_visible_spot_notional_capacity,
+)
 from future_opportunity.domain.market.snapshot import CashAndCarryMarketSnapshot
 
 
@@ -54,6 +58,8 @@ class CashAndCarryEvaluation:
     spot_notional: Decimal
     futures_notional: Decimal
     futures_margin: Decimal
+    visible_capacity_5bps: Decimal
+    visible_capacity_10bps: Decimal
     gross_basis_return_on_notional: Decimal
     gross_return_to_expiry: Decimal
     assumed_fee_return: Decimal
@@ -147,6 +153,16 @@ def evaluate_cash_and_carry(
         spot_notional=allocation.spot_notional,
         futures_notional=allocation.hedge_notional,
         futures_margin=allocation.futures_margin,
+        visible_capacity_5bps=hedged_visible_spot_notional_capacity(
+            snapshot.spot_book,
+            snapshot.future_book,
+            Decimal(5),
+        ),
+        visible_capacity_10bps=hedged_visible_spot_notional_capacity(
+            snapshot.spot_book,
+            snapshot.future_book,
+            Decimal(10),
+        ),
         gross_basis_return_on_notional=gross_basis_return_on_notional,
         gross_return_to_expiry=gross_return,
         assumed_fee_return=assumed_fee_return,
