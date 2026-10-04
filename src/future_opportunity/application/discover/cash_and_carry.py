@@ -9,6 +9,7 @@ from future_opportunity.application.ports import CashAndCarryMarketDataPort
 from future_opportunity.application.repositories import OpportunityRepository
 from future_opportunity.domain.market.snapshot import CashAndCarryMarketSnapshot
 from future_opportunity.domain.opportunity.model import (
+    Opportunity,
     OpportunityObservation,
     OpportunityQualification,
     ReturnCharacter,
