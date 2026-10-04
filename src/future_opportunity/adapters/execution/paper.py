@@ -25,6 +25,13 @@ def simulate_market_fill(
     fee_bps: Decimal,
 ) -> PaperExecutionResult:
     estimate = estimate_market_fill(book, side, quantity)
+    reference = book.best_ask if side == "buy" else book.best_bid
+    reference_notional = quantity * reference
+    slippage_quote = (
+        estimate.notional - reference_notional
+        if side == "buy"
+        else reference_notional - estimate.notional
+    )
 
     return PaperExecutionResult(
         fill=Fill(
@@ -32,9 +39,11 @@ def simulate_market_fill(
             side=side,
             quantity=quantity,
             price=estimate.price,
+            reference_price=reference,
             notional=estimate.notional,
             fee=estimate.notional * fee_bps / BPS,
             slippage_bps=estimate.impact_bps,
+            slippage_quote=slippage_quote,
             filled_at=datetime.now(UTC),
             source=FillSource.SIMULATED,
         )
