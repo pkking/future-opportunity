@@ -1,6 +1,6 @@
 # 2026-10-05-historical-backtest-evidence: Historical strategy backtest evidence
 
-Status: PLANNING
+Status: IMPLEMENTING
 Owner: agent
 Started: 2026-10-05
 Last checkpoint: 2026-10-05
@@ -55,7 +55,7 @@ real market history.
 
 ## Acceptance criteria
 
-- [ ] Select an official/open historical data source with documented provenance.
+- [x] Select an official/open historical data source with documented provenance.
 - [ ] Define a canonical historical replay dataset format.
 - [ ] Implement import/normalization tooling with checksums.
 - [ ] Implement strategy backtest runner over multiple timestamps/periods.
@@ -69,7 +69,7 @@ real market history.
 
 ## Implementation slices
 
-- [ ] 1. Research official/open historical data sources and reusable tooling.
+- [x] 1. Research official/open historical data sources and reusable tooling.
 - [ ] 2. Record data/evidence design and any material decision as ADR.
 - [ ] 3. Add canonical replay-domain format and importer.
 - [ ] 4. Add backtest application workflow and metrics.
@@ -96,6 +96,28 @@ None yet. Research first.
 - 2026-10-05: previous liquidity-policy plan completed and archived.
 - 2026-10-05: final repository CI run 37217265012 passed all four gates;
   strategy-e2e-evidence artifact ID 11308912872.
+- 2026-10-05: selected OKX public historical market-data catalog as the initial
+  unified history source. Official contract supports SPOT/FUTURES/SWAP plus
+  funding and 400/5000-level order-book archives and returns direct archive
+  URLs with filename/date/size metadata.
+- 2026-10-05: official catalog contract requires SPOT instIdList and derivative
+  instFamilyList; order-book archive dates use UTC while funding and other
+  modules use UTC+8. Availability is typically T+3 for books and T+2 for
+  funding/other modules.
+- 2026-10-05: derivative historical size cannot be normalized without pinned
+  instrument metadata (ctVal/ctMult/ctValCcy/settleCcy). Historical FUTURES
+  metadata must be captured in the dataset manifest rather than inferred from
+  symbol naming.
+- 2026-10-05: OKX public history-mark-price-candles provides 1m historical mark
+  price candles from recent years. Official funding formula is position value
+  multiplied by funding rate; USDT-margined position value depends on contract
+  size/multiplier and mark price.
+- 2026-10-05: raw ZIP L2 row schema has not yet been verified from an official
+  sample archive in the current execution environment. Do not implement a raw
+  order-book parser by guessing third-party formats.
+- 2026-10-05: hftbacktest is useful reference material for deterministic L2
+  replay methodology, but is not required as a dependency for the current
+  taker/capacity execution model.
 
 ## Deviations and discoveries
 
@@ -103,9 +125,9 @@ None.
 
 ## Resume from here
 
-Research official/open historical market-data archives and reusable backtest
-tooling. Determine whether they provide the depth/funding/dated-future evidence
-required by the existing domain model without inventing missing data.
+Record ADR-0006 for historical dataset provenance and implement the verified
+catalog/manifest layer. Do not implement raw order-book archive parsing until an
+official sample file schema has been inspected.
 
 ## Completion
 
