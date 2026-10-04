@@ -32,3 +32,12 @@ def test_quickstart_remains_zero_configuration_and_paper_only() -> None:
     assert "arb simulate funding-carry" in result.stdout
     assert "paper" in result.stdout.lower()
     assert "live orders are disabled" in result.stdout.lower()
+
+
+def test_discover_and_simulate_expose_explicit_liquidity_controls() -> None:
+    for command in ("discover", "simulate"):
+        result = runner.invoke(app, [command, "--help"])
+        assert result.exit_code == 0
+        assert "--liquidity-policy" in result.stdout
+        assert "--max-impact-bps" in result.stdout
+        assert "strict" in result.stdout
