@@ -93,6 +93,7 @@ async def test_postgres_round_trip_rebuilds_complete_simulation() -> None:
         assert len(stored.execution.fills) == 2
         assert stored.position.id == simulated.execution.position.id
         assert stored.entry_return.net_pnl == simulated.execution.entry_return.net_pnl
+        assert stored.current_return.net_pnl == stored.entry_return.net_pnl
         assert len(stored.risk.invariants) == 6
 
         listed = await simulations.list()
