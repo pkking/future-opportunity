@@ -27,7 +27,7 @@ class FakeFundingMarketData:
         )
         history = tuple(
             FundingObservation(
-                rate=self._rate,
+                rate=self.rate,
                 funding_time=now - timedelta(hours=8 * index),
             )
             for index in range(90)
@@ -41,7 +41,7 @@ class FakeFundingMarketData:
             spot_book=book,
             perpetual_book=book,
             mark_price=Decimal(100),
-            last_funding_rate=self._rate,
+            last_funding_rate=self.rate,
             next_funding_time=now + timedelta(hours=8),
             funding_history=history,
             observed_at=now,
@@ -75,3 +75,42 @@ async def test_negative_funding_is_discovered_but_not_qualified() -> None:
     assert result.qualification.qualified is False
     assert "expected_funding_not_positive" in result.qualification.reasons
     assert result.opportunity.state is OpportunityState.DISCOVERED
+
+
+@pytest.mark.asyncio
+async def test_opportunity_lifecycle_reuses_active_id_and_rotates_after_expiry() -> None:
+    market = FakeFundingMarketData(Decimal("0.0002"))
+    repository = MemoryOpportunityRepository()
+    use_case = DiscoverFundingCarry(market, repository)
+
+    first = await use_case.execute(
+        base="BTC",
+        capital=Decimal(10_000),
+        assumptions=FundingCarryAssumptions(),
+    )
+    second = await use_case.execute(
+        base="BTC",
+        capital=Decimal(10_000),
+        assumptions=FundingCarryAssumptions(),
+    )
+
+    assert second.opportunity.id == first.opportunity.id
+    assert len(repository.observations_for(first.opportunity.id)) == 2
+
+    market.rate = Decimal("-0.0001")
+    expired = await use_case.execute(
+        base="BTC",
+        capital=Decimal(10_000),
+        assumptions=FundingCarryAssumptions(),
+    )
+    assert expired.opportunity.id == first.opportunity.id
+    assert expired.opportunity.state is OpportunityState.EXPIRED
+
+    market.rate = Decimal("0.0002")
+    rediscovered = await use_case.execute(
+        base="BTC",
+        capital=Decimal(10_000),
+        assumptions=FundingCarryAssumptions(),
+    )
+    assert rediscovered.opportunity.id != first.opportunity.id
+    assert rediscovered.opportunity.state is OpportunityState.QUALIFIED
