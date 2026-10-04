@@ -4,8 +4,10 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 from future_opportunity.adapters.execution.paper import simulate_market_fill
+from future_opportunity.domain.execution.model import Fill
 from future_opportunity.domain.market.snapshot import CashAndCarryMarketSnapshot
 from future_opportunity.domain.position.model import LegPosition, Position, PositionState
+from future_opportunity.domain.returns.model import ReturnAttribution
 from future_opportunity.domain.strategy.cash_and_carry import (
     CashAndCarryAssumptions,
     cash_and_carry_allocation,
@@ -15,9 +17,20 @@ from future_opportunity.domain.strategy.cash_and_carry import (
 @dataclass(frozen=True, slots=True)
 class PaperCashAndCarryResult:
     position: Position
-    spot_fee: Decimal
-    futures_fee: Decimal
-    entry_slippage_bps: Decimal
+    fills: tuple[Fill, Fill]
+    entry_return: ReturnAttribution
+
+    @property
+    def spot_fee(self) -> Decimal:
+        return self.fills[0].fee
+
+    @property
+    def futures_fee(self) -> Decimal:
+        return self.fills[1].fee
+
+    @property
+    def entry_slippage_bps(self) -> Decimal:
+        return self.fills[0].slippage_bps + self.fills[1].slippage_bps
 
 
 def execute_paper_cash_and_carry(
@@ -49,6 +62,12 @@ def execute_paper_cash_and_carry(
     delta_notional = base_delta * snapshot.spot_book.best_ask
     delta_pct = delta_notional / capital
 
+    entry_return = ReturnAttribution(
+        trading_fees=spot.fee + future.fee,
+        slippage=spot.slippage_quote + future.slippage_quote,
+    )
+    opened_at = max(spot.filled_at, future.filled_at)
+
     position = Position(
         id=position_id,
         strategy_plan_id=strategy_plan_id,
@@ -67,11 +86,12 @@ def execute_paper_cash_and_carry(
         ),
         delta_notional=delta_notional,
         delta_pct=delta_pct,
+        realized_pnl=entry_return.net_pnl,
+        opened_at=opened_at,
     )
 
     return PaperCashAndCarryResult(
         position=position,
-        spot_fee=spot.fee,
-        futures_fee=future.fee,
-        entry_slippage_bps=spot.slippage_bps + future.slippage_bps,
+        fills=(spot, future),
+        entry_return=entry_return,
     )
