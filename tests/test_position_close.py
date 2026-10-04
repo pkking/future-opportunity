@@ -14,9 +14,10 @@ from future_opportunity.application.manage.close_cash_and_carry import CloseCash
 from future_opportunity.application.manage.close_funding_carry import CloseFundingCarry
 from future_opportunity.application.simulate.cash_and_carry import SimulateCashAndCarry
 from future_opportunity.application.simulate.funding_carry import SimulateFundingCarry
-from future_opportunity.domain.execution.model import ExecutionPurpose
+from future_opportunity.domain.execution.model import ExecutionPurpose, FillSource
 from future_opportunity.domain.market.snapshot import (
     CashAndCarryMarketSnapshot,
+    DeliverySettlement,
     FundingCarryMarketSnapshot,
     FundingObservation,
     OrderBook,
@@ -146,3 +147,90 @@ async def test_cash_close_is_complete_realized_paper_return() -> None:
     history = _history_record_view(closed)
     assert history["progress_state"] == "realized"
     assert history["current"]["complete"] is True
+
+
+class DeliveredCashData:
+    def __init__(self) -> None:
+        self.delivered = False
+
+    async def snapshots(
+        self,
+        base: str,
+        quote: str = "USDT",
+    ) -> tuple[CashAndCarryMarketSnapshot, ...]:
+        if self.delivered:
+            return ()
+
+        now = datetime.now(UTC)
+        return (
+            CashAndCarryMarketSnapshot(
+                venue="fake",
+                base=base,
+                quote=quote,
+                spot_instrument_id="fake:spot",
+                future_instrument_id="fake:future",
+                spot_book=book(Decimal(99), Decimal(100)),
+                future_book=book(Decimal(103), Decimal(104)),
+                expiry=now + timedelta(seconds=1),
+                observed_at=now,
+            ),
+        )
+
+    async def spot_book(
+        self,
+        base: str,
+        quote: str = "USDT",
+    ) -> tuple[str, OrderBook]:
+        del base, quote
+        return "fake:spot", book(Decimal("102.5"), Decimal(103))
+
+    async def delivery_settlement(
+        self,
+        future_instrument_id: str,
+        base: str,
+        quote: str = "USDT",
+    ) -> DeliverySettlement | None:
+        del base, quote
+        return DeliverySettlement(
+            venue="fake",
+            future_instrument_id=future_instrument_id,
+            settlement_price=Decimal(102),
+            settled_at=datetime.now(UTC),
+        )
+
+
+@pytest.mark.asyncio
+async def test_cash_close_after_delivery_uses_public_settlement_evidence() -> None:
+    opportunities = MemoryOpportunityRepository()
+    simulations = MemorySimulationRepository()
+    market = DeliveredCashData()
+
+    simulated = await SimulateCashAndCarry(
+        DiscoverCashAndCarry(market, opportunities),
+        simulations,
+    ).execute(
+        base="BTC",
+        future_instrument_id="fake:future",
+        capital=Decimal(10_000),
+        assumptions=CashAndCarryAssumptions(),
+    )
+
+    market.delivered = True
+    closed = await CloseCashAndCarry(market, simulations).execute(
+        simulated.execution.position.id
+    )
+
+    assert closed.position.state is PositionState.CLOSED
+    assert closed.current_return.complete is True
+    close_execution = closed.management_executions[0]
+    assert {fill.source for fill in close_execution.fills} == {
+        FillSource.SIMULATED,
+        FillSource.SETTLEMENT,
+    }
+
+    quantity = simulated.execution.position.legs[0].quantity
+    assert closed.current_return.basis_convergence == quantity * Decimal(3)
+    assert (
+        closed.current_return.residual_directional_pnl
+        == quantity * Decimal("0.5")
+    )
