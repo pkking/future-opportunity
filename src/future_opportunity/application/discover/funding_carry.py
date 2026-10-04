@@ -83,6 +83,8 @@ class DiscoverFundingCarry:
                 annualized_equivalent=evaluation.annualized_equivalent,
                 expected_cost=total_expected_cost,
             ),
+            capacity_5bps=evaluation.visible_capacity_5bps,
+            capacity_10bps=evaluation.visible_capacity_10bps,
         )
 
         await self.opportunities.record(opportunity, observation)
