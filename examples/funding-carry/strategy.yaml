@@ -20,6 +20,10 @@ spec:
     amount: 1000
     currency: USDT
 
+  capitalModel:
+    reserveRatio: 0.10
+    futuresLeverage: 1.0
+
   execution:
     mode: paper
 
