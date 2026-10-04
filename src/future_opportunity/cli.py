@@ -70,6 +70,20 @@ def version() -> None:
     typer.echo("future-opportunity 0.1.0")
 
 
+def _funding_market_data_or_bad_parameter(venue: str) -> object:
+    try:
+        return funding_market_data_for(venue)
+    except ValueError as error:
+        raise typer.BadParameter(str(error)) from error
+
+
+def _cash_market_data_or_bad_parameter(venue: str) -> object:
+    try:
+        return cash_and_carry_market_data_for(venue)
+    except ValueError as error:
+        raise typer.BadParameter(str(error)) from error
+
+
 def _decimal_cli(name: str, value: str) -> Decimal:
     try:
         return Decimal(value)
@@ -155,7 +169,7 @@ def discover(
         async with _cli_repositories() as (repository, _):
             if strategy == "funding-carry":
                 result = await DiscoverFundingCarry(
-                    funding_market_data_for(venue),
+                    _funding_market_data_or_bad_parameter(venue),
                     repository,
                 ).execute(
                     base=base,
@@ -172,7 +186,7 @@ def discover(
 
             if strategy == "cash-and-carry":
                 results = await DiscoverCashAndCarry(
-                    cash_and_carry_market_data_for(venue),
+                    _cash_market_data_or_bad_parameter(venue),
                     repository,
                 ).execute(
                     base=base,
@@ -223,7 +237,7 @@ def simulate(
                 try:
                     simulated = await SimulateFundingCarry(
                         DiscoverFundingCarry(
-                            funding_market_data_for(venue),
+                            _funding_market_data_or_bad_parameter(venue),
                             repository,
                         ),
                         simulations,
@@ -262,7 +276,7 @@ def simulate(
                 try:
                     simulated = await SimulateCashAndCarry(
                         DiscoverCashAndCarry(
-                            cash_and_carry_market_data_for(venue),
+                            _cash_market_data_or_bad_parameter(venue),
                             repository,
                         ),
                         simulations,
