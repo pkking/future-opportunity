@@ -17,8 +17,10 @@ class Fill:
     side: str
     quantity: Decimal
     price: Decimal
+    reference_price: Decimal
     notional: Decimal
     fee: Decimal
     slippage_bps: Decimal
+    slippage_quote: Decimal
     filled_at: datetime
     source: FillSource
