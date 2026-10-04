@@ -13,6 +13,33 @@ Opportunity
   -> Return + Risk
 ```
 
+## Agent-first development
+
+All non-trivial repository development is governed by [AGENTS.md](AGENTS.md).
+
+The agent workflow is intentionally plan-first and interruption-safe:
+
+```text
+Inspect
+  -> execution plan
+  -> implement small slices
+  -> targeted verification
+  -> CI: static + code + API + E2E
+  -> machine-readable evidence
+  -> completed plan
+```
+
+Work in progress lives under `docs/exec-plans/active/`. Strategy E2E targets
+are versioned in `tests/e2e/strategy-targets.json`; CI uploads the actual-vs-
+target evidence artifact on every E2E run, including failures.
+
+See:
+
+- [Agent repository contract](AGENTS.md)
+- [Agent workflow](docs/agents/workflow.md)
+- [Testing and evidence contract](docs/agents/testing.md)
+- [Execution-plan template](docs/exec-plans/TEMPLATE.md)
+
 ## Safety boundary
 
 V0 is intentionally **paper-trading only**.
