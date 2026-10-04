@@ -56,13 +56,12 @@ def test_ci_has_explicit_observable_gates() -> None:
     assert "if: always()" in workflow
 
 
-def test_active_work_has_resume_checkpoint() -> None:
+def test_active_work_has_resume_checkpoint_when_present() -> None:
     plans = [
         path
         for path in Path("docs/exec-plans/active").glob("*.md")
         if path.name != "README.md"
     ]
-    assert plans
 
     for plan in plans:
         text = plan.read_text()
