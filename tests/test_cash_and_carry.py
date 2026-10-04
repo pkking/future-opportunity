@@ -52,7 +52,5 @@ def test_cash_and_carry_reports_convergent_return_to_expiry() -> None:
     assert result.gross_basis_return_on_notional == Decimal("0.02")
     assert result.expected_net_return_to_expiry > Decimal(0)
     assert result.annualized_equivalent > result.expected_net_return_to_expiry
-    assert (
-        result.reserve_amount + result.spot_notional + result.futures_margin
-        == Decimal(10_000)
-    )
+    allocated = result.reserve_amount + result.spot_notional + result.futures_margin
+    assert abs(allocated - Decimal(10_000)) < Decimal("1e-20")
