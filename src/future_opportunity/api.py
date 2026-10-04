@@ -162,7 +162,6 @@ async def discover(
     exit_buffer_bps: Decimal = Query(default=Decimal(5), ge=0),
 ) -> dict[str, object]:
     repository: OpportunityRepository = request.app.state.opportunity_repository
-    simulation_repository = request.app.state.simulation_repository
 
     if strategy == "funding-carry":
         result = await DiscoverFundingCarry(
@@ -223,6 +222,7 @@ async def simulate(
     future_instrument_id: str | None = Query(default=None),
 ) -> dict[str, object]:
     repository: OpportunityRepository = request.app.state.opportunity_repository
+    simulation_repository: SimulationRepository = request.app.state.simulation_repository
 
     if strategy == "funding-carry":
         configured = funding_assumptions(
