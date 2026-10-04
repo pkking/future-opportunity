@@ -1,8 +1,13 @@
+from __future__ import annotations
+
+import os
+from contextlib import asynccontextmanager
 from dataclasses import asdict
 from decimal import Decimal
+from typing import AsyncIterator
 from uuid import uuid4
 
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, Request
 
 from future_opportunity.adapters.exchanges.factory import funding_market_data_for
 from future_opportunity.adapters.persistence.memory import MemoryOpportunityRepository
@@ -11,6 +16,7 @@ from future_opportunity.application.execute.paper_funding_carry import (
     execute_paper_funding_carry,
 )
 from future_opportunity.application.plan.funding_carry import build_funding_carry_plan
+from future_opportunity.application.repositories import OpportunityRepository
 from future_opportunity.domain.risk.invariants import evaluate_delta_neutrality
 from future_opportunity.domain.strategy.funding_carry import (
     FundingCarryAssumptions,
@@ -18,8 +24,34 @@ from future_opportunity.domain.strategy.funding_carry import (
 )
 
 
-app = FastAPI(title="future-opportunity", version="0.1.0")
-opportunity_repository = MemoryOpportunityRepository()
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    repository: OpportunityRepository
+    postgres_repository = None
+
+    database_url = os.getenv("DATABASE_URL")
+    if database_url:
+        from future_opportunity.adapters.persistence.postgres import (
+            PostgresOpportunityRepository,
+        )
+
+        postgres_repository = await PostgresOpportunityRepository.connect(database_url)
+        repository = postgres_repository
+    else:
+        repository = MemoryOpportunityRepository()
+
+    app.state.opportunity_repository = repository
+    yield
+
+    if postgres_repository is not None:
+        await postgres_repository.close()
+
+
+app = FastAPI(
+    title="future-opportunity",
+    version="0.1.0",
+    lifespan=lifespan,
+)
 
 
 @app.get("/healthz")
@@ -39,15 +71,17 @@ def assumptions(
 
 @app.get("/v1/opportunities/{venue}/funding-carry/{base}")
 async def discover_funding_carry(
+    request: Request,
     venue: str,
     base: str,
     capital: Decimal = Query(default=Decimal(10_000), gt=0),
     spot_fee_bps: Decimal = Query(default=Decimal(10), ge=0),
     perpetual_fee_bps: Decimal = Query(default=Decimal(5), ge=0),
 ) -> dict[str, object]:
+    repository: OpportunityRepository = request.app.state.opportunity_repository
     use_case = DiscoverFundingCarry(
         funding_market_data_for(venue),
-        opportunity_repository,
+        repository,
     )
     result = await use_case.execute(
         base=base,
