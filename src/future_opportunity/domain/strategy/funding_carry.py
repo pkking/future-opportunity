@@ -5,7 +5,11 @@ from datetime import timedelta
 from decimal import Decimal
 
 from future_opportunity.domain.capital.model import allocate_isolated_hedge
-from future_opportunity.domain.market.liquidity import BPS, estimate_market_fill
+from future_opportunity.domain.market.liquidity import (
+    BPS,
+    estimate_market_fill,
+    hedged_visible_spot_notional_capacity,
+)
 from future_opportunity.domain.market.snapshot import FundingCarryMarketSnapshot
 
 
@@ -39,6 +43,8 @@ class FundingCarryEvaluation:
     reserve_amount: Decimal
     deployed_notional: Decimal
     futures_margin: Decimal
+    visible_capacity_5bps: Decimal
+    visible_capacity_10bps: Decimal
     expected_funding_rate_per_period: Decimal
     funding_periods_per_day: Decimal
     positive_funding_ratio_7d: Decimal
@@ -49,7 +55,6 @@ class FundingCarryEvaluation:
     expected_net_return_horizon: Decimal
     annualized_equivalent: Decimal
     return_character: str = "variable"
-
 
 
 def _rates_within(
@@ -166,6 +171,16 @@ def evaluate_funding_carry(
         reserve_amount=allocation.reserve_amount,
         deployed_notional=deployed_notional,
         futures_margin=allocation.futures_margin,
+        visible_capacity_5bps=hedged_visible_spot_notional_capacity(
+            snapshot.spot_book,
+            snapshot.perpetual_book,
+            Decimal(5),
+        ),
+        visible_capacity_10bps=hedged_visible_spot_notional_capacity(
+            snapshot.spot_book,
+            snapshot.perpetual_book,
+            Decimal(10),
+        ),
         expected_funding_rate_per_period=expected_rate,
         funding_periods_per_day=periods_per_day,
         positive_funding_ratio_7d=positive_ratio_7d,
