@@ -656,6 +656,29 @@ class PostgresSimulationRepository(SimulationRepository):
                     )
 
                 await conn.execute(
+                    "DELETE FROM position_legs WHERE position_id = %s",
+                    (position.id,),
+                )
+                for leg in position.legs:
+                    await conn.execute(
+                        """
+                        INSERT INTO position_legs (
+                            position_id,
+                            instrument_id,
+                            quantity,
+                            notional
+                        )
+                        VALUES (%s, %s, %s, %s)
+                        """,
+                        (
+                            position.id,
+                            leg.instrument_id,
+                            leg.quantity,
+                            leg.notional,
+                        ),
+                    )
+
+                await conn.execute(
                     """
                     INSERT INTO return_attributions (
                         id,
