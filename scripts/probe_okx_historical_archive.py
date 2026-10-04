@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import tarfile
 import tempfile
 import zipfile
 from pathlib import Path
@@ -129,28 +130,62 @@ def download(
     return digest.hexdigest(), total, response_metadata
 
 
-def inspect_zip(path: Path) -> dict[str, Any]:
-    with zipfile.ZipFile(path) as archive:
-        members = [item for item in archive.infolist() if not item.is_dir()]
-        if not members:
-            raise RuntimeError("archive contains no files")
+def inspect_archive(path: Path) -> dict[str, Any]:
+    if zipfile.is_zipfile(path):
+        with zipfile.ZipFile(path) as archive:
+            members = [item for item in archive.infolist() if not item.is_dir()]
+            if not members:
+                raise RuntimeError("archive contains no files")
 
-        first = members[0]
-        with archive.open(first) as source:
-            sample = source.read(128 * 1024)
+            first = members[0]
+            with archive.open(first) as source:
+                sample = source.read(128 * 1024)
 
-    text = sample.decode("utf-8-sig", errors="replace")
-    lines = text.splitlines()[:30]
-    return {
-        "members": [
+        member_view = [
             {
                 "filename": item.filename,
                 "compressed_size": item.compress_size,
                 "uncompressed_size": item.file_size,
             }
             for item in members[:20]
-        ],
-        "sample_member": first.filename,
+        ]
+        archive_type = "zip"
+        sample_member = first.filename
+    else:
+        try:
+            archive = tarfile.open(path, mode="r:gz")
+        except tarfile.TarError as error:
+            raise RuntimeError("unsupported historical archive format") from error
+
+        with archive:
+            members = [item for item in archive.getmembers() if item.isfile()]
+            if not members:
+                raise RuntimeError("archive contains no files")
+
+            first = members[0]
+            source = archive.extractfile(first)
+            if source is None:
+                raise RuntimeError("unable to read first tar member")
+            with source:
+                sample = source.read(128 * 1024)
+
+            member_view = [
+                {
+                    "filename": item.name,
+                    "compressed_size": None,
+                    "uncompressed_size": item.size,
+                }
+                for item in members[:20]
+            ]
+            archive_type = "tar.gz"
+            sample_member = first.name
+
+    text = sample.decode("utf-8-sig", errors="replace")
+    lines = text.splitlines()[:30]
+    return {
+        "archive_type": archive_type,
+        "members": member_view,
+        "sample_member": sample_member,
         "first_lines": lines,
     }
 
@@ -226,11 +261,8 @@ def probe(instrument_type: str) -> dict[str, Any]:
                     ),
                 }
             )
-            try:
-                result["zip"] = inspect_zip(archive_path)
-                result["status"] = "schema_sampled"
-            except zipfile.BadZipFile:
-                result["status"] = "download_not_zip"
+            result["archive"] = inspect_archive(archive_path)
+            result["status"] = "schema_sampled"
         return result
 
 
