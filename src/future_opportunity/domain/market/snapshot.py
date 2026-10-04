@@ -50,3 +50,16 @@ class FundingCarryMarketSnapshot:
     next_funding_time: datetime
     funding_history: tuple[FundingObservation, ...]
     observed_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
+class CashAndCarryMarketSnapshot:
+    venue: str
+    base: str
+    quote: str
+    spot_instrument_id: str
+    future_instrument_id: str
+    spot_book: OrderBook
+    future_book: OrderBook
+    expiry: datetime
+    observed_at: datetime
