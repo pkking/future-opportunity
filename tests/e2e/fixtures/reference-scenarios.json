@@ -40,5 +40,23 @@
       "ask": "103",
       "quantity": "100"
     }
+  },
+  "funding-carry-liquidity-partial-v1": {
+    "observed_at": "2026-01-01T00:00:00+00:00",
+    "base": "BTC",
+    "quote": "USDT",
+    "spot": {
+      "bid": "99.9",
+      "ask": "100",
+      "quantity": "10"
+    },
+    "perpetual": {
+      "bid": "100",
+      "ask": "100.1",
+      "quantity": "10"
+    },
+    "funding_rate": "0.001",
+    "funding_interval_hours": 8,
+    "funding_history_points": 90
   }
 }
