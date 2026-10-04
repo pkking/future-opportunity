@@ -198,7 +198,9 @@ function renderOpportunities() {
       '<td class="metric">$'+money(e.visible_capacity_10bps)+'</td>'+
       '<td>'+esc(primary)+'</td>'+
       '<td class="subtle">'+esc(e.future_instrument_id || "perpetual")+'</td>'+
-      '<td><button onclick="simulateOpportunity('+index+')">Simulate</button></td>'+
+      '<td>'+(item.qualification.qualified
+        ? '<button onclick="simulateOpportunity('+index+')">Simulate</button>'
+        : '<span class="subtle">Not qualified</span>')+'</td>'+
     '</tr>';
   }).join("");
   $("opportunities").innerHTML =
