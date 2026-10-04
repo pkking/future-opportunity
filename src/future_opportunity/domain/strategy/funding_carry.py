@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import timedelta
 from decimal import Decimal
 
+from future_opportunity.domain.capital.model import allocate_isolated_hedge
 from future_opportunity.domain.market.liquidity import BPS, estimate_market_fill
 from future_opportunity.domain.market.snapshot import FundingCarryMarketSnapshot
 
@@ -49,17 +50,6 @@ class FundingCarryEvaluation:
     annualized_equivalent: Decimal
     return_character: str = "variable"
 
-
-def target_hedged_notional(
-    capital: Decimal,
-    assumptions: FundingCarryAssumptions,
-) -> Decimal:
-    if capital <= 0:
-        raise ValueError("capital must be positive")
-
-    usable_capital = capital * (Decimal(1) - assumptions.reserve_ratio)
-    capital_per_notional = Decimal(1) + Decimal(1) / assumptions.futures_leverage
-    return usable_capital / capital_per_notional
 
 
 def _rates_within(
@@ -130,10 +120,13 @@ def evaluate_funding_carry(
 
     periods_per_day = _funding_periods_per_day(snapshot)
     periods = Decimal(assumptions.horizon_days) * periods_per_day
-    deployed_notional = target_hedged_notional(capital, assumptions)
+    allocation = allocate_isolated_hedge(
+        capital,
+        assumptions.reserve_ratio,
+        assumptions.futures_leverage,
+    )
+    deployed_notional = allocation.hedged_notional
     notional_to_capital = deployed_notional / capital
-    futures_margin = deployed_notional / assumptions.futures_leverage
-    reserve_amount = capital * assumptions.reserve_ratio
 
     gross_return = expected_rate * periods * notional_to_capital
 
@@ -170,9 +163,9 @@ def evaluate_funding_carry(
         base=snapshot.base,
         quote=snapshot.quote,
         capital=capital,
-        reserve_amount=reserve_amount,
+        reserve_amount=allocation.reserve_amount,
         deployed_notional=deployed_notional,
-        futures_margin=futures_margin,
+        futures_margin=allocation.futures_margin,
         expected_funding_rate_per_period=expected_rate,
         funding_periods_per_day=periods_per_day,
         positive_funding_ratio_7d=positive_ratio_7d,
