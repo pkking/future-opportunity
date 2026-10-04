@@ -18,7 +18,11 @@ from future_opportunity.adapters.persistence.memory import (
 )
 from future_opportunity.application.discover.cash_and_carry import DiscoverCashAndCarry
 from future_opportunity.application.discover.funding_carry import DiscoverFundingCarry
-from future_opportunity.application.repositories import OpportunityRepository
+from future_opportunity.application.repositories import (
+    OpportunityRepository,
+    SimulationRecord,
+    SimulationRepository,
+)
 from future_opportunity.application.simulate.cash_and_carry import (
     FutureInstrumentNotFound,
     SimulateCashAndCarry,
@@ -30,26 +34,34 @@ from future_opportunity.domain.strategy.funding_carry import FundingCarryAssumpt
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    repository: OpportunityRepository
-    postgres_repository = None
+    opportunity_repository: OpportunityRepository
+    simulation_repository: SimulationRepository
+    postgres_opportunities = None
+    postgres_simulations = None
 
     database_url = os.getenv("DATABASE_URL")
     if database_url:
         from future_opportunity.adapters.persistence.postgres import (
             PostgresOpportunityRepository,
+            PostgresSimulationRepository,
         )
 
-        postgres_repository = await PostgresOpportunityRepository.connect(database_url)
-        repository = postgres_repository
+        postgres_opportunities = await PostgresOpportunityRepository.connect(database_url)
+        postgres_simulations = await PostgresSimulationRepository.connect(database_url)
+        opportunity_repository = postgres_opportunities
+        simulation_repository = postgres_simulations
     else:
-        repository = MemoryOpportunityRepository()
+        opportunity_repository = MemoryOpportunityRepository()
+        simulation_repository = MemorySimulationRepository()
 
-    app.state.opportunity_repository = repository
-    app.state.simulation_repository = MemorySimulationRepository()
+    app.state.opportunity_repository = opportunity_repository
+    app.state.simulation_repository = simulation_repository
     yield
 
-    if postgres_repository is not None:
-        await postgres_repository.close()
+    if postgres_opportunities is not None:
+        await postgres_opportunities.close()
+    if postgres_simulations is not None:
+        await postgres_simulations.close()
 
 
 app = FastAPI(
@@ -103,6 +115,37 @@ def _discovery_view(result: object) -> dict[str, object]:
         "qualification": asdict(result.qualification),
         "evaluation": asdict(result.evaluation),
     }
+
+
+
+
+def _simulation_record_view(record: SimulationRecord) -> dict[str, object]:
+    return {
+        "plan": asdict(record.plan),
+        "execution": asdict(record.execution),
+        "position": asdict(record.position),
+        "return_attribution": asdict(record.entry_return),
+        "risk": asdict(record.risk),
+    }
+
+
+@app.get("/v1/positions")
+async def list_positions(request: Request) -> dict[str, object]:
+    repository: SimulationRepository = request.app.state.simulation_repository
+    records = await repository.list()
+    return {"results": [_simulation_record_view(record) for record in records]}
+
+
+@app.get("/v1/positions/{position_id}")
+async def get_position(
+    request: Request,
+    position_id: str,
+) -> dict[str, object]:
+    repository: SimulationRepository = request.app.state.simulation_repository
+    record = await repository.get(position_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"position not found: {position_id}")
+    return _simulation_record_view(record)
 
 
 @app.get("/v1/opportunities/{venue}/{strategy}/{base}")
