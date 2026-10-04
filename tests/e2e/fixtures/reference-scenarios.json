@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "fixture_id": "reference-scenarios-v1",
+  "funding-carry-reference-v1": {
+    "observed_at": "2026-01-01T00:00:00+00:00",
+    "base": "BTC",
+    "quote": "USDT",
+    "spot": {
+      "bid": "99.5",
+      "ask": "100",
+      "quantity": "100"
+    },
+    "perpetual": {
+      "bid": "100.5",
+      "ask": "101",
+      "quantity": "100"
+    },
+    "funding_rate": "0.0002",
+    "funding_interval_hours": 8,
+    "funding_history_points": 90
+  },
+  "cash-and-carry-delivery-reference-v1": {
+    "observed_at": "2026-01-01T00:00:00+00:00",
+    "delivery_at": "2026-04-01T00:00:00+00:00",
+    "base": "BTC",
+    "quote": "USDT",
+    "spot_entry": {
+      "bid": "99",
+      "ask": "100",
+      "quantity": "100"
+    },
+    "future_entry": {
+      "bid": "103",
+      "ask": "104",
+      "quantity": "100"
+    },
+    "delivery_price": "102",
+    "spot_close": {
+      "bid": "102.5",
+      "ask": "103",
+      "quantity": "100"
+    }
+  }
+}
