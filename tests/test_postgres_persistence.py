@@ -11,6 +11,7 @@ from future_opportunity.adapters.persistence.postgres import (
     PostgresSimulationRepository,
 )
 from future_opportunity.application.discover.funding_carry import DiscoverFundingCarry
+from future_opportunity.application.manage.funding_carry import RefreshFundingCarry
 from future_opportunity.application.simulate.funding_carry import SimulateFundingCarry
 from future_opportunity.domain.market.snapshot import (
     FundingCarryMarketSnapshot,
@@ -101,6 +102,20 @@ async def test_postgres_round_trip_rebuilds_complete_simulation() -> None:
         assert stored.entry_return.net_pnl == simulated.execution.entry_return.net_pnl
         assert stored.current_return.net_pnl == stored.entry_return.net_pnl
         assert len(stored.risk.invariants) == 6
+
+        refreshed = await RefreshFundingCarry(
+            FundingData(),
+            simulations,
+        ).execute(stored.position.id)
+
+        assert refreshed.position.version == 1
+        assert refreshed.current_return.complete is False
+        assert refreshed.current_return.unassessed_components == ("funding",)
+
+        reloaded = await simulations.get(stored.position.id)
+        assert reloaded is not None
+        assert reloaded.position.version == 1
+        assert reloaded.current_return.unassessed_components == ("funding",)
 
         listed = await simulations.list()
         assert [record.position.id for record in listed] == [stored.position.id]
