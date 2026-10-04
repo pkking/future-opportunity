@@ -285,9 +285,9 @@ History compares this entry-time expectation with the current assessed return.
 
 For Funding Carry, public market data does not prove exact accrued funding cash flow for the simulated position. Until explicit settlement evidence is available, the `funding` return component is marked **unassessed** rather than assumed to be zero. A closed Funding Carry paper position is therefore reported as `realized_partial`.
 
-Cash-and-Carry can be marked `realized` when the close evidence is complete.
+Cash-and-Carry can be marked `realized` when the close evidence is complete. If the dated future has already delivered, OKX public delivery history supplies the settlement price; the future close is recorded as `FillSource.SETTLEMENT`, while the spot leg is sold against the current order book. Any spot move after delivery is attributed to residual directional PnL rather than basis convergence.
 
-See [ADR-0003](docs/adr/0003-unassessed-return-components.md).
+See [ADR-0003](docs/adr/0003-unassessed-return-components.md) and [ADR-0004](docs/adr/0004-public-delivery-settlement.md).
 
 ## Architecture
 
@@ -299,5 +299,6 @@ See:
 - [ADR-0001: Conservative Isolated Capital Model](docs/adr/0001-isolated-capital-model.md)
 - [ADR-0002: Explicit Unassessed Risk State](docs/adr/0002-unassessed-risk-state.md)
 - [ADR-0003: Explicit Unassessed Return Components](docs/adr/0003-unassessed-return-components.md)
+- [ADR-0004: Public Delivery Settlement as Execution Evidence](docs/adr/0004-public-delivery-settlement.md)
 
 Changes to frozen domain boundaries, return semantics, capital semantics, or the paper/live safety boundary require an ADR.
