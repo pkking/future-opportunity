@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import timedelta
 from decimal import Decimal
 
+from future_opportunity.domain.market.liquidity import BPS, estimate_market_fill
 from future_opportunity.domain.market.snapshot import FundingCarryMarketSnapshot
 
 
-BPS = Decimal(10_000)
-FUNDING_PERIODS_PER_DAY = Decimal(3)
+SECONDS_PER_DAY = Decimal(86_400)
 DAYS_PER_YEAR = Decimal(365)
 
 
@@ -33,18 +34,27 @@ class FundingCarryEvaluation:
     capital: Decimal
     deployed_notional: Decimal
     expected_funding_rate_per_period: Decimal
+    funding_periods_per_day: Decimal
     positive_funding_ratio_7d: Decimal
     funding_volatility_30d: Decimal
     gross_return_horizon: Decimal
     assumed_round_trip_fee_return: Decimal
+    estimated_round_trip_slippage_return: Decimal
     expected_net_return_horizon: Decimal
     annualized_equivalent: Decimal
     return_character: str = "variable"
 
 
-def _rates(snapshot: FundingCarryMarketSnapshot, count: int) -> list[Decimal]:
-    values = [item.rate for item in snapshot.funding_history]
-    return values[-count:] if len(values) > count else values
+def _rates_within(
+    snapshot: FundingCarryMarketSnapshot,
+    days: int,
+) -> list[Decimal]:
+    cutoff = snapshot.observed_at - timedelta(days=days)
+    return [
+        item.rate
+        for item in snapshot.funding_history
+        if item.funding_time >= cutoff
+    ]
 
 
 def _mean(values: list[Decimal]) -> Decimal:
@@ -63,6 +73,24 @@ def _volatility(values: list[Decimal]) -> Decimal:
     return variance.sqrt()
 
 
+def _funding_periods_per_day(snapshot: FundingCarryMarketSnapshot) -> Decimal:
+    times = sorted(item.funding_time for item in snapshot.funding_history)
+    if len(times) < 2:
+        return Decimal(3)
+
+    intervals = [
+        Decimal(str((right - left).total_seconds()))
+        for left, right in zip(times[-22:-1], times[-21:], strict=False)
+        if right > left
+    ]
+    if not intervals:
+        return Decimal(3)
+
+    intervals.sort()
+    median_seconds = intervals[len(intervals) // 2]
+    return SECONDS_PER_DAY / median_seconds
+
+
 def evaluate_funding_carry(
     snapshot: FundingCarryMarketSnapshot,
     capital: Decimal,
@@ -71,31 +99,55 @@ def evaluate_funding_carry(
     if capital <= 0:
         raise ValueError("capital must be positive")
 
-    rates_1d = _rates(snapshot, 3)
-    rates_7d = _rates(snapshot, 21)
-    rates_30d = _rates(snapshot, 90)
+    rates_1d = _rates_within(snapshot, 1)
+    rates_7d = _rates_within(snapshot, 7)
+    rates_30d = _rates_within(snapshot, 30)
 
     expected_rate = (
         Decimal("0.5") * _mean(rates_1d)
         + Decimal("0.3") * _mean(rates_7d)
         + Decimal("0.2") * _mean(rates_30d)
     )
-
     positive_ratio_7d = (
         Decimal(sum(1 for value in rates_7d if value > 0)) / Decimal(len(rates_7d))
         if rates_7d
         else Decimal(0)
     )
 
-    periods = Decimal(assumptions.horizon_days) * FUNDING_PERIODS_PER_DAY
-    gross_return = expected_rate * periods
+    periods_per_day = _funding_periods_per_day(snapshot)
+    periods = Decimal(assumptions.horizon_days) * periods_per_day
+    deployed_notional = capital * assumptions.deploy_ratio
 
-    one_way_fee = (
+    gross_return = expected_rate * periods * assumptions.deploy_ratio
+
+    one_way_fee_rate = (
         assumptions.spot_taker_fee_bps + assumptions.perpetual_taker_fee_bps
     ) / BPS
-    round_trip_fee = one_way_fee * Decimal(2)
-    net_return = gross_return - round_trip_fee
+    round_trip_fee_return = (
+        one_way_fee_rate * Decimal(2) * assumptions.deploy_ratio
+    )
 
+    spot_quantity = deployed_notional / snapshot.spot_book.best_ask
+    spot_impact = estimate_market_fill(
+        snapshot.spot_book,
+        "buy",
+        spot_quantity,
+    ).impact_bps
+    perpetual_impact = estimate_market_fill(
+        snapshot.perpetual_book,
+        "sell",
+        spot_quantity,
+    ).impact_bps
+    entry_slippage_rate = (spot_impact + perpetual_impact) / BPS
+    round_trip_slippage_return = (
+        entry_slippage_rate * Decimal(2) * assumptions.deploy_ratio
+    )
+
+    net_return = (
+        gross_return
+        - round_trip_fee_return
+        - round_trip_slippage_return
+    )
     annualized = net_return * DAYS_PER_YEAR / Decimal(assumptions.horizon_days)
 
     return FundingCarryEvaluation(
@@ -103,12 +155,14 @@ def evaluate_funding_carry(
         base=snapshot.base,
         quote=snapshot.quote,
         capital=capital,
-        deployed_notional=capital * assumptions.deploy_ratio,
+        deployed_notional=deployed_notional,
         expected_funding_rate_per_period=expected_rate,
+        funding_periods_per_day=periods_per_day,
         positive_funding_ratio_7d=positive_ratio_7d,
         funding_volatility_30d=_volatility(rates_30d),
         gross_return_horizon=gross_return,
-        assumed_round_trip_fee_return=round_trip_fee,
+        assumed_round_trip_fee_return=round_trip_fee_return,
+        estimated_round_trip_slippage_return=round_trip_slippage_return,
         expected_net_return_horizon=net_return,
         annualized_equivalent=annualized,
     )
