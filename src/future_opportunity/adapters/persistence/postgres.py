@@ -17,6 +17,7 @@ from future_opportunity.application.repositories import (
 )
 from future_opportunity.domain.execution.model import (
     Execution,
+    ExecutionPurpose,
     ExecutionState,
     Fill,
     FillSource,
@@ -278,9 +279,10 @@ class PostgresSimulationRepository(SimulationRepository):
                         state,
                         mode,
                         started_at,
-                        finished_at
+                        finished_at,
+                        purpose
                     )
-                    VALUES (%s, %s, %s, %s, %s, %s)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
                     """,
                     (
                         execution.id,
@@ -289,6 +291,7 @@ class PostgresSimulationRepository(SimulationRepository):
                         execution.mode,
                         execution.started_at,
                         execution.finished_at,
+                        execution.purpose.value,
                     ),
                 )
 
