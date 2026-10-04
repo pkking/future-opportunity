@@ -1,6 +1,6 @@
 # 2026-10-05-agent-development-discipline: Agent-first repository discipline
 
-Status: VERIFYING
+Status: COMPLETED
 Owner: agent
 Started: 2026-10-05
 Last checkpoint: 2026-10-05
@@ -31,10 +31,10 @@ strategy behavior.
 - [x] Detailed workflow/testing rules are versioned under docs.
 - [x] Active/completed execution-plan convention exists.
 - [x] Interrupted liquidity-policy work is captured as an active resumable plan.
-- [ ] CI has explicit code/API/E2E gates.
-- [ ] Deterministic strategy target/evidence E2E exists.
-- [ ] E2E evidence is uploaded even when the E2E gate fails.
-- [ ] Final CI green.
+- [x] CI has explicit code/API/E2E gates.
+- [x] Deterministic strategy target/evidence E2E exists.
+- [x] E2E evidence is uploaded even when the E2E gate fails.
+- [x] Final CI green.
 
 ## Implementation slices
 
@@ -42,19 +42,19 @@ strategy behavior.
 - [x] 2. Add agent workflow/testing documentation.
 - [x] 3. Add execution-plan template and directories.
 - [x] 4. Capture paused liquidity decision as active plan.
-- [ ] 5. Add deterministic E2E strategy targets/scenarios.
-- [ ] 6. Split CI into explicit gates and upload E2E evidence.
-- [ ] 7. Add contract test for the agent-development map.
-- [ ] 8. Record final CI/evidence and mark completed.
+- [x] 5. Add deterministic E2E strategy targets/scenarios.
+- [x] 6. Split CI into explicit gates and upload E2E evidence.
+- [x] 7. Add contract test for the agent-development map.
+- [x] 8. Record final CI/evidence and mark completed.
 
 ## Verification matrix
 
 | Scope | Command / CI gate | Expected evidence | Status |
 |---|---|---|---|
-| Static | `uv run ruff check .` | zero violations | pending |
-| Code | code-level test job | pytest result | pending |
-| API | API contract job | pytest result | pending |
-| E2E | strategy acceptance job | JSON + JUnit | pending |
+| Static | `uv run ruff check .` | zero violations | passed |
+| Code | code-level test job | pytest result | passed |
+| API | API contract job | pytest result | passed |
+| E2E | strategy acceptance job | JSON + JUnit | passed |
 
 ## Decision gates
 
@@ -67,6 +67,11 @@ separate active execution plan.
   repository test inventory.
 - 2026-10-05: consulted the AGENTS.md convention and agent-first repository
   guidance before choosing a short root map plus deeper repository docs.
+- 2026-10-05: CI run 37215823464 completed successfully for commit
+  41aaf4dc56642b5074000499fa7bcbaf4b574bc8.
+- 2026-10-05: E2E strategy acceptance ran 2 deterministic strategy scenarios;
+  both passed. JUnit and JSON evidence were uploaded as
+  `strategy-e2e-evidence`, artifact ID 11308007417.
 
 ## Deviations and discoveries
 
@@ -76,11 +81,12 @@ separate active execution plan.
 
 ## Resume from here
 
-Add versioned strategy targets and deterministic E2E acceptance tests.
+Completed. Resume product development from the active liquidity-policy plan:
+`docs/exec-plans/active/2026-10-05-liquidity-policy.md`.
 
 ## Completion
 
-Final commit:
-CI run:
-E2E artifact:
-Remaining unassessed items:
+Final implementation commit: 41aaf4dc56642b5074000499fa7bcbaf4b574bc8
+CI run: https://github.com/pkking/future-opportunity/actions/runs/37215823464
+E2E artifact: strategy-e2e-evidence (artifact ID 11308007417)
+Remaining unassessed items: none for the agent-development discipline itself.
