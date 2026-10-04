@@ -6,7 +6,8 @@
   <title>future-opportunity</title>
   <style>
     :root {
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", sans-serif;
       color: #172033;
       background: #f6f8fb;
     }
@@ -23,36 +24,55 @@
       border: 1px solid #d7dce5; border-radius: 8px; background: white;
       padding: 9px 13px; cursor: pointer; font: inherit;
     }
-    nav button.active, button.primary { background: #111827; color: white; border-color: #111827; }
+    nav button.active, button.primary {
+      background: #111827; color: white; border-color: #111827;
+    }
     main { padding: 20px 28px 40px; max-width: 1500px; margin: auto; }
     .panel {
       background: white; border: 1px solid #e5e9f0; border-radius: 12px;
       padding: 18px; margin-bottom: 16px;
     }
-    .grid { display: grid; grid-template-columns: repeat(6, minmax(120px, 1fr)); gap: 12px; }
-    label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #64748b; }
+    .grid {
+      display: grid; grid-template-columns: repeat(8, minmax(110px, 1fr)); gap: 12px;
+    }
+    label {
+      display: flex; flex-direction: column; gap: 6px;
+      font-size: 12px; color: #64748b;
+    }
     input, select {
-      border: 1px solid #d7dce5; border-radius: 7px; padding: 9px; background: white; font: inherit;
+      border: 1px solid #d7dce5; border-radius: 7px; padding: 9px;
+      background: white; font: inherit;
     }
     h2 { margin: 0 0 14px; font-size: 19px; }
     h3 { margin: 0 0 10px; font-size: 15px; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #edf0f5; vertical-align: top; }
+    th, td {
+      padding: 10px 8px; text-align: left; border-bottom: 1px solid #edf0f5;
+      vertical-align: top;
+    }
     th { color: #64748b; font-weight: 600; }
-    .badge { display: inline-block; padding: 3px 7px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+    .badge {
+      display: inline-block; padding: 3px 7px; border-radius: 999px;
+      font-size: 11px; font-weight: 600;
+    }
     .ok { background: #dcfce7; color: #166534; }
     .warn { background: #fef3c7; color: #92400e; }
     .bad { background: #fee2e2; color: #991b1b; }
     .muted { background: #e5e7eb; color: #4b5563; }
     .metric { font-variant-numeric: tabular-nums; }
     .subtle { color: #64748b; font-size: 12px; }
-    .error { color: #b91c1c; white-space: pre-wrap; }
+    .error { color: #b91c1c; white-space: pre-wrap; margin-top: 10px; }
     .hidden { display: none; }
-    .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .cards {
+      display: grid; grid-template-columns: repeat(5, minmax(150px, 1fr)); gap: 12px;
+    }
     .card { border: 1px solid #e5e9f0; border-radius: 10px; padding: 14px; }
-    .card .value { font-size: 22px; font-weight: 650; margin-top: 6px; }
-    pre { white-space: pre-wrap; word-break: break-word; background: #f8fafc; padding: 12px; border-radius: 8px; font-size: 12px; }
-    @media (max-width: 900px) {
+    .card .value { font-size: 20px; font-weight: 650; margin-top: 6px; }
+    pre {
+      white-space: pre-wrap; word-break: break-word; background: #f8fafc;
+      padding: 12px; border-radius: 8px; font-size: 12px;
+    }
+    @media (max-width: 1000px) {
       .grid, .cards { grid-template-columns: 1fr 1fr; }
       main { padding: 16px; }
       nav { padding-left: 16px; overflow-x: auto; }
@@ -99,23 +119,38 @@
         <label>Futures leverage
           <input id="leverage" type="number" value="1" min="0.1" max="1.2" step="0.1">
         </label>
+        <label>Liquidity policy
+          <select id="liquidity-policy">
+            <option value="strict">Strict — reject oversize</option>
+            <option value="partial">Partial — explicit resize</option>
+          </select>
+        </label>
+        <label>Max entry impact (bps)
+          <input id="max-impact" type="number" value="10" min="0" step="1">
+        </label>
       </div>
       <div style="margin-top:14px; display:flex; gap:8px">
         <button id="discover" class="primary">Discover</button>
-        <span class="subtle" style="align-self:center">Fees are explicit simulation assumptions, not account fee claims.</span>
+        <span class="subtle" style="align-self:center">
+          Partial deployment is never automatic. Fees are simulation assumptions.
+        </span>
       </div>
       <div id="error" class="error"></div>
     </div>
     <div class="panel">
       <h3>Opportunities</h3>
-      <div id="opportunities"><span class="subtle">Run Discover to inspect live opportunities.</span></div>
+      <div id="opportunities">
+        <span class="subtle">Run Discover to inspect live opportunities.</span>
+      </div>
     </div>
   </section>
 
   <section id="analyze-view" class="hidden">
     <div class="panel">
       <h2>Strategy Analysis</h2>
-      <div id="analysis"><span class="subtle">Simulate an opportunity from Discover.</span></div>
+      <div id="analysis">
+        <span class="subtle">Simulate a qualified opportunity from Discover.</span>
+      </div>
     </div>
   </section>
 
@@ -137,14 +172,23 @@
 const state = { discovery: [], simulation: null };
 const $ = id => document.getElementById(id);
 const pct = value => value == null ? "—" : (Number(value) * 100).toFixed(3) + "%";
-const money = value => value == null ? "—" : Number(value).toLocaleString(undefined, {maximumFractionDigits: 2});
-const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+const money = value => value == null ? "—" : Number(value).toLocaleString(
+  undefined, {maximumFractionDigits: 2}
+);
+const esc = value => String(value ?? "").replace(
+  /[&<>"']/g,
+  c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])
+);
 
-function badge(state) {
-  const cls = state === "qualified" || state === "satisfied" ? "ok"
-    : state === "violated" ? "bad"
-    : state === "unassessed" ? "muted" : "warn";
-  return '<span class="badge '+cls+'">'+esc(state)+'</span>';
+function badge(value) {
+  const cls = value === "qualified" || value === "satisfied" || value === "realized"
+    ? "ok"
+    : value === "violated" || value === "expired"
+      ? "bad"
+      : value === "unassessed" || String(value).includes("partial")
+        ? "muted"
+        : "warn";
+  return '<span class="badge '+cls+'">'+esc(value)+'</span>';
 }
 
 function query() {
@@ -155,6 +199,8 @@ function query() {
     spot_fee_bps: "10",
     derivative_fee_bps: "5",
     exit_buffer_bps: "5",
+    liquidity_policy: $("liquidity-policy").value,
+    max_impact_bps: $("max-impact").value,
   });
 }
 
@@ -171,7 +217,9 @@ async function discover() {
   const venue = $("venue").value;
   const base = $("base").value;
   try {
-    const data = await json('/v1/opportunities/'+venue+'/'+strategy+'/'+base+'?'+query());
+    const data = await json(
+      '/v1/opportunities/'+venue+'/'+strategy+'/'+base+'?'+query()
+    );
     state.discovery = data.results;
     renderOpportunities();
   } catch (error) {
@@ -181,31 +229,40 @@ async function discover() {
 
 function renderOpportunities() {
   if (!state.discovery.length) {
-    $("opportunities").innerHTML = '<span class="subtle">No dated futures or opportunities returned.</span>';
+    $("opportunities").innerHTML =
+      '<span class="subtle">No dated futures or opportunities returned.</span>';
     return;
   }
+
   const rows = state.discovery.map((item, index) => {
     const e = item.evaluation;
+    const d = item.deployment;
     const net = e.expected_net_return_horizon ?? e.expected_net_return_to_expiry;
     const primary = e.expected_funding_rate_per_period != null
       ? 'Funding/period '+pct(e.expected_funding_rate_per_period)
       : 'Basis '+pct(e.gross_basis_return_on_notional);
+    const action = item.qualification.qualified
+      ? '<button onclick="simulateOpportunity('+index+')">Simulate</button>'
+      : '<span class="subtle">'+esc(item.qualification.reasons.join(", "))+'</span>';
+
     return '<tr>'+
       '<td>'+badge(item.opportunity.state)+'</td>'+
-      '<td>'+esc(e.return_character)+'</td>'+
+      '<td>'+esc(d.policy)+(d.partial_deployment ? ' · partial' : '')+'</td>'+
+      '<td class="metric">$'+money(d.requested_spot_notional)+'</td>'+
+      '<td class="metric">$'+money(d.capacity_spot_notional)+'</td>'+
+      '<td class="metric">$'+money(d.actual_spot_notional)+'</td>'+
+      '<td class="metric">$'+money(d.unused_capital)+'</td>'+
       '<td class="metric">'+pct(net)+'</td>'+
-      '<td class="metric">'+pct(e.annualized_equivalent)+'</td>'+
-      '<td class="metric">$'+money(e.visible_capacity_10bps)+'</td>'+
       '<td>'+esc(primary)+'</td>'+
       '<td class="subtle">'+esc(e.future_instrument_id || "perpetual")+'</td>'+
-      '<td>'+(item.qualification.qualified
-        ? '<button onclick="simulateOpportunity('+index+')">Simulate</button>'
-        : '<span class="subtle">Not qualified</span>')+'</td>'+
+      '<td>'+action+'</td>'+
     '</tr>';
   }).join("");
+
   $("opportunities").innerHTML =
-    '<table><thead><tr><th>Status</th><th>Return</th><th>Net horizon</th><th>Annualized equiv.</th>'+
-    '<th>Capacity @10bps</th><th>Primary evidence</th><th>Instrument</th><th></th></tr></thead>'+
+    '<table><thead><tr><th>Status</th><th>Policy</th><th>Requested notional</th>'+
+    '<th>Capacity</th><th>Actual notional</th><th>Unused capital</th>'+
+    '<th>Net horizon</th><th>Evidence</th><th>Instrument</th><th></th></tr></thead>'+
     '<tbody>'+rows+'</tbody></table>';
 }
 
@@ -218,6 +275,7 @@ async function simulateOpportunity(index) {
   if (strategy === "cash-and-carry") {
     params.set("future_instrument_id", item.evaluation.future_instrument_id);
   }
+
   try {
     state.simulation = await json(
       '/v1/simulations/'+venue+'/'+strategy+'/'+base+'?'+params,
@@ -234,23 +292,32 @@ function renderAnalysis() {
   const s = state.simulation;
   if (!s) return;
   const e = s.evaluation;
+  const d = s.deployment;
   const net = e.expected_net_return_horizon ?? e.expected_net_return_to_expiry;
   const riskRows = s.risk.invariants.map(r =>
     '<tr><td>'+esc(r.name)+'</td><td>'+badge(r.state)+'</td>'+
     '<td><code>'+esc(JSON.stringify(r.observed))+'</code></td>'+
     '<td><code>'+esc(JSON.stringify(r.limit))+'</code></td></tr>'
   ).join("");
+
   $("analysis").innerHTML =
     '<div class="cards">'+
       '<div class="card"><div class="subtle">Expected net return</div><div class="value">'+pct(net)+'</div></div>'+
-      '<div class="card"><div class="subtle">Annualized equivalent</div><div class="value">'+pct(e.annualized_equivalent)+'</div></div>'+
-      '<div class="card"><div class="subtle">Capital</div><div class="value">$'+money(e.capital)+'</div></div>'+
-      '<div class="card"><div class="subtle">Capacity @10bps</div><div class="value">$'+money(e.visible_capacity_10bps)+'</div></div>'+
+      '<div class="card"><div class="subtle">Requested capital</div><div class="value">$'+money(d.requested_capital)+'</div></div>'+
+      '<div class="card"><div class="subtle">Actual notional</div><div class="value">$'+money(d.actual_spot_notional)+'</div></div>'+
+      '<div class="card"><div class="subtle">Unused capital</div><div class="value">$'+money(d.unused_capital)+'</div></div>'+
+      '<div class="card"><div class="subtle">Entry impact limit</div><div class="value">'+money(d.max_impact_bps)+' bps</div></div>'+
     '</div>'+
     '<h3 style="margin-top:18px">Risk invariants</h3>'+
-    '<table><thead><tr><th>Invariant</th><th>State</th><th>Observed</th><th>Limit</th></tr></thead><tbody>'+riskRows+'</tbody></table>'+
+    '<table><thead><tr><th>Invariant</th><th>State</th><th>Observed</th><th>Limit</th></tr></thead>'+
+    '<tbody>'+riskRows+'</tbody></table>'+
     '<h3 style="margin-top:18px">Execution evidence</h3>'+
-    '<pre>'+esc(JSON.stringify({plan:s.plan, fills:s.fills, return_attribution:s.return_attribution}, null, 2))+'</pre>';
+    '<pre>'+esc(JSON.stringify({
+      deployment:s.deployment,
+      plan:s.plan,
+      fills:s.fills,
+      return_attribution:s.return_attribution
+    }, null, 2))+'</pre>';
 }
 
 async function loadPositions() {
@@ -259,137 +326,41 @@ async function loadPositions() {
     $("positions").innerHTML = '<span class="subtle">No paper positions yet.</span>';
     return;
   }
+
   const rows = data.results.map(record => {
     const evidence = record.return_complete ? "complete" : "partial";
-    return '<tr><td>'+esc(record.plan.strategy.name)+'</td>'+
-    '<td>'+esc(record.position.state)+'</td>'+
-    '<td class="metric">async function loadHistory() {
-  const data = await json("/v1/history");
-  if (!data.results.length) {
-    $("history").innerHTML = '<span class="subtle">No paper simulations yet.</span>';
-    return;
-  }
-  const rows = data.results.map(record => {
-    const expected = record.expected;
-    const expectedReturn = expected ? pct(expected.expected_net_return) : "—";
-    const expectedPnl = expected ? "$"+money(expected.expected_net_pnl) : "—";
-    const currentPnl = "$"+money(record.current.net_pnl);
-    const currentReturn = pct(record.current.net_return);
-    const variance = record.variance ? pct(record.variance.net_return) : "—";
+    const deployment = record.plan.deployment;
+    const deployText = deployment
+      ? deployment.policy+(deployment.partial_deployment ? " · partial" : "")
+      : "legacy";
+
     return '<tr>'+
-      '<td>'+esc(record.strategy)+'</td>'+
-      '<td>'+esc(record.venue)+'</td>'+
-      '<td>'+esc(record.base)+'</td>'+
-      '<td>'+badge(record.progress_state === "realized" ? "satisfied" : "unassessed")+' '+esc(record.progress_state)+'</td>'+
-      '<td class="metric">'+expectedReturn+'</td>'+
-      '<td class="metric">'+expectedPnl+'</td>'+
-      '<td class="metric">'+currentReturn+'</td>'+
-      '<td class="metric">'+currentPnl+'</td>'+
-      '<td class="metric">'+variance+'</td>'+
-      '<td>'+esc(record.position_state)+'</td>'+
-    '</tr>';
+      '<td>'+esc(record.plan.strategy.name)+'</td>'+
+      '<td>'+esc(record.position.state)+'</td>'+
+      '<td>'+esc(deployText)+'</td>'+
+      '<td class="metric">$'+money(record.plan.capital.amount)+'</td>'+
+      '<td class="metric">$'+money(record.current_net_pnl)+'</td>'+
+      '<td>'+badge(record.return_complete ? "satisfied" : "unassessed")+' '+evidence+'</td>'+
+      '<td>'+badge(record.risk.invariants.some(x => x.state === "violated") ? "violated" : "satisfied")+'</td>'+
+      '<td><button onclick="refreshPosition(\''+esc(record.position.id)+'\')">Refresh</button> '+
+      (record.position.state === "closed"
+        ? ""
+        : '<button onclick="closePosition(\''+esc(record.position.id)+'\')">Close</button>')+
+      '</td></tr>';
   }).join("");
-  $("history").innerHTML =
-    '<p class="subtle">Current values are only called realized after the Position is CLOSED.</p>'+
-    '<table><thead><tr><th>Strategy</th><th>Venue</th><th>Asset</th><th>Progress</th>'+
-    '<th>Expected return</th><th>Expected PnL</th><th>Current return</th><th>Current PnL</th>'+
-    '<th>Variance</th><th>Position</th></tr></thead><tbody>'+rows+'</tbody></table>';
-}
 
-function switchView(view) {
-  document.querySelectorAll("main > section").forEach(el => el.classList.add("hidden"));
-  $(view+"-view").classList.remove("hidden");
-  document.querySelectorAll("nav button").forEach(b => b.classList.toggle("active", b.dataset.view === view));
-  if (view === "positions") loadPositions().catch(e => $("positions").textContent=e.message);
-  if (view === "history") loadHistory().catch(e => $("history").textContent=e.message);
-}
-
-document.querySelectorAll("nav button").forEach(button => button.addEventListener("click", () => switchView(button.dataset.view)));
-$("discover").addEventListener("click", discover);
-function syncVenueOptions() {
-  const current = $("venue").value;
-  if ($("strategy").value === "cash-and-carry") {
-    $("venue").innerHTML = '<option value="okx">OKX</option>';
-    return;
-  }
-
-  $("venue").innerHTML =
-    '<option value="binance">Binance</option><option value="okx">OKX</option>';
-  if (current === "okx") $("venue").value = "okx";
-}
-
-$("strategy").addEventListener("change", syncVenueOptions);
-syncVenueOptions();
-</script>
-</body>
-</html>
-+money(record.plan.capital.amount)+'</td>'+
-    '<td class="metric">async function loadHistory() {
-  const data = await json("/v1/history");
-  if (!data.results.length) {
-    $("history").innerHTML = '<span class="subtle">No paper simulations yet.</span>';
-    return;
-  }
-  const rows = data.results.map(record => {
-    const expected = record.expected;
-    const expectedReturn = expected ? pct(expected.expected_net_return) : "—";
-    const expectedPnl = expected ? "$"+money(expected.expected_net_pnl) : "—";
-    const currentPnl = "$"+money(record.current.net_pnl);
-    const currentReturn = pct(record.current.net_return);
-    const variance = record.variance ? pct(record.variance.net_return) : "—";
-    return '<tr>'+
-      '<td>'+esc(record.strategy)+'</td>'+
-      '<td>'+esc(record.venue)+'</td>'+
-      '<td>'+esc(record.base)+'</td>'+
-      '<td>'+badge(record.progress_state === "realized" ? "satisfied" : "unassessed")+' '+esc(record.progress_state)+'</td>'+
-      '<td class="metric">'+expectedReturn+'</td>'+
-      '<td class="metric">'+expectedPnl+'</td>'+
-      '<td class="metric">'+currentReturn+'</td>'+
-      '<td class="metric">'+currentPnl+'</td>'+
-      '<td class="metric">'+variance+'</td>'+
-      '<td>'+esc(record.position_state)+'</td>'+
-    '</tr>';
-  }).join("");
-  $("history").innerHTML =
-    '<p class="subtle">Current values are only called realized after the Position is CLOSED.</p>'+
-    '<table><thead><tr><th>Strategy</th><th>Venue</th><th>Asset</th><th>Progress</th>'+
-    '<th>Expected return</th><th>Expected PnL</th><th>Current return</th><th>Current PnL</th>'+
-    '<th>Variance</th><th>Position</th></tr></thead><tbody>'+rows+'</tbody></table>';
-}
-
-function switchView(view) {
-  document.querySelectorAll("main > section").forEach(el => el.classList.add("hidden"));
-  $(view+"-view").classList.remove("hidden");
-  document.querySelectorAll("nav button").forEach(b => b.classList.toggle("active", b.dataset.view === view));
-  if (view === "positions") loadPositions().catch(e => $("positions").textContent=e.message);
-  if (view === "history") loadHistory().catch(e => $("history").textContent=e.message);
-}
-
-document.querySelectorAll("nav button").forEach(button => button.addEventListener("click", () => switchView(button.dataset.view)));
-$("discover").addEventListener("click", discover);
-$("strategy").addEventListener("change", () => {
-  if ($("strategy").value === "cash-and-carry") $("venue").value = "okx";
-});
-</script>
-</body>
-</html>
-+money(record.current_net_pnl)+'</td>'+
-    '<td>'+badge(record.return_complete ? "satisfied" : "unassessed")+' '+evidence+'</td>'+
-    '<td>'+esc(record.position.opened_at || "")+'</td>'+
-    '<td>'+badge(record.risk.invariants.some(x=>x.state==="violated") ? "violated" : "satisfied")+'</td>'+
-    '<td><button onclick="refreshPosition(\''+esc(record.position.id)+'\')">Refresh</button> '+
-    (record.position.state === "closed" ? "" : '<button onclick="closePosition(\''+esc(record.position.id)+'\')">Close</button>')+
-    '</td></tr>';
-  }).join("");
   $("positions").innerHTML =
-    '<table><thead><tr><th>Strategy</th><th>State</th><th>Capital</th><th>Current assessed PnL</th>'+
-    '<th>Return evidence</th><th>Opened</th><th>Risk</th><th></th></tr></thead>'+
-    '<tbody>'+rows+'</tbody></table>';
+    '<table><thead><tr><th>Strategy</th><th>State</th><th>Deployment</th>'+
+    '<th>Capital</th><th>Current assessed PnL</th><th>Return evidence</th>'+
+    '<th>Risk</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>';
 }
 
 async function refreshPosition(positionId) {
   try {
-    await json('/v1/positions/'+encodeURIComponent(positionId)+'/refresh', {method:"POST"});
+    await json(
+      '/v1/positions/'+encodeURIComponent(positionId)+'/refresh',
+      {method:"POST"}
+    );
     await loadPositions();
     await loadHistory();
   } catch (error) {
@@ -399,7 +370,10 @@ async function refreshPosition(positionId) {
 
 async function closePosition(positionId) {
   try {
-    await json('/v1/positions/'+encodeURIComponent(positionId)+'/close', {method:"POST"});
+    await json(
+      '/v1/positions/'+encodeURIComponent(positionId)+'/close',
+      {method:"POST"}
+    );
     await loadPositions();
     await loadHistory();
   } catch (error) {
@@ -413,46 +387,61 @@ async function loadHistory() {
     $("history").innerHTML = '<span class="subtle">No paper simulations yet.</span>';
     return;
   }
+
   const rows = data.results.map(record => {
     const expected = record.expected;
-    const expectedReturn = expected ? pct(expected.expected_net_return) : "—";
-    const expectedPnl = expected ? "$"+money(expected.expected_net_pnl) : "—";
-    const currentPnl = "$"+money(record.current.net_pnl);
-    const currentReturn = pct(record.current.net_return);
-    const variance = record.variance ? pct(record.variance.net_return) : "—";
     return '<tr>'+
       '<td>'+esc(record.strategy)+'</td>'+
       '<td>'+esc(record.venue)+'</td>'+
       '<td>'+esc(record.base)+'</td>'+
-      '<td>'+badge(record.progress_state === "realized" ? "satisfied" : "unassessed")+' '+esc(record.progress_state)+'</td>'+
-      '<td class="metric">'+expectedReturn+'</td>'+
-      '<td class="metric">'+expectedPnl+'</td>'+
-      '<td class="metric">'+currentReturn+'</td>'+
-      '<td class="metric">'+currentPnl+'</td>'+
-      '<td class="metric">'+variance+'</td>'+
+      '<td>'+badge(record.progress_state)+' '+esc(record.progress_state)+'</td>'+
+      '<td class="metric">'+(expected ? pct(expected.expected_net_return) : "—")+'</td>'+
+      '<td class="metric">'+pct(record.current.net_return)+'</td>'+
+      '<td class="metric">$'+money(record.current.net_pnl)+'</td>'+
       '<td>'+esc(record.position_state)+'</td>'+
     '</tr>';
   }).join("");
+
   $("history").innerHTML =
-    '<p class="subtle">Current values are only called realized after the Position is CLOSED.</p>'+
+    '<p class="subtle">Current values become realized only after Position is CLOSED; partial evidence remains explicit.</p>'+
     '<table><thead><tr><th>Strategy</th><th>Venue</th><th>Asset</th><th>Progress</th>'+
-    '<th>Expected return</th><th>Expected PnL</th><th>Current return</th><th>Current PnL</th>'+
-    '<th>Variance</th><th>Position</th></tr></thead><tbody>'+rows+'</tbody></table>';
+    '<th>Expected return</th><th>Current return</th><th>Current PnL</th><th>Position</th>'+
+    '</tr></thead><tbody>'+rows+'</tbody></table>';
 }
 
 function switchView(view) {
-  document.querySelectorAll("main > section").forEach(el => el.classList.add("hidden"));
+  document.querySelectorAll("main > section").forEach(
+    el => el.classList.add("hidden")
+  );
   $(view+"-view").classList.remove("hidden");
-  document.querySelectorAll("nav button").forEach(b => b.classList.toggle("active", b.dataset.view === view));
-  if (view === "positions") loadPositions().catch(e => $("positions").textContent=e.message);
-  if (view === "history") loadHistory().catch(e => $("history").textContent=e.message);
+  document.querySelectorAll("nav button").forEach(
+    button => button.classList.toggle("active", button.dataset.view === view)
+  );
+  if (view === "positions") {
+    loadPositions().catch(error => $("positions").textContent = error.message);
+  }
+  if (view === "history") {
+    loadHistory().catch(error => $("history").textContent = error.message);
+  }
 }
 
-document.querySelectorAll("nav button").forEach(button => button.addEventListener("click", () => switchView(button.dataset.view)));
+function syncVenueOptions() {
+  const current = $("venue").value;
+  if ($("strategy").value === "cash-and-carry") {
+    $("venue").innerHTML = '<option value="okx">OKX</option>';
+    return;
+  }
+  $("venue").innerHTML =
+    '<option value="binance">Binance</option><option value="okx">OKX</option>';
+  if (current === "okx") $("venue").value = "okx";
+}
+
+document.querySelectorAll("nav button").forEach(
+  button => button.addEventListener("click", () => switchView(button.dataset.view))
+);
 $("discover").addEventListener("click", discover);
-$("strategy").addEventListener("change", () => {
-  if ($("strategy").value === "cash-and-carry") $("venue").value = "okx";
-});
+$("strategy").addEventListener("change", syncVenueOptions);
+syncVenueOptions();
 </script>
 </body>
 </html>
