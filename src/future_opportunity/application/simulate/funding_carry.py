@@ -17,6 +17,7 @@ from future_opportunity.application.repositories import (
     SimulationRecord,
     SimulationRepository,
 )
+from future_opportunity.application.simulate.errors import OpportunityNotQualified
 from future_opportunity.application.simulate.risk import build_paper_risk_report
 from future_opportunity.domain.execution.model import Execution, ExecutionState
 from future_opportunity.domain.risk.model import RiskReport
@@ -45,6 +46,9 @@ class SimulateFundingCarry:
         assumptions: FundingCarryAssumptions,
     ) -> SimulatedFundingCarry:
         discovered = await self.discovery.execute(base, capital, assumptions)
+        if not discovered.qualification.qualified:
+            raise OpportunityNotQualified(discovered.qualification.reasons)
+
         evaluation = discovered.evaluation
         expected_cost_return = (
             evaluation.assumed_round_trip_fee_return
