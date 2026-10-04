@@ -29,6 +29,9 @@ def build_cash_and_carry_plan(
         id=plan_id,
         strategy=StrategyRef(name=CASH_AND_CARRY.name, version=CASH_AND_CARRY.version),
         opportunity_observation_id=opportunity_observation_id,
+        venue=snapshot.venue,
+        base=snapshot.base,
+        quote=snapshot.quote,
         capital=Money(amount=capital, currency=snapshot.quote),
         legs=(
             PlanLeg(
