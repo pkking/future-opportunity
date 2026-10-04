@@ -95,8 +95,7 @@ class DiscoverFundingCarry:
             ),
         )
 
-        await self.opportunities.save(opportunity)
-        await self.opportunities.append_observation(observation)
+        await self.opportunities.record(opportunity, observation)
 
         return DiscoveredFundingCarry(
             opportunity=opportunity,
