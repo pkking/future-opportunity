@@ -36,6 +36,10 @@ Both strategies share the same Opportunity, StrategyPlan, Position, Capital Allo
 
 Requires Python 3.12+ and [uv](https://docs.astral.sh/uv/).
 
+### 1. Zero-configuration exploration
+
+This mode uses in-memory repositories. It is appropriate for learning and one-shot analysis; state disappears when the command exits.
+
 ```bash
 uv sync --all-extras --dev
 
@@ -60,6 +64,34 @@ uv run arb simulate cash-and-carry \
 ```
 
 The simulator uses the **same market snapshot and OpportunityObservation** that generated the StrategyPlan. It does not invent a new observation ID or silently select another expiry.
+
+### 2. Persistent paper workflow
+
+Use PostgreSQL when you want subsequent commands to inspect, refresh, close, and compare the same Position.
+
+```bash
+docker compose up -d postgres
+
+export DATABASE_URL='postgresql://future_opportunity:future_opportunity@localhost:5432/future_opportunity'
+
+uv run arb db-migrate
+
+# This simulation is now persisted.
+uv run arb simulate funding-carry \
+  --venue binance \
+  --base BTC \
+  --capital 1000
+
+uv run arb positions
+uv run arb position-show <position-id>
+uv run arb position-refresh <position-id>
+uv run arb position-close <position-id>
+
+uv run arb opportunity-show <opportunity-id>
+uv run arb opportunity-history <opportunity-id>
+```
+
+When `DATABASE_URL` is set, CLI `discover` and `simulate` automatically use PostgreSQL. Without it they remain dependency-free, in-memory commands.
 
 ## Business semantics
 
@@ -157,6 +189,14 @@ POST /v1/simulations/binance/funding-carry/BTC
 
 GET  /v1/opportunities/okx/cash-and-carry/BTC
 POST /v1/simulations/okx/cash-and-carry/BTC?future_instrument_id=<id>
+
+GET  /v1/opportunities/<opportunity-id>
+GET  /v1/opportunities/<opportunity-id>/observations
+
+GET  /v1/positions
+POST /v1/positions/<position-id>/refresh
+POST /v1/positions/<position-id>/close
+GET  /v1/history
 ```
 
 ## Exchange anti-corruption layer
@@ -177,22 +217,23 @@ If the opportunity disappears and later reappears, a new Opportunity lifecycle b
 
 ## Optional PostgreSQL persistence
 
-The API uses an in-memory Opportunity repository by default, which keeps Quickstart dependency-free.
+The API and CLI use in-memory repositories by default so exploratory usage remains dependency-free.
 
-For persistent Opportunity lifecycle history:
+For persistent Opportunity and Position history:
 
 ```bash
 docker compose up -d postgres
 
 export DATABASE_URL='postgresql://future_opportunity:future_opportunity@localhost:5432/future_opportunity'
 
-psql "$DATABASE_URL" -f migrations/0001_v0_core.sql
-
 uv sync --all-extras --dev
+uv run arb db-migrate
 uv run uvicorn future_opportunity.api:app --reload
 ```
 
-When `DATABASE_URL` is present, the API uses the PostgreSQL Repository adapter. Without it, the same application use cases run against the in-memory adapter.
+`arb db-migrate` applies all pending SQL migrations in filename order, records their SHA-256 checksums, is idempotent on already-applied migrations, and rejects checksum drift.
+
+When `DATABASE_URL` is present, API requests plus CLI `discover` / `simulate` use PostgreSQL. Without it, the same business use cases run against in-memory repositories.
 
 ## Manage paper positions
 
