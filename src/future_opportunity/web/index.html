@@ -257,17 +257,129 @@ async function loadPositions() {
     $("positions").innerHTML = '<span class="subtle">No paper positions yet.</span>';
     return;
   }
-  const rows = data.results.map(record =>
-    '<tr><td>'+esc(record.plan.strategy.name)+'</td>'+
+  const rows = data.results.map(record => {
+    const evidence = record.return_complete ? "complete" : "partial";
+    return '<tr><td>'+esc(record.plan.strategy.name)+'</td>'+
     '<td>'+esc(record.position.state)+'</td>'+
-    '<td class="metric">$'+money(record.plan.capital.amount)+'</td>'+
-    '<td class="metric">'+money(record.position.realized_pnl)+'</td>'+
+    '<td class="metric">async function loadHistory() {
+  const data = await json("/v1/history");
+  if (!data.results.length) {
+    $("history").innerHTML = '<span class="subtle">No paper simulations yet.</span>';
+    return;
+  }
+  const rows = data.results.map(record => {
+    const expected = record.expected;
+    const expectedReturn = expected ? pct(expected.expected_net_return) : "—";
+    const expectedPnl = expected ? "$"+money(expected.expected_net_pnl) : "—";
+    const currentPnl = "$"+money(record.current.net_pnl);
+    const currentReturn = pct(record.current.net_return);
+    const variance = record.variance ? pct(record.variance.net_return) : "—";
+    return '<tr>'+
+      '<td>'+esc(record.strategy)+'</td>'+
+      '<td>'+esc(record.venue)+'</td>'+
+      '<td>'+esc(record.base)+'</td>'+
+      '<td>'+badge(record.progress_state === "realized" ? "satisfied" : "unassessed")+' '+esc(record.progress_state)+'</td>'+
+      '<td class="metric">'+expectedReturn+'</td>'+
+      '<td class="metric">'+expectedPnl+'</td>'+
+      '<td class="metric">'+currentReturn+'</td>'+
+      '<td class="metric">'+currentPnl+'</td>'+
+      '<td class="metric">'+variance+'</td>'+
+      '<td>'+esc(record.position_state)+'</td>'+
+    '</tr>';
+  }).join("");
+  $("history").innerHTML =
+    '<p class="subtle">Current values are only called realized after the Position is CLOSED.</p>'+
+    '<table><thead><tr><th>Strategy</th><th>Venue</th><th>Asset</th><th>Progress</th>'+
+    '<th>Expected return</th><th>Expected PnL</th><th>Current return</th><th>Current PnL</th>'+
+    '<th>Variance</th><th>Position</th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+
+function switchView(view) {
+  document.querySelectorAll("main > section").forEach(el => el.classList.add("hidden"));
+  $(view+"-view").classList.remove("hidden");
+  document.querySelectorAll("nav button").forEach(b => b.classList.toggle("active", b.dataset.view === view));
+  if (view === "positions") loadPositions().catch(e => $("positions").textContent=e.message);
+  if (view === "history") loadHistory().catch(e => $("history").textContent=e.message);
+}
+
+document.querySelectorAll("nav button").forEach(button => button.addEventListener("click", () => switchView(button.dataset.view)));
+$("discover").addEventListener("click", discover);
+$("strategy").addEventListener("change", () => {
+  if ($("strategy").value === "cash-and-carry") $("venue").value = "okx";
+});
+</script>
+</body>
+</html>
++money(record.plan.capital.amount)+'</td>'+
+    '<td class="metric">async function loadHistory() {
+  const data = await json("/v1/history");
+  if (!data.results.length) {
+    $("history").innerHTML = '<span class="subtle">No paper simulations yet.</span>';
+    return;
+  }
+  const rows = data.results.map(record => {
+    const expected = record.expected;
+    const expectedReturn = expected ? pct(expected.expected_net_return) : "—";
+    const expectedPnl = expected ? "$"+money(expected.expected_net_pnl) : "—";
+    const currentPnl = "$"+money(record.current.net_pnl);
+    const currentReturn = pct(record.current.net_return);
+    const variance = record.variance ? pct(record.variance.net_return) : "—";
+    return '<tr>'+
+      '<td>'+esc(record.strategy)+'</td>'+
+      '<td>'+esc(record.venue)+'</td>'+
+      '<td>'+esc(record.base)+'</td>'+
+      '<td>'+badge(record.progress_state === "realized" ? "satisfied" : "unassessed")+' '+esc(record.progress_state)+'</td>'+
+      '<td class="metric">'+expectedReturn+'</td>'+
+      '<td class="metric">'+expectedPnl+'</td>'+
+      '<td class="metric">'+currentReturn+'</td>'+
+      '<td class="metric">'+currentPnl+'</td>'+
+      '<td class="metric">'+variance+'</td>'+
+      '<td>'+esc(record.position_state)+'</td>'+
+    '</tr>';
+  }).join("");
+  $("history").innerHTML =
+    '<p class="subtle">Current values are only called realized after the Position is CLOSED.</p>'+
+    '<table><thead><tr><th>Strategy</th><th>Venue</th><th>Asset</th><th>Progress</th>'+
+    '<th>Expected return</th><th>Expected PnL</th><th>Current return</th><th>Current PnL</th>'+
+    '<th>Variance</th><th>Position</th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+
+function switchView(view) {
+  document.querySelectorAll("main > section").forEach(el => el.classList.add("hidden"));
+  $(view+"-view").classList.remove("hidden");
+  document.querySelectorAll("nav button").forEach(b => b.classList.toggle("active", b.dataset.view === view));
+  if (view === "positions") loadPositions().catch(e => $("positions").textContent=e.message);
+  if (view === "history") loadHistory().catch(e => $("history").textContent=e.message);
+}
+
+document.querySelectorAll("nav button").forEach(button => button.addEventListener("click", () => switchView(button.dataset.view)));
+$("discover").addEventListener("click", discover);
+$("strategy").addEventListener("change", () => {
+  if ($("strategy").value === "cash-and-carry") $("venue").value = "okx";
+});
+</script>
+</body>
+</html>
++money(record.current_net_pnl)+'</td>'+
+    '<td>'+badge(record.return_complete ? "satisfied" : "unassessed")+' '+evidence+'</td>'+
     '<td>'+esc(record.position.opened_at || "")+'</td>'+
-    '<td>'+badge(record.risk.invariants.some(x=>x.state==="violated") ? "violated" : "satisfied")+'</td></tr>'
-  ).join("");
+    '<td>'+badge(record.risk.invariants.some(x=>x.state==="violated") ? "violated" : "satisfied")+'</td>'+
+    '<td><button onclick="refreshPosition(\''+esc(record.position.id)+'\')">Refresh</button></td></tr>';
+  }).join("");
   $("positions").innerHTML =
-    '<table><thead><tr><th>Strategy</th><th>State</th><th>Capital</th><th>Realized PnL</th><th>Opened</th><th>Risk</th></tr></thead>'+
+    '<table><thead><tr><th>Strategy</th><th>State</th><th>Capital</th><th>Current assessed PnL</th>'+
+    '<th>Return evidence</th><th>Opened</th><th>Risk</th><th></th></tr></thead>'+
     '<tbody>'+rows+'</tbody></table>';
+}
+
+async function refreshPosition(positionId) {
+  try {
+    await json('/v1/positions/'+encodeURIComponent(positionId)+'/refresh', {method:"POST"});
+    await loadPositions();
+    await loadHistory();
+  } catch (error) {
+    $("positions").innerHTML = '<div class="error">'+esc(error.message)+'</div>';
+  }
 }
 
 async function loadHistory() {
