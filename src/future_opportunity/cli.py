@@ -405,3 +405,63 @@ def position_close(position_id: str) -> None:
             await repository.close()
 
     asyncio.run(run())
+
+
+@app.command("opportunity-show")
+def opportunity_show(opportunity_id: str) -> None:
+    """Inspect one persisted Opportunity and its latest observation."""
+
+    async def run() -> None:
+        from future_opportunity.adapters.persistence.postgres import (
+            PostgresOpportunityRepository,
+        )
+
+        repository = await PostgresOpportunityRepository.connect(
+            _require_database_url()
+        )
+        try:
+            opportunity = await repository.get(opportunity_id)
+            if opportunity is None:
+                raise typer.BadParameter(
+                    f"opportunity not found: {opportunity_id}"
+                )
+            observations = await repository.observations(opportunity_id)
+            typer.echo(
+                {
+                    "opportunity": asdict(opportunity),
+                    "observation_count": len(observations),
+                    "latest_observation": (
+                        asdict(observations[-1]) if observations else None
+                    ),
+                }
+            )
+        finally:
+            await repository.close()
+
+    asyncio.run(run())
+
+
+@app.command("opportunity-history")
+def opportunity_history(opportunity_id: str) -> None:
+    """Show immutable observations for one persisted Opportunity."""
+
+    async def run() -> None:
+        from future_opportunity.adapters.persistence.postgres import (
+            PostgresOpportunityRepository,
+        )
+
+        repository = await PostgresOpportunityRepository.connect(
+            _require_database_url()
+        )
+        try:
+            opportunity = await repository.get(opportunity_id)
+            if opportunity is None:
+                raise typer.BadParameter(
+                    f"opportunity not found: {opportunity_id}"
+                )
+            observations = await repository.observations(opportunity_id)
+            typer.echo([asdict(observation) for observation in observations])
+        finally:
+            await repository.close()
+
+    asyncio.run(run())
