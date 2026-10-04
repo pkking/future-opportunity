@@ -9,6 +9,7 @@ from future_opportunity.application.ports import FundingCarryMarketDataPort
 from future_opportunity.application.repositories import OpportunityRepository
 from future_opportunity.domain.market.snapshot import FundingCarryMarketSnapshot
 from future_opportunity.domain.opportunity.model import (
+    Opportunity,
     OpportunityObservation,
     OpportunityQualification,
     ReturnCharacter,
