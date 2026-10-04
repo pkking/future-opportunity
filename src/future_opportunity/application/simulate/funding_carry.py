@@ -13,8 +13,8 @@ from future_opportunity.application.execute.paper_funding_carry import (
     execute_paper_funding_carry,
 )
 from future_opportunity.application.plan.funding_carry import build_funding_carry_plan
-from future_opportunity.domain.risk.invariants import evaluate_delta_neutrality
-from future_opportunity.domain.risk.model import InvariantResult
+from future_opportunity.application.simulate.risk import build_paper_risk_report
+from future_opportunity.domain.risk.model import RiskReport
 from future_opportunity.domain.strategy.funding_carry import FundingCarryAssumptions
 from future_opportunity.domain.strategy.model import StrategyPlan
 
@@ -24,7 +24,7 @@ class SimulatedFundingCarry:
     discovered: DiscoveredFundingCarry
     plan: StrategyPlan
     execution: PaperFundingCarryResult
-    delta_risk: InvariantResult
+    risk: RiskReport
 
 
 @dataclass(frozen=True, slots=True)
@@ -52,13 +52,18 @@ class SimulateFundingCarry:
             capital=capital,
             assumptions=assumptions,
         )
-        delta_risk = evaluate_delta_neutrality(
+        risk = build_paper_risk_report(
             execution.position,
-            plan.max_delta_pct,
+            plan,
+            expected_net_return=discovered.evaluation.expected_net_return_horizon,
+            books={
+                discovered.snapshot.spot_instrument_id: discovered.snapshot.spot_book,
+                discovered.snapshot.perpetual_instrument_id: discovered.snapshot.perpetual_book,
+            },
         )
         return SimulatedFundingCarry(
             discovered=discovered,
             plan=plan,
             execution=execution,
-            delta_risk=delta_risk,
+            risk=risk,
         )
