@@ -57,9 +57,10 @@ class MemorySimulationRepository:
         existing = self._simulations.get(position.id)
         if existing is None:
             raise KeyError(position.id)
+        persisted_position = replace(position, version=position.version + 1)
         self._simulations[position.id] = replace(
             existing,
-            position=position,
+            position=persisted_position,
             current_return=current_return,
             risk=risk,
         )
