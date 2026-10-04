@@ -4,7 +4,11 @@ from dataclasses import dataclass, replace
 from decimal import Decimal
 from uuid import uuid4
 
-from future_opportunity.application.manage.valuation import simulate_close_evidence
+from future_opportunity.application.manage.valuation import (
+    PaperCloseEvidence,
+    simulate_close_evidence,
+    simulate_delivery_close_evidence,
+)
 from future_opportunity.application.ports import CashAndCarryMarketDataPort
 from future_opportunity.application.repositories import (
     SimulationRecord,
@@ -42,12 +46,16 @@ class CloseCashAndCarry:
         if capital_policy is None or cost_policy is None:
             raise ValueError("strategy plan is missing frozen economics policies")
 
+        spot_leg = next(
+            (leg for leg in record.plan.legs if leg.id == "spot-leg"),
+            None,
+        )
         future_leg = next(
             (leg for leg in record.plan.legs if leg.id == "future-leg"),
             None,
         )
-        if future_leg is None:
-            raise ValueError("cash-and-carry plan has no future leg")
+        if spot_leg is None or future_leg is None:
+            raise ValueError("cash-and-carry plan must contain spot and future legs")
 
         snapshots = await self.market_data.snapshots(
             record.plan.base,
@@ -61,36 +69,66 @@ class CloseCashAndCarry:
             ),
             None,
         )
-        if snapshot is None:
-            raise ValueError(
-                f"future instrument is no longer available: {future_leg.instrument_id}"
-            )
 
-        assumptions = CashAndCarryAssumptions(
-            reserve_ratio=capital_policy.reserve_ratio,
-            futures_leverage=capital_policy.futures_leverage,
-            spot_entry_fee_bps=cost_policy.spot_entry_fee_bps,
-            futures_entry_fee_bps=cost_policy.derivative_entry_fee_bps,
-            spot_exit_fee_bps=cost_policy.spot_exit_fee_bps,
-            futures_settlement_fee_bps=cost_policy.derivative_exit_fee_bps,
-            exit_buffer_bps=cost_policy.exit_buffer_bps,
-        )
-        evaluation = evaluate_cash_and_carry(
-            snapshot,
-            record.plan.capital.amount,
-            assumptions,
-        )
-        books = {
-            snapshot.spot_instrument_id: snapshot.spot_book,
-            snapshot.future_instrument_id: snapshot.future_book,
-        }
-        close_evidence = simulate_close_evidence(record, books)
-        risk = build_paper_risk_report(
-            record.position,
-            record.plan,
-            expected_net_return=evaluation.expected_net_return_to_expiry,
-            books=books,
-        )
+        close_evidence: PaperCloseEvidence
+        if snapshot is not None:
+            assumptions = CashAndCarryAssumptions(
+                reserve_ratio=capital_policy.reserve_ratio,
+                futures_leverage=capital_policy.futures_leverage,
+                spot_entry_fee_bps=cost_policy.spot_entry_fee_bps,
+                futures_entry_fee_bps=cost_policy.derivative_entry_fee_bps,
+                spot_exit_fee_bps=cost_policy.spot_exit_fee_bps,
+                futures_settlement_fee_bps=cost_policy.derivative_exit_fee_bps,
+                exit_buffer_bps=cost_policy.exit_buffer_bps,
+            )
+            evaluation = evaluate_cash_and_carry(
+                snapshot,
+                record.plan.capital.amount,
+                assumptions,
+            )
+            books = {
+                snapshot.spot_instrument_id: snapshot.spot_book,
+                snapshot.future_instrument_id: snapshot.future_book,
+            }
+            close_evidence = simulate_close_evidence(record, books)
+            risk = build_paper_risk_report(
+                record.position,
+                record.plan,
+                expected_net_return=evaluation.expected_net_return_to_expiry,
+                books=books,
+            )
+        else:
+            settlement = await self.market_data.delivery_settlement(
+                future_leg.instrument_id,
+                record.plan.base,
+                record.plan.quote,
+            )
+            if settlement is None:
+                raise ValueError(
+                    "future is not live and no public delivery settlement "
+                    f"was found: {future_leg.instrument_id}"
+                )
+
+            spot_instrument_id, spot_book = await self.market_data.spot_book(
+                record.plan.base,
+                record.plan.quote,
+            )
+            if spot_instrument_id != spot_leg.instrument_id:
+                raise ValueError(
+                    "spot instrument changed since plan creation: "
+                    f"{spot_leg.instrument_id} -> {spot_instrument_id}"
+                )
+
+            close_evidence = simulate_delivery_close_evidence(
+                record,
+                spot_instrument_id=spot_instrument_id,
+                spot_book=spot_book,
+                settlement=settlement,
+            )
+            # No live future book exists after delivery. Keep the last assessed
+            # risk report; the immutable settlement/spot fills are the close
+            # evidence and the resulting Position has zero exposure.
+            risk = record.risk
 
         started_at = min(fill.filled_at for fill in close_evidence.fills)
         finished_at = max(fill.filled_at for fill in close_evidence.fills)
@@ -125,3 +163,4 @@ class CloseCashAndCarry:
         if closed is None:
             raise RuntimeError(f"position disappeared after close: {position_id}")
         return closed
+
