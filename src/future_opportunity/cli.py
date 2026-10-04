@@ -22,6 +22,7 @@ from future_opportunity.application.simulate.cash_and_carry import (
 )
 from future_opportunity.application.simulate.funding_carry import SimulateFundingCarry
 from future_opportunity.domain.strategy.cash_and_carry import CashAndCarryAssumptions
+from future_opportunity.domain.strategy.definition import STRATEGIES
 from future_opportunity.domain.strategy.funding_carry import FundingCarryAssumptions
 
 
@@ -73,6 +74,14 @@ def _result_view(result: object) -> dict[str, object]:
         "qualification": asdict(result.qualification),
         "evaluation": asdict(result.evaluation),
     }
+
+
+
+
+@app.command()
+def strategies() -> None:
+    """List supported versioned arbitrage strategies."""
+    typer.echo([asdict(definition) for definition in STRATEGIES.values()])
 
 
 @app.command()
