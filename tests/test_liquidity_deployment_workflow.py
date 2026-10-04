@@ -7,18 +7,22 @@ from future_opportunity.adapters.persistence.memory import (
     MemoryOpportunityRepository,
     MemorySimulationRepository,
 )
+from future_opportunity.application.discover.cash_and_carry import DiscoverCashAndCarry
 from future_opportunity.application.discover.funding_carry import DiscoverFundingCarry
 from future_opportunity.application.manage.close_funding_carry import CloseFundingCarry
 from future_opportunity.application.manage.funding_carry import RefreshFundingCarry
 from future_opportunity.application.simulate.errors import OpportunityNotQualified
+from future_opportunity.application.simulate.cash_and_carry import SimulateCashAndCarry
 from future_opportunity.application.simulate.funding_carry import SimulateFundingCarry
 from future_opportunity.domain.deployment.model import LiquidityPolicy
 from future_opportunity.domain.market.snapshot import (
+    CashAndCarryMarketSnapshot,
     FundingCarryMarketSnapshot,
     FundingObservation,
     OrderBook,
     OrderBookLevel,
 )
+from future_opportunity.domain.strategy.cash_and_carry import CashAndCarryAssumptions
 from future_opportunity.domain.strategy.funding_carry import FundingCarryAssumptions
 
 
@@ -181,3 +185,72 @@ async def test_partial_deployment_remains_manageable_without_reexpanding_capital
     assert closed.position.state.value == "closed"
     assert closed.plan.deployment is not None
     assert closed.plan.deployment.actual_spot_notional == Decimal(1_000)
+
+
+class ThinCashMarket:
+    async def snapshots(
+        self,
+        base: str,
+        quote: str = "USDT",
+    ) -> tuple[CashAndCarryMarketSnapshot, ...]:
+        now = datetime.now(UTC)
+        spot = OrderBook(
+            bids=(OrderBookLevel(price=Decimal("99.9"), quantity=Decimal(10)),),
+            asks=(OrderBookLevel(price=Decimal(100), quantity=Decimal(10)),),
+            observed_at=now,
+        )
+        future = OrderBook(
+            bids=(OrderBookLevel(price=Decimal(103), quantity=Decimal(10)),),
+            asks=(OrderBookLevel(price=Decimal("103.1"), quantity=Decimal(10)),),
+            observed_at=now,
+        )
+        return (
+            CashAndCarryMarketSnapshot(
+                venue="fixture",
+                base=base,
+                quote=quote,
+                spot_instrument_id="fixture:spot",
+                future_instrument_id="fixture:future",
+                spot_book=spot,
+                future_book=future,
+                expiry=now + timedelta(days=90),
+                observed_at=now,
+            ),
+        )
+
+
+@pytest.mark.asyncio
+async def test_cash_partial_policy_accounts_for_basis_in_margin_and_unused_capital() -> None:
+    assumptions = CashAndCarryAssumptions(
+        spot_entry_fee_bps=Decimal(0),
+        futures_entry_fee_bps=Decimal(0),
+        spot_exit_fee_bps=Decimal(0),
+        futures_settlement_fee_bps=Decimal(0),
+        exit_buffer_bps=Decimal(0),
+    )
+    simulations = MemorySimulationRepository()
+    simulated = await SimulateCashAndCarry(
+        DiscoverCashAndCarry(
+            ThinCashMarket(),
+            MemoryOpportunityRepository(),
+        ),
+        simulations,
+    ).execute(
+        base="BTC",
+        future_instrument_id="fixture:future",
+        capital=Decimal(10_000),
+        assumptions=assumptions,
+        liquidity_policy=LiquidityPolicy.PARTIAL,
+        max_impact_bps=Decimal(10),
+    )
+
+    deployment = simulated.plan.deployment
+    assert deployment is not None
+    assert deployment.partial_deployment is True
+    assert deployment.actual_spot_notional == Decimal(1_000)
+    assert deployment.actual_hedge_notional == Decimal(1_030)
+    assert deployment.futures_margin == Decimal(1_030)
+    assert deployment.unused_capital == Decimal(6_970)
+    assert simulated.plan.legs[0].target_notional.amount == Decimal(1_000)
+    assert simulated.plan.legs[1].target_notional.amount == Decimal(1_030)
+    assert simulated.execution.position.delta_pct == Decimal(0)
