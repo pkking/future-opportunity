@@ -26,6 +26,8 @@ from future_opportunity.application.repositories import (
     SimulationRepository,
 )
 from future_opportunity.application.manage.cash_and_carry import RefreshCashAndCarry
+from future_opportunity.application.manage.close_cash_and_carry import CloseCashAndCarry
+from future_opportunity.application.manage.close_funding_carry import CloseFundingCarry
 from future_opportunity.application.manage.funding_carry import RefreshFundingCarry
 from future_opportunity.application.simulate.cash_and_carry import (
     FutureInstrumentNotFound,
@@ -141,6 +143,9 @@ def _simulation_record_view(record: SimulationRecord) -> dict[str, object]:
         "current_return": asdict(record.current_return),
         "current_net_pnl": record.current_return.net_pnl,
         "return_complete": record.current_return.complete,
+        "management_executions": [
+            asdict(execution) for execution in record.management_executions
+        ],
         "risk": asdict(record.risk),
     }
 
@@ -255,6 +260,38 @@ async def refresh_position(
         raise HTTPException(status_code=409, detail=str(error)) from error
 
     return _simulation_record_view(refreshed)
+
+
+@app.post("/v1/positions/{position_id}/close")
+async def close_position(
+    request: Request,
+    position_id: str,
+) -> dict[str, object]:
+    repository: SimulationRepository = request.app.state.simulation_repository
+    record = await repository.get(position_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"position not found: {position_id}")
+
+    try:
+        if record.plan.strategy.name == "funding-carry":
+            closed = await CloseFundingCarry(
+                funding_market_data_for(record.plan.venue),
+                repository,
+            ).execute(position_id)
+        elif record.plan.strategy.name == "cash-and-carry":
+            closed = await CloseCashAndCarry(
+                cash_and_carry_market_data_for(record.plan.venue),
+                repository,
+            ).execute(position_id)
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail=f"unsupported strategy: {record.plan.strategy.name}",
+            )
+    except (ValueError, KeyError) as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+
+    return _simulation_record_view(closed)
 
 
 @app.get("/v1/positions/{position_id}")
