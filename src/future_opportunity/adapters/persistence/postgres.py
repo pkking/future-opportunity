@@ -390,9 +390,10 @@ class PostgresSimulationRepository(SimulationRepository):
                         trading_fees,
                         slippage,
                         rebalancing_cost,
-                        residual_directional_pnl
+                        residual_directional_pnl,
+                        unassessed_components
                     )
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """,
                     (
                         str(uuid4()),
@@ -404,6 +405,7 @@ class PostgresSimulationRepository(SimulationRepository):
                         attribution.slippage,
                         attribution.rebalancing_cost,
                         attribution.residual_directional_pnl,
+                        list(attribution.unassessed_components),
                     ),
                 )
 
@@ -490,9 +492,10 @@ class PostgresSimulationRepository(SimulationRepository):
                         trading_fees,
                         slippage,
                         rebalancing_cost,
-                        residual_directional_pnl
+                        residual_directional_pnl,
+                        unassessed_components
                     )
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """,
                     (
                         str(uuid4()),
@@ -504,6 +507,7 @@ class PostgresSimulationRepository(SimulationRepository):
                         current_return.slippage,
                         current_return.rebalancing_cost,
                         current_return.residual_directional_pnl,
+                        list(current_return.unassessed_components),
                     ),
                 )
 
@@ -752,6 +756,9 @@ class PostgresSimulationRepository(SimulationRepository):
                 slippage=return_row["slippage"],
                 rebalancing_cost=return_row["rebalancing_cost"],
                 residual_directional_pnl=return_row["residual_directional_pnl"],
+                unassessed_components=tuple(
+                    return_row.get("unassessed_components") or ()
+                ),
             )
 
         entry_return = attribution_from(return_rows[0])
