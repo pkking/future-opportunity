@@ -229,18 +229,24 @@ class PostgresSimulationRepository(SimulationRepository):
                         strategy_name,
                         strategy_version,
                         opportunity_observation_id,
+                        venue,
+                        base_asset,
+                        quote_asset,
                         capital_amount,
                         capital_currency,
                         execution_mode,
                         current_revision
                     )
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, 1)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 1)
                     """,
                     (
                         plan.id,
                         plan.strategy.name,
                         plan.strategy.version,
                         plan.opportunity_observation_id,
+                        plan.venue,
+                        plan.base,
+                        plan.quote,
                         plan.capital.amount,
                         plan.capital.currency,
                         plan.execution_mode,
@@ -437,6 +443,7 @@ class PostgresSimulationRepository(SimulationRepository):
                     """
                     SELECT p.*, sp.strategy_name, sp.strategy_version,
                            sp.opportunity_observation_id,
+                           sp.venue, sp.base_asset, sp.quote_asset,
                            sp.capital_amount, sp.capital_currency,
                            sp.execution_mode, spr.document
                     FROM positions p
@@ -462,6 +469,7 @@ class PostgresSimulationRepository(SimulationRepository):
                     """
                     SELECT p.*, sp.strategy_name, sp.strategy_version,
                            sp.opportunity_observation_id,
+                           sp.venue, sp.base_asset, sp.quote_asset,
                            sp.capital_amount, sp.capital_currency,
                            sp.execution_mode, spr.document
                     FROM positions p
@@ -487,6 +495,9 @@ class PostgresSimulationRepository(SimulationRepository):
                 version=row["strategy_version"],
             ),
             opportunity_observation_id=str(row["opportunity_observation_id"]),
+            venue=row["venue"],
+            base=row["base_asset"],
+            quote=row["quote_asset"],
             capital=Money(
                 amount=Decimal(str(row["capital_amount"])),
                 currency=row["capital_currency"],
