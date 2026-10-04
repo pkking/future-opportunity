@@ -49,15 +49,18 @@ uv run arb simulate BTC --capital 1000
 
 `discover` reads public spot/perpetual market data through a Venue adapter and produces an Opportunity-level funding-carry evaluation. OKX swap contract sizes are normalized from contract count into base-asset quantity before entering the domain model.
 
-`simulate` walks the real order book to create simulated fills and a delta-neutral paper Position.
+`simulate` walks the real order book to create simulated fills and a delta-neutral paper Position. V0 uses a conservative isolated-capital model: capital is split between reserve, spot purchase, and futures margin instead of assuming that spot collateral automatically funds the futures leg.
 
 Fee values are explicit assumptions. The defaults are examples for simulation and are **not** a claim about the fee tier of any Binance account:
 
 ```bash
 uv run arb discover BTC \
+  --venue binance \
   --capital 10000 \
   --spot-fee-bps 10 \
-  --perpetual-fee-bps 5
+  --perpetual-fee-bps 5 \
+  --reserve-ratio 0.10 \
+  --futures-leverage 1
 ```
 
 ## API
