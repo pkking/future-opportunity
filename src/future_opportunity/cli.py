@@ -170,6 +170,8 @@ def simulate(
                     "observation_id": simulated.discovered.observation.id,
                     "plan": asdict(simulated.plan),
                     "position": asdict(simulated.execution.position),
+                    "fills": [asdict(fill) for fill in simulated.execution.fills],
+                    "return_attribution": asdict(simulated.execution.entry_return),
                     "risk": asdict(simulated.risk),
                 }
             )
@@ -211,6 +213,8 @@ def simulate(
                     "observation_id": simulated.discovered.observation.id,
                     "plan": asdict(simulated.plan),
                     "position": asdict(simulated.execution.position),
+                    "fills": [asdict(fill) for fill in simulated.execution.fills],
+                    "return_attribution": asdict(simulated.execution.entry_return),
                     "risk": asdict(simulated.risk),
                 }
             )
