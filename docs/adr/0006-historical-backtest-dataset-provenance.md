@@ -136,3 +136,56 @@ model.
 - The canonical replay format remains venue-independent.
 - Raw source formats stay confined to acquisition/normalization adapters.
 - Missing historical evidence remains explicit instead of being synthesized.
+
+
+## Verified source-schema evidence
+
+The raw module-4 order-book schema was verified through a non-gating GitHub
+Actions probe against the official OKX catalog and CDN.
+
+Evidence:
+
+```text
+workflow run: 37218442680
+artifact: okx-historical-schema-probe
+artifact id: 11309790145
+probe date: 2026-10-01 UTC
+```
+
+Observed archive contract:
+
+```text
+catalog filename: *-L2orderbook-400lv-YYYY-MM-DD.tar.gz
+HTTP content-type: application/gzip
+archive member: *.data
+member encoding: UTF-8 JSON Lines
+```
+
+Observed event shape:
+
+```json
+{
+  "instId": "...",
+  "action": "snapshot | update",
+  "ts": "...",
+  "asks": [["price", "size", "orderCount"]],
+  "bids": [["price", "size", "orderCount"]]
+}
+```
+
+A snapshot replaces the complete replay state. Updates mutate individual price
+levels. An update size of zero removes that price level.
+
+For SPOT, size is base-currency quantity. For derivatives, size is contract
+count and MUST be normalized through the pinned contract metadata in the
+dataset manifest.
+
+Verified probe hashes:
+
+```text
+USDC-USDT SPOT:
+25c59d54bc4797e6353e01f2fb1e0ec4a63b2e00986761821ce516359c3b6b9a
+
+USDC-USDT-SWAP:
+c21b083f6116cb9411d6738d85a2776db2db5fde579d0fd2d8cfbba2b5426835
+```
