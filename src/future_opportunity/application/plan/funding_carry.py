@@ -31,6 +31,9 @@ def build_funding_carry_plan(
         id=plan_id,
         strategy=StrategyRef(name=FUNDING_CARRY.name, version=FUNDING_CARRY.version),
         opportunity_observation_id=opportunity_observation_id,
+        venue=snapshot.venue,
+        base=snapshot.base,
+        quote=snapshot.quote,
         capital=Money(amount=capital, currency=snapshot.quote),
         legs=(
             PlanLeg(
