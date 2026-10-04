@@ -5,6 +5,12 @@ from decimal import Decimal
 from uuid import uuid4
 
 from future_opportunity.application.opportunity.lifecycle import evolve_opportunity
+from future_opportunity.domain.deployment.model import (
+    DeploymentAssessment,
+    LiquidityPolicy,
+    assess_liquidity_bounded_deployment,
+)
+from future_opportunity.domain.market.liquidity import hedged_visible_spot_notional_capacity
 from future_opportunity.application.ports import CashAndCarryMarketDataPort
 from future_opportunity.application.repositories import OpportunityRepository
 from future_opportunity.domain.market.snapshot import CashAndCarryMarketSnapshot
@@ -30,6 +36,7 @@ class DiscoveredCashAndCarry:
     observation: OpportunityObservation
     qualification: OpportunityQualification
     evaluation: CashAndCarryEvaluation
+    deployment: DeploymentAssessment
 
 
 @dataclass(frozen=True, slots=True)
@@ -42,13 +49,45 @@ class DiscoverCashAndCarry:
         base: str,
         capital: Decimal,
         assumptions: CashAndCarryAssumptions,
+        liquidity_policy: LiquidityPolicy = LiquidityPolicy.STRICT,
+        max_impact_bps: Decimal = Decimal(10),
     ) -> tuple[DiscoveredCashAndCarry, ...]:
         snapshots = await self.market_data.snapshots(base)
         results: list[DiscoveredCashAndCarry] = []
 
         for snapshot in snapshots:
-            evaluation = evaluate_cash_and_carry(snapshot, capital, assumptions)
+            hedge_ratio = (
+                snapshot.future_book.best_bid / snapshot.spot_book.best_ask
+            )
+            capacity = hedged_visible_spot_notional_capacity(
+                snapshot.spot_book,
+                snapshot.future_book,
+                max_impact_bps,
+            )
+            deployment = assess_liquidity_bounded_deployment(
+                capital=capital,
+                reserve_ratio=assumptions.reserve_ratio,
+                futures_leverage=assumptions.futures_leverage,
+                hedge_notional_ratio=hedge_ratio,
+                capacity_spot_notional=capacity,
+                policy=liquidity_policy,
+                max_impact_bps=max_impact_bps,
+            )
+            evaluation = evaluate_cash_and_carry(
+                snapshot,
+                capital,
+                assumptions,
+                deployed_spot_notional=deployment.assessed_spot_notional,
+            )
             reasons: list[str] = []
+
+            if (
+                deployment.policy is LiquidityPolicy.STRICT
+                and not deployment.capacity_sufficient
+            ):
+                reasons.append("requested_notional_exceeds_liquidity_limit")
+            elif not deployment.executable:
+                reasons.append("no_executable_liquidity")
 
             if evaluation.gross_basis_return_on_notional <= 0:
                 reasons.append("future_not_in_contango")
@@ -99,6 +138,7 @@ class DiscoverCashAndCarry:
                     observation=observation,
                     qualification=qualification,
                     evaluation=evaluation,
+                    deployment=deployment,
                 )
             )
 
