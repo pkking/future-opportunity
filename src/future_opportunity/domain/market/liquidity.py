@@ -57,3 +57,57 @@ def estimate_market_fill(
         notional=total_notional,
         impact_bps=impact * BPS,
     )
+
+
+def max_visible_quantity_at_impact(
+    book: OrderBook,
+    side: str,
+    max_impact_bps: Decimal,
+) -> Decimal:
+    """Maximum visible-book quantity whose VWAP impact stays within a threshold."""
+    if side not in {"buy", "sell"}:
+        raise ValueError("side must be buy or sell")
+    if max_impact_bps < 0:
+        raise ValueError("max_impact_bps must be non-negative")
+
+    levels = book.asks if side == "buy" else book.bids
+    if not levels:
+        return Decimal(0)
+
+    reference = book.best_ask if side == "buy" else book.best_bid
+    threshold = max_impact_bps / BPS
+    target = (
+        reference * (Decimal(1) + threshold)
+        if side == "buy"
+        else reference * (Decimal(1) - threshold)
+    )
+
+    quantity = Decimal(0)
+    notional = Decimal(0)
+
+    for level in levels:
+        whole_quantity = quantity + level.quantity
+        whole_notional = notional + level.quantity * level.price
+        whole_vwap = whole_notional / whole_quantity
+        within = whole_vwap <= target if side == "buy" else whole_vwap >= target
+
+        if within:
+            quantity = whole_quantity
+            notional = whole_notional
+            continue
+
+        if side == "buy":
+            denominator = level.price - target
+            numerator = target * quantity - notional
+        else:
+            denominator = target - level.price
+            numerator = notional - target * quantity
+
+        if denominator <= 0 or numerator <= 0:
+            break
+
+        partial = min(level.quantity, numerator / denominator)
+        quantity += partial
+        break
+
+    return quantity
