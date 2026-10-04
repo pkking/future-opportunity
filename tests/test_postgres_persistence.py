@@ -11,6 +11,7 @@ from future_opportunity.adapters.persistence.postgres import (
     PostgresSimulationRepository,
 )
 from future_opportunity.application.discover.funding_carry import DiscoverFundingCarry
+from future_opportunity.application.manage.close_funding_carry import CloseFundingCarry
 from future_opportunity.application.manage.funding_carry import RefreshFundingCarry
 from future_opportunity.application.simulate.funding_carry import SimulateFundingCarry
 from future_opportunity.domain.market.snapshot import (
@@ -116,6 +117,17 @@ async def test_postgres_round_trip_rebuilds_complete_simulation() -> None:
         assert reloaded is not None
         assert reloaded.position.version == 1
         assert reloaded.current_return.unassessed_components == ("funding",)
+
+        closed = await CloseFundingCarry(
+            FundingData(),
+            simulations,
+        ).execute(stored.position.id)
+        assert closed.position.state.value == "closed"
+        assert closed.position.version == 2
+        assert closed.position.legs == ()
+        assert len(closed.management_executions) == 1
+        assert closed.management_executions[0].purpose.value == "close"
+        assert len(closed.management_executions[0].fills) == 2
 
         listed = await simulations.list()
         assert [record.position.id for record in listed] == [stored.position.id]
