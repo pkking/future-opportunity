@@ -16,6 +16,10 @@ from future_opportunity.application.repositories import (
     SimulationRecord,
     SimulationRepository,
 )
+from future_opportunity.domain.deployment.model import (
+    DeploymentAssessment,
+    LiquidityPolicy,
+)
 from future_opportunity.domain.execution.model import (
     Execution,
     ExecutionPurpose,
@@ -1080,6 +1084,46 @@ class PostgresSimulationRepository(SimulationRepository):
                     ),
                 )
                 if document.get("execution_cost_policy") is not None
+                else None
+            ),
+            deployment=(
+                DeploymentAssessment(
+                    policy=LiquidityPolicy(document["deployment"]["policy"]),
+                    max_impact_bps=Decimal(
+                        str(document["deployment"]["max_impact_bps"])
+                    ),
+                    requested_capital=Decimal(
+                        str(document["deployment"]["requested_capital"])
+                    ),
+                    reserve_amount=Decimal(
+                        str(document["deployment"]["reserve_amount"])
+                    ),
+                    requested_spot_notional=Decimal(
+                        str(document["deployment"]["requested_spot_notional"])
+                    ),
+                    capacity_spot_notional=Decimal(
+                        str(document["deployment"]["capacity_spot_notional"])
+                    ),
+                    actual_spot_notional=Decimal(
+                        str(document["deployment"]["actual_spot_notional"])
+                    ),
+                    actual_hedge_notional=Decimal(
+                        str(document["deployment"]["actual_hedge_notional"])
+                    ),
+                    futures_margin=Decimal(
+                        str(document["deployment"]["futures_margin"])
+                    ),
+                    unused_capital=Decimal(
+                        str(document["deployment"]["unused_capital"])
+                    ),
+                    partial_deployment=bool(
+                        document["deployment"]["partial_deployment"]
+                    ),
+                    capacity_sufficient=bool(
+                        document["deployment"]["capacity_sufficient"]
+                    ),
+                )
+                if document.get("deployment") is not None
                 else None
             ),
             expected_economics=(
