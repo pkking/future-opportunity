@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from typing import Any
 from dataclasses import asdict
 from datetime import datetime
 from decimal import Decimal
@@ -47,6 +48,62 @@ from future_opportunity.domain.strategy.model import (
 
 def _jsonable(value: object) -> object:
     return json.loads(json.dumps(value, default=str))
+
+
+async def _append_domain_event(
+    conn: Any,
+    *,
+    aggregate_type: str,
+    aggregate_id: str,
+    aggregate_version: int,
+    event_type: str,
+    occurred_at: datetime,
+    payload: object,
+) -> None:
+    event_id = str(uuid4())
+    event_payload = _jsonable(payload)
+    await conn.execute(
+        """
+        INSERT INTO domain_events (
+            id,
+            aggregate_type,
+            aggregate_id,
+            aggregate_version,
+            event_type,
+            occurred_at,
+            payload
+        )
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """,
+        (
+            event_id,
+            aggregate_type,
+            aggregate_id,
+            aggregate_version,
+            event_type,
+            occurred_at,
+            Jsonb(event_payload),
+        ),
+    )
+    await conn.execute(
+        """
+        INSERT INTO outbox_events (
+            id,
+            domain_event_id,
+            topic,
+            payload,
+            created_at
+        )
+        VALUES (%s, %s, %s, %s, %s)
+        """,
+        (
+            str(uuid4()),
+            event_id,
+            f"future-opportunity.{event_type}",
+            Jsonb(event_payload),
+            occurred_at,
+        ),
+    )
 
 
 def _pool(
