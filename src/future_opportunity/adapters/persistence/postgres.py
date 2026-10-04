@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict
+from datetime import datetime
 from decimal import Decimal
 from uuid import uuid4
 
@@ -441,7 +442,7 @@ class PostgresSimulationRepository(SimulationRepository):
         position: Position,
         current_return: ReturnAttribution,
         risk: RiskReport,
-        observed_at: object,
+        observed_at: datetime,
     ) -> None:
         async with self._pool.connection() as conn:
             async with conn.transaction():
