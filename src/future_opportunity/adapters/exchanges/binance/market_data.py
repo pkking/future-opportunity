@@ -75,6 +75,12 @@ class BinanceFundingMarketData:
                         int(item["fundingTime"]) / 1000,
                         tz=UTC,
                     ),
+                    mark_price=(
+                        Decimal(item["markPrice"])
+                        if item.get("markPrice")
+                        else None
+                    ),
+                    rate_type=item.get("rateType"),
                 )
                 for item in funding
             ),
