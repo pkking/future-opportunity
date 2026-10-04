@@ -120,6 +120,7 @@ class OkxCashAndCarryMarketData:
             instrument
             for instrument in instruments
             if instrument.get("state") == "live"
+            and instrument.get("ctType") == "linear"
             and instrument.get("settleCcy") == quote
             and instrument.get("ctValCcy") == base
             and instrument.get("expTime")
