@@ -89,6 +89,12 @@ async def test_postgres_round_trip_rebuilds_complete_simulation() -> None:
         assert stored is not None
         assert stored.plan.id == simulated.plan.id
         assert stored.plan.opportunity_observation_id == simulated.discovered.observation.id
+        assert stored.plan.expected_economics is not None
+        assert simulated.plan.expected_economics is not None
+        assert (
+            stored.plan.expected_economics.expected_net_pnl
+            == simulated.plan.expected_economics.expected_net_pnl
+        )
         assert stored.execution.id == simulated.execution_record.id
         assert len(stored.execution.fills) == 2
         assert stored.position.id == simulated.execution.position.id
