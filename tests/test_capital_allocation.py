@@ -32,9 +32,9 @@ def test_isolated_allocation_accounts_for_futures_basis() -> None:
 
     assert allocation.spot_notional == Decimal(9_000) / Decimal("2.02")
     assert allocation.hedge_notional == allocation.spot_notional * Decimal("1.02")
-    assert (
+    allocated = (
         allocation.reserve_amount
         + allocation.spot_notional
         + allocation.futures_margin
-        == allocation.total_capital
     )
+    assert abs(allocated - allocation.total_capital) < Decimal("1e-20")
