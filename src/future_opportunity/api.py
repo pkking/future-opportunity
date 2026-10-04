@@ -206,7 +206,7 @@ async def simulate(
                 "derivative_fee": simulated.execution.perpetual_fee,
                 "slippage_bps": simulated.execution.entry_slippage_bps,
             },
-            "risk": asdict(simulated.delta_risk),
+            "risk": asdict(simulated.risk),
         }
 
     if strategy == "cash-and-carry":
@@ -254,7 +254,7 @@ async def simulate(
                 "derivative_fee": simulated.execution.futures_fee,
                 "slippage_bps": simulated.execution.entry_slippage_bps,
             },
-            "risk": asdict(simulated.delta_risk),
+            "risk": asdict(simulated.risk),
         }
 
     raise HTTPException(status_code=404, detail=f"unsupported strategy: {strategy}")
