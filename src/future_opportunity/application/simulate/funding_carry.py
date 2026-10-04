@@ -19,6 +19,7 @@ from future_opportunity.application.repositories import (
 )
 from future_opportunity.application.simulate.errors import OpportunityNotQualified
 from future_opportunity.application.simulate.risk import build_paper_risk_report
+from future_opportunity.domain.deployment.model import LiquidityPolicy
 from future_opportunity.domain.execution.model import Execution, ExecutionState
 from future_opportunity.domain.risk.model import RiskReport
 from future_opportunity.domain.strategy.funding_carry import FundingCarryAssumptions
@@ -44,8 +45,16 @@ class SimulateFundingCarry:
         base: str,
         capital: Decimal,
         assumptions: FundingCarryAssumptions,
+        liquidity_policy: LiquidityPolicy = LiquidityPolicy.STRICT,
+        max_impact_bps: Decimal = Decimal(10),
     ) -> SimulatedFundingCarry:
-        discovered = await self.discovery.execute(base, capital, assumptions)
+        discovered = await self.discovery.execute(
+            base,
+            capital,
+            assumptions,
+            liquidity_policy=liquidity_policy,
+            max_impact_bps=max_impact_bps,
+        )
         if not discovered.qualification.qualified:
             raise OpportunityNotQualified(discovered.qualification.reasons)
 
@@ -71,6 +80,7 @@ class SimulateFundingCarry:
             capital=capital,
             assumptions=assumptions,
             expected_economics=expected,
+            deployment=discovered.deployment,
         )
         paper_execution = execute_paper_funding_carry(
             position_id=str(uuid4()),
@@ -78,6 +88,7 @@ class SimulateFundingCarry:
             snapshot=discovered.snapshot,
             capital=capital,
             assumptions=assumptions,
+            deployment=discovered.deployment,
         )
         risk = build_paper_risk_report(
             paper_execution.position,
