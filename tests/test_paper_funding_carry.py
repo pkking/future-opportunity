@@ -34,7 +34,7 @@ def test_paper_execution_builds_delta_neutral_combination() -> None:
         perpetual_instrument_id="binance:BTCUSDT:perpetual",
         spot_book=spot,
         perpetual_book=perpetual,
-        mark_price=Decimal("101"),
+        mark_price=Decimal(101),
         last_funding_rate=Decimal("0.0001"),
         next_funding_time=now + timedelta(hours=8),
         funding_history=(),
