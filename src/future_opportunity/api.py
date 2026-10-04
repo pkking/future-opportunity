@@ -141,6 +141,44 @@ def _simulation_record_view(record: SimulationRecord) -> dict[str, object]:
     }
 
 
+def _history_record_view(record: SimulationRecord) -> dict[str, object]:
+    expected = record.plan.expected_economics
+    current_net_pnl = record.current_return.net_pnl
+    capital = record.plan.capital.amount
+    current_return = current_net_pnl / capital if capital else Decimal(0)
+    closed = record.position.state.value == "closed"
+
+    return {
+        "position_id": record.position.id,
+        "strategy": record.plan.strategy.name,
+        "venue": record.plan.venue,
+        "base": record.plan.base,
+        "quote": record.plan.quote,
+        "position_state": record.position.state.value,
+        "progress_state": "realized" if closed else "in_progress",
+        "opened_at": record.position.opened_at,
+        "closed_at": record.position.closed_at,
+        "expected": (
+            asdict(expected)
+            if expected is not None
+            else None
+        ),
+        "current": {
+            "net_pnl": current_net_pnl,
+            "net_return": current_return,
+            "attribution": asdict(record.current_return),
+        },
+        "variance": (
+            {
+                "net_pnl": current_net_pnl - expected.expected_net_pnl,
+                "net_return": current_return - expected.expected_net_return,
+            }
+            if expected is not None
+            else None
+        ),
+    }
+
+
 
 
 @app.get("/v1/strategies")
@@ -160,6 +198,13 @@ def get_strategy(name: str) -> dict[str, object]:
     except ValueError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
     return asdict(definition)
+
+
+@app.get("/v1/history")
+async def history(request: Request) -> dict[str, object]:
+    repository: SimulationRepository = request.app.state.simulation_repository
+    records = await repository.list()
+    return {"results": [_history_record_view(record) for record in records]}
 
 
 @app.get("/v1/positions")
