@@ -436,6 +436,108 @@ class PostgresSimulationRepository(SimulationRepository):
                         ),
                     )
 
+    async def update_position(
+        self,
+        position: Position,
+        current_return: ReturnAttribution,
+        risk: RiskReport,
+        observed_at: object,
+    ) -> None:
+        async with self._pool.connection() as conn:
+            async with conn.transaction():
+                updated = await conn.execute(
+                    """
+                    UPDATE positions
+                    SET
+                        state = %s,
+                        current_delta = %s,
+                        current_delta_pct = %s,
+                        realized_pnl = %s,
+                        unrealized_pnl = %s,
+                        opened_at = %s,
+                        closed_at = %s,
+                        version = version + 1
+                    WHERE id = %s
+                      AND version = %s
+                    """,
+                    (
+                        position.state.value,
+                        position.delta_notional,
+                        position.delta_pct,
+                        position.realized_pnl,
+                        position.unrealized_pnl,
+                        position.opened_at,
+                        position.closed_at,
+                        position.id,
+                        position.version,
+                    ),
+                )
+                if updated.rowcount != 1:
+                    raise RuntimeError(
+                        f"position version conflict or missing position: {position.id}"
+                    )
+
+                await conn.execute(
+                    """
+                    INSERT INTO return_attributions (
+                        id,
+                        position_id,
+                        observed_at,
+                        funding,
+                        basis_convergence,
+                        trading_fees,
+                        slippage,
+                        rebalancing_cost,
+                        residual_directional_pnl
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """,
+                    (
+                        str(uuid4()),
+                        position.id,
+                        observed_at,
+                        current_return.funding,
+                        current_return.basis_convergence,
+                        current_return.trading_fees,
+                        current_return.slippage,
+                        current_return.rebalancing_cost,
+                        current_return.residual_directional_pnl,
+                    ),
+                )
+
+                for invariant in risk.invariants:
+                    await conn.execute(
+                        """
+                        INSERT INTO risk_observations (
+                            id,
+                            position_id,
+                            observed_at,
+                            invariant_name,
+                            state,
+                            observed,
+                            limit_value,
+                            explanation
+                        )
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                        """,
+                        (
+                            str(uuid4()),
+                            position.id,
+                            observed_at,
+                            invariant.name,
+                            invariant.state.value,
+                            Jsonb(_jsonable(invariant.observed)),
+                            Jsonb(_jsonable(invariant.limit)),
+                            (
+                                Jsonb(_jsonable(invariant.explanation))
+                                if invariant.explanation is not None
+                                else None
+                            ),
+                        ),
+                    )
+
+        position.version += 1
+
     async def get(self, position_id: str) -> SimulationRecord | None:
         async with self._pool.connection() as conn:
             position_row = await (
@@ -600,26 +702,32 @@ class PostgresSimulationRepository(SimulationRepository):
             version=row["version"],
         )
 
-        return_row = await (
+        return_rows = await (
             await conn.execute(
                 """
                 SELECT *
                 FROM return_attributions
                 WHERE position_id = %s
-                ORDER BY observed_at ASC
-                LIMIT 1
+                ORDER BY observed_at ASC, id ASC
                 """,
                 (row["id"],),
             )
-        ).fetchone()
-        attribution = ReturnAttribution(
-            funding=return_row["funding"],
-            basis_convergence=return_row["basis_convergence"],
-            trading_fees=return_row["trading_fees"],
-            slippage=return_row["slippage"],
-            rebalancing_cost=return_row["rebalancing_cost"],
-            residual_directional_pnl=return_row["residual_directional_pnl"],
-        )
+        ).fetchall()
+        if not return_rows:
+            raise RuntimeError(f"position has no return attribution: {row['id']}")
+
+        def attribution_from(return_row: dict[str, object]) -> ReturnAttribution:
+            return ReturnAttribution(
+                funding=return_row["funding"],
+                basis_convergence=return_row["basis_convergence"],
+                trading_fees=return_row["trading_fees"],
+                slippage=return_row["slippage"],
+                rebalancing_cost=return_row["rebalancing_cost"],
+                residual_directional_pnl=return_row["residual_directional_pnl"],
+            )
+
+        entry_return = attribution_from(return_rows[0])
+        current_return = attribution_from(return_rows[-1])
 
         risk_rows = await (
             await conn.execute(
@@ -650,6 +758,7 @@ class PostgresSimulationRepository(SimulationRepository):
             plan=plan,
             execution=execution,
             position=position,
-            entry_return=attribution,
+            entry_return=entry_return,
+            current_return=current_return,
             risk=risk,
         )
