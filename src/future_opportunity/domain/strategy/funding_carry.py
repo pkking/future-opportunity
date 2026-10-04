@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from decimal import Decimal
-from statistics import fmean, pstdev
 
 from future_opportunity.domain.market.snapshot import FundingCarryMarketSnapshot
 
@@ -51,13 +50,17 @@ def _rates(snapshot: FundingCarryMarketSnapshot, count: int) -> list[Decimal]:
 def _mean(values: list[Decimal]) -> Decimal:
     if not values:
         return Decimal(0)
-    return Decimal(str(fmean(float(value) for value in values)))
+    return sum(values, Decimal(0)) / Decimal(len(values))
 
 
 def _volatility(values: list[Decimal]) -> Decimal:
     if len(values) < 2:
         return Decimal(0)
-    return Decimal(str(pstdev(float(value) for value in values)))
+    mean = _mean(values)
+    variance = sum(((value - mean) ** 2 for value in values), Decimal(0)) / Decimal(
+        len(values)
+    )
+    return variance.sqrt()
 
 
 def evaluate_funding_carry(
