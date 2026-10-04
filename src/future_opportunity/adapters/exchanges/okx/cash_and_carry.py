@@ -12,7 +12,11 @@ from future_opportunity.adapters.exchanges.okx.common import (
     okx_first_data,
     parse_okx_book,
 )
-from future_opportunity.domain.market.snapshot import CashAndCarryMarketSnapshot
+from future_opportunity.domain.market.snapshot import (
+    CashAndCarryMarketSnapshot,
+    DeliverySettlement,
+    OrderBook,
+)
 
 
 class OkxCashAndCarryMarketData:
@@ -107,6 +111,110 @@ class OkxCashAndCarryMarketData:
             )
 
         return tuple(snapshots)
+
+    async def spot_book(
+        self,
+        base: str,
+        quote: str = "USDT",
+    ) -> tuple[str, OrderBook]:
+        base = base.upper()
+        quote = quote.upper()
+        spot_id = f"{base}-{quote}"
+
+        async with httpx.AsyncClient(timeout=self._timeout) as client:
+            raw = await get_okx(
+                client,
+                self._base_url,
+                "/api/v5/market/books",
+                {"instId": spot_id, "sz": 100},
+            )
+
+        observed_at = datetime.now(UTC)
+        return (
+            f"okx:{spot_id}:spot",
+            parse_okx_book(
+                okx_first_data(raw),
+                observed_at,
+                quantity_multiplier=Decimal(1),
+            ),
+        )
+
+    async def delivery_settlement(
+        self,
+        future_instrument_id: str,
+        base: str,
+        quote: str = "USDT",
+    ) -> DeliverySettlement | None:
+        base = base.upper()
+        quote = quote.upper()
+        family = f"{base}-{quote}"
+        raw_instrument_id = self._raw_future_id(future_instrument_id)
+
+        async with httpx.AsyncClient(timeout=self._timeout) as client:
+            payload = await get_okx(
+                client,
+                self._base_url,
+                "/api/v5/public/delivery-exercise-history",
+                {"instType": "FUTURES", "instFamily": family},
+            )
+
+        return self._find_delivery_settlement(
+            payload,
+            canonical_instrument_id=future_instrument_id,
+            raw_instrument_id=raw_instrument_id,
+        )
+
+    @staticmethod
+    def _raw_future_id(future_instrument_id: str) -> str:
+        prefix = "okx:"
+        suffix = ":future"
+        if not (
+            future_instrument_id.startswith(prefix)
+            and future_instrument_id.endswith(suffix)
+        ):
+            raise ValueError(
+                f"unexpected OKX future instrument id: {future_instrument_id}"
+            )
+        return future_instrument_id[len(prefix) : -len(suffix)]
+
+    @staticmethod
+    def _find_delivery_settlement(
+        payload: dict[str, object],
+        *,
+        canonical_instrument_id: str,
+        raw_instrument_id: str,
+    ) -> DeliverySettlement | None:
+        data = payload.get("data")
+        if not isinstance(data, list):
+            raise TypeError("unexpected OKX delivery history response")
+
+        for group in data:
+            if not isinstance(group, dict):
+                continue
+            timestamp = group.get("ts")
+            details = group.get("details")
+            if not isinstance(timestamp, str) or not isinstance(details, list):
+                continue
+
+            for detail in details:
+                if not isinstance(detail, dict):
+                    continue
+                instrument_id = detail.get("instId") or detail.get("insId")
+                price = detail.get("px") or detail.get("settlePx")
+                if instrument_id != raw_instrument_id or not isinstance(price, str):
+                    continue
+
+                return DeliverySettlement(
+                    venue="okx",
+                    future_instrument_id=canonical_instrument_id,
+                    settlement_price=Decimal(price),
+                    settled_at=datetime.fromtimestamp(
+                        int(timestamp) / 1000,
+                        tz=UTC,
+                    ),
+                )
+
+        return None
 
     @staticmethod
     def _eligible_futures(
