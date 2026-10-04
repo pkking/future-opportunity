@@ -26,6 +26,12 @@ class ReturnEstimate:
 
 
 @dataclass(frozen=True, slots=True)
+class OpportunityQualification:
+    qualified: bool
+    reasons: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class OpportunityObservation:
     id: str
     opportunity_id: str
