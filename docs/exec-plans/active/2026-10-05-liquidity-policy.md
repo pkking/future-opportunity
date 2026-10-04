@@ -1,6 +1,6 @@
 # 2026-10-05-liquidity-policy: Liquidity-bounded deployment policy
 
-Status: VERIFYING
+Status: COMPLETED
 Owner: agent
 Started: 2026-10-05
 Last checkpoint: 2026-10-05
@@ -53,7 +53,7 @@ StrategyPlan, paper execution, API/CLI/Web, and E2E evidence.
 - [x] Execution cannot exceed the accepted impact/capacity limit.
 - [x] API/CLI/Web expose the policy without hidden resizing.
 - [x] Deterministic E2E scenario proves behavior at/over capacity.
-- [ ] Final CI green.
+- [x] Final CI green.
 
 ## Implementation slices
 
@@ -68,10 +68,10 @@ StrategyPlan, paper execution, API/CLI/Web, and E2E evidence.
 
 | Scope | Command / CI gate | Expected evidence | Status |
 |---|---|---|---|
-| Static | `uv run ruff check .` | zero violations | verifying final commit |
-| Code | code-level test gate | liquidity semantics tests | verifying final commit |
-| API | API contract gate | capacity fields/rejection semantics | verifying final commit |
-| E2E | strategy E2E gate | oversized-capital scenario artifact | passed on a6dfe324 |
+| Static | `uv run ruff check .` | zero violations | passed |
+| Code | code-level test gate | liquidity semantics tests | passed |
+| API | API contract gate | capacity fields/rejection semantics | passed |
+| E2E | strategy E2E gate | oversized-capital scenario artifact | passed |
 
 ## Decision gates
 
@@ -116,6 +116,15 @@ Status: ACCEPTED
 - 2026-10-05: E2E run 37216924324 passed 3 deterministic scenarios in 0.12s,
   including oversized-capital strict/partial semantics. Evidence uploaded as
   strategy-e2e-evidence artifact ID 11308153322.
+- 2026-10-05: CI runs 37217071178 / 37217073749 / 37217076939 exposed one
+  CLI contract-test defect: Rich ANSI styling split the rendered option token.
+  The business CLI options were present; the evidence assertion was fixed by
+  stripping ANSI rather than weakening the option-name assertion.
+- 2026-10-05: final implementation CI run 37217156199 succeeded on commit
+  f2a0ad643e0faff0b8cb70307513860eb29c1832. Static, code-level, API contract,
+  and E2E strategy acceptance gates all passed.
+- 2026-10-05: final E2E strategy acceptance passed 3 scenarios in 0.11s;
+  strategy-e2e-evidence artifact ID 11308397969.
 
 ## Deviations and discoveries
 
@@ -123,12 +132,12 @@ None.
 
 ## Resume from here
 
-Wait for the latest documentation/CLI-contract commit to finish all four CI
-gates. If green, record the final run/evidence and move this plan to completed/.
+Completed. The next non-trivial change must start from a new active execution
+plan under docs/exec-plans/active/.
 
 ## Completion
 
-Final commit:
-CI run:
-E2E artifact:
-Remaining unassessed items:
+Final implementation commit: f2a0ad643e0faff0b8cb70307513860eb29c1832
+CI run: https://github.com/pkking/future-opportunity/actions/runs/37217156199
+E2E artifact: strategy-e2e-evidence (artifact ID 11308397969)
+Remaining unassessed items: none for ADR-0005 liquidity deployment semantics.
