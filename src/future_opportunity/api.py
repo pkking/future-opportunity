@@ -29,6 +29,7 @@ from future_opportunity.application.simulate.cash_and_carry import (
 )
 from future_opportunity.application.simulate.funding_carry import SimulateFundingCarry
 from future_opportunity.domain.strategy.cash_and_carry import CashAndCarryAssumptions
+from future_opportunity.domain.strategy.definition import STRATEGIES, strategy_definition
 from future_opportunity.domain.strategy.funding_carry import FundingCarryAssumptions
 
 
@@ -127,6 +128,27 @@ def _simulation_record_view(record: SimulationRecord) -> dict[str, object]:
         "return_attribution": asdict(record.entry_return),
         "risk": asdict(record.risk),
     }
+
+
+
+
+@app.get("/v1/strategies")
+def list_strategies() -> dict[str, object]:
+    return {
+        "results": [
+            asdict(definition)
+            for definition in STRATEGIES.values()
+        ]
+    }
+
+
+@app.get("/v1/strategies/{name}")
+def get_strategy(name: str) -> dict[str, object]:
+    try:
+        definition = strategy_definition(name)
+    except ValueError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    return asdict(definition)
 
 
 @app.get("/v1/positions")
