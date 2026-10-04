@@ -28,6 +28,14 @@ class DeploymentAssessment:
     capacity_sufficient: bool
 
     @property
+    def assessed_spot_notional(self) -> Decimal:
+        """Largest notional that can be evaluated without breaching the limit."""
+        return min(
+            self.requested_spot_notional,
+            self.capacity_spot_notional,
+        )
+
+    @property
     def executable(self) -> bool:
         if self.actual_spot_notional <= 0:
             return False
