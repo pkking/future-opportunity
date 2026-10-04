@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal
 
+from future_opportunity.domain.deployment.model import DeploymentAssessment
+
 
 @dataclass(frozen=True, slots=True)
 class Money:
@@ -66,4 +68,5 @@ class StrategyPlan:
     execution_mode: str = "paper"
     capital_policy: CapitalPolicy | None = None
     execution_cost_policy: ExecutionCostPolicy | None = None
+    deployment: DeploymentAssessment | None = None
     expected_economics: ExpectedEconomics | None = None
