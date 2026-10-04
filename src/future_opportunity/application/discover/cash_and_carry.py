@@ -6,6 +6,7 @@ from uuid import uuid4
 
 from future_opportunity.application.ports import CashAndCarryMarketDataPort
 from future_opportunity.application.repositories import OpportunityRepository
+from future_opportunity.domain.market.snapshot import CashAndCarryMarketSnapshot
 from future_opportunity.domain.opportunity.model import (
     Opportunity,
     OpportunityObservation,
@@ -23,6 +24,7 @@ from future_opportunity.domain.strategy.cash_and_carry import (
 
 @dataclass(frozen=True, slots=True)
 class DiscoveredCashAndCarry:
+    snapshot: CashAndCarryMarketSnapshot
     opportunity: Opportunity
     observation: OpportunityObservation
     qualification: OpportunityQualification
@@ -101,6 +103,7 @@ class DiscoverCashAndCarry:
 
             results.append(
                 DiscoveredCashAndCarry(
+                    snapshot=snapshot,
                     opportunity=opportunity,
                     observation=observation,
                     qualification=qualification,
