@@ -15,6 +15,7 @@ from future_opportunity.domain.opportunity.model import (
     ReturnCharacter,
     ReturnEstimate,
 )
+from future_opportunity.domain.strategy.definition import CASH_AND_CARRY
 from future_opportunity.domain.strategy.cash_and_carry import (
     CashAndCarryAssumptions,
     CashAndCarryEvaluation,
@@ -67,7 +68,7 @@ class DiscoverCashAndCarry:
                 await self.opportunities.get_active_by_key(key),
                 opportunity_id=str(uuid4()),
                 key=key,
-                strategy_type="cash-and-carry",
+                strategy_type=CASH_AND_CARRY.name,
                 qualified=qualification.qualified,
                 observed_at=snapshot.observed_at,
             )
