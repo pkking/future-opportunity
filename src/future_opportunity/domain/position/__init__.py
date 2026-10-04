@@ -1,0 +1,1 @@
+"""Arbitrage position aggregate."""
