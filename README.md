@@ -179,6 +179,51 @@ Maximum leverage 1.2x
 
 This intentionally avoids assuming exchange-specific unified/portfolio-margin collateral behavior.
 
+## Liquidity-bounded deployment
+
+V0 treats requested capital and executable market liquidity as different facts.
+The policy is defined by [ADR-0005](docs/adr/0005-liquidity-bounded-deployment.md).
+
+Default behavior is **strict**:
+
+```text
+requested target notional > safe capacity at max impact
+=> Opportunity is not qualified
+=> paper execution is rejected
+```
+
+The system never silently reduces the user's capital intent.
+
+Explicit partial deployment is available when the caller accepts unused capital:
+
+```bash
+uv run arb discover funding-carry \
+  --venue binance \
+  --base BTC \
+  --capital 10000 \
+  --liquidity-policy partial \
+  --max-impact-bps 10
+```
+
+A partial StrategyPlan freezes:
+
+```text
+requested capital
+requested spot notional
+safe capacity
+actual spot / hedge notional
+reserve
+futures margin
+unused capital
+max impact
+```
+
+Returns continue to use requested total capital as the denominator. Idle capital
+therefore lowers return-on-capital instead of disappearing from the economics.
+
+The Web workbench exposes the same explicit Strict/Partial choice. Partial is
+never selected automatically.
+
 ## Costs
 
 Fee values are **explicit assumptions**. Defaults are examples for paper simulation and are not claims about the fee tier of a specific exchange account.
@@ -327,5 +372,6 @@ See:
 - [ADR-0002: Explicit Unassessed Risk State](docs/adr/0002-unassessed-risk-state.md)
 - [ADR-0003: Explicit Unassessed Return Components](docs/adr/0003-unassessed-return-components.md)
 - [ADR-0004: Public Delivery Settlement as Execution Evidence](docs/adr/0004-public-delivery-settlement.md)
+- [ADR-0005: Liquidity-Bounded Deployment Policy](docs/adr/0005-liquidity-bounded-deployment.md)
 
 Changes to frozen domain boundaries, return semantics, capital semantics, or the paper/live safety boundary require an ADR.
