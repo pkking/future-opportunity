@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>future-opportunity</title>
+  <style>
+    :root {
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #172033;
+      background: #f6f8fb;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    header {
+      background: #111827; color: white; padding: 18px 28px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    header strong { font-size: 18px; }
+    header span { color: #9ca3af; font-size: 13px; }
+    nav { display: flex; gap: 8px; padding: 14px 28px 0; }
+    nav button, button {
+      border: 1px solid #d7dce5; border-radius: 8px; background: white;
+      padding: 9px 13px; cursor: pointer; font: inherit;
+    }
+    nav button.active, button.primary { background: #111827; color: white; border-color: #111827; }
+    main { padding: 20px 28px 40px; max-width: 1500px; margin: auto; }
+    .panel {
+      background: white; border: 1px solid #e5e9f0; border-radius: 12px;
+      padding: 18px; margin-bottom: 16px;
+    }
+    .grid { display: grid; grid-template-columns: repeat(6, minmax(120px, 1fr)); gap: 12px; }
+    label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #64748b; }
+    input, select {
+      border: 1px solid #d7dce5; border-radius: 7px; padding: 9px; background: white; font: inherit;
+    }
+    h2 { margin: 0 0 14px; font-size: 19px; }
+    h3 { margin: 0 0 10px; font-size: 15px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #edf0f5; vertical-align: top; }
+    th { color: #64748b; font-weight: 600; }
+    .badge { display: inline-block; padding: 3px 7px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+    .ok { background: #dcfce7; color: #166534; }
+    .warn { background: #fef3c7; color: #92400e; }
+    .bad { background: #fee2e2; color: #991b1b; }
+    .muted { background: #e5e7eb; color: #4b5563; }
+    .metric { font-variant-numeric: tabular-nums; }
+    .subtle { color: #64748b; font-size: 12px; }
+    .error { color: #b91c1c; white-space: pre-wrap; }
+    .hidden { display: none; }
+    .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .card { border: 1px solid #e5e9f0; border-radius: 10px; padding: 14px; }
+    .card .value { font-size: 22px; font-weight: 650; margin-top: 6px; }
+    pre { white-space: pre-wrap; word-break: break-word; background: #f8fafc; padding: 12px; border-radius: 8px; font-size: 12px; }
+    @media (max-width: 900px) {
+      .grid, .cards { grid-template-columns: 1fr 1fr; }
+      main { padding: 16px; }
+      nav { padding-left: 16px; overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <strong>future-opportunity</strong>
+  <span>V0 · real market data · paper execution only</span>
+</header>
+<nav>
+  <button data-view="discover" class="active">Discover</button>
+  <button data-view="analyze">Analyze</button>
+  <button data-view="positions">Positions</button>
+  <button data-view="strategies">Strategies</button>
+</nav>
+<main>
+  <section id="discover-view">
+    <div class="panel">
+      <h2>Discover Opportunities</h2>
+      <div class="grid">
+        <label>Strategy
+          <select id="strategy">
+            <option value="funding-carry">Funding Carry</option>
+            <option value="cash-and-carry">Cash-and-Carry</option>
+          </select>
+        </label>
+        <label>Venue
+          <select id="venue">
+            <option value="binance">Binance</option>
+            <option value="okx">OKX</option>
+          </select>
+        </label>
+        <label>Asset
+          <select id="base"><option>BTC</option><option>ETH</option></select>
+        </label>
+        <label>Capital (USDT)
+          <input id="capital" type="number" value="10000" min="1">
+        </label>
+        <label>Reserve ratio
+          <input id="reserve" type="number" value="0.10" min="0" max="0.99" step="0.01">
+        </label>
+        <label>Futures leverage
+          <input id="leverage" type="number" value="1" min="0.1" max="1.2" step="0.1">
+        </label>
+      </div>
+      <div style="margin-top:14px; display:flex; gap:8px">
+        <button id="discover" class="primary">Discover</button>
+        <span class="subtle" style="align-self:center">Fees are explicit simulation assumptions, not account fee claims.</span>
+      </div>
+      <div id="error" class="error"></div>
+    </div>
+    <div class="panel">
+      <h3>Opportunities</h3>
+      <div id="opportunities"><span class="subtle">Run Discover to inspect live opportunities.</span></div>
+    </div>
+  </section>
+
+  <section id="analyze-view" class="hidden">
+    <div class="panel">
+      <h2>Strategy Analysis</h2>
+      <div id="analysis"><span class="subtle">Simulate an opportunity from Discover.</span></div>
+    </div>
+  </section>
+
+  <section id="positions-view" class="hidden">
+    <div class="panel">
+      <h2>Paper Positions</h2>
+      <div id="positions"><span class="subtle">No positions loaded.</span></div>
+    </div>
+  </section>
+
+  <section id="strategies-view" class="hidden">
+    <div class="panel">
+      <h2>Strategy Definitions</h2>
+      <div id="strategy-list"><span class="subtle">Loading…</span></div>
+    </div>
+  </section>
+</main>
+<script>
+const state = { discovery: [], simulation: null };
+const $ = id => document.getElementById(id);
+const pct = value => value == null ? "—" : (Number(value) * 100).toFixed(3) + "%";
+const money = value => value == null ? "—" : Number(value).toLocaleString(undefined, {maximumFractionDigits: 2});
+const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+
+function badge(state) {
+  const cls = state === "qualified" || state === "satisfied" ? "ok"
+    : state === "violated" ? "bad"
+    : state === "unassessed" ? "muted" : "warn";
+  return '<span class="badge '+cls+'">'+esc(state)+'</span>';
+}
+
+function query() {
+  return new URLSearchParams({
+    capital: $("capital").value,
+    reserve_ratio: $("reserve").value,
+    futures_leverage: $("leverage").value,
+    spot_fee_bps: "10",
+    derivative_fee_bps: "5",
+    exit_buffer_bps: "5",
+  });
+}
+
+async function json(url, options) {
+  const response = await fetch(url, options);
+  const body = await response.json();
+  if (!response.ok) throw new Error(body.detail || JSON.stringify(body));
+  return body;
+}
+
+async function discover() {
+  $("error").textContent = "";
+  const strategy = $("strategy").value;
+  const venue = $("venue").value;
+  const base = $("base").value;
+  try {
+    const data = await json('/v1/opportunities/'+venue+'/'+strategy+'/'+base+'?'+query());
+    state.discovery = data.results;
+    renderOpportunities();
+  } catch (error) {
+    $("error").textContent = error.message;
+  }
+}
+
+function renderOpportunities() {
+  if (!state.discovery.length) {
+    $("opportunities").innerHTML = '<span class="subtle">No dated futures or opportunities returned.</span>';
+    return;
+  }
+  const rows = state.discovery.map((item, index) => {
+    const e = item.evaluation;
+    const net = e.expected_net_return_horizon ?? e.expected_net_return_to_expiry;
+    const primary = e.expected_funding_rate_per_period != null
+      ? 'Funding/period '+pct(e.expected_funding_rate_per_period)
+      : 'Basis '+pct(e.gross_basis_return_on_notional);
+    return '<tr>'+
+      '<td>'+badge(item.opportunity.state)+'</td>'+
+      '<td>'+esc(e.return_character)+'</td>'+
+      '<td class="metric">'+pct(net)+'</td>'+
+      '<td class="metric">'+pct(e.annualized_equivalent)+'</td>'+
+      '<td class="metric">$'+money(e.visible_capacity_10bps)+'</td>'+
+      '<td>'+esc(primary)+'</td>'+
+      '<td class="subtle">'+esc(e.future_instrument_id || "perpetual")+'</td>'+
+      '<td><button onclick="simulateOpportunity('+index+')">Simulate</button></td>'+
+    '</tr>';
+  }).join("");
+  $("opportunities").innerHTML =
+    '<table><thead><tr><th>Status</th><th>Return</th><th>Net horizon</th><th>Annualized equiv.</th>'+
+    '<th>Capacity @10bps</th><th>Primary evidence</th><th>Instrument</th><th></th></tr></thead>'+
+    '<tbody>'+rows+'</tbody></table>';
+}
+
+async function simulateOpportunity(index) {
+  const item = state.discovery[index];
+  const strategy = $("strategy").value;
+  const venue = $("venue").value;
+  const base = $("base").value;
+  const params = query();
+  if (strategy === "cash-and-carry") {
+    params.set("future_instrument_id", item.evaluation.future_instrument_id);
+  }
+  try {
+    state.simulation = await json(
+      '/v1/simulations/'+venue+'/'+strategy+'/'+base+'?'+params,
+      {method:"POST"}
+    );
+    renderAnalysis();
+    switchView("analyze");
+  } catch (error) {
+    $("error").textContent = error.message;
+  }
+}
+
+function renderAnalysis() {
+  const s = state.simulation;
+  if (!s) return;
+  const e = s.evaluation;
+  const net = e.expected_net_return_horizon ?? e.expected_net_return_to_expiry;
+  const riskRows = s.risk.invariants.map(r =>
+    '<tr><td>'+esc(r.name)+'</td><td>'+badge(r.state)+'</td>'+
+    '<td><code>'+esc(JSON.stringify(r.observed))+'</code></td>'+
+    '<td><code>'+esc(JSON.stringify(r.limit))+'</code></td></tr>'
+  ).join("");
+  $("analysis").innerHTML =
+    '<div class="cards">'+
+      '<div class="card"><div class="subtle">Expected net return</div><div class="value">'+pct(net)+'</div></div>'+
+      '<div class="card"><div class="subtle">Annualized equivalent</div><div class="value">'+pct(e.annualized_equivalent)+'</div></div>'+
+      '<div class="card"><div class="subtle">Capital</div><div class="value">$'+money(e.capital)+'</div></div>'+
+      '<div class="card"><div class="subtle">Capacity @10bps</div><div class="value">$'+money(e.visible_capacity_10bps)+'</div></div>'+
+    '</div>'+
+    '<h3 style="margin-top:18px">Risk invariants</h3>'+
+    '<table><thead><tr><th>Invariant</th><th>State</th><th>Observed</th><th>Limit</th></tr></thead><tbody>'+riskRows+'</tbody></table>'+
+    '<h3 style="margin-top:18px">Execution evidence</h3>'+
+    '<pre>'+esc(JSON.stringify({plan:s.plan, fills:s.fills, return_attribution:s.return_attribution}, null, 2))+'</pre>';
+}
+
+async function loadPositions() {
+  const data = await json("/v1/positions");
+  if (!data.results.length) {
+    $("positions").innerHTML = '<span class="subtle">No paper positions yet.</span>';
+    return;
+  }
+  const rows = data.results.map(record =>
+    '<tr><td>'+esc(record.plan.strategy.name)+'</td>'+
+    '<td>'+esc(record.position.state)+'</td>'+
+    '<td class="metric">$'+money(record.plan.capital.amount)+'</td>'+
+    '<td class="metric">'+money(record.position.realized_pnl)+'</td>'+
+    '<td>'+esc(record.position.opened_at || "")+'</td>'+
+    '<td>'+badge(record.risk.invariants.some(x=>x.state==="violated") ? "violated" : "satisfied")+'</td></tr>'
+  ).join("");
+  $("positions").innerHTML =
+    '<table><thead><tr><th>Strategy</th><th>State</th><th>Capital</th><th>Realized PnL</th><th>Opened</th><th>Risk</th></tr></thead>'+
+    '<tbody>'+rows+'</tbody></table>';
+}
+
+async function loadStrategies() {
+  const data = await json("/v1/strategies");
+  $("strategy-list").innerHTML = data.results.map(s =>
+    '<div class="card" style="margin-bottom:10px"><strong>'+esc(s.name)+' @ '+esc(s.version)+'</strong>'+
+    '<p>'+esc(s.description)+'</p><div class="subtle">Return: '+esc(s.return_character)+
+    ' · Sources: '+esc(s.return_sources.join(", "))+
+    ' · Invariants: '+esc(s.invariants.join(", "))+'</div></div>'
+  ).join("");
+}
+
+function switchView(view) {
+  document.querySelectorAll("main > section").forEach(el => el.classList.add("hidden"));
+  $(view+"-view").classList.remove("hidden");
+  document.querySelectorAll("nav button").forEach(b => b.classList.toggle("active", b.dataset.view === view));
+  if (view === "positions") loadPositions().catch(e => $("positions").textContent=e.message);
+  if (view === "strategies") loadStrategies().catch(e => $("strategy-list").textContent=e.message);
+}
+
+document.querySelectorAll("nav button").forEach(button => button.addEventListener("click", () => switchView(button.dataset.view)));
+$("discover").addEventListener("click", discover);
+$("strategy").addEventListener("change", () => {
+  if ($("strategy").value === "cash-and-carry") $("venue").value = "okx";
+});
+loadStrategies().catch(()=>{});
+</script>
+</body>
+</html>
