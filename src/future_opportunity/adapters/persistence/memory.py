@@ -18,10 +18,12 @@ class MemoryOpportunityRepository(OpportunityRepository):
             return None
         return opportunity
 
-    async def save(self, opportunity: Opportunity) -> None:
+    async def record(
+        self,
+        opportunity: Opportunity,
+        observation: OpportunityObservation,
+    ) -> None:
         self._opportunities[opportunity.key] = opportunity
-
-    async def append_observation(self, observation: OpportunityObservation) -> None:
         self._observations.setdefault(observation.opportunity_id, []).append(observation)
 
     def observations_for(self, opportunity_id: str) -> tuple[OpportunityObservation, ...]:
