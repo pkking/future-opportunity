@@ -15,6 +15,7 @@ from future_opportunity.domain.opportunity.model import (
     ReturnCharacter,
     ReturnEstimate,
 )
+from future_opportunity.domain.strategy.definition import FUNDING_CARRY
 from future_opportunity.domain.strategy.funding_carry import (
     FundingCarryAssumptions,
     FundingCarryEvaluation,
@@ -64,7 +65,7 @@ class DiscoverFundingCarry:
             await self.opportunities.get_active_by_key(key),
             opportunity_id=str(uuid4()),
             key=key,
-            strategy_type="funding-carry",
+            strategy_type=FUNDING_CARRY.name,
             qualified=qualification.qualified,
             observed_at=snapshot.observed_at,
         )
