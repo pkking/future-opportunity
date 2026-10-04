@@ -70,7 +70,7 @@ real market history.
 ## Implementation slices
 
 - [x] 1. Research official/open historical data sources and reusable tooling.
-- [ ] 2. Record data/evidence design and any material decision as ADR.
+- [x] 2. Record data/evidence design and any material decision as ADR.
 - [ ] 3. Add canonical replay-domain format and importer.
 - [ ] 4. Add backtest application workflow and metrics.
 - [ ] 5. Add pinned historical fixtures + provenance/checksum manifest.
@@ -112,9 +112,18 @@ None yet. Research first.
   price candles from recent years. Official funding formula is position value
   multiplied by funding rate; USDT-margined position value depends on contract
   size/multiplier and mark price.
-- 2026-10-05: raw ZIP L2 row schema has not yet been verified from an official
-  sample archive in the current execution environment. Do not implement a raw
-  order-book parser by guessing third-party formats.
+- 2026-10-05: initial local environment could not fetch archive bytes, so raw
+  parsing remained blocked rather than guessed.
+- 2026-10-05: non-gating GitHub Actions probe resolved the evidence gap. Run
+  37218442680 produced okx-historical-schema-probe artifact ID 11309790145.
+  Official module-4 L2 files are tar.gz archives containing JSONL .data files.
+  The stream starts with action=snapshot and continues with action=update;
+  asks/bids levels are [price,size,orderCount], and zero size removes a level.
+- 2026-10-05: probe captured SPOT USDC-USDT raw SHA-256
+  25c59d54bc4797e6353e01f2fb1e0ec4a63b2e00986761821ce516359c3b6b9a
+  and SWAP USDC-USDT-SWAP raw SHA-256
+  c21b083f6116cb9411d6738d85a2776db2db5fde579d0fd2d8cfbba2b5426835.
+  SWAP metadata captured ctVal=10, ctMult=1, ctValCcy=USDC, settleCcy=USDT.
 - 2026-10-05: hftbacktest is useful reference material for deterministic L2
   replay methodology, but is not required as a dependency for the current
   taker/capacity execution model.
@@ -125,9 +134,9 @@ None.
 
 ## Resume from here
 
-Record ADR-0006 for historical dataset provenance and implement the verified
-catalog/manifest layer. Do not implement raw order-book archive parsing until an
-official sample file schema has been inspected.
+Implement the verified streaming tar.gz JSONL order-book replayer. Require an
+initial snapshot, fail closed on unknown actions/schema, and require pinned
+contract metadata before normalizing derivative sizes.
 
 ## Completion
 
