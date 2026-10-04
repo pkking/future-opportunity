@@ -98,12 +98,23 @@ def download(
     client: httpx.Client,
     item: dict[str, Any],
     destination: Path,
-) -> tuple[str, int]:
+) -> tuple[str, int, dict[str, str]]:
     digest = hashlib.sha256()
     total = 0
     hard_limit = int((MAX_DOWNLOAD_MB + 4) * 1024 * 1024)
 
+    response_metadata: dict[str, str] = {}
     with client.stream("GET", str(item["url"])) as response:
+        response_metadata = {
+            "status_code": str(response.status_code),
+            "final_url": str(response.url),
+            "content_type": response.headers.get("content-type", ""),
+            "content_length": response.headers.get("content-length", ""),
+            "content_disposition": response.headers.get(
+                "content-disposition",
+                "",
+            ),
+        }
         response.raise_for_status()
         with destination.open("wb") as output:
             for chunk in response.iter_bytes():
@@ -115,7 +126,7 @@ def download(
                 digest.update(chunk)
                 output.write(chunk)
 
-    return digest.hexdigest(), total
+    return digest.hexdigest(), total, response_metadata
 
 
 def inspect_zip(path: Path) -> dict[str, Any]:
@@ -199,20 +210,27 @@ def probe(instrument_type: str) -> dict[str, Any]:
 
         with tempfile.TemporaryDirectory() as temporary:
             archive_path = Path(temporary) / str(selected["filename"])
-            sha256, size = download(client, selected, archive_path)
+            sha256, size, http = download(client, selected, archive_path)
             result.update(
                 {
-                    "status": "schema_sampled",
                     "selected": selected,
                     "raw_sha256": sha256,
                     "downloaded_bytes": size,
-                    "zip": inspect_zip(archive_path),
+                    "http": http,
+                    "first_256_bytes_hex": archive_path.read_bytes()[:256].hex(),
+                    "first_256_bytes_text": archive_path.read_bytes()[:256]
+                    .decode("utf-8", errors="replace"),
                     "instrument_metadata": instrument_metadata(
                         client,
                         selected,
                     ),
                 }
             )
+            try:
+                result["zip"] = inspect_zip(archive_path)
+                result["status"] = "schema_sampled"
+            except zipfile.BadZipFile:
+                result["status"] = "download_not_zip"
         return result
 
 
@@ -230,6 +248,8 @@ def main() -> None:
     for instrument_type in ("SPOT", "SWAP"):
         try:
             result = probe(instrument_type)
+            if result.get("status") != "schema_sampled":
+                failures.append(instrument_type)
         except Exception as error:
             result = {
                 "status": "error",
