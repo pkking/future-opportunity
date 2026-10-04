@@ -96,12 +96,34 @@ def evaluate_cash_and_carry(
     snapshot: CashAndCarryMarketSnapshot,
     capital: Decimal,
     assumptions: CashAndCarryAssumptions,
+    deployed_spot_notional: Decimal | None = None,
 ) -> CashAndCarryEvaluation:
     allocation = cash_and_carry_allocation(snapshot, capital, assumptions)
-    quantity = allocation.spot_notional / snapshot.spot_book.best_ask
+    spot_notional = (
+        allocation.spot_notional
+        if deployed_spot_notional is None
+        else deployed_spot_notional
+    )
+    if spot_notional < 0:
+        raise ValueError("deployed_spot_notional must be non-negative")
 
-    spot_entry = estimate_market_fill(snapshot.spot_book, "buy", quantity)
-    future_entry = estimate_market_fill(snapshot.future_book, "sell", quantity)
+    hedge_ratio = snapshot.future_book.best_bid / snapshot.spot_book.best_ask
+    futures_notional = spot_notional * hedge_ratio
+    futures_margin = futures_notional / assumptions.futures_leverage
+    quantity = spot_notional / snapshot.spot_book.best_ask
+
+    if quantity > 0:
+        spot_entry = estimate_market_fill(snapshot.spot_book, "buy", quantity)
+        future_entry = estimate_market_fill(snapshot.future_book, "sell", quantity)
+        spot_entry_impact = (
+            spot_entry.notional - quantity * snapshot.spot_book.best_ask
+        )
+        future_entry_impact = (
+            quantity * snapshot.future_book.best_bid - future_entry.notional
+        )
+    else:
+        spot_entry_impact = Decimal(0)
+        future_entry_impact = Decimal(0)
 
     gross_basis_return_on_notional = (
         snapshot.future_book.best_bid / snapshot.spot_book.best_ask - Decimal(1)
@@ -112,10 +134,10 @@ def evaluate_cash_and_carry(
     gross_return = gross_pnl / capital
 
     fee_quote = (
-        allocation.spot_notional
+        spot_notional
         * (assumptions.spot_entry_fee_bps + assumptions.spot_exit_fee_bps)
         / BPS
-        + allocation.hedge_notional
+        + futures_notional
         * (
             assumptions.futures_entry_fee_bps
             + assumptions.futures_settlement_fee_bps
@@ -124,13 +146,7 @@ def evaluate_cash_and_carry(
     )
     assumed_fee_return = fee_quote / capital
 
-    spot_entry_impact = (
-        spot_entry.notional - quantity * snapshot.spot_book.best_ask
-    )
-    future_entry_impact = (
-        quantity * snapshot.future_book.best_bid - future_entry.notional
-    )
-    exit_buffer = allocation.spot_notional * assumptions.exit_buffer_bps / BPS
+    exit_buffer = spot_notional * assumptions.exit_buffer_bps / BPS
     liquidity_cost_return = (
         spot_entry_impact + future_entry_impact + exit_buffer
     ) / capital
@@ -150,9 +166,9 @@ def evaluate_cash_and_carry(
         days_to_expiry=days_to_expiry,
         capital=capital,
         reserve_amount=allocation.reserve_amount,
-        spot_notional=allocation.spot_notional,
-        futures_notional=allocation.hedge_notional,
-        futures_margin=allocation.futures_margin,
+        spot_notional=spot_notional,
+        futures_notional=futures_notional,
+        futures_margin=futures_margin,
         visible_capacity_5bps=hedged_visible_spot_notional_capacity(
             snapshot.spot_book,
             snapshot.future_book,
