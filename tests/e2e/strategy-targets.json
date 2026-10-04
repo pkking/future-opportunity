@@ -41,6 +41,20 @@
         "settlement",
         "simulated"
       ]
+    },
+    "funding-carry-liquidity-partial-v1": {
+      "strategy": "funding-carry",
+      "strategy_version": "1.0.0",
+      "capital": "10000",
+      "max_impact_bps": "10",
+      "strict_must_qualify": false,
+      "partial_must_qualify": true,
+      "requested_spot_notional": "4500",
+      "capacity_spot_notional": "1000",
+      "actual_spot_notional": "1000",
+      "unused_capital": "7000",
+      "min_partial_expected_net_return": "0.005",
+      "max_abs_delta_pct": "0.005"
     }
   }
 }
