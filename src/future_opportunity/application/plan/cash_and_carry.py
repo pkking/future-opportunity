@@ -8,7 +8,13 @@ from future_opportunity.domain.strategy.cash_and_carry import (
     CashAndCarryAssumptions,
     cash_and_carry_allocation,
 )
-from future_opportunity.domain.strategy.model import Money, PlanLeg, StrategyPlan, StrategyRef
+from future_opportunity.domain.strategy.model import (
+    ExpectedEconomics,
+    Money,
+    PlanLeg,
+    StrategyPlan,
+    StrategyRef,
+)
 
 
 def build_cash_and_carry_plan(
@@ -17,6 +23,7 @@ def build_cash_and_carry_plan(
     snapshot: CashAndCarryMarketSnapshot,
     capital: Decimal,
     assumptions: CashAndCarryAssumptions,
+    expected_economics: ExpectedEconomics | None = None,
     max_delta_pct: Decimal = Decimal("0.005"),
     max_leverage: Decimal = Decimal("1.2"),
 ) -> StrategyPlan:
@@ -56,4 +63,5 @@ def build_cash_and_carry_plan(
         max_delta_pct=max_delta_pct,
         max_leverage=max_leverage,
         execution_mode="paper",
+        expected_economics=expected_economics,
     )
