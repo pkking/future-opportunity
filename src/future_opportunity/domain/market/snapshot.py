@@ -34,6 +34,8 @@ class OrderBook:
 class FundingObservation:
     rate: Decimal
     funding_time: datetime
+    mark_price: Decimal | None = None
+    rate_type: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
