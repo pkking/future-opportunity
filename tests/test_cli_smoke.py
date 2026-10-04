@@ -1,9 +1,16 @@
+import re
+
 from typer.testing import CliRunner
 
 from future_opportunity.cli import app
 
 
 runner = CliRunner()
+ANSI_ESCAPE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
+
+
+def plain_output(value: str) -> str:
+    return ANSI_ESCAPE.sub("", value)
 
 
 def test_cli_exposes_v0_business_workflow_commands() -> None:
@@ -38,6 +45,7 @@ def test_discover_and_simulate_expose_explicit_liquidity_controls() -> None:
     for command in ("discover", "simulate"):
         result = runner.invoke(app, [command, "--help"])
         assert result.exit_code == 0
-        assert "--liquidity-policy" in result.stdout
-        assert "--max-impact-bps" in result.stdout
-        assert "strict" in result.stdout
+        output = plain_output(result.stdout)
+        assert "--liquidity-policy" in output
+        assert "--max-impact-bps" in output
+        assert "strict" in output
