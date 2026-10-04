@@ -1,0 +1,33 @@
+name: Historical Data Schema Probe
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - scripts/probe_okx_historical_archive.py
+      - .github/workflows/historical-data-probe.yml
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    name: Probe official OKX archive schema
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - name: Probe catalog and bounded archive samples
+        env:
+          HISTORICAL_PROBE_DIR: artifacts/historical-probe
+          MAX_ARCHIVE_MB: "64"
+        run: uv run python scripts/probe_okx_historical_archive.py
+      - name: Upload probe evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: okx-historical-schema-probe
+          path: artifacts/historical-probe/
+          if-no-files-found: warn
