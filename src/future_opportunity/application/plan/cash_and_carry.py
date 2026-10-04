@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
+from future_opportunity.domain.deployment.model import DeploymentAssessment
 from future_opportunity.domain.market.snapshot import CashAndCarryMarketSnapshot
 from future_opportunity.domain.strategy.definition import CASH_AND_CARRY
 from future_opportunity.domain.strategy.cash_and_carry import (
@@ -26,6 +27,7 @@ def build_cash_and_carry_plan(
     capital: Decimal,
     assumptions: CashAndCarryAssumptions,
     expected_economics: ExpectedEconomics | None = None,
+    deployment: DeploymentAssessment | None = None,
     max_delta_pct: Decimal = Decimal("0.005"),
     max_leverage: Decimal = Decimal("1.2"),
 ) -> StrategyPlan:
@@ -33,6 +35,16 @@ def build_cash_and_carry_plan(
         raise ValueError("configured futures leverage exceeds plan risk limit")
 
     allocation = cash_and_carry_allocation(snapshot, capital, assumptions)
+    spot_notional = (
+        deployment.actual_spot_notional
+        if deployment is not None
+        else allocation.spot_notional
+    )
+    hedge_notional = (
+        deployment.actual_hedge_notional
+        if deployment is not None
+        else allocation.hedge_notional
+    )
 
     return StrategyPlan(
         id=plan_id,
@@ -48,7 +60,7 @@ def build_cash_and_carry_plan(
                 instrument_id=snapshot.spot_instrument_id,
                 side="buy",
                 target_notional=Money(
-                    amount=allocation.spot_notional,
+                    amount=spot_notional,
                     currency=snapshot.quote,
                 ),
             ),
@@ -57,7 +69,7 @@ def build_cash_and_carry_plan(
                 instrument_id=snapshot.future_instrument_id,
                 side="sell",
                 target_notional=Money(
-                    amount=allocation.hedge_notional,
+                    amount=hedge_notional,
                     currency=snapshot.quote,
                 ),
             ),
@@ -76,5 +88,6 @@ def build_cash_and_carry_plan(
             derivative_exit_fee_bps=assumptions.futures_settlement_fee_bps,
             exit_buffer_bps=assumptions.exit_buffer_bps,
         ),
+        deployment=deployment,
         expected_economics=expected_economics,
     )
