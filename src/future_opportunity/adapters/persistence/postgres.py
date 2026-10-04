@@ -34,6 +34,8 @@ from future_opportunity.domain.risk.model import (
     RiskReport,
 )
 from future_opportunity.domain.strategy.model import (
+    CapitalPolicy,
+    ExecutionCostPolicy,
     ExpectedEconomics,
     Money,
     PlanLeg,
@@ -625,6 +627,39 @@ class PostgresSimulationRepository(SimulationRepository):
             max_delta_pct=Decimal(str(document["max_delta_pct"])),
             max_leverage=Decimal(str(document["max_leverage"])),
             execution_mode=row["execution_mode"],
+            capital_policy=(
+                CapitalPolicy(
+                    reserve_ratio=Decimal(
+                        str(document["capital_policy"]["reserve_ratio"])
+                    ),
+                    futures_leverage=Decimal(
+                        str(document["capital_policy"]["futures_leverage"])
+                    ),
+                )
+                if document.get("capital_policy") is not None
+                else None
+            ),
+            execution_cost_policy=(
+                ExecutionCostPolicy(
+                    spot_entry_fee_bps=Decimal(
+                        str(document["execution_cost_policy"]["spot_entry_fee_bps"])
+                    ),
+                    derivative_entry_fee_bps=Decimal(
+                        str(document["execution_cost_policy"]["derivative_entry_fee_bps"])
+                    ),
+                    spot_exit_fee_bps=Decimal(
+                        str(document["execution_cost_policy"]["spot_exit_fee_bps"])
+                    ),
+                    derivative_exit_fee_bps=Decimal(
+                        str(document["execution_cost_policy"]["derivative_exit_fee_bps"])
+                    ),
+                    exit_buffer_bps=Decimal(
+                        str(document["execution_cost_policy"].get("exit_buffer_bps", 0))
+                    ),
+                )
+                if document.get("execution_cost_policy") is not None
+                else None
+            ),
             expected_economics=(
                 ExpectedEconomics(
                     return_character=document["expected_economics"]["return_character"],
