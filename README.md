@@ -83,3 +83,23 @@ See `docs/design-baseline-v0.1.md` for the frozen V0 design baseline.
 ## Development policy
 
 Changes to the frozen domain boundaries or paper/live safety boundary require an ADR.
+
+
+## Optional PostgreSQL persistence
+
+The API uses an in-memory Opportunity repository by default, which keeps Quickstart dependency-free.
+
+For persistent Opportunity lifecycle history:
+
+```bash
+docker compose up -d postgres
+
+export DATABASE_URL='postgresql://future_opportunity:future_opportunity@localhost:5432/future_opportunity'
+
+psql "$DATABASE_URL" -f migrations/0001_v0_core.sql
+
+uv sync --all-extras --dev
+uv run uvicorn future_opportunity.api:app --reload
+```
+
+When `DATABASE_URL` is present, the API uses the PostgreSQL Repository adapter. Without it, the same application use case runs against the in-memory adapter.
