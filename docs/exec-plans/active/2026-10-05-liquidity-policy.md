@@ -1,6 +1,6 @@
 # 2026-10-05-liquidity-policy: Liquidity-bounded deployment policy
 
-Status: BLOCKED_DECISION
+Status: IMPLEMENTING
 Owner: agent
 Started: 2026-10-05
 Last checkpoint: 2026-10-05
@@ -46,8 +46,8 @@ StrategyPlan, paper execution, API/CLI/Web, and E2E evidence.
 
 ## Acceptance criteria
 
-- [ ] Human accepts one liquidity-deployment semantic.
-- [ ] ADR records the accepted policy.
+- [x] Human accepts one liquidity-deployment semantic.
+- [x] ADR records the accepted policy.
 - [ ] Opportunity exposes capacity and qualification reason.
 - [ ] StrategyPlan records requested vs actual deployable amount where relevant.
 - [ ] Execution cannot exceed the accepted impact/capacity limit.
@@ -57,7 +57,7 @@ StrategyPlan, paper execution, API/CLI/Web, and E2E evidence.
 
 ## Implementation slices
 
-- [ ] 1. Record ADR for selected policy.
+- [x] 1. Record ADR for selected policy.
 - [ ] 2. Add capacity/impact domain model.
 - [ ] 3. Apply qualification gate.
 - [ ] 4. Apply plan/execution semantics.
@@ -98,13 +98,16 @@ Consequence:
 
 This creates an explicit liquidity policy and makes unused capital visible.
 
-Status: BLOCKED_DECISION
+Status: ACCEPTED
 
 ## Evidence log
 
 - 2026-10-05: implementation paused before selecting liquidity policy.
 - 2026-10-05: repository agent-development discipline established before
   resuming this decision.
+- 2026-10-05: user instructed development to continue under AGENTS.md; accepted
+  the previously recommended Option 3: STRICT by default, explicit PARTIAL
+  opt-in. ADR-0005 records the decision.
 
 ## Deviations and discoveries
 
@@ -112,8 +115,8 @@ None.
 
 ## Resume from here
 
-Obtain the human decision on the liquidity policy. Then create ADR-0005 before
-changing strategy/domain behavior.
+Implement the shared DeploymentAssessment domain model and targeted unit tests,
+then update this plan with the verification result.
 
 ## Completion
 
