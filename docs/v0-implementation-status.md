@@ -28,11 +28,11 @@ Real public market data
 | OKX market data | Implemented | Funding Carry + dated futures adapters |
 | BTC / ETH | Implemented | Venue-independent base asset input |
 | Funding Carry | Implemented | Discover / simulate / refresh / close |
-| Cash-and-Carry | Implemented | Discover / simulate / refresh / close |
+| Cash-and-Carry | Implemented | Discover / simulate / refresh / live close / expiry delivery close |
 | Opportunity lifecycle | Implemented | Active lifecycle + immutable observations |
 | StrategyDefinition | Implemented | Versioned strategy catalog |
 | StrategyPlan | Implemented | Observation reference + frozen economics/policies |
-| Paper execution | Implemented | Real order-book walk and immutable fills |
+| Paper execution | Implemented | Real order-book walk, immutable fills, public delivery settlement evidence |
 | Position lifecycle | Implemented | HEDGED / ACTIVE / DEGRADED / CLOSED |
 | Return attribution | Implemented | Evidence-aware components |
 | Risk invariants | Implemented | Explainable invariant reports |
@@ -58,7 +58,7 @@ CLOSED + realized_partial
 
 rather than falsely reported as a complete realized return.
 
-See ADR-0003.
+See ADR-0003 and ADR-0004.
 
 ### MarginSafety
 
