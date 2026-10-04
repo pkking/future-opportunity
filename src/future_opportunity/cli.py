@@ -141,6 +141,7 @@ def _result_view(result: object) -> dict[str, object]:
         "observation": asdict(result.observation),
         "qualification": asdict(result.qualification),
         "evaluation": asdict(result.evaluation),
+        "deployment": asdict(result.deployment),
     }
 
 
