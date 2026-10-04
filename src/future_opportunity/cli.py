@@ -5,6 +5,7 @@ from decimal import Decimal
 import typer
 
 from future_opportunity.adapters.exchanges.factory import funding_market_data_for
+from future_opportunity.adapters.persistence.memory import MemoryOpportunityRepository
 from future_opportunity.application.discover.funding_carry import DiscoverFundingCarry
 from future_opportunity.application.execute.paper_funding_carry import (
     execute_paper_funding_carry,
@@ -43,7 +44,10 @@ def discover(
     """Discover a funding-carry opportunity from public market data."""
 
     async def run() -> None:
-        use_case = DiscoverFundingCarry(\n            funding_market_data_for(venue),\n            MemoryOpportunityRepository(),\n        )
+        use_case = DiscoverFundingCarry(
+            funding_market_data_for(venue),
+            MemoryOpportunityRepository(),
+        )
         result = await use_case.execute(
             base=base,
             capital=capital,
