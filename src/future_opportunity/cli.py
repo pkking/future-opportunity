@@ -5,7 +5,7 @@ import os
 from contextlib import asynccontextmanager
 from dataclasses import asdict
 from typing import AsyncIterator
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 import typer
 
@@ -69,6 +69,15 @@ def version() -> None:
     typer.echo("future-opportunity 0.1.0")
 
 
+def _decimal_cli(name: str, value: str) -> Decimal:
+    try:
+        return Decimal(value)
+    except InvalidOperation as error:
+        raise typer.BadParameter(
+            f"{name} must be a decimal number, got: {value!r}"
+        ) from error
+
+
 def _funding_assumptions(
     spot_fee_bps: Decimal,
     derivative_fee_bps: Decimal,
@@ -123,14 +132,23 @@ def discover(
     strategy: str,
     base: str = "BTC",
     venue: str = "binance",
-    capital: Decimal = Decimal(10_000),
-    spot_fee_bps: Decimal = Decimal(10),
-    derivative_fee_bps: Decimal = Decimal(5),
-    reserve_ratio: Decimal = Decimal("0.10"),
-    futures_leverage: Decimal = Decimal(1),
-    exit_buffer_bps: Decimal = Decimal(5),
+    capital: str = "10000",
+    spot_fee_bps: str = "10",
+    derivative_fee_bps: str = "5",
+    reserve_ratio: str = "0.10",
+    futures_leverage: str = "1",
+    exit_buffer_bps: str = "5",
 ) -> None:
     """Discover opportunities using professional strategy semantics."""
+    capital_value = _decimal_cli("capital", capital)
+    spot_fee_value = _decimal_cli("spot_fee_bps", spot_fee_bps)
+    derivative_fee_value = _decimal_cli(
+        "derivative_fee_bps",
+        derivative_fee_value,
+    )
+    reserve_value = _decimal_cli("reserve_ratio", reserve_ratio)
+    leverage_value = _decimal_cli("futures_leverage", futures_leverage)
+    exit_buffer_value = _decimal_cli("exit_buffer_bps", exit_buffer_bps)
 
     async def run() -> None:
         async with _cli_repositories() as (repository, _):
@@ -140,12 +158,12 @@ def discover(
                     repository,
                 ).execute(
                     base=base,
-                    capital=capital,
+                    capital=capital_value,
                     assumptions=_funding_assumptions(
-                        spot_fee_bps,
-                        derivative_fee_bps,
-                        reserve_ratio,
-                        futures_leverage,
+                        spot_fee_value,
+                        derivative_fee_value,
+                        reserve_value,
+                        leverage_value,
                     ),
                 )
                 typer.echo(_result_view(result))
@@ -157,13 +175,13 @@ def discover(
                     repository,
                 ).execute(
                     base=base,
-                    capital=capital,
+                    capital=capital_value,
                     assumptions=_cash_assumptions(
-                        spot_fee_bps,
-                        derivative_fee_bps,
-                        reserve_ratio,
-                        futures_leverage,
-                        exit_buffer_bps,
+                        spot_fee_value,
+                        derivative_fee_value,
+                        reserve_value,
+                        leverage_value,
+                        exit_buffer_value,
                     ),
                 )
                 typer.echo([_result_view(result) for result in results])
@@ -179,15 +197,24 @@ def simulate(
     strategy: str,
     base: str = "BTC",
     venue: str = "binance",
-    capital: Decimal = Decimal(1_000),
-    spot_fee_bps: Decimal = Decimal(10),
-    derivative_fee_bps: Decimal = Decimal(5),
-    reserve_ratio: Decimal = Decimal("0.10"),
-    futures_leverage: Decimal = Decimal(1),
-    exit_buffer_bps: Decimal = Decimal(5),
+    capital: str = "1000",
+    spot_fee_bps: str = "10",
+    derivative_fee_bps: str = "5",
+    reserve_ratio: str = "0.10",
+    futures_leverage: str = "1",
+    exit_buffer_bps: str = "5",
     future_instrument_id: str | None = None,
 ) -> None:
     """Paper-execute a strategy from the exact observed Opportunity."""
+    capital_value = _decimal_cli("capital", capital)
+    spot_fee_value = _decimal_cli("spot_fee_bps", spot_fee_bps)
+    derivative_fee_value = _decimal_cli(
+        "derivative_fee_bps",
+        derivative_fee_value,
+    )
+    reserve_value = _decimal_cli("reserve_ratio", reserve_ratio)
+    leverage_value = _decimal_cli("futures_leverage", futures_leverage)
+    exit_buffer_value = _decimal_cli("exit_buffer_bps", exit_buffer_bps)
 
     async def run() -> None:
         async with _cli_repositories() as (repository, simulations):
@@ -200,12 +227,12 @@ def simulate(
                     simulations,
                 ).execute(
                     base=base,
-                    capital=capital,
+                    capital=capital_value,
                     assumptions=_funding_assumptions(
-                        spot_fee_bps,
-                        derivative_fee_bps,
-                        reserve_ratio,
-                        futures_leverage,
+                        spot_fee_value,
+                        derivative_fee_value,
+                        reserve_value,
+                        leverage_value,
                     ),
                 )
                 typer.echo(
@@ -238,13 +265,13 @@ def simulate(
                     ).execute(
                         base=base,
                         future_instrument_id=future_instrument_id,
-                        capital=capital,
+                        capital=capital_value,
                         assumptions=_cash_assumptions(
-                            spot_fee_bps,
-                            derivative_fee_bps,
-                            reserve_ratio,
-                            futures_leverage,
-                            exit_buffer_bps,
+                            spot_fee_value,
+                            derivative_fee_value,
+                            reserve_value,
+                            leverage_value,
+                            exit_buffer_value,
                         ),
                     )
                 except FutureInstrumentNotFound as error:
