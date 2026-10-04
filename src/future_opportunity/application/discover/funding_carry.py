@@ -6,6 +6,7 @@ from uuid import uuid4
 
 from future_opportunity.application.ports import FundingCarryMarketDataPort
 from future_opportunity.application.repositories import OpportunityRepository
+from future_opportunity.domain.market.snapshot import FundingCarryMarketSnapshot
 from future_opportunity.domain.opportunity.model import (
     Opportunity,
     OpportunityObservation,
@@ -23,6 +24,7 @@ from future_opportunity.domain.strategy.funding_carry import (
 
 @dataclass(frozen=True, slots=True)
 class DiscoveredFundingCarry:
+    snapshot: FundingCarryMarketSnapshot
     opportunity: Opportunity
     observation: OpportunityObservation
     qualification: OpportunityQualification
@@ -98,6 +100,7 @@ class DiscoverFundingCarry:
         await self.opportunities.record(opportunity, observation)
 
         return DiscoveredFundingCarry(
+            snapshot=snapshot,
             opportunity=opportunity,
             observation=observation,
             qualification=qualification,
