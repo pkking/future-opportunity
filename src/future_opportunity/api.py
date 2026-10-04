@@ -43,7 +43,7 @@ async def discover_funding_carry(
     spot_fee_bps: Decimal = Query(default=Decimal(10), ge=0),
     perpetual_fee_bps: Decimal = Query(default=Decimal(5), ge=0),
 ) -> dict[str, object]:
-    use_case = DiscoverFundingCarry(funding_market_data_for(venue))
+    use_case = DiscoverFundingCarry(\n        funding_market_data_for(venue),\n        opportunity_repository,\n    )
     result = await use_case.execute(
         base=base,
         capital=capital,
