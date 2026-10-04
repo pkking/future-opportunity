@@ -9,6 +9,8 @@ from future_opportunity.domain.strategy.cash_and_carry import (
     cash_and_carry_allocation,
 )
 from future_opportunity.domain.strategy.model import (
+    CapitalPolicy,
+    ExecutionCostPolicy,
     ExpectedEconomics,
     Money,
     PlanLeg,
@@ -63,5 +65,16 @@ def build_cash_and_carry_plan(
         max_delta_pct=max_delta_pct,
         max_leverage=max_leverage,
         execution_mode="paper",
+        capital_policy=CapitalPolicy(
+            reserve_ratio=assumptions.reserve_ratio,
+            futures_leverage=assumptions.futures_leverage,
+        ),
+        execution_cost_policy=ExecutionCostPolicy(
+            spot_entry_fee_bps=assumptions.spot_entry_fee_bps,
+            derivative_entry_fee_bps=assumptions.futures_entry_fee_bps,
+            spot_exit_fee_bps=assumptions.spot_exit_fee_bps,
+            derivative_exit_fee_bps=assumptions.futures_settlement_fee_bps,
+            exit_buffer_bps=assumptions.exit_buffer_bps,
+        ),
         expected_economics=expected_economics,
     )
