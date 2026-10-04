@@ -6,7 +6,10 @@ from decimal import Decimal
 from future_opportunity.adapters.execution.paper import simulate_market_fill
 from future_opportunity.domain.market.snapshot import FundingCarryMarketSnapshot
 from future_opportunity.domain.position.model import LegPosition, Position, PositionState
-from future_opportunity.domain.strategy.funding_carry import FundingCarryAssumptions
+from future_opportunity.domain.strategy.funding_carry import (
+    FundingCarryAssumptions,
+    target_hedged_notional,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -24,7 +27,7 @@ def execute_paper_funding_carry(
     capital: Decimal,
     assumptions: FundingCarryAssumptions,
 ) -> PaperFundingCarryResult:
-    target_notional = capital * assumptions.deploy_ratio
+    target_notional = target_hedged_notional(capital, assumptions)
     spot_quantity = target_notional / snapshot.spot_book.best_ask
 
     spot = simulate_market_fill(
