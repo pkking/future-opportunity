@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "scenarios": {
+    "funding-carry-reference-v1": {
+      "strategy": "funding-carry",
+      "strategy_version": "1.0.0",
+      "capital": "10000",
+      "must_qualify": true,
+      "min_expected_net_return": "0.005",
+      "max_abs_delta_pct": "0.005",
+      "required_risk_states": {
+        "DeltaNeutrality": "satisfied",
+        "LegIntegrity": "satisfied",
+        "CarryPositive": "satisfied",
+        "ExitLiquidity": "satisfied",
+        "MarginSafety": "unassessed",
+        "VenueExposure": "unassessed"
+      },
+      "close_return_complete": false,
+      "required_unassessed_return_components": [
+        "funding"
+      ]
+    },
+    "cash-and-carry-delivery-reference-v1": {
+      "strategy": "cash-and-carry",
+      "strategy_version": "1.0.0",
+      "capital": "10000",
+      "must_qualify": true,
+      "min_realized_net_return": "0.01",
+      "max_abs_delta_pct": "0.005",
+      "required_risk_states": {
+        "DeltaNeutrality": "satisfied",
+        "LegIntegrity": "satisfied",
+        "CarryPositive": "satisfied",
+        "ExitLiquidity": "satisfied",
+        "MarginSafety": "unassessed",
+        "VenueExposure": "unassessed"
+      },
+      "close_return_complete": true,
+      "required_close_fill_sources": [
+        "settlement",
+        "simulated"
+      ]
+    }
+  }
+}
