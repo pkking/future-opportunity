@@ -15,6 +15,7 @@ def test_okx_cash_and_carry_filters_linear_live_future_contracts() -> None:
         {
             "instId": "BTC-USDT-LATER",
             "state": "live",
+            "ctType": "linear",
             "settleCcy": "USDT",
             "ctValCcy": "BTC",
             "ctVal": "0.01",
@@ -23,6 +24,7 @@ def test_okx_cash_and_carry_filters_linear_live_future_contracts() -> None:
         {
             "instId": "BTC-USDT-NEAR",
             "state": "live",
+            "ctType": "linear",
             "settleCcy": "USDT",
             "ctValCcy": "BTC",
             "ctVal": "0.01",
@@ -31,6 +33,7 @@ def test_okx_cash_and_carry_filters_linear_live_future_contracts() -> None:
         {
             "instId": "BTC-USD-INVERSE",
             "state": "live",
+            "ctType": "inverse",
             "settleCcy": "BTC",
             "ctValCcy": "USD",
             "ctVal": "100",
@@ -39,6 +42,7 @@ def test_okx_cash_and_carry_filters_linear_live_future_contracts() -> None:
         {
             "instId": "BTC-USDT-EXPIRED",
             "state": "live",
+            "ctType": "linear",
             "settleCcy": "USDT",
             "ctValCcy": "BTC",
             "ctVal": "0.01",
