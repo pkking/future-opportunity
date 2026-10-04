@@ -13,8 +13,8 @@ from future_opportunity.application.execute.paper_cash_and_carry import (
     execute_paper_cash_and_carry,
 )
 from future_opportunity.application.plan.cash_and_carry import build_cash_and_carry_plan
-from future_opportunity.domain.risk.invariants import evaluate_delta_neutrality
-from future_opportunity.domain.risk.model import InvariantResult
+from future_opportunity.application.simulate.risk import build_paper_risk_report
+from future_opportunity.domain.risk.model import RiskReport
 from future_opportunity.domain.strategy.cash_and_carry import CashAndCarryAssumptions
 from future_opportunity.domain.strategy.model import StrategyPlan
 
@@ -28,7 +28,7 @@ class SimulatedCashAndCarry:
     discovered: DiscoveredCashAndCarry
     plan: StrategyPlan
     execution: PaperCashAndCarryResult
-    delta_risk: InvariantResult
+    risk: RiskReport
 
 
 @dataclass(frozen=True, slots=True)
@@ -68,13 +68,18 @@ class SimulateCashAndCarry:
             capital=capital,
             assumptions=assumptions,
         )
-        delta_risk = evaluate_delta_neutrality(
+        risk = build_paper_risk_report(
             execution.position,
-            plan.max_delta_pct,
+            plan,
+            expected_net_return=discovered.evaluation.expected_net_return_to_expiry,
+            books={
+                discovered.snapshot.spot_instrument_id: discovered.snapshot.spot_book,
+                discovered.snapshot.future_instrument_id: discovered.snapshot.future_book,
+            },
         )
         return SimulatedCashAndCarry(
             discovered=discovered,
             plan=plan,
             execution=execution,
-            delta_risk=delta_risk,
+            risk=risk,
         )
