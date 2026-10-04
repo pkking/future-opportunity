@@ -6,6 +6,7 @@ import os
 import psycopg
 import pytest
 
+from future_opportunity.adapters.persistence.migrations import apply_migrations
 from future_opportunity.adapters.persistence.postgres import (
     PostgresOpportunityRepository,
     PostgresSimulationRepository,
@@ -61,17 +62,17 @@ class FundingData:
         )
 
 
-def apply_migrations(dsn: str) -> None:
-    with psycopg.connect(dsn, autocommit=True) as connection:
-        for path in sorted(Path("migrations").glob("*.sql")):
-            connection.execute(path.read_text())
-
-
 @pytest.mark.asyncio
 @pytest.mark.skipif(TEST_DATABASE_URL is None, reason="TEST_DATABASE_URL is not set")
 async def test_postgres_round_trip_rebuilds_complete_simulation() -> None:
     assert TEST_DATABASE_URL is not None
-    apply_migrations(TEST_DATABASE_URL)
+    first_apply = apply_migrations(TEST_DATABASE_URL)
+    second_apply = apply_migrations(TEST_DATABASE_URL)
+
+    assert [migration.name for migration in first_apply] == [
+        path.name for path in sorted(Path("migrations").glob("*.sql"))
+    ]
+    assert second_apply == ()
 
     opportunities = await PostgresOpportunityRepository.connect(TEST_DATABASE_URL)
     simulations = await PostgresSimulationRepository.connect(TEST_DATABASE_URL)
