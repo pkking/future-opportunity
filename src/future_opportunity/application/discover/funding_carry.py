@@ -5,6 +5,7 @@ from decimal import Decimal
 from uuid import uuid4
 
 from future_opportunity.application.ports import FundingCarryMarketDataPort
+from future_opportunity.application.repositories import OpportunityRepository
 from future_opportunity.domain.opportunity.model import (
     Opportunity,
     OpportunityObservation,
@@ -31,6 +32,7 @@ class DiscoveredFundingCarry:
 @dataclass(frozen=True, slots=True)
 class DiscoverFundingCarry:
     market_data: FundingCarryMarketDataPort
+    opportunities: OpportunityRepository
 
     async def execute(
         self,
@@ -51,21 +53,39 @@ class DiscoverFundingCarry:
             qualified=not reasons,
             reasons=tuple(reasons),
         )
-
-        opportunity_id = str(uuid4())
-        observation_id = str(uuid4())
         key = (
             f"funding-carry:{snapshot.venue}:"
             f"{snapshot.spot_instrument_id}:{snapshot.perpetual_instrument_id}"
         )
+
+        opportunity = await self.opportunities.get_active_by_key(key)
+        if opportunity is None:
+            opportunity = Opportunity(
+                id=str(uuid4()),
+                key=key,
+                strategy_type="funding-carry",
+                state=(
+                    OpportunityState.QUALIFIED
+                    if qualification.qualified
+                    else OpportunityState.DISCOVERED
+                ),
+                discovered_at=snapshot.observed_at,
+                qualified_at=snapshot.observed_at if qualification.qualified else None,
+            )
+        elif qualification.qualified and opportunity.state is OpportunityState.DISCOVERED:
+            opportunity.state = OpportunityState.QUALIFIED
+            opportunity.qualified_at = snapshot.observed_at
+        elif not qualification.qualified and opportunity.state is OpportunityState.QUALIFIED:
+            opportunity.state = OpportunityState.EXPIRED
+            opportunity.expired_at = snapshot.observed_at
 
         total_expected_cost = (
             evaluation.assumed_round_trip_fee_return
             + evaluation.estimated_round_trip_slippage_return
         )
         observation = OpportunityObservation(
-            id=observation_id,
-            opportunity_id=opportunity_id,
+            id=str(uuid4()),
+            opportunity_id=opportunity.id,
             observed_at=snapshot.observed_at,
             return_estimate=ReturnEstimate(
                 character=ReturnCharacter.VARIABLE,
@@ -75,19 +95,8 @@ class DiscoverFundingCarry:
             ),
         )
 
-        state = (
-            OpportunityState.QUALIFIED
-            if qualification.qualified
-            else OpportunityState.DISCOVERED
-        )
-        opportunity = Opportunity(
-            id=opportunity_id,
-            key=key,
-            strategy_type="funding-carry",
-            state=state,
-            discovered_at=snapshot.observed_at,
-            qualified_at=snapshot.observed_at if qualification.qualified else None,
-        )
+        await self.opportunities.save(opportunity)
+        await self.opportunities.append_observation(observation)
 
         return DiscoveredFundingCarry(
             opportunity=opportunity,
