@@ -33,12 +33,22 @@ class SimulationRecord:
     execution: Execution
     position: Position
     entry_return: ReturnAttribution
+    current_return: ReturnAttribution
     risk: RiskReport
 
 
 class SimulationRepository(Protocol):
     async def record(self, simulation: SimulationRecord) -> None:
         """Persist the paper execution evidence atomically."""
+        ...
+
+    async def update_position(
+        self,
+        position: Position,
+        current_return: ReturnAttribution,
+        risk: RiskReport,
+        observed_at: object,
+    ) -> None:
         ...
 
     async def get(self, position_id: str) -> SimulationRecord | None:
