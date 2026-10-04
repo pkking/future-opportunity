@@ -533,6 +533,7 @@ async def simulate(
             "opportunity": asdict(simulated.discovered.opportunity),
             "observation": asdict(simulated.discovered.observation),
             "evaluation": asdict(simulated.discovered.evaluation),
+            "deployment": asdict(simulated.discovered.deployment),
             "plan": asdict(simulated.plan),
             "position": asdict(simulated.execution.position),
             "fills": [asdict(fill) for fill in simulated.execution.fills],
