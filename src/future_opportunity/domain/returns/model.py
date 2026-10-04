@@ -12,9 +12,11 @@ class ReturnAttribution:
     slippage: Decimal = Decimal(0)
     rebalancing_cost: Decimal = Decimal(0)
     residual_directional_pnl: Decimal = Decimal(0)
+    unassessed_components: tuple[str, ...] = ()
 
     @property
     def net_pnl(self) -> Decimal:
+        """Sum of assessed return components only."""
         return (
             self.funding
             + self.basis_convergence
@@ -23,3 +25,7 @@ class ReturnAttribution:
             - self.slippage
             - self.rebalancing_cost
         )
+
+    @property
+    def complete(self) -> bool:
+        return not self.unassessed_components
