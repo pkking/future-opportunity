@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 from decimal import Decimal
 from enum import StrEnum
 
@@ -33,4 +34,6 @@ class Position:
     delta_pct: Decimal
     realized_pnl: Decimal = Decimal(0)
     unrealized_pnl: Decimal = Decimal(0)
+    opened_at: datetime | None = None
+    closed_at: datetime | None = None
     version: int = 0
