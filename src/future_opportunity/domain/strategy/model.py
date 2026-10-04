@@ -29,6 +29,9 @@ class StrategyPlan:
     id: str
     strategy: StrategyRef
     opportunity_observation_id: str
+    venue: str
+    base: str
+    quote: str
     capital: Money
     legs: tuple[PlanLeg, ...]
     max_delta_pct: Decimal
