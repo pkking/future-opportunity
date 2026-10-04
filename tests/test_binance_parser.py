@@ -17,3 +17,20 @@ def test_binance_order_book_is_normalized() -> None:
     assert book.best_bid == Decimal(100)
     assert book.best_ask == Decimal(101)
     assert book.bids[0].quantity == Decimal(2)
+
+
+def test_binance_funding_history_preserves_mark_price_and_rate_type() -> None:
+    history = BinanceFundingMarketData._parse_funding_history(
+        [
+            {
+                "fundingRate": "0.0001",
+                "fundingTime": "1760000000000",
+                "markPrice": "120000.5",
+                "rateType": "Regular",
+            }
+        ]
+    )
+
+    assert history[0].rate == Decimal("0.0001")
+    assert history[0].mark_price == Decimal("120000.5")
+    assert history[0].rate_type == "Regular"
