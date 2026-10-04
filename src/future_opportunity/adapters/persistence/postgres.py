@@ -549,6 +549,175 @@ class PostgresSimulationRepository(SimulationRepository):
 
         position.version += 1
 
+    async def close_position(
+        self,
+        position: Position,
+        execution: Execution,
+        current_return: ReturnAttribution,
+        risk: RiskReport,
+        observed_at: datetime,
+    ) -> None:
+        if execution.purpose is not ExecutionPurpose.CLOSE:
+            raise ValueError("close_position requires a CLOSE execution")
+
+        async with self._pool.connection() as conn:
+            async with conn.transaction():
+                await conn.execute(
+                    """
+                    INSERT INTO executions (
+                        id,
+                        strategy_plan_id,
+                        state,
+                        mode,
+                        started_at,
+                        finished_at,
+                        purpose
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    """,
+                    (
+                        execution.id,
+                        execution.strategy_plan_id,
+                        execution.state.value,
+                        execution.mode,
+                        execution.started_at,
+                        execution.finished_at,
+                        execution.purpose.value,
+                    ),
+                )
+
+                for fill in execution.fills:
+                    await conn.execute(
+                        """
+                        INSERT INTO fills (
+                            id,
+                            execution_id,
+                            instrument_id,
+                            side,
+                            quantity,
+                            price,
+                            reference_price,
+                            notional,
+                            fee,
+                            slippage_bps,
+                            slippage_quote,
+                            source,
+                            filled_at
+                        )
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        """,
+                        (
+                            str(uuid4()),
+                            execution.id,
+                            fill.instrument_id,
+                            fill.side,
+                            fill.quantity,
+                            fill.price,
+                            fill.reference_price,
+                            fill.notional,
+                            fill.fee,
+                            fill.slippage_bps,
+                            fill.slippage_quote,
+                            fill.source.value,
+                            fill.filled_at,
+                        ),
+                    )
+
+                updated = await conn.execute(
+                    """
+                    UPDATE positions
+                    SET
+                        state = %s,
+                        current_delta = %s,
+                        current_delta_pct = %s,
+                        realized_pnl = %s,
+                        unrealized_pnl = %s,
+                        opened_at = %s,
+                        closed_at = %s,
+                        version = version + 1
+                    WHERE id = %s
+                      AND version = %s
+                    """,
+                    (
+                        position.state.value,
+                        position.delta_notional,
+                        position.delta_pct,
+                        position.realized_pnl,
+                        position.unrealized_pnl,
+                        position.opened_at,
+                        position.closed_at,
+                        position.id,
+                        position.version,
+                    ),
+                )
+                if updated.rowcount != 1:
+                    raise RuntimeError(
+                        f"position version conflict or missing position: {position.id}"
+                    )
+
+                await conn.execute(
+                    """
+                    INSERT INTO return_attributions (
+                        id,
+                        position_id,
+                        observed_at,
+                        funding,
+                        basis_convergence,
+                        trading_fees,
+                        slippage,
+                        rebalancing_cost,
+                        residual_directional_pnl,
+                        unassessed_components
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """,
+                    (
+                        str(uuid4()),
+                        position.id,
+                        observed_at,
+                        current_return.funding,
+                        current_return.basis_convergence,
+                        current_return.trading_fees,
+                        current_return.slippage,
+                        current_return.rebalancing_cost,
+                        current_return.residual_directional_pnl,
+                        list(current_return.unassessed_components),
+                    ),
+                )
+
+                for invariant in risk.invariants:
+                    await conn.execute(
+                        """
+                        INSERT INTO risk_observations (
+                            id,
+                            position_id,
+                            observed_at,
+                            invariant_name,
+                            state,
+                            observed,
+                            limit_value,
+                            explanation
+                        )
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                        """,
+                        (
+                            str(uuid4()),
+                            position.id,
+                            observed_at,
+                            invariant.name,
+                            invariant.state.value,
+                            Jsonb(_jsonable(invariant.observed)),
+                            Jsonb(_jsonable(invariant.limit)),
+                            (
+                                Jsonb(_jsonable(invariant.explanation))
+                                if invariant.explanation is not None
+                                else None
+                            ),
+                        ),
+                    )
+
+        position.version += 1
+
     async def get(self, position_id: str) -> SimulationRecord | None:
         async with self._pool.connection() as conn:
             position_row = await (
