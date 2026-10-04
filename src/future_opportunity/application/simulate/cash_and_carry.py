@@ -99,6 +99,7 @@ class SimulateCashAndCarry:
                 execution=execution_record,
                 position=paper_execution.position,
                 entry_return=paper_execution.entry_return,
+                current_return=paper_execution.entry_return,
                 risk=risk,
             )
         )
