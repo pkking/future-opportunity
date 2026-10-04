@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Protocol
 
 from future_opportunity.domain.execution.model import Execution
@@ -47,7 +48,7 @@ class SimulationRepository(Protocol):
         position: Position,
         current_return: ReturnAttribution,
         risk: RiskReport,
-        observed_at: object,
+        observed_at: datetime,
     ) -> None:
         ...
 
