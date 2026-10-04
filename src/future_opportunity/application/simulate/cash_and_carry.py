@@ -19,6 +19,7 @@ from future_opportunity.application.repositories import (
 )
 from future_opportunity.application.simulate.errors import OpportunityNotQualified
 from future_opportunity.application.simulate.risk import build_paper_risk_report
+from future_opportunity.domain.deployment.model import LiquidityPolicy
 from future_opportunity.domain.execution.model import Execution, ExecutionState
 from future_opportunity.domain.risk.model import RiskReport
 from future_opportunity.domain.strategy.cash_and_carry import CashAndCarryAssumptions
@@ -49,8 +50,16 @@ class SimulateCashAndCarry:
         future_instrument_id: str,
         capital: Decimal,
         assumptions: CashAndCarryAssumptions,
+        liquidity_policy: LiquidityPolicy = LiquidityPolicy.STRICT,
+        max_impact_bps: Decimal = Decimal(10),
     ) -> SimulatedCashAndCarry:
-        candidates = await self.discovery.execute(base, capital, assumptions)
+        candidates = await self.discovery.execute(
+            base,
+            capital,
+            assumptions,
+            liquidity_policy=liquidity_policy,
+            max_impact_bps=max_impact_bps,
+        )
         discovered = next(
             (
                 candidate
@@ -86,6 +95,7 @@ class SimulateCashAndCarry:
             capital=capital,
             assumptions=assumptions,
             expected_economics=expected,
+            deployment=discovered.deployment,
         )
         paper_execution = execute_paper_cash_and_carry(
             position_id=str(uuid4()),
@@ -93,6 +103,7 @@ class SimulateCashAndCarry:
             snapshot=discovered.snapshot,
             capital=capital,
             assumptions=assumptions,
+            deployment=discovered.deployment,
         )
         risk = build_paper_risk_report(
             paper_execution.position,
