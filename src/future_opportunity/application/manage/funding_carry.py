@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from decimal import Decimal
-
 from future_opportunity.application.ports import FundingCarryMarketDataPort
 from future_opportunity.application.repositories import (
     SimulationRecord,
