@@ -13,7 +13,12 @@ from future_opportunity.application.execute.paper_cash_and_carry import (
     execute_paper_cash_and_carry,
 )
 from future_opportunity.application.plan.cash_and_carry import build_cash_and_carry_plan
+from future_opportunity.application.repositories import (
+    SimulationRecord,
+    SimulationRepository,
+)
 from future_opportunity.application.simulate.risk import build_paper_risk_report
+from future_opportunity.domain.execution.model import Execution, ExecutionState
 from future_opportunity.domain.risk.model import RiskReport
 from future_opportunity.domain.strategy.cash_and_carry import CashAndCarryAssumptions
 from future_opportunity.domain.strategy.model import StrategyPlan
@@ -27,6 +32,7 @@ class FutureInstrumentNotFound(ValueError):
 class SimulatedCashAndCarry:
     discovered: DiscoveredCashAndCarry
     plan: StrategyPlan
+    execution_record: Execution
     execution: PaperCashAndCarryResult
     risk: RiskReport
 
@@ -34,6 +40,7 @@ class SimulatedCashAndCarry:
 @dataclass(frozen=True, slots=True)
 class SimulateCashAndCarry:
     discovery: DiscoverCashAndCarry
+    simulations: SimulationRepository
 
     async def execute(
         self,
@@ -61,7 +68,7 @@ class SimulateCashAndCarry:
             capital=capital,
             assumptions=assumptions,
         )
-        execution = execute_paper_cash_and_carry(
+        paper_execution = execute_paper_cash_and_carry(
             position_id=str(uuid4()),
             strategy_plan_id=plan.id,
             snapshot=discovered.snapshot,
@@ -69,7 +76,7 @@ class SimulateCashAndCarry:
             assumptions=assumptions,
         )
         risk = build_paper_risk_report(
-            execution.position,
+            paper_execution.position,
             plan,
             expected_net_return=discovered.evaluation.expected_net_return_to_expiry,
             books={
@@ -77,9 +84,28 @@ class SimulateCashAndCarry:
                 discovered.snapshot.future_instrument_id: discovered.snapshot.future_book,
             },
         )
+        execution_record = Execution(
+            id=str(uuid4()),
+            strategy_plan_id=plan.id,
+            state=ExecutionState.COMPLETED,
+            mode="paper",
+            started_at=min(fill.filled_at for fill in paper_execution.fills),
+            finished_at=max(fill.filled_at for fill in paper_execution.fills),
+            fills=paper_execution.fills,
+        )
+        await self.simulations.record(
+            SimulationRecord(
+                plan=plan,
+                execution=execution_record,
+                position=paper_execution.position,
+                entry_return=paper_execution.entry_return,
+                risk=risk,
+            )
+        )
         return SimulatedCashAndCarry(
             discovered=discovered,
             plan=plan,
-            execution=execution,
+            execution_record=execution_record,
+            execution=paper_execution,
             risk=risk,
         )
