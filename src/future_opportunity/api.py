@@ -4,7 +4,7 @@ from uuid import uuid4
 
 from fastapi import FastAPI, Query
 
-from future_opportunity.adapters.exchanges.binance.market_data import BinanceFundingMarketData
+from future_opportunity.adapters.exchanges.factory import funding_market_data_for
 from future_opportunity.application.discover.funding_carry import DiscoverFundingCarry
 from future_opportunity.application.execute.paper_funding_carry import (
     execute_paper_funding_carry,
@@ -35,14 +35,15 @@ def assumptions(
     )
 
 
-@app.get("/v1/opportunities/funding-carry/{base}")
+@app.get("/v1/opportunities/{venue}/funding-carry/{base}")
 async def discover_funding_carry(
+    venue: str,
     base: str,
     capital: Decimal = Query(default=Decimal(10_000), gt=0),
     spot_fee_bps: Decimal = Query(default=Decimal(10), ge=0),
     perpetual_fee_bps: Decimal = Query(default=Decimal(5), ge=0),
 ) -> dict[str, object]:
-    use_case = DiscoverFundingCarry(BinanceFundingMarketData())
+    use_case = DiscoverFundingCarry(funding_market_data_for(venue))
     result = await use_case.execute(
         base=base,
         capital=capital,
@@ -51,14 +52,15 @@ async def discover_funding_carry(
     return asdict(result)
 
 
-@app.post("/v1/simulations/funding-carry/{base}")
+@app.post("/v1/simulations/{venue}/funding-carry/{base}")
 async def simulate_funding_carry(
+    venue: str,
     base: str,
     capital: Decimal = Query(default=Decimal(10_000), gt=0),
     spot_fee_bps: Decimal = Query(default=Decimal(10), ge=0),
     perpetual_fee_bps: Decimal = Query(default=Decimal(5), ge=0),
 ) -> dict[str, object]:
-    market_data = BinanceFundingMarketData()
+    market_data = funding_market_data_for(venue)
     snapshot = await market_data.snapshot(base)
     configured = assumptions(spot_fee_bps, perpetual_fee_bps)
     evaluation = evaluate_funding_carry(snapshot, capital, configured)
