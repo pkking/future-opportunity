@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 from dataclasses import asdict
 from decimal import Decimal
-from uuid import uuid4
 
 import typer
 
@@ -14,15 +13,11 @@ from future_opportunity.adapters.exchanges.factory import (
 from future_opportunity.adapters.persistence.memory import MemoryOpportunityRepository
 from future_opportunity.application.discover.cash_and_carry import DiscoverCashAndCarry
 from future_opportunity.application.discover.funding_carry import DiscoverFundingCarry
-from future_opportunity.application.execute.paper_cash_and_carry import (
-    execute_paper_cash_and_carry,
+from future_opportunity.application.simulate.cash_and_carry import (
+    FutureInstrumentNotFound,
+    SimulateCashAndCarry,
 )
-from future_opportunity.application.execute.paper_funding_carry import (
-    execute_paper_funding_carry,
-)
-from future_opportunity.application.plan.cash_and_carry import build_cash_and_carry_plan
-from future_opportunity.application.plan.funding_carry import build_funding_carry_plan
-from future_opportunity.domain.risk.invariants import evaluate_delta_neutrality
+from future_opportunity.application.simulate.funding_carry import SimulateFundingCarry
 from future_opportunity.domain.strategy.cash_and_carry import CashAndCarryAssumptions
 from future_opportunity.domain.strategy.funding_carry import FundingCarryAssumptions
 
@@ -153,43 +148,29 @@ def simulate(
         repository = MemoryOpportunityRepository()
 
         if strategy == "funding-carry":
-            configured = _funding_assumptions(
-                spot_fee_bps,
-                derivative_fee_bps,
-                reserve_ratio,
-                futures_leverage,
-            )
-            discovered = await DiscoverFundingCarry(
-                funding_market_data_for(venue),
-                repository,
+            simulated = await SimulateFundingCarry(
+                DiscoverFundingCarry(
+                    funding_market_data_for(venue),
+                    repository,
+                )
             ).execute(
                 base=base,
                 capital=capital,
-                assumptions=configured,
+                assumptions=_funding_assumptions(
+                    spot_fee_bps,
+                    derivative_fee_bps,
+                    reserve_ratio,
+                    futures_leverage,
+                ),
             )
-            plan = build_funding_carry_plan(
-                plan_id=str(uuid4()),
-                opportunity_observation_id=discovered.observation.id,
-                snapshot=discovered.snapshot,
-                capital=capital,
-                assumptions=configured,
-            )
-            execution = execute_paper_funding_carry(
-                position_id=str(uuid4()),
-                strategy_plan_id=plan.id,
-                snapshot=discovered.snapshot,
-                capital=capital,
-                assumptions=configured,
-            )
-            risk = evaluate_delta_neutrality(execution.position, plan.max_delta_pct)
             typer.echo(
                 {
                     "mode": "paper",
                     "live_orders": False,
-                    "observation_id": discovered.observation.id,
-                    "plan": asdict(plan),
-                    "position": asdict(execution.position),
-                    "risk": asdict(risk),
+                    "observation_id": simulated.discovered.observation.id,
+                    "plan": asdict(simulated.plan),
+                    "position": asdict(simulated.execution.position),
+                    "risk": asdict(simulated.delta_risk),
                 }
             )
             return
@@ -200,57 +181,37 @@ def simulate(
                     "--future-instrument-id is required for cash-and-carry simulation"
                 )
 
-            configured = _cash_assumptions(
-                spot_fee_bps,
-                derivative_fee_bps,
-                reserve_ratio,
-                futures_leverage,
-                exit_buffer_bps,
-            )
-            candidates = await DiscoverCashAndCarry(
-                cash_and_carry_market_data_for(venue),
-                repository,
-            ).execute(
-                base=base,
-                capital=capital,
-                assumptions=configured,
-            )
-            discovered = next(
-                (
-                    candidate
-                    for candidate in candidates
-                    if candidate.snapshot.future_instrument_id == future_instrument_id
-                ),
-                None,
-            )
-            if discovered is None:
-                raise typer.BadParameter(
-                    f"future instrument not found: {future_instrument_id}"
+            try:
+                simulated = await SimulateCashAndCarry(
+                    DiscoverCashAndCarry(
+                        cash_and_carry_market_data_for(venue),
+                        repository,
+                    )
+                ).execute(
+                    base=base,
+                    future_instrument_id=future_instrument_id,
+                    capital=capital,
+                    assumptions=_cash_assumptions(
+                        spot_fee_bps,
+                        derivative_fee_bps,
+                        reserve_ratio,
+                        futures_leverage,
+                        exit_buffer_bps,
+                    ),
                 )
+            except FutureInstrumentNotFound as error:
+                raise typer.BadParameter(
+                    f"future instrument not found: {error}"
+                ) from error
 
-            plan = build_cash_and_carry_plan(
-                plan_id=str(uuid4()),
-                opportunity_observation_id=discovered.observation.id,
-                snapshot=discovered.snapshot,
-                capital=capital,
-                assumptions=configured,
-            )
-            execution = execute_paper_cash_and_carry(
-                position_id=str(uuid4()),
-                strategy_plan_id=plan.id,
-                snapshot=discovered.snapshot,
-                capital=capital,
-                assumptions=configured,
-            )
-            risk = evaluate_delta_neutrality(execution.position, plan.max_delta_pct)
             typer.echo(
                 {
                     "mode": "paper",
                     "live_orders": False,
-                    "observation_id": discovered.observation.id,
-                    "plan": asdict(plan),
-                    "position": asdict(execution.position),
-                    "risk": asdict(risk),
+                    "observation_id": simulated.discovered.observation.id,
+                    "plan": asdict(simulated.plan),
+                    "position": asdict(simulated.execution.position),
+                    "risk": asdict(simulated.delta_risk),
                 }
             )
             return
