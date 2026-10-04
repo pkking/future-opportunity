@@ -5,6 +5,7 @@ from uuid import uuid4
 from fastapi import FastAPI, Query
 
 from future_opportunity.adapters.exchanges.factory import funding_market_data_for
+from future_opportunity.adapters.persistence.memory import MemoryOpportunityRepository
 from future_opportunity.application.discover.funding_carry import DiscoverFundingCarry
 from future_opportunity.application.execute.paper_funding_carry import (
     execute_paper_funding_carry,
@@ -18,6 +19,7 @@ from future_opportunity.domain.strategy.funding_carry import (
 
 
 app = FastAPI(title="future-opportunity", version="0.1.0")
+opportunity_repository = MemoryOpportunityRepository()
 
 
 @app.get("/healthz")
@@ -43,7 +45,10 @@ async def discover_funding_carry(
     spot_fee_bps: Decimal = Query(default=Decimal(10), ge=0),
     perpetual_fee_bps: Decimal = Query(default=Decimal(5), ge=0),
 ) -> dict[str, object]:
-    use_case = DiscoverFundingCarry(\n        funding_market_data_for(venue),\n        opportunity_repository,\n    )
+    use_case = DiscoverFundingCarry(
+        funding_market_data_for(venue),
+        opportunity_repository,
+    )
     result = await use_case.execute(
         base=base,
         capital=capital,
