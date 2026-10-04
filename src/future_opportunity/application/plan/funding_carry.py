@@ -6,7 +6,13 @@ from future_opportunity.domain.capital.model import allocate_isolated_hedge
 from future_opportunity.domain.market.snapshot import FundingCarryMarketSnapshot
 from future_opportunity.domain.strategy.definition import FUNDING_CARRY
 from future_opportunity.domain.strategy.funding_carry import FundingCarryAssumptions
-from future_opportunity.domain.strategy.model import Money, PlanLeg, StrategyPlan, StrategyRef
+from future_opportunity.domain.strategy.model import (
+    ExpectedEconomics,
+    Money,
+    PlanLeg,
+    StrategyPlan,
+    StrategyRef,
+)
 
 
 def build_funding_carry_plan(
@@ -15,6 +21,7 @@ def build_funding_carry_plan(
     snapshot: FundingCarryMarketSnapshot,
     capital: Decimal,
     assumptions: FundingCarryAssumptions,
+    expected_economics: ExpectedEconomics | None = None,
     max_delta_pct: Decimal = Decimal("0.005"),
     max_leverage: Decimal = Decimal("1.2"),
 ) -> StrategyPlan:
@@ -52,4 +59,5 @@ def build_funding_carry_plan(
         max_delta_pct=max_delta_pct,
         max_leverage=max_leverage,
         execution_mode="paper",
+        expected_economics=expected_economics,
     )
