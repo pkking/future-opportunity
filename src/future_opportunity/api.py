@@ -135,7 +135,8 @@ def _simulation_record_view(record: SimulationRecord) -> dict[str, object]:
         "plan": asdict(record.plan),
         "execution": asdict(record.execution),
         "position": asdict(record.position),
-        "return_attribution": asdict(record.entry_return),
+        "entry_return": asdict(record.entry_return),
+        "current_return": asdict(record.current_return),
         "risk": asdict(record.risk),
     }
 
