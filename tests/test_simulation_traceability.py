@@ -92,6 +92,10 @@ async def test_funding_simulation_preserves_decision_evidence_chain() -> None:
 
     assert result.plan.opportunity_observation_id == result.discovered.observation.id
     assert result.execution.position.strategy_plan_id == result.plan.id
+    assert result.plan.capital_policy is not None
+    assert result.plan.execution_cost_policy is not None
+    assert result.plan.capital_policy is not None
+    assert result.plan.execution_cost_policy is not None
     assert result.plan.expected_economics is not None
     assert (
         result.plan.expected_economics.expected_net_pnl
