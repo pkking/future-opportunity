@@ -201,6 +201,8 @@ async def simulate(
             "evaluation": asdict(simulated.discovered.evaluation),
             "plan": asdict(simulated.plan),
             "position": asdict(simulated.execution.position),
+            "fills": [asdict(fill) for fill in simulated.execution.fills],
+            "return_attribution": asdict(simulated.execution.entry_return),
             "entry_cost": {
                 "spot_fee": simulated.execution.spot_fee,
                 "derivative_fee": simulated.execution.perpetual_fee,
@@ -249,6 +251,8 @@ async def simulate(
             "evaluation": asdict(simulated.discovered.evaluation),
             "plan": asdict(simulated.plan),
             "position": asdict(simulated.execution.position),
+            "fills": [asdict(fill) for fill in simulated.execution.fills],
+            "return_attribution": asdict(simulated.execution.entry_return),
             "entry_cost": {
                 "spot_fee": simulated.execution.spot_fee,
                 "derivative_fee": simulated.execution.futures_fee,
