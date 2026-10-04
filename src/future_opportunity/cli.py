@@ -4,7 +4,7 @@ from decimal import Decimal
 
 import typer
 
-from future_opportunity.adapters.exchanges.binance.market_data import BinanceFundingMarketData
+from future_opportunity.adapters.exchanges.factory import funding_market_data_for
 from future_opportunity.application.discover.funding_carry import DiscoverFundingCarry
 from future_opportunity.application.execute.paper_funding_carry import (
     execute_paper_funding_carry,
@@ -35,14 +35,15 @@ def _assumptions(
 @app.command()
 def discover(
     base: str = "BTC",
+    venue: str = "binance",
     capital: Decimal = Decimal(10_000),
     spot_fee_bps: Decimal = Decimal(10),
     perpetual_fee_bps: Decimal = Decimal(5),
 ) -> None:
-    """Discover a Binance funding-carry opportunity from public market data."""
+    """Discover a funding-carry opportunity from public market data."""
 
     async def run() -> None:
-        use_case = DiscoverFundingCarry(BinanceFundingMarketData())
+        use_case = DiscoverFundingCarry(funding_market_data_for(venue))
         result = await use_case.execute(
             base=base,
             capital=capital,
@@ -56,15 +57,16 @@ def discover(
 @app.command()
 def simulate(
     base: str = "BTC",
+    venue: str = "binance",
     capital: Decimal = Decimal(1_000),
     spot_fee_bps: Decimal = Decimal(10),
     perpetual_fee_bps: Decimal = Decimal(5),
 ) -> None:
-    """Paper-execute a funding-carry position against the real order book."""
+    """Paper-execute a funding-carry position against a real order book."""
 
     async def run() -> None:
         configured = _assumptions(spot_fee_bps, perpetual_fee_bps)
-        snapshot = await BinanceFundingMarketData().snapshot(base)
+        snapshot = await funding_market_data_for(venue).snapshot(base)
         result = execute_paper_funding_carry(
             position_id="quickstart-position",
             strategy_plan_id="quickstart-plan",
@@ -80,6 +82,7 @@ def simulate(
             {
                 "mode": "paper",
                 "live_orders": False,
+                "venue": venue,
                 "position": asdict(result.position),
                 "risk": asdict(risk),
             }
@@ -93,6 +96,7 @@ def quickstart(strategy: str = "funding-carry") -> None:
     """Show the safe V0 quickstart command."""
     if strategy != "funding-carry":
         raise typer.BadParameter("V0 quickstart currently supports funding-carry")
-    typer.echo("Run: arb discover BTC --capital 1000")
-    typer.echo("Then: arb simulate BTC --capital 1000")
+    typer.echo("Run: arb discover BTC --venue binance --capital 1000")
+    typer.echo("Then: arb simulate BTC --venue binance --capital 1000")
+    typer.echo("Try OKX: arb discover BTC --venue okx --capital 1000")
     typer.echo("V0 execution mode is paper; live orders are disabled.")
