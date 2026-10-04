@@ -1,6 +1,6 @@
 # 2026-10-05-liquidity-policy: Liquidity-bounded deployment policy
 
-Status: IMPLEMENTING
+Status: VERIFYING
 Owner: agent
 Started: 2026-10-05
 Last checkpoint: 2026-10-05
@@ -48,30 +48,30 @@ StrategyPlan, paper execution, API/CLI/Web, and E2E evidence.
 
 - [x] Human accepts one liquidity-deployment semantic.
 - [x] ADR records the accepted policy.
-- [ ] Opportunity exposes capacity and qualification reason.
-- [ ] StrategyPlan records requested vs actual deployable amount where relevant.
-- [ ] Execution cannot exceed the accepted impact/capacity limit.
-- [ ] API/CLI/Web expose the policy without hidden resizing.
-- [ ] Deterministic E2E scenario proves behavior at/over capacity.
+- [x] Opportunity exposes capacity and qualification reason.
+- [x] StrategyPlan records requested vs actual deployable amount where relevant.
+- [x] Execution cannot exceed the accepted impact/capacity limit.
+- [x] API/CLI/Web expose the policy without hidden resizing.
+- [x] Deterministic E2E scenario proves behavior at/over capacity.
 - [ ] Final CI green.
 
 ## Implementation slices
 
 - [x] 1. Record ADR for selected policy.
-- [ ] 2. Add capacity/impact domain model.
-- [ ] 3. Apply qualification gate.
-- [ ] 4. Apply plan/execution semantics.
-- [ ] 5. Expose API/CLI/Web fields.
-- [ ] 6. Add code/API/E2E tests and evidence.
+- [x] 2. Add capacity/impact domain model.
+- [x] 3. Apply qualification gate.
+- [x] 4. Apply plan/execution semantics.
+- [x] 5. Expose API/CLI/Web fields.
+- [x] 6. Add code/API/E2E tests and evidence.
 
 ## Verification matrix
 
 | Scope | Command / CI gate | Expected evidence | Status |
 |---|---|---|---|
-| Static | `uv run ruff check .` | zero violations | pending |
-| Code | code-level test gate | liquidity semantics tests | pending |
-| API | API contract gate | capacity fields/rejection semantics | pending |
-| E2E | strategy E2E gate | oversized-capital scenario artifact | pending |
+| Static | `uv run ruff check .` | zero violations | verifying final commit |
+| Code | code-level test gate | liquidity semantics tests | verifying final commit |
+| API | API contract gate | capacity fields/rejection semantics | verifying final commit |
+| E2E | strategy E2E gate | oversized-capital scenario artifact | passed on a6dfe324 |
 
 ## Decision gates
 
@@ -108,6 +108,14 @@ Status: ACCEPTED
 - 2026-10-05: user instructed development to continue under AGENTS.md; accepted
   the previously recommended Option 3: STRICT by default, explicit PARTIAL
   opt-in. ADR-0005 records the decision.
+- 2026-10-05: shared DeploymentAssessment implemented; strict and partial
+  application tests pass in CI.
+- 2026-10-05: API contract verifies strict rejection and explicit partial
+  execution; Web contract added after discovering and repairing a previously
+  corrupted index.html.
+- 2026-10-05: E2E run 37216924324 passed 3 deterministic scenarios in 0.12s,
+  including oversized-capital strict/partial semantics. Evidence uploaded as
+  strategy-e2e-evidence artifact ID 11308153322.
 
 ## Deviations and discoveries
 
@@ -115,8 +123,8 @@ None.
 
 ## Resume from here
 
-Implement the shared DeploymentAssessment domain model and targeted unit tests,
-then update this plan with the verification result.
+Wait for the latest documentation/CLI-contract commit to finish all four CI
+gates. If green, record the final run/evidence and move this plan to completed/.
 
 ## Completion
 
