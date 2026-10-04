@@ -139,6 +139,8 @@ def _simulation_record_view(record: SimulationRecord) -> dict[str, object]:
         "position": asdict(record.position),
         "entry_return": asdict(record.entry_return),
         "current_return": asdict(record.current_return),
+        "current_net_pnl": record.current_return.net_pnl,
+        "return_complete": record.current_return.complete,
         "risk": asdict(record.risk),
     }
 
