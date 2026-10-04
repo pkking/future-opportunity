@@ -10,7 +10,10 @@ from future_opportunity.adapters.exchanges.factory import (
     cash_and_carry_market_data_for,
     funding_market_data_for,
 )
-from future_opportunity.adapters.persistence.memory import MemoryOpportunityRepository
+from future_opportunity.adapters.persistence.memory import (
+    MemoryOpportunityRepository,
+    MemorySimulationRepository,
+)
 from future_opportunity.application.discover.cash_and_carry import DiscoverCashAndCarry
 from future_opportunity.application.discover.funding_carry import DiscoverFundingCarry
 from future_opportunity.application.simulate.cash_and_carry import (
@@ -88,6 +91,7 @@ def discover(
 
     async def run() -> None:
         repository = MemoryOpportunityRepository()
+        simulations = MemorySimulationRepository()
 
         if strategy == "funding-carry":
             result = await DiscoverFundingCarry(
@@ -152,7 +156,8 @@ def simulate(
                 DiscoverFundingCarry(
                     funding_market_data_for(venue),
                     repository,
-                )
+                ),
+                simulations,
             ).execute(
                 base=base,
                 capital=capital,
@@ -188,7 +193,8 @@ def simulate(
                     DiscoverCashAndCarry(
                         cash_and_carry_market_data_for(venue),
                         repository,
-                    )
+                    ),
+                    simulations,
                 ).execute(
                     base=base,
                     future_instrument_id=future_instrument_id,
