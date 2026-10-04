@@ -65,3 +65,11 @@ class CashAndCarryMarketSnapshot:
     future_book: OrderBook
     expiry: datetime
     observed_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
+class DeliverySettlement:
+    venue: str
+    future_instrument_id: str
+    settlement_price: Decimal
+    settled_at: datetime
