@@ -33,7 +33,7 @@ Venues/assets:
 - BTC
 - ETH
 
-Current implementation starts with the first vertical slice: Binance BTC/ETH Funding Carry.
+Current implementation supports the Funding Carry vertical slice on Binance and OKX for BTC/ETH.
 
 ## Quickstart
 
@@ -47,7 +47,7 @@ uv run arb discover BTC --capital 1000
 uv run arb simulate BTC --capital 1000
 ```
 
-`discover` reads Binance public spot and USD-M futures market data and produces an Opportunity-level funding-carry evaluation.
+`discover` reads public spot/perpetual market data through a Venue adapter and produces an Opportunity-level funding-carry evaluation. OKX swap contract sizes are normalized from contract count into base-asset quantity before entering the domain model.
 
 `simulate` walks the real order book to create simulated fills and a delta-neutral paper Position.
 
