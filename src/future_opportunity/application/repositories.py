@@ -12,8 +12,10 @@ class OpportunityRepository(Protocol):
     async def get_active_by_key(self, key: str) -> Opportunity | None:
         ...
 
-    async def save(self, opportunity: Opportunity) -> None:
-        ...
-
-    async def append_observation(self, observation: OpportunityObservation) -> None:
+    async def record(
+        self,
+        opportunity: Opportunity,
+        observation: OpportunityObservation,
+    ) -> None:
+        """Persist aggregate state and its observation atomically."""
         ...
