@@ -15,15 +15,18 @@ DAYS_PER_YEAR = Decimal(365)
 @dataclass(frozen=True, slots=True)
 class FundingCarryAssumptions:
     horizon_days: int = 30
-    deploy_ratio: Decimal = Decimal("0.90")
+    reserve_ratio: Decimal = Decimal("0.10")
+    futures_leverage: Decimal = Decimal(1)
     spot_taker_fee_bps: Decimal = Decimal(10)
     perpetual_taker_fee_bps: Decimal = Decimal(5)
 
     def __post_init__(self) -> None:
         if self.horizon_days <= 0:
             raise ValueError("horizon_days must be positive")
-        if not Decimal(0) < self.deploy_ratio <= Decimal(1):
-            raise ValueError("deploy_ratio must be within (0, 1]")
+        if not Decimal(0) <= self.reserve_ratio < Decimal(1):
+            raise ValueError("reserve_ratio must be within [0, 1)")
+        if self.futures_leverage <= 0:
+            raise ValueError("futures_leverage must be positive")
 
 
 @dataclass(frozen=True, slots=True)
@@ -32,7 +35,9 @@ class FundingCarryEvaluation:
     base: str
     quote: str
     capital: Decimal
+    reserve_amount: Decimal
     deployed_notional: Decimal
+    futures_margin: Decimal
     expected_funding_rate_per_period: Decimal
     funding_periods_per_day: Decimal
     positive_funding_ratio_7d: Decimal
@@ -43,6 +48,18 @@ class FundingCarryEvaluation:
     expected_net_return_horizon: Decimal
     annualized_equivalent: Decimal
     return_character: str = "variable"
+
+
+def target_hedged_notional(
+    capital: Decimal,
+    assumptions: FundingCarryAssumptions,
+) -> Decimal:
+    if capital <= 0:
+        raise ValueError("capital must be positive")
+
+    usable_capital = capital * (Decimal(1) - assumptions.reserve_ratio)
+    capital_per_notional = Decimal(1) + Decimal(1) / assumptions.futures_leverage
+    return usable_capital / capital_per_notional
 
 
 def _rates_within(
@@ -96,9 +113,6 @@ def evaluate_funding_carry(
     capital: Decimal,
     assumptions: FundingCarryAssumptions,
 ) -> FundingCarryEvaluation:
-    if capital <= 0:
-        raise ValueError("capital must be positive")
-
     rates_1d = _rates_within(snapshot, 1)
     rates_7d = _rates_within(snapshot, 7)
     rates_30d = _rates_within(snapshot, 30)
@@ -116,16 +130,17 @@ def evaluate_funding_carry(
 
     periods_per_day = _funding_periods_per_day(snapshot)
     periods = Decimal(assumptions.horizon_days) * periods_per_day
-    deployed_notional = capital * assumptions.deploy_ratio
+    deployed_notional = target_hedged_notional(capital, assumptions)
+    notional_to_capital = deployed_notional / capital
+    futures_margin = deployed_notional / assumptions.futures_leverage
+    reserve_amount = capital * assumptions.reserve_ratio
 
-    gross_return = expected_rate * periods * assumptions.deploy_ratio
+    gross_return = expected_rate * periods * notional_to_capital
 
     one_way_fee_rate = (
         assumptions.spot_taker_fee_bps + assumptions.perpetual_taker_fee_bps
     ) / BPS
-    round_trip_fee_return = (
-        one_way_fee_rate * Decimal(2) * assumptions.deploy_ratio
-    )
+    round_trip_fee_return = one_way_fee_rate * Decimal(2) * notional_to_capital
 
     spot_quantity = deployed_notional / snapshot.spot_book.best_ask
     spot_impact = estimate_market_fill(
@@ -140,7 +155,7 @@ def evaluate_funding_carry(
     ).impact_bps
     entry_slippage_rate = (spot_impact + perpetual_impact) / BPS
     round_trip_slippage_return = (
-        entry_slippage_rate * Decimal(2) * assumptions.deploy_ratio
+        entry_slippage_rate * Decimal(2) * notional_to_capital
     )
 
     net_return = (
@@ -155,7 +170,9 @@ def evaluate_funding_carry(
         base=snapshot.base,
         quote=snapshot.quote,
         capital=capital,
+        reserve_amount=reserve_amount,
         deployed_notional=deployed_notional,
+        futures_margin=futures_margin,
         expected_funding_rate_per_period=expected_rate,
         funding_periods_per_day=periods_per_day,
         positive_funding_ratio_7d=positive_ratio_7d,
