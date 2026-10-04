@@ -5,7 +5,6 @@ from contextlib import asynccontextmanager
 from dataclasses import asdict
 from decimal import Decimal
 from typing import AsyncIterator
-from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException, Query, Request
 
@@ -16,16 +15,12 @@ from future_opportunity.adapters.exchanges.factory import (
 from future_opportunity.adapters.persistence.memory import MemoryOpportunityRepository
 from future_opportunity.application.discover.cash_and_carry import DiscoverCashAndCarry
 from future_opportunity.application.discover.funding_carry import DiscoverFundingCarry
-from future_opportunity.application.execute.paper_cash_and_carry import (
-    execute_paper_cash_and_carry,
-)
-from future_opportunity.application.execute.paper_funding_carry import (
-    execute_paper_funding_carry,
-)
-from future_opportunity.application.plan.cash_and_carry import build_cash_and_carry_plan
-from future_opportunity.application.plan.funding_carry import build_funding_carry_plan
 from future_opportunity.application.repositories import OpportunityRepository
-from future_opportunity.domain.risk.invariants import evaluate_delta_neutrality
+from future_opportunity.application.simulate.cash_and_carry import (
+    FutureInstrumentNotFound,
+    SimulateCashAndCarry,
+)
+from future_opportunity.application.simulate.funding_carry import SimulateFundingCarry
 from future_opportunity.domain.strategy.cash_and_carry import CashAndCarryAssumptions
 from future_opportunity.domain.strategy.funding_carry import FundingCarryAssumptions
 
@@ -182,55 +177,36 @@ async def simulate(
     repository: OpportunityRepository = request.app.state.opportunity_repository
 
     if strategy == "funding-carry":
-        discovered = await DiscoverFundingCarry(
-            funding_market_data_for(venue),
-            repository,
-        ).execute(
-            base=base,
-            capital=capital,
-            assumptions=funding_assumptions(
-                spot_fee_bps,
-                derivative_fee_bps,
-                reserve_ratio,
-                futures_leverage,
-            ),
-        )
         configured = funding_assumptions(
             spot_fee_bps,
             derivative_fee_bps,
             reserve_ratio,
             futures_leverage,
         )
-        plan = build_funding_carry_plan(
-            plan_id=str(uuid4()),
-            opportunity_observation_id=discovered.observation.id,
-            snapshot=discovered.snapshot,
+        simulated = await SimulateFundingCarry(
+            DiscoverFundingCarry(
+                funding_market_data_for(venue),
+                repository,
+            )
+        ).execute(
+            base=base,
             capital=capital,
             assumptions=configured,
         )
-        execution = execute_paper_funding_carry(
-            position_id=str(uuid4()),
-            strategy_plan_id=plan.id,
-            snapshot=discovered.snapshot,
-            capital=capital,
-            assumptions=configured,
-        )
-        risk = evaluate_delta_neutrality(execution.position, plan.max_delta_pct)
-
         return {
             "mode": "paper",
             "live_orders": False,
-            "opportunity": asdict(discovered.opportunity),
-            "observation": asdict(discovered.observation),
-            "evaluation": asdict(discovered.evaluation),
-            "plan": asdict(plan),
-            "position": asdict(execution.position),
+            "opportunity": asdict(simulated.discovered.opportunity),
+            "observation": asdict(simulated.discovered.observation),
+            "evaluation": asdict(simulated.discovered.evaluation),
+            "plan": asdict(simulated.plan),
+            "position": asdict(simulated.execution.position),
             "entry_cost": {
-                "spot_fee": execution.spot_fee,
-                "derivative_fee": execution.perpetual_fee,
-                "slippage_bps": execution.entry_slippage_bps,
+                "spot_fee": simulated.execution.spot_fee,
+                "derivative_fee": simulated.execution.perpetual_fee,
+                "slippage_bps": simulated.execution.entry_slippage_bps,
             },
-            "risk": asdict(risk),
+            "risk": asdict(simulated.delta_risk),
         }
 
     if strategy == "cash-and-carry":
@@ -247,58 +223,38 @@ async def simulate(
             futures_leverage,
             exit_buffer_bps,
         )
-        candidates = await DiscoverCashAndCarry(
-            cash_and_carry_market_data_for(venue),
-            repository,
-        ).execute(
-            base=base,
-            capital=capital,
-            assumptions=configured,
-        )
-        discovered = next(
-            (
-                candidate
-                for candidate in candidates
-                if candidate.snapshot.future_instrument_id == future_instrument_id
-            ),
-            None,
-        )
-        if discovered is None:
+        try:
+            simulated = await SimulateCashAndCarry(
+                DiscoverCashAndCarry(
+                    cash_and_carry_market_data_for(venue),
+                    repository,
+                )
+            ).execute(
+                base=base,
+                future_instrument_id=future_instrument_id,
+                capital=capital,
+                assumptions=configured,
+            )
+        except FutureInstrumentNotFound as error:
             raise HTTPException(
                 status_code=404,
-                detail=f"future instrument not found: {future_instrument_id}",
-            )
-
-        plan = build_cash_and_carry_plan(
-            plan_id=str(uuid4()),
-            opportunity_observation_id=discovered.observation.id,
-            snapshot=discovered.snapshot,
-            capital=capital,
-            assumptions=configured,
-        )
-        execution = execute_paper_cash_and_carry(
-            position_id=str(uuid4()),
-            strategy_plan_id=plan.id,
-            snapshot=discovered.snapshot,
-            capital=capital,
-            assumptions=configured,
-        )
-        risk = evaluate_delta_neutrality(execution.position, plan.max_delta_pct)
+                detail=f"future instrument not found: {error}",
+            ) from error
 
         return {
             "mode": "paper",
             "live_orders": False,
-            "opportunity": asdict(discovered.opportunity),
-            "observation": asdict(discovered.observation),
-            "evaluation": asdict(discovered.evaluation),
-            "plan": asdict(plan),
-            "position": asdict(execution.position),
+            "opportunity": asdict(simulated.discovered.opportunity),
+            "observation": asdict(simulated.discovered.observation),
+            "evaluation": asdict(simulated.discovered.evaluation),
+            "plan": asdict(simulated.plan),
+            "position": asdict(simulated.execution.position),
             "entry_cost": {
-                "spot_fee": execution.spot_fee,
-                "derivative_fee": execution.futures_fee,
-                "slippage_bps": execution.entry_slippage_bps,
+                "spot_fee": simulated.execution.spot_fee,
+                "derivative_fee": simulated.execution.futures_fee,
+                "slippage_bps": simulated.execution.entry_slippage_bps,
             },
-            "risk": asdict(risk),
+            "risk": asdict(simulated.delta_risk),
         }
 
     raise HTTPException(status_code=404, detail=f"unsupported strategy: {strategy}")
