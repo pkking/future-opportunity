@@ -491,3 +491,17 @@ def opportunity_history(opportunity_id: str) -> None:
             await repository.close()
 
     asyncio.run(run())
+
+
+@app.command("db-migrate")
+def db_migrate() -> None:
+    """Apply pending PostgreSQL migrations with checksum verification."""
+    from future_opportunity.adapters.persistence.migrations import apply_migrations
+
+    applied = apply_migrations(_require_database_url())
+    typer.echo(
+        {
+            "applied": [migration.name for migration in applied],
+            "count": len(applied),
+        }
+    )
