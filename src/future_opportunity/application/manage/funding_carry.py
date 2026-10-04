@@ -51,6 +51,11 @@ class RefreshFundingCarry:
             snapshot,
             record.plan.capital.amount,
             assumptions,
+            deployed_spot_notional=(
+                record.plan.deployment.actual_spot_notional
+                if record.plan.deployment is not None
+                else None
+            ),
         )
 
         books = {
