@@ -306,9 +306,20 @@ function switchView(view) {
 
 document.querySelectorAll("nav button").forEach(button => button.addEventListener("click", () => switchView(button.dataset.view)));
 $("discover").addEventListener("click", discover);
-$("strategy").addEventListener("change", () => {
-  if ($("strategy").value === "cash-and-carry") $("venue").value = "okx";
-});
+function syncVenueOptions() {
+  const current = $("venue").value;
+  if ($("strategy").value === "cash-and-carry") {
+    $("venue").innerHTML = '<option value="okx">OKX</option>';
+    return;
+  }
+
+  $("venue").innerHTML =
+    '<option value="binance">Binance</option><option value="okx">OKX</option>';
+  if (current === "okx") $("venue").value = "okx";
+}
+
+$("strategy").addEventListener("change", syncVenueOptions);
+syncVenueOptions();
 </script>
 </body>
 </html>
