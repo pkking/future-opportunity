@@ -3,6 +3,7 @@ from decimal import Decimal
 
 import pytest
 
+from future_opportunity.api import _history_record_view
 from future_opportunity.adapters.persistence.memory import (
     MemoryOpportunityRepository,
     MemorySimulationRepository,
@@ -91,6 +92,16 @@ async def test_funding_simulation_preserves_decision_evidence_chain() -> None:
 
     assert result.plan.opportunity_observation_id == result.discovered.observation.id
     assert result.execution.position.strategy_plan_id == result.plan.id
+    assert result.plan.expected_economics is not None
+    assert (
+        result.plan.expected_economics.expected_net_pnl
+        == Decimal(10_000) * result.discovered.evaluation.expected_net_return_to_expiry
+    )
+    assert result.plan.expected_economics is not None
+    assert (
+        result.plan.expected_economics.expected_net_pnl
+        == Decimal(10_000) * result.discovered.evaluation.expected_net_return_horizon
+    )
 
 
 @pytest.mark.asyncio
@@ -107,3 +118,24 @@ async def test_cash_simulation_preserves_decision_evidence_chain() -> None:
 
     assert result.plan.opportunity_observation_id == result.discovered.observation.id
     assert result.execution.position.strategy_plan_id == result.plan.id
+
+
+@pytest.mark.asyncio
+async def test_history_does_not_call_open_position_realized() -> None:
+    simulations = MemorySimulationRepository()
+    result = await SimulateFundingCarry(
+        DiscoverFundingCarry(FundingData(), MemoryOpportunityRepository()),
+        simulations,
+    ).execute(
+        base="BTC",
+        capital=Decimal(10_000),
+        assumptions=FundingCarryAssumptions(),
+    )
+
+    record = await simulations.get(result.execution.position.id)
+    assert record is not None
+
+    view = _history_record_view(record)
+    assert view["progress_state"] == "in_progress"
+    assert view["expected"]["expected_net_pnl"] == result.plan.expected_economics.expected_net_pnl
+    assert view["current"]["net_pnl"] == record.current_return.net_pnl
