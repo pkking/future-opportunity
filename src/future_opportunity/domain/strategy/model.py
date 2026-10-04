@@ -25,6 +25,21 @@ class PlanLeg:
 
 
 @dataclass(frozen=True, slots=True)
+class CapitalPolicy:
+    reserve_ratio: Decimal
+    futures_leverage: Decimal
+
+
+@dataclass(frozen=True, slots=True)
+class ExecutionCostPolicy:
+    spot_entry_fee_bps: Decimal
+    derivative_entry_fee_bps: Decimal
+    spot_exit_fee_bps: Decimal
+    derivative_exit_fee_bps: Decimal
+    exit_buffer_bps: Decimal = Decimal(0)
+
+
+@dataclass(frozen=True, slots=True)
 class ExpectedEconomics:
     return_character: str
     horizon_type: str
@@ -49,4 +64,6 @@ class StrategyPlan:
     max_delta_pct: Decimal
     max_leverage: Decimal
     execution_mode: str = "paper"
+    capital_policy: CapitalPolicy | None = None
+    execution_cost_policy: ExecutionCostPolicy | None = None
     expected_economics: ExpectedEconomics | None = None
