@@ -53,11 +53,14 @@ def test_evaluation_accounts_for_deployed_capital_and_costs() -> None:
     assert result.expected_funding_rate_per_period == Decimal("0.00010")
     assert result.funding_periods_per_day == Decimal(3)
     assert result.positive_funding_ratio_7d == Decimal(1)
-    assert result.gross_return_horizon == Decimal("0.0081000")
-    assert result.assumed_round_trip_fee_return == Decimal("0.00270")
+    assert result.deployed_notional == Decimal(4_500)
+    assert result.futures_margin == Decimal(4_500)
+    assert result.reserve_amount == Decimal(1_000)
+    assert result.gross_return_horizon == Decimal("0.0040500")
+    assert result.assumed_round_trip_fee_return == Decimal("0.00135")
     assert result.estimated_round_trip_slippage_return == Decimal(0)
-    assert result.expected_net_return_horizon == Decimal("0.0054000")
-    assert result.annualized_equivalent == Decimal("0.0657000")
+    assert result.expected_net_return_horizon == Decimal("0.0027000")
+    assert result.annualized_equivalent == Decimal("0.0328500")
 
 
 def test_funding_interval_is_derived_from_history() -> None:
