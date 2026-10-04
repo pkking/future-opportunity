@@ -4,14 +4,13 @@ from dataclasses import dataclass
 from decimal import Decimal
 from uuid import uuid4
 
+from future_opportunity.application.opportunity.lifecycle import evolve_opportunity
 from future_opportunity.application.ports import CashAndCarryMarketDataPort
 from future_opportunity.application.repositories import OpportunityRepository
 from future_opportunity.domain.market.snapshot import CashAndCarryMarketSnapshot
 from future_opportunity.domain.opportunity.model import (
-    Opportunity,
     OpportunityObservation,
     OpportunityQualification,
-    OpportunityState,
     ReturnCharacter,
     ReturnEstimate,
 )
@@ -63,26 +62,14 @@ class DiscoverCashAndCarry:
                 f"{snapshot.spot_instrument_id}:{snapshot.future_instrument_id}"
             )
 
-            opportunity = await self.opportunities.get_active_by_key(key)
-            if opportunity is None:
-                opportunity = Opportunity(
-                    id=str(uuid4()),
-                    key=key,
-                    strategy_type="cash-and-carry",
-                    state=(
-                        OpportunityState.QUALIFIED
-                        if qualification.qualified
-                        else OpportunityState.DISCOVERED
-                    ),
-                    discovered_at=snapshot.observed_at,
-                    qualified_at=snapshot.observed_at if qualification.qualified else None,
-                )
-            elif qualification.qualified and opportunity.state is OpportunityState.DISCOVERED:
-                opportunity.state = OpportunityState.QUALIFIED
-                opportunity.qualified_at = snapshot.observed_at
-            elif not qualification.qualified and opportunity.state is OpportunityState.QUALIFIED:
-                opportunity.state = OpportunityState.EXPIRED
-                opportunity.expired_at = snapshot.observed_at
+            opportunity = evolve_opportunity(
+                await self.opportunities.get_active_by_key(key),
+                opportunity_id=str(uuid4()),
+                key=key,
+                strategy_type="cash-and-carry",
+                qualified=qualification.qualified,
+                observed_at=snapshot.observed_at,
+            )
 
             expected_cost = (
                 evaluation.assumed_fee_return
