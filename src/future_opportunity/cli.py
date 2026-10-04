@@ -299,7 +299,9 @@ def simulate(
 
 
 @app.command()
-def quickstart(strategy: str = "funding-carry") -> None:
+def quickstart(
+    strategy: str = typer.Argument("funding-carry"),
+) -> None:
     """Show safe executable examples for the V0 paper workflow."""
     if strategy == "funding-carry":
         typer.echo("1. arb discover funding-carry --venue binance --base BTC --capital 1000")
