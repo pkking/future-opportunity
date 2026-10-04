@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 from dataclasses import asdict
 from decimal import Decimal
 
@@ -16,6 +17,10 @@ from future_opportunity.adapters.persistence.memory import (
 )
 from future_opportunity.application.discover.cash_and_carry import DiscoverCashAndCarry
 from future_opportunity.application.discover.funding_carry import DiscoverFundingCarry
+from future_opportunity.application.manage.cash_and_carry import RefreshCashAndCarry
+from future_opportunity.application.manage.close_cash_and_carry import CloseCashAndCarry
+from future_opportunity.application.manage.close_funding_carry import CloseFundingCarry
+from future_opportunity.application.manage.funding_carry import RefreshFundingCarry
 from future_opportunity.application.simulate.cash_and_carry import (
     FutureInstrumentNotFound,
     SimulateCashAndCarry,
@@ -257,3 +262,146 @@ def quickstart(strategy: str = "funding-carry") -> None:
         raise typer.BadParameter(f"unsupported strategy: {strategy}")
 
     typer.echo("V0 execution mode is paper; live orders are disabled.")
+
+
+def _require_database_url() -> str:
+    value = os.getenv("DATABASE_URL")
+    if not value:
+        raise typer.BadParameter(
+            "DATABASE_URL is required for cross-process position management"
+        )
+    return value
+
+
+def _position_view(record: object) -> dict[str, object]:
+    return {
+        "position": asdict(record.position),
+        "plan": asdict(record.plan),
+        "current_return": asdict(record.current_return),
+        "current_net_pnl": record.current_return.net_pnl,
+        "return_complete": record.current_return.complete,
+        "risk": asdict(record.risk),
+        "management_executions": [
+            asdict(execution) for execution in record.management_executions
+        ],
+    }
+
+
+@app.command("positions")
+def list_positions() -> None:
+    """List persisted paper positions. Requires DATABASE_URL."""
+
+    async def run() -> None:
+        from future_opportunity.adapters.persistence.postgres import (
+            PostgresSimulationRepository,
+        )
+
+        repository = await PostgresSimulationRepository.connect(
+            _require_database_url()
+        )
+        try:
+            records = await repository.list()
+            typer.echo([_position_view(record) for record in records])
+        finally:
+            await repository.close()
+
+    asyncio.run(run())
+
+
+@app.command("position-show")
+def position_show(position_id: str) -> None:
+    """Inspect one persisted paper position."""
+
+    async def run() -> None:
+        from future_opportunity.adapters.persistence.postgres import (
+            PostgresSimulationRepository,
+        )
+
+        repository = await PostgresSimulationRepository.connect(
+            _require_database_url()
+        )
+        try:
+            record = await repository.get(position_id)
+            if record is None:
+                raise typer.BadParameter(f"position not found: {position_id}")
+            typer.echo(_position_view(record))
+        finally:
+            await repository.close()
+
+    asyncio.run(run())
+
+
+@app.command("position-refresh")
+def position_refresh(position_id: str) -> None:
+    """Refresh current return and risk from live public market data."""
+
+    async def run() -> None:
+        from future_opportunity.adapters.persistence.postgres import (
+            PostgresSimulationRepository,
+        )
+
+        repository = await PostgresSimulationRepository.connect(
+            _require_database_url()
+        )
+        try:
+            record = await repository.get(position_id)
+            if record is None:
+                raise typer.BadParameter(f"position not found: {position_id}")
+
+            if record.plan.strategy.name == "funding-carry":
+                refreshed = await RefreshFundingCarry(
+                    funding_market_data_for(record.plan.venue),
+                    repository,
+                ).execute(position_id)
+            elif record.plan.strategy.name == "cash-and-carry":
+                refreshed = await RefreshCashAndCarry(
+                    cash_and_carry_market_data_for(record.plan.venue),
+                    repository,
+                ).execute(position_id)
+            else:
+                raise typer.BadParameter(
+                    f"unsupported strategy: {record.plan.strategy.name}"
+                )
+            typer.echo(_position_view(refreshed))
+        finally:
+            await repository.close()
+
+    asyncio.run(run())
+
+
+@app.command("position-close")
+def position_close(position_id: str) -> None:
+    """Paper-close a position and persist immutable exit-fill evidence."""
+
+    async def run() -> None:
+        from future_opportunity.adapters.persistence.postgres import (
+            PostgresSimulationRepository,
+        )
+
+        repository = await PostgresSimulationRepository.connect(
+            _require_database_url()
+        )
+        try:
+            record = await repository.get(position_id)
+            if record is None:
+                raise typer.BadParameter(f"position not found: {position_id}")
+
+            if record.plan.strategy.name == "funding-carry":
+                closed = await CloseFundingCarry(
+                    funding_market_data_for(record.plan.venue),
+                    repository,
+                ).execute(position_id)
+            elif record.plan.strategy.name == "cash-and-carry":
+                closed = await CloseCashAndCarry(
+                    cash_and_carry_market_data_for(record.plan.venue),
+                    repository,
+                ).execute(position_id)
+            else:
+                raise typer.BadParameter(
+                    f"unsupported strategy: {record.plan.strategy.name}"
+                )
+            typer.echo(_position_view(closed))
+        finally:
+            await repository.close()
+
+    asyncio.run(run())
