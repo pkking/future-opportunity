@@ -131,6 +131,29 @@ async def test_postgres_round_trip_rebuilds_complete_simulation() -> None:
 
         listed = await simulations.list()
         assert [record.position.id for record in listed] == [stored.position.id]
+
+        with psycopg.connect(TEST_DATABASE_URL) as connection:
+            events = connection.execute(
+                """
+                SELECT aggregate_type, aggregate_id, aggregate_version, event_type
+                FROM domain_events
+                ORDER BY occurred_at, aggregate_type, aggregate_version
+                """
+            ).fetchall()
+            outbox = connection.execute(
+                """
+                SELECT domain_event_id, topic
+                FROM outbox_events
+                """
+            ).fetchall()
+
+        event_types = {row[3] for row in events}
+        assert "OpportunityQualified" in event_types
+        assert "PositionHedged" in event_types
+        assert "PositionRefreshed" in event_types
+        assert "PositionClosed" in event_types
+        assert len(outbox) == len(events)
+        assert all(topic.startswith("future-opportunity.") for _, topic in outbox)
     finally:
         await opportunities.close()
         await simulations.close()
