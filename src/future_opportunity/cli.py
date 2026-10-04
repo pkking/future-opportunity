@@ -26,10 +26,14 @@ def version() -> None:
 def _assumptions(
     spot_fee_bps: Decimal,
     perpetual_fee_bps: Decimal,
+    reserve_ratio: Decimal,
+    futures_leverage: Decimal,
 ) -> FundingCarryAssumptions:
     return FundingCarryAssumptions(
         spot_taker_fee_bps=spot_fee_bps,
         perpetual_taker_fee_bps=perpetual_fee_bps,
+        reserve_ratio=reserve_ratio,
+        futures_leverage=futures_leverage,
     )
 
 
@@ -40,6 +44,8 @@ def discover(
     capital: Decimal = Decimal(10_000),
     spot_fee_bps: Decimal = Decimal(10),
     perpetual_fee_bps: Decimal = Decimal(5),
+    reserve_ratio: Decimal = Decimal("0.10"),
+    futures_leverage: Decimal = Decimal(1),
 ) -> None:
     """Discover a funding-carry opportunity from public market data."""
 
@@ -51,7 +57,12 @@ def discover(
         result = await use_case.execute(
             base=base,
             capital=capital,
-            assumptions=_assumptions(spot_fee_bps, perpetual_fee_bps),
+            assumptions=_assumptions(
+                spot_fee_bps,
+                perpetual_fee_bps,
+                reserve_ratio,
+                futures_leverage,
+            ),
         )
         typer.echo(asdict(result))
 
@@ -65,11 +76,18 @@ def simulate(
     capital: Decimal = Decimal(1_000),
     spot_fee_bps: Decimal = Decimal(10),
     perpetual_fee_bps: Decimal = Decimal(5),
+    reserve_ratio: Decimal = Decimal("0.10"),
+    futures_leverage: Decimal = Decimal(1),
 ) -> None:
     """Paper-execute a funding-carry position against a real order book."""
 
     async def run() -> None:
-        configured = _assumptions(spot_fee_bps, perpetual_fee_bps)
+        configured = _assumptions(
+            spot_fee_bps,
+            perpetual_fee_bps,
+            reserve_ratio,
+            futures_leverage,
+        )
         snapshot = await funding_market_data_for(venue).snapshot(base)
         result = execute_paper_funding_carry(
             position_id="quickstart-position",
