@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from future_opportunity.application.repositories import OpportunityRepository
+from future_opportunity.application.repositories import (
+    OpportunityRepository,
+    SimulationRecord,
+)
 from future_opportunity.domain.opportunity.model import (
     Opportunity,
     OpportunityObservation,
@@ -28,3 +31,17 @@ class MemoryOpportunityRepository(OpportunityRepository):
 
     def observations_for(self, opportunity_id: str) -> tuple[OpportunityObservation, ...]:
         return tuple(self._observations.get(opportunity_id, ()))
+
+
+class MemorySimulationRepository:
+    def __init__(self) -> None:
+        self._simulations: dict[str, SimulationRecord] = {}
+
+    async def record(self, simulation: SimulationRecord) -> None:
+        self._simulations[simulation.position.id] = simulation
+
+    async def get(self, position_id: str) -> SimulationRecord | None:
+        return self._simulations.get(position_id)
+
+    async def list(self) -> tuple[SimulationRecord, ...]:
+        return tuple(self._simulations.values())
