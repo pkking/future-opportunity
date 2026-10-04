@@ -170,7 +170,7 @@ def simulate(
                     "observation_id": simulated.discovered.observation.id,
                     "plan": asdict(simulated.plan),
                     "position": asdict(simulated.execution.position),
-                    "risk": asdict(simulated.delta_risk),
+                    "risk": asdict(simulated.risk),
                 }
             )
             return
@@ -211,7 +211,7 @@ def simulate(
                     "observation_id": simulated.discovered.observation.id,
                     "plan": asdict(simulated.plan),
                     "position": asdict(simulated.execution.position),
-                    "risk": asdict(simulated.delta_risk),
+                    "risk": asdict(simulated.risk),
                 }
             )
             return
