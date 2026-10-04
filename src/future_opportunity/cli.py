@@ -91,7 +91,6 @@ def discover(
 
     async def run() -> None:
         repository = MemoryOpportunityRepository()
-        simulations = MemorySimulationRepository()
 
         if strategy == "funding-carry":
             result = await DiscoverFundingCarry(
@@ -150,6 +149,7 @@ def simulate(
 
     async def run() -> None:
         repository = MemoryOpportunityRepository()
+        simulations = MemorySimulationRepository()
 
         if strategy == "funding-carry":
             simulated = await SimulateFundingCarry(
