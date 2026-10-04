@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import asyncio
 import os
+from contextlib import asynccontextmanager
 from dataclasses import asdict
+from typing import AsyncIterator
 from decimal import Decimal
 
 import typer
@@ -21,6 +23,10 @@ from future_opportunity.application.manage.cash_and_carry import RefreshCashAndC
 from future_opportunity.application.manage.close_cash_and_carry import CloseCashAndCarry
 from future_opportunity.application.manage.close_funding_carry import CloseFundingCarry
 from future_opportunity.application.manage.funding_carry import RefreshFundingCarry
+from future_opportunity.application.repositories import (
+    OpportunityRepository,
+    SimulationRepository,
+)
 from future_opportunity.application.simulate.cash_and_carry import (
     FutureInstrumentNotFound,
     SimulateCashAndCarry,
@@ -32,6 +38,29 @@ from future_opportunity.domain.strategy.funding_carry import FundingCarryAssumpt
 
 
 app = typer.Typer(help="Market-neutral arbitrage workbench")
+
+
+@asynccontextmanager
+async def _cli_repositories() -> AsyncIterator[
+    tuple[OpportunityRepository, SimulationRepository]
+]:
+    database_url = os.getenv("DATABASE_URL")
+    if not database_url:
+        yield MemoryOpportunityRepository(), MemorySimulationRepository()
+        return
+
+    from future_opportunity.adapters.persistence.postgres import (
+        PostgresOpportunityRepository,
+        PostgresSimulationRepository,
+    )
+
+    opportunities = await PostgresOpportunityRepository.connect(database_url)
+    simulations = await PostgresSimulationRepository.connect(database_url)
+    try:
+        yield opportunities, simulations
+    finally:
+        await opportunities.close()
+        await simulations.close()
 
 
 @app.command()
@@ -104,44 +133,43 @@ def discover(
     """Discover opportunities using professional strategy semantics."""
 
     async def run() -> None:
-        repository = MemoryOpportunityRepository()
+        async with _cli_repositories() as (repository, _):
+            if strategy == "funding-carry":
+                result = await DiscoverFundingCarry(
+                    funding_market_data_for(venue),
+                    repository,
+                ).execute(
+                    base=base,
+                    capital=capital,
+                    assumptions=_funding_assumptions(
+                        spot_fee_bps,
+                        derivative_fee_bps,
+                        reserve_ratio,
+                        futures_leverage,
+                    ),
+                )
+                typer.echo(_result_view(result))
+                return
 
-        if strategy == "funding-carry":
-            result = await DiscoverFundingCarry(
-                funding_market_data_for(venue),
-                repository,
-            ).execute(
-                base=base,
-                capital=capital,
-                assumptions=_funding_assumptions(
-                    spot_fee_bps,
-                    derivative_fee_bps,
-                    reserve_ratio,
-                    futures_leverage,
-                ),
-            )
-            typer.echo(_result_view(result))
-            return
+            if strategy == "cash-and-carry":
+                results = await DiscoverCashAndCarry(
+                    cash_and_carry_market_data_for(venue),
+                    repository,
+                ).execute(
+                    base=base,
+                    capital=capital,
+                    assumptions=_cash_assumptions(
+                        spot_fee_bps,
+                        derivative_fee_bps,
+                        reserve_ratio,
+                        futures_leverage,
+                        exit_buffer_bps,
+                    ),
+                )
+                typer.echo([_result_view(result) for result in results])
+                return
 
-        if strategy == "cash-and-carry":
-            results = await DiscoverCashAndCarry(
-                cash_and_carry_market_data_for(venue),
-                repository,
-            ).execute(
-                base=base,
-                capital=capital,
-                assumptions=_cash_assumptions(
-                    spot_fee_bps,
-                    derivative_fee_bps,
-                    reserve_ratio,
-                    futures_leverage,
-                    exit_buffer_bps,
-                ),
-            )
-            typer.echo([_result_view(result) for result in results])
-            return
-
-        raise typer.BadParameter(f"unsupported strategy: {strategy}")
+            raise typer.BadParameter(f"unsupported strategy: {strategy}")
 
     asyncio.run(run())
 
@@ -162,85 +190,83 @@ def simulate(
     """Paper-execute a strategy from the exact observed Opportunity."""
 
     async def run() -> None:
-        repository = MemoryOpportunityRepository()
-        simulations = MemorySimulationRepository()
-
-        if strategy == "funding-carry":
-            simulated = await SimulateFundingCarry(
-                DiscoverFundingCarry(
-                    funding_market_data_for(venue),
-                    repository,
-                ),
-                simulations,
-            ).execute(
-                base=base,
-                capital=capital,
-                assumptions=_funding_assumptions(
-                    spot_fee_bps,
-                    derivative_fee_bps,
-                    reserve_ratio,
-                    futures_leverage,
-                ),
-            )
-            typer.echo(
-                {
-                    "mode": "paper",
-                    "live_orders": False,
-                    "observation_id": simulated.discovered.observation.id,
-                    "plan": asdict(simulated.plan),
-                    "position": asdict(simulated.execution.position),
-                    "fills": [asdict(fill) for fill in simulated.execution.fills],
-                    "return_attribution": asdict(simulated.execution.entry_return),
-                    "risk": asdict(simulated.risk),
-                }
-            )
-            return
-
-        if strategy == "cash-and-carry":
-            if future_instrument_id is None:
-                raise typer.BadParameter(
-                    "--future-instrument-id is required for cash-and-carry simulation"
-                )
-
-            try:
-                simulated = await SimulateCashAndCarry(
-                    DiscoverCashAndCarry(
-                        cash_and_carry_market_data_for(venue),
+        async with _cli_repositories() as (repository, simulations):
+                if strategy == "funding-carry":
+                simulated = await SimulateFundingCarry(
+                    DiscoverFundingCarry(
+                        funding_market_data_for(venue),
                         repository,
                     ),
                     simulations,
                 ).execute(
                     base=base,
-                    future_instrument_id=future_instrument_id,
                     capital=capital,
-                    assumptions=_cash_assumptions(
+                    assumptions=_funding_assumptions(
                         spot_fee_bps,
                         derivative_fee_bps,
                         reserve_ratio,
                         futures_leverage,
-                        exit_buffer_bps,
                     ),
                 )
-            except FutureInstrumentNotFound as error:
-                raise typer.BadParameter(
-                    f"future instrument not found: {error}"
-                ) from error
+                typer.echo(
+                    {
+                        "mode": "paper",
+                        "live_orders": False,
+                        "observation_id": simulated.discovered.observation.id,
+                        "plan": asdict(simulated.plan),
+                        "position": asdict(simulated.execution.position),
+                        "fills": [asdict(fill) for fill in simulated.execution.fills],
+                        "return_attribution": asdict(simulated.execution.entry_return),
+                        "risk": asdict(simulated.risk),
+                    }
+                )
+                return
 
-            typer.echo(
-                {
-                    "mode": "paper",
-                    "live_orders": False,
-                    "observation_id": simulated.discovered.observation.id,
-                    "plan": asdict(simulated.plan),
-                    "position": asdict(simulated.execution.position),
-                    "fills": [asdict(fill) for fill in simulated.execution.fills],
-                    "return_attribution": asdict(simulated.execution.entry_return),
-                    "risk": asdict(simulated.risk),
-                }
-            )
-            return
+            if strategy == "cash-and-carry":
+                if future_instrument_id is None:
+                    raise typer.BadParameter(
+                        "--future-instrument-id is required for cash-and-carry simulation"
+                    )
 
-        raise typer.BadParameter(f"unsupported strategy: {strategy}")
+                try:
+                    simulated = await SimulateCashAndCarry(
+                        DiscoverCashAndCarry(
+                            cash_and_carry_market_data_for(venue),
+                            repository,
+                        ),
+                        simulations,
+                    ).execute(
+                        base=base,
+                        future_instrument_id=future_instrument_id,
+                        capital=capital,
+                        assumptions=_cash_assumptions(
+                            spot_fee_bps,
+                            derivative_fee_bps,
+                            reserve_ratio,
+                            futures_leverage,
+                            exit_buffer_bps,
+                        ),
+                    )
+                except FutureInstrumentNotFound as error:
+                    raise typer.BadParameter(
+                        f"future instrument not found: {error}"
+                    ) from error
+
+                typer.echo(
+                    {
+                        "mode": "paper",
+                        "live_orders": False,
+                        "observation_id": simulated.discovered.observation.id,
+                        "plan": asdict(simulated.plan),
+                        "position": asdict(simulated.execution.position),
+                        "fills": [asdict(fill) for fill in simulated.execution.fills],
+                        "return_attribution": asdict(simulated.execution.entry_return),
+                        "risk": asdict(simulated.risk),
+                    }
+                )
+                return
+
+            raise typer.BadParameter(f"unsupported strategy: {strategy}")
 
     asyncio.run(run())
 
