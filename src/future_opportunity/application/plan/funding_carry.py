@@ -3,6 +3,7 @@ from __future__ import annotations
 from decimal import Decimal
 
 from future_opportunity.domain.capital.model import allocate_isolated_hedge
+from future_opportunity.domain.deployment.model import DeploymentAssessment
 from future_opportunity.domain.market.snapshot import FundingCarryMarketSnapshot
 from future_opportunity.domain.strategy.definition import FUNDING_CARRY
 from future_opportunity.domain.strategy.funding_carry import FundingCarryAssumptions
@@ -24,14 +25,19 @@ def build_funding_carry_plan(
     capital: Decimal,
     assumptions: FundingCarryAssumptions,
     expected_economics: ExpectedEconomics | None = None,
+    deployment: DeploymentAssessment | None = None,
     max_delta_pct: Decimal = Decimal("0.005"),
     max_leverage: Decimal = Decimal("1.2"),
 ) -> StrategyPlan:
-    deployed_notional = allocate_isolated_hedge(
-        capital,
-        assumptions.reserve_ratio,
-        assumptions.futures_leverage,
-    ).hedged_notional
+    deployed_notional = (
+        deployment.actual_spot_notional
+        if deployment is not None
+        else allocate_isolated_hedge(
+            capital,
+            assumptions.reserve_ratio,
+            assumptions.futures_leverage,
+        ).hedged_notional
+    )
 
     if assumptions.futures_leverage > max_leverage:
         raise ValueError("configured futures leverage exceeds plan risk limit")
@@ -71,5 +77,6 @@ def build_funding_carry_plan(
             spot_exit_fee_bps=assumptions.spot_taker_fee_bps,
             derivative_exit_fee_bps=assumptions.perpetual_taker_fee_bps,
         ),
+        deployment=deployment,
         expected_economics=expected_economics,
     )
