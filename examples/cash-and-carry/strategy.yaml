@@ -1,0 +1,40 @@
+apiVersion: arbitrage.dev/v1alpha1
+kind: StrategyPlan
+
+metadata:
+  name: quickstart-btc-cash-and-carry
+
+spec:
+  strategy:
+    name: cash-and-carry
+    version: 1.0.0
+
+  asset:
+    base: BTC
+    quote: USDT
+
+  venue:
+    name: okx
+
+  # Select this from 'arb discover cash-and-carry'.
+  futureInstrumentId: okx:BTC-USDT-XXXXXX:future
+
+  capital:
+    amount: 1000
+    currency: USDT
+
+  capitalModel:
+    reserveRatio: 0.10
+    futuresLeverage: 1.0
+
+  execution:
+    mode: paper
+
+  costAssumptions:
+    spotFeeBps: 10
+    derivativeFeeBps: 5
+    exitBufferBps: 5
+
+  risk:
+    maxDeltaPct: 0.005
+    maxLeverage: 1.2
