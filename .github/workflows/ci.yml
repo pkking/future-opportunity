@@ -9,7 +9,20 @@ permissions:
   contents: read
 
 jobs:
-  test:
+  static:
+    name: Static and architecture safety
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - name: Ruff
+        run: uv run ruff check .
+      - name: Architecture and agent contract
+        run: uv run pytest tests/test_architecture.py tests/test_agent_contract.py -v
+
+  code-tests:
+    name: Code-level tests
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -31,5 +44,41 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
       - run: uv sync --all-extras --dev
-      - run: uv run ruff check .
-      - run: uv run pytest
+      - name: Domain application adapter and persistence tests
+        run: >-
+          uv run pytest tests
+          --ignore=tests/test_api_smoke.py
+          --ignore=tests/e2e
+          -v
+
+  api-tests:
+    name: API contract tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - name: REST and OpenAPI contract
+        run: uv run pytest tests/test_api_smoke.py -v
+
+  e2e-strategy:
+    name: E2E strategy acceptance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - name: Deterministic strategy replay
+        env:
+          E2E_EVIDENCE_PATH: artifacts/e2e/strategy-evidence.json
+        run: |
+          mkdir -p artifacts/e2e
+          uv run pytest tests/e2e -v \
+            --junitxml=artifacts/e2e/junit.xml
+      - name: Upload E2E evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: strategy-e2e-evidence
+          path: artifacts/e2e/
+          if-no-files-found: warn
