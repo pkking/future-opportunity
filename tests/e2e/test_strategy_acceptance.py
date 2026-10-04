@@ -19,6 +19,7 @@ from future_opportunity.application.manage.close_cash_and_carry import CloseCash
 from future_opportunity.application.manage.close_funding_carry import CloseFundingCarry
 from future_opportunity.application.simulate.cash_and_carry import SimulateCashAndCarry
 from future_opportunity.application.simulate.funding_carry import SimulateFundingCarry
+from future_opportunity.domain.deployment.model import LiquidityPolicy
 from future_opportunity.domain.execution.model import FillSource
 from future_opportunity.domain.market.snapshot import (
     CashAndCarryMarketSnapshot,
@@ -333,6 +334,116 @@ async def test_cash_and_carry_delivery_reference_target(
             "return_complete": closed.current_return.complete,
             "unassessed_components": list(
                 closed.current_return.unassessed_components
+            ),
+            "passed": passed,
+        }
+    )
+
+    assert passed
+
+
+@pytest.mark.asyncio
+async def test_funding_liquidity_policy_requires_explicit_partial_opt_in(
+    evidence_recorder: Callable[[dict[str, object]], None],
+) -> None:
+    scenario_id = "funding-carry-liquidity-partial-v1"
+    target = TARGETS[scenario_id]
+    fixture = FIXTURES[scenario_id]
+    assert isinstance(target, dict)
+    assert isinstance(fixture, dict)
+
+    capital = Decimal(str(target["capital"]))
+    max_impact = Decimal(str(target["max_impact_bps"]))
+    market = FundingReplay(fixture)
+
+    strict = await DiscoverFundingCarry(
+        market,
+        MemoryOpportunityRepository(),
+    ).execute(
+        base=str(fixture["base"]),
+        capital=capital,
+        assumptions=FundingCarryAssumptions(),
+        liquidity_policy=LiquidityPolicy.STRICT,
+        max_impact_bps=max_impact,
+    )
+
+    simulations = MemorySimulationRepository()
+    partial = await SimulateFundingCarry(
+        DiscoverFundingCarry(
+            market,
+            MemoryOpportunityRepository(),
+        ),
+        simulations,
+    ).execute(
+        base=str(fixture["base"]),
+        capital=capital,
+        assumptions=FundingCarryAssumptions(),
+        liquidity_policy=LiquidityPolicy.PARTIAL,
+        max_impact_bps=max_impact,
+    )
+
+    deployment = partial.plan.deployment
+    expected = partial.plan.expected_economics
+    assert deployment is not None
+    assert expected is not None
+
+    delta = abs(partial.execution.position.delta_pct)
+    observed_impacts = [fill.slippage_bps for fill in partial.execution.fills]
+    passed = (
+        strict.qualification.qualified is bool(target["strict_must_qualify"])
+        and (
+            "requested_notional_exceeds_liquidity_limit"
+            in strict.qualification.reasons
+        )
+        and partial.discovered.qualification.qualified
+        is bool(target["partial_must_qualify"])
+        and deployment.policy is LiquidityPolicy.PARTIAL
+        and deployment.partial_deployment
+        and deployment.requested_spot_notional
+        == Decimal(str(target["requested_spot_notional"]))
+        and deployment.capacity_spot_notional
+        == Decimal(str(target["capacity_spot_notional"]))
+        and deployment.actual_spot_notional
+        == Decimal(str(target["actual_spot_notional"]))
+        and deployment.unused_capital
+        == Decimal(str(target["unused_capital"]))
+        and expected.expected_net_return
+        >= Decimal(str(target["min_partial_expected_net_return"]))
+        and delta <= Decimal(str(target["max_abs_delta_pct"]))
+        and all(impact <= max_impact for impact in observed_impacts)
+    )
+
+    evidence_recorder(
+        {
+            "scenario_id": scenario_id,
+            "strategy": partial.plan.strategy.name,
+            "strategy_version": partial.plan.strategy.version,
+            "fixture_id": FIXTURES_DOCUMENT["fixture_id"],
+            "fixture_sha256": FIXTURE_HASH,
+            "target": target,
+            "actual": {
+                "strict_qualified": strict.qualification.qualified,
+                "strict_reasons": list(strict.qualification.reasons),
+                "partial_qualified": partial.discovered.qualification.qualified,
+                "policy": deployment.policy.value,
+                "requested_spot_notional": str(
+                    deployment.requested_spot_notional
+                ),
+                "capacity_spot_notional": str(
+                    deployment.capacity_spot_notional
+                ),
+                "actual_spot_notional": str(deployment.actual_spot_notional),
+                "unused_capital": str(deployment.unused_capital),
+                "expected_net_return": str(expected.expected_net_return),
+                "initial_delta_pct": str(delta),
+                "entry_impact_bps": [str(value) for value in observed_impacts],
+            },
+            "qualified": partial.discovered.qualification.qualified,
+            "position_state": partial.execution.position.state.value,
+            "risk_invariants": _risk_states(partial.risk),
+            "return_complete": partial.execution.entry_return.complete,
+            "unassessed_components": list(
+                partial.execution.entry_return.unassessed_components
             ),
             "passed": passed,
         }
