@@ -33,6 +33,7 @@ from future_opportunity.application.simulate.cash_and_carry import (
 )
 from future_opportunity.application.simulate.errors import OpportunityNotQualified
 from future_opportunity.application.simulate.funding_carry import SimulateFundingCarry
+from future_opportunity.domain.deployment.model import LiquidityPolicy
 from future_opportunity.domain.strategy.cash_and_carry import CashAndCarryAssumptions
 from future_opportunity.domain.strategy.definition import STRATEGIES
 from future_opportunity.domain.strategy.funding_carry import FundingCarryAssumptions
@@ -82,6 +83,15 @@ def _cash_market_data_or_bad_parameter(venue: str) -> object:
         return cash_and_carry_market_data_for(venue)
     except ValueError as error:
         raise typer.BadParameter(str(error)) from error
+
+
+def _liquidity_policy_cli(value: str) -> LiquidityPolicy:
+    try:
+        return LiquidityPolicy(value.lower())
+    except ValueError as error:
+        raise typer.BadParameter(
+            f"liquidity_policy must be one of: strict, partial; got {value!r}"
+        ) from error
 
 
 def _decimal_cli(name: str, value: str) -> Decimal:
@@ -153,6 +163,8 @@ def discover(
     reserve_ratio: str = "0.10",
     futures_leverage: str = "1",
     exit_buffer_bps: str = "5",
+    liquidity_policy: str = "strict",
+    max_impact_bps: str = "10",
 ) -> None:
     """Discover opportunities using professional strategy semantics."""
     capital_value = _decimal_cli("capital", capital)
@@ -164,6 +176,8 @@ def discover(
     reserve_value = _decimal_cli("reserve_ratio", reserve_ratio)
     leverage_value = _decimal_cli("futures_leverage", futures_leverage)
     exit_buffer_value = _decimal_cli("exit_buffer_bps", exit_buffer_bps)
+    liquidity_policy_value = _liquidity_policy_cli(liquidity_policy)
+    max_impact_value = _decimal_cli("max_impact_bps", max_impact_bps)
 
     async def run() -> None:
         async with _cli_repositories() as (repository, _):
@@ -180,6 +194,8 @@ def discover(
                         reserve_value,
                         leverage_value,
                     ),
+                    liquidity_policy=liquidity_policy_value,
+                    max_impact_bps=max_impact_value,
                 )
                 typer.echo(_result_view(result))
                 return
@@ -198,6 +214,8 @@ def discover(
                         leverage_value,
                         exit_buffer_value,
                     ),
+                    liquidity_policy=liquidity_policy_value,
+                    max_impact_bps=max_impact_value,
                 )
                 typer.echo([_result_view(result) for result in results])
                 return
@@ -218,6 +236,8 @@ def simulate(
     reserve_ratio: str = "0.10",
     futures_leverage: str = "1",
     exit_buffer_bps: str = "5",
+    liquidity_policy: str = "strict",
+    max_impact_bps: str = "10",
     future_instrument_id: str | None = None,
 ) -> None:
     """Paper-execute a strategy from the exact observed Opportunity."""
@@ -230,6 +250,8 @@ def simulate(
     reserve_value = _decimal_cli("reserve_ratio", reserve_ratio)
     leverage_value = _decimal_cli("futures_leverage", futures_leverage)
     exit_buffer_value = _decimal_cli("exit_buffer_bps", exit_buffer_bps)
+    liquidity_policy_value = _liquidity_policy_cli(liquidity_policy)
+    max_impact_value = _decimal_cli("max_impact_bps", max_impact_bps)
 
     async def run() -> None:
         async with _cli_repositories() as (repository, simulations):
@@ -250,6 +272,8 @@ def simulate(
                             reserve_value,
                             leverage_value,
                         ),
+                        liquidity_policy=liquidity_policy_value,
+                        max_impact_bps=max_impact_value,
                     )
                 except OpportunityNotQualified as error:
                     raise typer.BadParameter(str(error)) from error
@@ -291,6 +315,8 @@ def simulate(
                             leverage_value,
                             exit_buffer_value,
                         ),
+                        liquidity_policy=liquidity_policy_value,
+                        max_impact_bps=max_impact_value,
                     )
                 except FutureInstrumentNotFound as error:
                     raise typer.BadParameter(
