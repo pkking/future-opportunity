@@ -8,6 +8,7 @@ from enum import StrEnum
 
 class FillSource(StrEnum):
     SIMULATED = "simulated"
+    SETTLEMENT = "settlement"
     EXCHANGE = "exchange"
 
 
