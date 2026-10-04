@@ -36,6 +36,7 @@ class SimulationRecord:
     entry_return: ReturnAttribution
     current_return: ReturnAttribution
     risk: RiskReport
+    management_executions: tuple[Execution, ...] = ()
 
 
 class SimulationRepository(Protocol):
@@ -50,6 +51,17 @@ class SimulationRepository(Protocol):
         risk: RiskReport,
         observed_at: datetime,
     ) -> None:
+        ...
+
+    async def close_position(
+        self,
+        position: Position,
+        execution: Execution,
+        current_return: ReturnAttribution,
+        risk: RiskReport,
+        observed_at: datetime,
+    ) -> None:
+        """Persist close execution and final position state atomically."""
         ...
 
     async def get(self, position_id: str) -> SimulationRecord | None:
