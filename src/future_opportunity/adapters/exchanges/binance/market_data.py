@@ -68,22 +68,7 @@ class BinanceFundingMarketData:
                 int(premium["nextFundingTime"]) / 1000,
                 tz=UTC,
             ),
-            funding_history=tuple(
-                FundingObservation(
-                    rate=Decimal(item["fundingRate"]),
-                    funding_time=datetime.fromtimestamp(
-                        int(item["fundingTime"]) / 1000,
-                        tz=UTC,
-                    ),
-                    mark_price=(
-                        Decimal(item["markPrice"])
-                        if item.get("markPrice")
-                        else None
-                    ),
-                    rate_type=item.get("rateType"),
-                )
-                for item in funding
-            ),
+            funding_history=self._parse_funding_history(funding),
             observed_at=observed_at,
         )
 
@@ -111,3 +96,26 @@ class BinanceFundingMarketData:
             for price, quantity in payload.get("asks", [])
         )
         return OrderBook(bids=bids, asks=asks, observed_at=observed_at)
+
+
+    @staticmethod
+    def _parse_funding_history(payload: object) -> tuple[FundingObservation, ...]:
+        if not isinstance(payload, list):
+            raise TypeError("unexpected Binance funding history response")
+
+        return tuple(
+            FundingObservation(
+                rate=Decimal(item["fundingRate"]),
+                funding_time=datetime.fromtimestamp(
+                    int(item["fundingTime"]) / 1000,
+                    tz=UTC,
+                ),
+                mark_price=(
+                    Decimal(item["markPrice"])
+                    if item.get("markPrice")
+                    else None
+                ),
+                rate_type=item.get("rateType"),
+            )
+            for item in payload
+        )
