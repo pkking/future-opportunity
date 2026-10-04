@@ -21,7 +21,7 @@ from future_opportunity.application.simulate.risk import build_paper_risk_report
 from future_opportunity.domain.execution.model import Execution, ExecutionState
 from future_opportunity.domain.risk.model import RiskReport
 from future_opportunity.domain.strategy.cash_and_carry import CashAndCarryAssumptions
-from future_opportunity.domain.strategy.model import StrategyPlan
+from future_opportunity.domain.strategy.model import ExpectedEconomics, StrategyPlan
 
 
 class FutureInstrumentNotFound(ValueError):
@@ -61,12 +61,28 @@ class SimulateCashAndCarry:
         if discovered is None:
             raise FutureInstrumentNotFound(future_instrument_id)
 
+        evaluation = discovered.evaluation
+        expected_cost_return = (
+            evaluation.assumed_fee_return
+            + evaluation.estimated_liquidity_cost_return
+        )
+        expected = ExpectedEconomics(
+            return_character=evaluation.return_character,
+            horizon_type="expiry",
+            horizon_days=evaluation.days_to_expiry,
+            expected_net_return=evaluation.expected_net_return_to_expiry,
+            annualized_equivalent=evaluation.annualized_equivalent,
+            expected_cost_return=expected_cost_return,
+            expected_net_pnl=capital * evaluation.expected_net_return_to_expiry,
+            expected_cost_pnl=capital * expected_cost_return,
+        )
         plan = build_cash_and_carry_plan(
             plan_id=str(uuid4()),
             opportunity_observation_id=discovered.observation.id,
             snapshot=discovered.snapshot,
             capital=capital,
             assumptions=assumptions,
+            expected_economics=expected,
         )
         paper_execution = execute_paper_cash_and_carry(
             position_id=str(uuid4()),
