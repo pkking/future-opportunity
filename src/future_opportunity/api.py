@@ -62,10 +62,14 @@ def healthz() -> dict[str, str]:
 def assumptions(
     spot_fee_bps: Decimal,
     perpetual_fee_bps: Decimal,
+    reserve_ratio: Decimal,
+    futures_leverage: Decimal,
 ) -> FundingCarryAssumptions:
     return FundingCarryAssumptions(
         spot_taker_fee_bps=spot_fee_bps,
         perpetual_taker_fee_bps=perpetual_fee_bps,
+        reserve_ratio=reserve_ratio,
+        futures_leverage=futures_leverage,
     )
 
 
@@ -77,6 +81,8 @@ async def discover_funding_carry(
     capital: Decimal = Query(default=Decimal(10_000), gt=0),
     spot_fee_bps: Decimal = Query(default=Decimal(10), ge=0),
     perpetual_fee_bps: Decimal = Query(default=Decimal(5), ge=0),
+    reserve_ratio: Decimal = Query(default=Decimal("0.10"), ge=0, lt=1),
+    futures_leverage: Decimal = Query(default=Decimal(1), gt=0, le=Decimal("1.2")),
 ) -> dict[str, object]:
     repository: OpportunityRepository = request.app.state.opportunity_repository
     use_case = DiscoverFundingCarry(
@@ -86,7 +92,12 @@ async def discover_funding_carry(
     result = await use_case.execute(
         base=base,
         capital=capital,
-        assumptions=assumptions(spot_fee_bps, perpetual_fee_bps),
+        assumptions=assumptions(
+            spot_fee_bps,
+            perpetual_fee_bps,
+            reserve_ratio,
+            futures_leverage,
+        ),
     )
     return asdict(result)
 
@@ -98,10 +109,17 @@ async def simulate_funding_carry(
     capital: Decimal = Query(default=Decimal(10_000), gt=0),
     spot_fee_bps: Decimal = Query(default=Decimal(10), ge=0),
     perpetual_fee_bps: Decimal = Query(default=Decimal(5), ge=0),
+    reserve_ratio: Decimal = Query(default=Decimal("0.10"), ge=0, lt=1),
+    futures_leverage: Decimal = Query(default=Decimal(1), gt=0, le=Decimal("1.2")),
 ) -> dict[str, object]:
     market_data = funding_market_data_for(venue)
     snapshot = await market_data.snapshot(base)
-    configured = assumptions(spot_fee_bps, perpetual_fee_bps)
+    configured = assumptions(
+        spot_fee_bps,
+        perpetual_fee_bps,
+        reserve_ratio,
+        futures_leverage,
+    )
     evaluation = evaluate_funding_carry(snapshot, capital, configured)
 
     opportunity_observation_id = str(uuid4())
