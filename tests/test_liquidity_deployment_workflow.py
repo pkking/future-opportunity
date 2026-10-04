@@ -8,6 +8,8 @@ from future_opportunity.adapters.persistence.memory import (
     MemorySimulationRepository,
 )
 from future_opportunity.application.discover.funding_carry import DiscoverFundingCarry
+from future_opportunity.application.manage.close_funding_carry import CloseFundingCarry
+from future_opportunity.application.manage.funding_carry import RefreshFundingCarry
 from future_opportunity.application.simulate.errors import OpportunityNotQualified
 from future_opportunity.application.simulate.funding_carry import SimulateFundingCarry
 from future_opportunity.domain.deployment.model import LiquidityPolicy
@@ -147,3 +149,35 @@ async def test_partial_liquidity_policy_freezes_and_executes_capacity_limited_pl
     )
     assert simulated.plan.expected_economics is not None
     assert simulated.plan.expected_economics.expected_net_return > Decimal(0)
+
+
+@pytest.mark.asyncio
+async def test_partial_deployment_remains_manageable_without_reexpanding_capital() -> None:
+    market = ThinFundingMarket()
+    simulations = MemorySimulationRepository()
+    simulated = await SimulateFundingCarry(
+        DiscoverFundingCarry(
+            market,
+            MemoryOpportunityRepository(),
+        ),
+        simulations,
+    ).execute(
+        base="BTC",
+        capital=Decimal(10_000),
+        assumptions=ASSUMPTIONS,
+        liquidity_policy=LiquidityPolicy.PARTIAL,
+        max_impact_bps=Decimal(10),
+    )
+
+    refreshed = await RefreshFundingCarry(market, simulations).execute(
+        simulated.execution.position.id
+    )
+    assert refreshed.plan.deployment is not None
+    assert refreshed.plan.deployment.actual_spot_notional == Decimal(1_000)
+
+    closed = await CloseFundingCarry(market, simulations).execute(
+        simulated.execution.position.id
+    )
+    assert closed.position.state.value == "closed"
+    assert closed.plan.deployment is not None
+    assert closed.plan.deployment.actual_spot_notional == Decimal(1_000)
