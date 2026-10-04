@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 from future_opportunity.adapters.execution.paper import simulate_market_fill
+from future_opportunity.domain.deployment.model import DeploymentAssessment
 from future_opportunity.domain.execution.model import Fill
 from future_opportunity.domain.market.snapshot import CashAndCarryMarketSnapshot
 from future_opportunity.domain.position.model import LegPosition, Position, PositionState
@@ -39,9 +40,15 @@ def execute_paper_cash_and_carry(
     snapshot: CashAndCarryMarketSnapshot,
     capital: Decimal,
     assumptions: CashAndCarryAssumptions,
+    deployment: DeploymentAssessment | None = None,
 ) -> PaperCashAndCarryResult:
     allocation = cash_and_carry_allocation(snapshot, capital, assumptions)
-    quantity = allocation.spot_notional / snapshot.spot_book.best_ask
+    spot_notional = (
+        deployment.actual_spot_notional
+        if deployment is not None
+        else allocation.spot_notional
+    )
+    quantity = spot_notional / snapshot.spot_book.best_ask
 
     spot = simulate_market_fill(
         instrument_id=snapshot.spot_instrument_id,
@@ -57,6 +64,11 @@ def execute_paper_cash_and_carry(
         book=snapshot.future_book,
         fee_bps=assumptions.futures_entry_fee_bps,
     ).fill
+
+    if deployment is not None:
+        max_impact = deployment.max_impact_bps
+        if spot.slippage_bps > max_impact or future.slippage_bps > max_impact:
+            raise ValueError("entry fill exceeds frozen liquidity impact limit")
 
     base_delta = spot.quantity - future.quantity
     delta_notional = base_delta * snapshot.spot_book.best_ask
