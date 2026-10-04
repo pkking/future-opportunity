@@ -1,12 +1,12 @@
 from datetime import UTC, datetime
 from decimal import Decimal
 
-from future_opportunity.adapters.exchanges.okx.market_data import OkxFundingMarketData
+from future_opportunity.adapters.exchanges.okx.common import parse_okx_book
 
 
 def test_okx_swap_contract_sizes_are_normalized_to_base_quantity() -> None:
     now = datetime.now(UTC)
-    book = OkxFundingMarketData._parse_book(
+    book = parse_okx_book(
         {
             "bids": [["100000", "12", "0", "2"]],
             "asks": [["100010", "7", "0", "1"]],
