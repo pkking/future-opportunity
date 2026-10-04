@@ -31,6 +31,7 @@ from future_opportunity.application.simulate.cash_and_carry import (
     FutureInstrumentNotFound,
     SimulateCashAndCarry,
 )
+from future_opportunity.application.simulate.errors import OpportunityNotQualified
 from future_opportunity.application.simulate.funding_carry import SimulateFundingCarry
 from future_opportunity.domain.strategy.cash_and_carry import CashAndCarryAssumptions
 from future_opportunity.domain.strategy.definition import STRATEGIES
@@ -219,22 +220,25 @@ def simulate(
     async def run() -> None:
         async with _cli_repositories() as (repository, simulations):
             if strategy == "funding-carry":
-                simulated = await SimulateFundingCarry(
-                    DiscoverFundingCarry(
-                        funding_market_data_for(venue),
-                        repository,
-                    ),
-                    simulations,
-                ).execute(
-                    base=base,
-                    capital=capital_value,
-                    assumptions=_funding_assumptions(
-                        spot_fee_value,
-                        derivative_fee_value,
-                        reserve_value,
-                        leverage_value,
-                    ),
-                )
+                try:
+                    simulated = await SimulateFundingCarry(
+                        DiscoverFundingCarry(
+                            funding_market_data_for(venue),
+                            repository,
+                        ),
+                        simulations,
+                    ).execute(
+                        base=base,
+                        capital=capital_value,
+                        assumptions=_funding_assumptions(
+                            spot_fee_value,
+                            derivative_fee_value,
+                            reserve_value,
+                            leverage_value,
+                        ),
+                    )
+                except OpportunityNotQualified as error:
+                    raise typer.BadParameter(str(error)) from error
                 typer.echo(
                     {
                         "mode": "paper",
@@ -278,6 +282,8 @@ def simulate(
                     raise typer.BadParameter(
                         f"future instrument not found: {error}"
                     ) from error
+                except OpportunityNotQualified as error:
+                    raise typer.BadParameter(str(error)) from error
 
                 typer.echo(
                     {
