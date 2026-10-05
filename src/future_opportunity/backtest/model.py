@@ -5,6 +5,8 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Mapping
 
+from future_opportunity.domain.market.snapshot import OrderBook
+
 
 @dataclass(frozen=True, slots=True)
 class HistoricalArchiveFile:
@@ -105,3 +107,18 @@ def _validate_sha256(value: str) -> None:
         int(value, 16)
     except ValueError as error:
         raise ValueError("SHA-256 must be hexadecimal") from error
+
+
+@dataclass(frozen=True, slots=True)
+class HistoricalOrderBookObservation:
+    instrument_id: str
+    action: str
+    source_line: int
+    observed_at: datetime
+    book: OrderBook
+
+    def __post_init__(self) -> None:
+        if self.action not in {"snapshot", "update"}:
+            raise ValueError(f"unsupported order-book action: {self.action}")
+        if self.source_line <= 0:
+            raise ValueError("source_line must be positive")
