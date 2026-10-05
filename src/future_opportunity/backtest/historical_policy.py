@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from datetime import date
 from pathlib import Path
 from typing import Any, Mapping
+
+from future_opportunity.backtest.corpus import load_historical_corpus
 
 
 @dataclass(frozen=True, slots=True)
@@ -136,39 +137,15 @@ def collect_pinned_entry_market_days(
     *,
     required_strategies: tuple[str, ...],
 ) -> dict[str, tuple[str, ...]]:
-    days: dict[str, set[str]] = {
-        strategy: set()
-        for strategy in required_strategies
-    }
-    for manifest_path in sorted(fixture_root.rglob("manifest.json")):
-        raw = json.loads(manifest_path.read_text())
-        if not isinstance(raw, dict):
-            raise TypeError(
-                f"historical fixture manifest must be an object: {manifest_path}"
-            )
-        strategy = raw.get("strategy")
-        entry_market_date = raw.get("entry_market_date")
-        if strategy is None and entry_market_date is None:
-            continue
-        if strategy not in days:
-            raise ValueError(
-                f"historical fixture has unsupported strategy: {strategy}"
-            )
-        if not isinstance(entry_market_date, str):
-            raise ValueError(
-                f"historical fixture entry_market_date missing: {manifest_path}"
-            )
-        try:
-            parsed = date.fromisoformat(entry_market_date)
-        except ValueError as error:
-            raise ValueError(
-                f"invalid entry_market_date in {manifest_path}"
-            ) from error
-        days[strategy].add(parsed.isoformat())
-
+    corpus = load_historical_corpus(
+        index_path=fixture_root / "corpus-index.json",
+        fixture_root=fixture_root,
+        required_strategies=required_strategies,
+    )
+    grouped = corpus.entry_days_by_strategy()
     return {
-        strategy: tuple(sorted(values))
-        for strategy, values in days.items()
+        strategy: tuple(grouped.get(strategy, ()))
+        for strategy in required_strategies
     }
 
 
