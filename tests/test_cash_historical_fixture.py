@@ -36,12 +36,17 @@ def observation(
     )
 
 
-def build_fixture(root: Path) -> None:
+def build_fixture(
+    root: Path,
+    *,
+    future_id: str = "BTC-USDT-260626",
+    expiry: datetime = EXPIRY,
+) -> None:
     components = {
         "entry_spot": observation("BTC-USDT", ENTRY, 10),
-        "entry_future": observation("BTC-USDT-260626", ENTRY, 20),
+        "entry_future": observation(future_id, ENTRY, 20),
         "exit_spot": observation("BTC-USDT", EXIT, 30),
-        "exit_future": observation("BTC-USDT-260626", EXIT, 40),
+        "exit_future": observation(future_id, EXIT, 40),
     }
     normalized = {}
     for key, item in components.items():
@@ -63,8 +68,8 @@ def build_fixture(root: Path) -> None:
         },
         "max_staleness_ms": 1000,
         "instrument": {
-            "future_instrument_id": "BTC-USDT-260626",
-            "expiry": EXPIRY.isoformat(),
+            "future_instrument_id": future_id,
+            "expiry": expiry.isoformat(),
             "metadata_provenance": {
                 "type": "official_product_spec",
                 "contract_value": "0.01",
@@ -101,3 +106,21 @@ def test_cash_fixture_rejects_unproven_expired_metadata(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="product-spec provenance"):
         load_cash_and_carry_close_fixture(tmp_path)
+
+
+
+def test_cash_fixture_accepts_another_explicit_btcusdt_expiry_future(
+    tmp_path: Path,
+) -> None:
+    future_id = "BTC-USDT-260731"
+    expiry = datetime(2026, 7, 31, 8, tzinfo=UTC)
+    build_fixture(
+        tmp_path,
+        future_id=future_id,
+        expiry=expiry,
+    )
+
+    case = load_cash_and_carry_close_fixture(tmp_path)
+
+    assert case.entry.future_instrument_id == f"okx:{future_id}:future"
+    assert case.entry.expiry == expiry
