@@ -143,3 +143,25 @@ def test_order_book_catalog_dates_use_utc() -> None:
 
     assert item.source_timezone == "UTC"
     assert item.data_date.isoformat() == "2025-09-01T00:00:00+00:00"
+
+
+def test_specific_derivative_funding_catalog_requires_monthly_aggregation() -> None:
+    with pytest.raises(ValueError, match="requires monthly aggregation"):
+        OkxHistoricalCatalogQuery(
+            module="3",
+            instrument_type="SWAP",
+            date_aggregation="daily",
+            begin_ms=1,
+            end_ms=2,
+            instrument_families=("BTC-USDT",),
+        )
+
+    monthly = OkxHistoricalCatalogQuery(
+        module="3",
+        instrument_type="SWAP",
+        date_aggregation="monthly",
+        begin_ms=1,
+        end_ms=2,
+        instrument_families=("BTC-USDT",),
+    )
+    assert monthly.params()["dateAggrType"] == "monthly"
