@@ -1,0 +1,44 @@
+name: Discover Cash Historical Corpus
+
+on:
+  workflow_dispatch:
+    inputs:
+      dates_json:
+        description: JSON array of UTC market dates to inspect
+        required: true
+        default: '["2026-06-02","2026-06-03"]'
+  push:
+    paths:
+      - scripts/discover_okx_cash_history.py
+      - src/future_opportunity/backtest/cash_discovery.py
+      - .github/workflows/discover-cash-corpus.yml
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    name: Discover Cash day ${{ matrix.market_date }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        market_date: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.dates_json || '["2026-06-02","2026-06-03"]') }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - name: Discover concrete historical future and delivery evidence
+        run: |
+          mkdir -p artifacts/cash-discovery
+          uv run python scripts/discover_okx_cash_history.py             "${{ matrix.market_date }}"             --output "artifacts/cash-discovery/${{ matrix.market_date }}.json"
+          cat "artifacts/cash-discovery/${{ matrix.market_date }}.json"
+      - name: Upload discovery evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cash-discovery-${{ matrix.market_date }}
+          path: artifacts/cash-discovery/
+          if-no-files-found: error
