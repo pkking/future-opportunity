@@ -461,6 +461,10 @@ def iter_okx_l2_sampled_jsonl(
             )
         previous_event_time = observed_at
 
+        if not initialized and action == "snapshot":
+            while sampled_at < observed_at and sampled_at <= end:
+                sampled_at += cadence
+
         while (
             initialized
             and sampled_at <= end
