@@ -1,0 +1,47 @@
+name: Prepare Funding Historical Batch
+
+on:
+  workflow_dispatch:
+    inputs:
+      start_date:
+        description: First UTC market date (YYYY-MM-DD)
+        required: true
+      end_date:
+        description: Last UTC market date (YYYY-MM-DD), inclusive
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  dates:
+    name: Resolve UTC market dates
+    runs-on: ubuntu-latest
+    outputs:
+      dates: ${{ steps.range.outputs.dates }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - id: range
+        name: Build bounded date matrix
+        env:
+          START_DATE: ${{ inputs.start_date }}
+          END_DATE: ${{ inputs.end_date }}
+        run: |
+          dates="$(uv run python scripts/list_historical_dates.py \
+            "${START_DATE}" "${END_DATE}" --max-days 31)"
+          echo "dates=${dates}" >> "${GITHUB_OUTPUT}"
+          echo "Preparing dates: ${dates}"
+
+  prepare:
+    name: Prepare ${{ matrix.history_date }}
+    needs: dates
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        history_date: ${{ fromJSON(needs.dates.outputs.dates) }}
+    uses: ./.github/workflows/prepare-historical-fixture.yml
+    with:
+      history_date: ${{ matrix.history_date }}
