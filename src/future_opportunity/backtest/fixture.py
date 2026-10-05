@@ -223,10 +223,6 @@ def _snapshot(
         if future_funding
         else last.funding_time + timedelta(hours=8)
     )
-    mark_by_time = {
-        item.started_at: item
-        for item in fixture.mark_prices
-    }
     history = tuple(
         FundingObservation(
             rate=item.funding_rate,
