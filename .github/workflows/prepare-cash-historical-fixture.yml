@@ -1,0 +1,48 @@
+name: Prepare Cash and Carry Historical Fixture
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - scripts/prepare_okx_cash_and_carry_fixture.py
+      - scripts/run_cash_historical_backtest.py
+      - .github/workflows/prepare-cash-historical-fixture.yml
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - name: Download, verify and normalize official history
+        env:
+          CASH_HISTORICAL_FIXTURE_DIR: artifacts/cash-historical-fixture
+          CASH_HISTORY_MAX_RAW_MB: "600"
+          CASH_HISTORY_MAX_STALENESS_MS: "5000"
+        run: uv run python scripts/prepare_okx_cash_and_carry_fixture.py
+      - name: Evaluate historical actuals
+        run: |
+          uv run python scripts/run_cash_historical_backtest.py \
+            artifacts/cash-historical-fixture \
+            --output artifacts/cash-historical-backtest/report.json \
+            --capital 10000
+          cat artifacts/cash-historical-backtest/report.json
+      - name: Upload fixture
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: okx-btc-cash-and-carry-2026-06
+          path: artifacts/cash-historical-fixture/
+          if-no-files-found: error
+      - name: Upload actuals
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: okx-btc-cash-and-carry-actuals-2026-06
+          path: artifacts/cash-historical-backtest/report.json
+          if-no-files-found: warn
