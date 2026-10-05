@@ -110,6 +110,11 @@ def load_historical_corpus(
 
         root = fixture_root / relative
         manifest = _load_manifest(root)
+        pinning_status = manifest.get("pinning_status")
+        if pinning_status is not None and pinning_status != "commit_ready":
+            raise ValueError(
+                f"historical corpus fixture is not commit_ready: {canonical_path}"
+            )
         if manifest.get("dataset_id") != dataset_id:
             raise ValueError(
                 f"historical corpus dataset_id drift for {canonical_path}"
