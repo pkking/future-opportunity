@@ -1,0 +1,65 @@
+name: Discover Cash Historical Batch
+
+on:
+  workflow_dispatch:
+    inputs:
+      start_date:
+        description: First UTC market date (YYYY-MM-DD)
+        required: true
+      end_date:
+        description: Last UTC market date (YYYY-MM-DD), inclusive
+        required: true
+  push:
+    paths:
+      - ".github/workflows/discover-cash-historical-batch.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  dates:
+    name: Resolve Cash discovery dates
+    runs-on: ubuntu-latest
+    outputs:
+      dates: ${{ steps.range.outputs.dates }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - id: range
+        name: Build bounded date matrix
+        env:
+          START_DATE: ${{ inputs.start_date || '2026-06-02' }}
+          END_DATE: ${{ inputs.end_date || '2026-06-02' }}
+        run: |
+          dates="$(uv run python scripts/list_historical_dates.py \
+            "${START_DATE}" "${END_DATE}" --max-days 31)"
+          echo "dates=${dates}" >> "${GITHUB_OUTPUT}"
+
+  discover:
+    name: Discover Cash ${{ matrix.market_date }}
+    needs: dates
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        market_date: ${{ fromJSON(needs.dates.outputs.dates) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - name: Discover official historical future evidence
+        run: |
+          mkdir -p "artifacts/cash-discovery/${{ matrix.market_date }}"
+          uv run python scripts/discover_okx_cash_history.py \
+            "${{ matrix.market_date }}" \
+            --output "artifacts/cash-discovery/${{ matrix.market_date }}/report.json"
+          cat "artifacts/cash-discovery/${{ matrix.market_date }}/report.json"
+      - name: Upload discovery evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cash-history-discovery-${{ matrix.market_date }}
+          path: artifacts/cash-discovery/${{ matrix.market_date }}/
+          if-no-files-found: warn
