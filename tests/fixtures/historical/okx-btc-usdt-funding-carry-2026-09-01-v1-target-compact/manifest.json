@@ -65,8 +65,20 @@
         "preserve_base_quantity": "0.068571951024388757247674267994422814650016381077189",
         "rule": "retain entry/exit observations only and minimum best-price-outward levels on both sides covering at least 120% of frozen 10,000 USDT scenario base quantity",
         "observations": {
-          "entry": {"source_line":39566,"retained":{"bids":"0.45986607","asks":"0.10795989"}},
-          "exit": {"source_line":4049022,"retained":{"bids":"0.07111027","asks":"0.71128279"}}
+          "entry": {
+            "source_line": 39566,
+            "retained": {
+              "bids": "0.45986607",
+              "asks": "0.10795989"
+            }
+          },
+          "exit": {
+            "source_line": 4049022,
+            "retained": {
+              "bids": "0.07111027",
+              "asks": "0.71128279"
+            }
+          }
         }
       }
     },
@@ -83,8 +95,20 @@
         "preserve_base_quantity": "0.068571951024388757247674267994422814650016381077189",
         "rule": "retain entry/exit observations only and minimum best-price-outward levels on both sides covering at least 120% of frozen 10,000 USDT scenario base quantity",
         "observations": {
-          "entry": {"source_line":58151,"retained":{"bids":"4.6665","asks":"0.3358"}},
-          "exit": {"source_line":5808479,"retained":{"bids":"8.601","asks":"4.3479"}}
+          "entry": {
+            "source_line": 58151,
+            "retained": {
+              "bids": "4.6665",
+              "asks": "0.3358"
+            }
+          },
+          "exit": {
+            "source_line": 5808479,
+            "retained": {
+              "bids": "8.601",
+              "asks": "4.3479"
+            }
+          }
         }
       }
     },
@@ -132,5 +156,7 @@
   "evidence_limits": {
     "funding_mark_price": "interval_bound",
     "reason": "official funding archive has no settlement mark; confirmed 1m mark-price low/high bounds the funding settlement minute"
-  }
+  },
+  "strategy": "funding-carry",
+  "entry_market_date": "2026-09-01"
 }
