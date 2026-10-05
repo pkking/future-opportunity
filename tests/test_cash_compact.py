@@ -1,5 +1,5 @@
 import json
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
 
@@ -35,17 +35,17 @@ def observation(
         observed_at=observed_at,
         book=OrderBook(
             bids=(
-                OrderBookLevel(price=Decimal(bid), quantity=Decimal("0.05")),
+                OrderBookLevel(price=Decimal(bid), quantity=Decimal("40")),
                 OrderBookLevel(
                     price=Decimal(bid) - Decimal("1"),
-                    quantity=Decimal("0.05"),
+                    quantity=Decimal("40"),
                 ),
             ),
             asks=(
-                OrderBookLevel(price=Decimal(ask), quantity=Decimal("0.05")),
+                OrderBookLevel(price=Decimal(ask), quantity=Decimal("40")),
                 OrderBookLevel(
                     price=Decimal(ask) + Decimal("1"),
-                    quantity=Decimal("0.05"),
+                    quantity=Decimal("40"),
                 ),
             ),
             observed_at=observed_at,
