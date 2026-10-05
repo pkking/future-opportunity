@@ -90,7 +90,10 @@ def load_cash_and_carry_close_fixture(
         raise ValueError("cash fixture is missing instrument")
     raw_future_id = instrument.get("future_instrument_id")
     expiry = _aware_datetime(instrument.get("expiry"))
-    if raw_future_id != "BTC-USDT-260626":
+    if (
+        not isinstance(raw_future_id, str)
+        or not raw_future_id.startswith("BTC-USDT-")
+    ):
         raise ValueError("unexpected cash fixture future instrument")
 
     provenance = instrument.get("metadata_provenance")
