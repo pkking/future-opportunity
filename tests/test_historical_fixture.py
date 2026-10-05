@@ -1,4 +1,3 @@
-import hashlib
 import json
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
@@ -96,7 +95,7 @@ def build_fixture(root: Path) -> None:
         "venue": "okx",
         "history_date_utc": "2026-09-01",
         "cadence_seconds": 900,
-        "max_staleness_seconds": 900,
+        "max_staleness_seconds": 0,
         "alignment": {
             "requested_samples": 96,
             "emitted_samples": 2,
