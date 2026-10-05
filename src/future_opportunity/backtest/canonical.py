@@ -9,7 +9,10 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
 
-from future_opportunity.backtest.model import HistoricalOrderBookObservation
+from future_opportunity.backtest.model import (
+    HistoricalFundingObservation,
+    HistoricalOrderBookObservation,
+)
 from future_opportunity.domain.market.snapshot import OrderBook, OrderBookLevel
 
 
@@ -237,3 +240,105 @@ def _decimal(value: Any, name: str, line_number: int) -> Decimal:
         raise ValueError(
             f"invalid canonical {name} at line {line_number}"
         ) from error
+
+
+
+CANONICAL_FUNDING_SCHEMA_VERSION = 1
+
+
+def write_canonical_funding(
+    observations: Iterable[HistoricalFundingObservation],
+    destination: Path,
+) -> CanonicalReplaySummary:
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    digest = hashlib.sha256()
+    count = 0
+    observed_start: datetime | None = None
+    observed_end: datetime | None = None
+
+    with destination.open("wb") as output:
+        for observation in observations:
+            payload = {
+                "schema_version": CANONICAL_FUNDING_SCHEMA_VERSION,
+                "instrument_id": observation.instrument_id,
+                "source_line": observation.source_line,
+                "funding_time": observation.funding_time.astimezone(UTC).isoformat(),
+                "funding_rate": str(observation.funding_rate),
+            }
+            encoded = (
+                json.dumps(
+                    payload,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                    ensure_ascii=True,
+                )
+                + "\n"
+            ).encode("utf-8")
+            output.write(encoded)
+            digest.update(encoded)
+            count += 1
+            if observed_start is None:
+                observed_start = observation.funding_time
+            observed_end = observation.funding_time
+
+    if count == 0 or observed_start is None or observed_end is None:
+        raise ValueError("canonical funding replay requires at least one observation")
+
+    return CanonicalReplaySummary(
+        sha256=digest.hexdigest(),
+        sample_count=count,
+        observed_start=observed_start,
+        observed_end=observed_end,
+    )
+
+
+def iter_canonical_funding(
+    source: Path,
+) -> Iterator[HistoricalFundingObservation]:
+    previous_time: datetime | None = None
+    with source.open(encoding="utf-8") as input_file:
+        for line_number, raw_line in enumerate(input_file, start=1):
+            line = raw_line.strip()
+            if not line:
+                continue
+            try:
+                payload = json.loads(line)
+            except json.JSONDecodeError as error:
+                raise ValueError(
+                    f"invalid canonical funding JSON at line {line_number}"
+                ) from error
+            if not isinstance(payload, dict):
+                raise TypeError(
+                    f"canonical funding line {line_number} must be an object"
+                )
+            if payload.get("schema_version") != CANONICAL_FUNDING_SCHEMA_VERSION:
+                raise ValueError(
+                    f"unsupported canonical funding schema at line {line_number}"
+                )
+
+            instrument_id = payload.get("instrument_id")
+            source_line = payload.get("source_line")
+            raw_time = payload.get("funding_time")
+            raw_rate = payload.get("funding_rate")
+            if not isinstance(instrument_id, str) or not instrument_id:
+                raise ValueError(
+                    f"invalid funding instrument_id at line {line_number}"
+                )
+            if not isinstance(source_line, int) or source_line <= 1:
+                raise ValueError(
+                    f"invalid funding source_line at line {line_number}"
+                )
+            funding_time = _parse_datetime(raw_time, line_number)
+            rate = _decimal(raw_rate, "funding_rate", line_number)
+            if previous_time is not None and funding_time <= previous_time:
+                raise ValueError(
+                    "canonical funding timestamps must be strictly increasing "
+                    f"(line {line_number})"
+                )
+            previous_time = funding_time
+            yield HistoricalFundingObservation(
+                instrument_id=instrument_id,
+                source_line=source_line,
+                funding_time=funding_time,
+                funding_rate=rate,
+            )
