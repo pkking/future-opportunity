@@ -5,6 +5,7 @@ import json
 import os
 import tarfile
 import tempfile
+import time
 import zipfile
 from datetime import UTC, datetime
 from pathlib import Path
@@ -33,14 +34,19 @@ def get_json(
     path: str,
     params: dict[str, str],
 ) -> dict[str, Any]:
-    response = client.get(f"{BASE_URL}{path}", params=params)
-    response.raise_for_status()
-    payload = response.json()
-    if payload.get("code") != "0":
-        raise RuntimeError(
-            f"OKX error {payload.get('code')}: {payload.get('msg')}"
-        )
-    return payload
+    for attempt in range(5):
+        response = client.get(f"{BASE_URL}{path}", params=params)
+        if response.status_code == 429:
+            time.sleep(0.75 * (attempt + 1))
+            continue
+        response.raise_for_status()
+        payload = response.json()
+        if payload.get("code") != "0":
+            raise RuntimeError(
+                f"OKX error {payload.get('code')}: {payload.get('msg')}"
+            )
+        return payload
+    raise RuntimeError("OKX rate limit persisted after retries")
 
 
 def catalog(
@@ -317,6 +323,36 @@ def probe_50_level(
         return result
 
 
+def scan_futures_catalog_dates() -> dict[str, Any]:
+    dates = (
+        datetime(2026, 9, 1, tzinfo=UTC),
+        datetime(2026, 8, 1, tzinfo=UTC),
+        datetime(2026, 7, 1, tzinfo=UTC),
+        datetime(2026, 6, 1, tzinfo=UTC),
+        datetime(2026, 3, 1, tzinfo=UTC),
+    )
+    results: dict[str, Any] = {}
+    with httpx.Client(timeout=30.0, follow_redirects=True) as client:
+        for day in dates:
+            timestamp_ms = int(day.timestamp() * 1000)
+            params, payload = catalog(
+                client,
+                instrument_type="FUTURES",
+                module="4",
+                date_aggregation="daily",
+                timestamp_ms=timestamp_ms,
+                selectors=("BTC-USDT",),
+            )
+            candidates = archive_candidates(payload)
+            results[day.date().isoformat()] = {
+                "query": params,
+                "candidate_count": len(candidates),
+                "candidates": candidates,
+            }
+            time.sleep(0.5)
+    return results
+
+
 def probe_funding() -> dict[str, Any]:
     with httpx.Client(timeout=30.0, follow_redirects=True) as client:
         params, payload = catalog(
@@ -406,6 +442,19 @@ def main() -> None:
     summary["results"]["FUNDING"] = funding
     (OUTPUT / "funding-probe.json").write_text(
         json.dumps(funding, indent=2, sort_keys=True) + "\n"
+    )
+
+    try:
+        futures_scan = scan_futures_catalog_dates()
+    except Exception as error:
+        futures_scan = {
+            "status": "error",
+            "error_type": type(error).__name__,
+            "error": str(error),
+        }
+    summary["results"]["FUTURES_MODULE4_DATE_SCAN"] = futures_scan
+    (OUTPUT / "futures-module4-date-scan.json").write_text(
+        json.dumps(futures_scan, indent=2, sort_keys=True) + "\n"
     )
 
     for instrument_type in ("SPOT", "SWAP", "FUTURES"):
