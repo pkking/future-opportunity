@@ -122,3 +122,29 @@ class HistoricalOrderBookObservation:
             raise ValueError(f"unsupported order-book action: {self.action}")
         if self.source_line <= 0:
             raise ValueError("source_line must be positive")
+
+
+@dataclass(frozen=True, slots=True)
+class HistoricalBookPair:
+    sampled_at: datetime
+    spot: HistoricalOrderBookObservation
+    hedge: HistoricalOrderBookObservation
+    spot_age_ms: int
+    hedge_age_ms: int
+
+
+@dataclass(frozen=True, slots=True)
+class HistoricalAlignmentReport:
+    requested_samples: int
+    emitted_samples: int
+    missing_spot_samples: int
+    missing_hedge_samples: int
+    stale_spot_samples: int
+    stale_hedge_samples: int
+    samples: tuple[HistoricalBookPair, ...]
+
+    @property
+    def coverage_ratio(self) -> Decimal:
+        if self.requested_samples == 0:
+            return Decimal(0)
+        return Decimal(self.emitted_samples) / Decimal(self.requested_samples)
