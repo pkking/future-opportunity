@@ -167,6 +167,45 @@ def main() -> None:
             29,
         ),
     )
+    rolling_30d = []
+    for day in range(1, 31):
+        entry = datetime(2026, 9, day, 0, 15, tzinfo=UTC)
+        evaluation = evaluate_funding_carry(
+            optimistic_snapshot(entry, history),
+            Decimal("10000"),
+            FundingCarryAssumptions(horizon_days=30),
+        )
+        rolling_30d.append(
+            {
+                "entry_at": entry.isoformat(),
+                "optimistic_net_return": str(
+                    evaluation.expected_net_return_horizon
+                ),
+                "annualized_equivalent": str(
+                    evaluation.annualized_equivalent
+                ),
+                "expected_funding_rate_per_period": str(
+                    evaluation.expected_funding_rate_per_period
+                ),
+                "positive_funding_ratio_7d": str(
+                    evaluation.positive_funding_ratio_7d
+                ),
+            }
+        )
+
+    rolling_values = [
+        Decimal(item["optimistic_net_return"])
+        for item in rolling_30d
+    ]
+    best_index = max(
+        range(len(rolling_values)),
+        key=lambda index: rolling_values[index],
+    )
+    worst_index = min(
+        range(len(rolling_values)),
+        key=lambda index: rolling_values[index],
+    )
+
     result = {
         "schema_version": 1,
         "evidence_type": "funding_horizon_optimistic_feasibility",
@@ -184,6 +223,22 @@ def main() -> None:
             }
             for item in sources
         ],
+        "rolling_30d": {
+            "samples": rolling_30d,
+            "positive_count": sum(
+                1 for value in rolling_values if value > 0
+            ),
+            "reference_target_count": sum(
+                1 for value in rolling_values
+                if value >= Decimal("0.005")
+            ),
+            "mean_optimistic_net_return": str(
+                sum(rolling_values, Decimal(0))
+                / Decimal(len(rolling_values))
+            ),
+            "best": rolling_30d[best_index],
+            "worst": rolling_30d[worst_index],
+        },
         "scenarios": {},
     }
     for name, entry, horizon_days in scenarios:
