@@ -1,0 +1,31 @@
+name: Cash Entry Day Historical Probe
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - scripts/probe_okx_cash_entry_day.py
+      - .github/workflows/probe-cash-entry-day.yml
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - name: Scan official June 1 Cash-and-Carry entries
+        run: |
+          mkdir -p artifacts/cash-entry-day-probe
+          uv run python scripts/probe_okx_cash_entry_day.py \
+            | tee artifacts/cash-entry-day-probe/report.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cash-entry-day-probe-2026-06-01
+          path: artifacts/cash-entry-day-probe/report.json
+          if-no-files-found: error
