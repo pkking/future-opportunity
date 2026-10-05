@@ -23,6 +23,7 @@ from future_opportunity.adapters.historical.okx_l2 import (
     iter_okx_l2_sampled_archive,
 )
 from future_opportunity.backtest.canonical import write_canonical_order_books
+from future_opportunity.backtest.cash_compact import derive_cash_compact_fixture
 from future_opportunity.backtest.model import HistoricalInstrumentMetadata
 
 
@@ -368,7 +369,24 @@ def main() -> None:
     (OUTPUT / "manifest.json").write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n"
     )
-    print(json.dumps(manifest, indent=2, sort_keys=True))
+    compact = derive_cash_compact_fixture(
+        OUTPUT,
+        OUTPUT / "compact",
+        capital=Decimal("10000"),
+        reserve_ratio=Decimal("0.10"),
+        futures_leverage=Decimal("1"),
+        quantity_margin=Decimal("1.20"),
+    )
+    print(
+        json.dumps(
+            {
+                "prepared": manifest,
+                "compact_draft": compact,
+            },
+            indent=2,
+            sort_keys=True,
+        )
+    )
 
 
 if __name__ == "__main__":
