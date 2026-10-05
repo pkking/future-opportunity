@@ -326,29 +326,51 @@ def probe_50_level(
 def probe_expired_future_metadata() -> dict[str, Any]:
     instrument_id = "BTC-USDT-260626"
     with httpx.Client(timeout=30.0, follow_redirects=True) as client:
-        instruments = get_json(
-            client,
-            INSTRUMENTS_PATH,
-            {
-                "instType": "FUTURES",
-                "instId": instrument_id,
-            },
-        )
-        delivery = get_json(
-            client,
-            "/api/v5/public/delivery-exercise-history",
-            {
-                "instType": "FUTURES",
-                "uly": "BTC-USDT",
-                "after": str(
-                    int(datetime(2026, 6, 27, tzinfo=UTC).timestamp() * 1000)
-                ),
-                "before": str(
-                    int(datetime(2026, 6, 25, tzinfo=UTC).timestamp() * 1000)
-                ),
-                "limit": "100",
-            },
-        )
+        try:
+            instruments: dict[str, Any] = get_json(
+                client,
+                INSTRUMENTS_PATH,
+                {
+                    "instType": "FUTURES",
+                    "instId": instrument_id,
+                },
+            )
+        except Exception as error:
+            instruments = {
+                "status": "unavailable",
+                "error_type": type(error).__name__,
+                "error": str(error),
+            }
+
+        try:
+            delivery: dict[str, Any] = get_json(
+                client,
+                "/api/v5/public/delivery-exercise-history",
+                {
+                    "instType": "FUTURES",
+                    "uly": "BTC-USDT",
+                    "after": str(
+                        int(
+                            datetime(2026, 6, 27, tzinfo=UTC).timestamp()
+                            * 1000
+                        )
+                    ),
+                    "before": str(
+                        int(
+                            datetime(2026, 6, 25, tzinfo=UTC).timestamp()
+                            * 1000
+                        )
+                    ),
+                    "limit": "100",
+                },
+            )
+        except Exception as error:
+            delivery = {
+                "status": "unavailable",
+                "error_type": type(error).__name__,
+                "error": str(error),
+            }
+
         return {
             "instrument_id": instrument_id,
             "instruments": instruments,
