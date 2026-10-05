@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import shutil
-from dataclasses import asdict
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
