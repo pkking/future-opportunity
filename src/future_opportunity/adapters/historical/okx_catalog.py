@@ -65,6 +65,16 @@ class OkxHistoricalCatalogQuery:
 
         if self.module == "6" and self.date_aggregation == "monthly":
             raise ValueError("OKX module 6 does not support monthly aggregation")
+        if (
+            self.module == "3"
+            and self.date_aggregation == "daily"
+            and self.instrument_type != "SPOT"
+            and self.instrument_families != ("ANY",)
+        ):
+            raise ValueError(
+                "OKX funding history for a specific derivative family "
+                "requires monthly aggregation"
+            )
 
     def params(self) -> dict[str, str]:
         result = {
