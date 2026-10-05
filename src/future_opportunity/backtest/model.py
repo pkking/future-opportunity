@@ -160,3 +160,45 @@ class HistoricalFundingObservation:
     def __post_init__(self) -> None:
         if self.source_line <= 1:
             raise ValueError("funding source_line must refer to a CSV data row")
+
+
+@dataclass(frozen=True, slots=True)
+class HistoricalMarkPriceCandle:
+    instrument_id: str
+    started_at: datetime
+    open_price: Decimal
+    high_price: Decimal
+    low_price: Decimal
+    close_price: Decimal
+    confirmed: bool
+
+    def __post_init__(self) -> None:
+        if not self.instrument_id:
+            raise ValueError("mark-price candle instrument_id is required")
+        if self.started_at.tzinfo is None:
+            raise ValueError("mark-price candle timestamp must be timezone-aware")
+        if min(
+            self.open_price,
+            self.high_price,
+            self.low_price,
+            self.close_price,
+        ) <= 0:
+            raise ValueError("mark-price candle prices must be positive")
+        if self.low_price > self.high_price:
+            raise ValueError("mark-price candle low must not exceed high")
+        if not self.low_price <= self.open_price <= self.high_price:
+            raise ValueError("mark-price candle open must lie within low/high")
+        if not self.low_price <= self.close_price <= self.high_price:
+            raise ValueError("mark-price candle close must lie within low/high")
+
+
+@dataclass(frozen=True, slots=True)
+class HistoricalFundingCashFlowBound:
+    funding_time: datetime
+    funding_rate: Decimal
+    mark_price_low: Decimal
+    mark_price_high: Decimal
+    cash_flow_lower: Decimal
+    cash_flow_upper: Decimal
+    evidence_complete: bool
+    evidence_note: str
