@@ -195,6 +195,14 @@ Do not lower the existing reference targets to make historical data pass.
   entry spot ask=73812.1, future bid=73955.9, expected_net_return=
   -0.0007469851510475881110930647630, reason
   `expected_net_return_not_positive`. Actuals artifact ID 11346154209.
+- 2026-10-05: June-1 full-day Cash-and-Carry entry scan run 37313711428
+  evaluated 95 aligned 15-minute entries. Qualification rate was 0/95.
+  Mean expected net return was -0.000618343652831051628846383188 and the best
+  entry (2026-06-01T14:30Z) was still negative at
+  -0.0004760521241466263335108904353 despite 10 bps visible capacity of
+  428245.1644137224782386072709 USDT. Artifact ID 11347385499. This closes the
+  concern that the original negative result was caused by one unlucky entry
+  timestamp.
 - 2026-10-05: Funding optimistic-horizon run 37312306663 scanned all 30
   September daily entries at a 30-day horizon using real official funding
   history and the production economics formula with zero slippage/infinite
@@ -218,10 +226,10 @@ None.
 
 ## Resume from here
 
-Finish the June-1 full-day Cash-and-Carry entry scan and record its qualification
-distribution. Then commit a compact, derived historical smoke fixture (raw
-archives remain out of git) and add an offline historical smoke CI that verifies
-checksums, provenance, qualification semantics, and machine-readable actuals.
+Commit compact, derived Funding Carry and Cash-and-Carry historical smoke
+fixtures (raw archives remain out of git) and add an offline historical smoke CI
+that verifies checksums, provenance, qualification semantics, and
+machine-readable actuals.
 After all non-target implementation is complete, stop at the historical target
 semantics decision gate; do not change existing reference return targets.
 
