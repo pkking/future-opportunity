@@ -59,10 +59,10 @@ without committing raw exchange archives, and without weakening provenance.
 - [x] Corpus validator discovers pinned strategy/date entries and rejects duplicates.
 - [x] Historical smoke readiness is derived from validated corpus facts.
 - [x] Funding Carry preparation accepts arbitrary UTC entry dates.
-- [ ] Funding Carry batch workflow can prepare multiple dates independently.
-- [ ] Prepared Funding days emit compact, commit-ready fixtures plus provenance.
-- [ ] Cash-and-Carry preparation accepts explicit entry/exit dates and future ID/spec provenance.
-- [ ] Cash batch discovery identifies historical dates/instruments without inventing expired metadata.
+- [x] Funding Carry batch workflow can prepare multiple dates independently.
+- [x] Prepared Funding days emit compact, commit-ready fixtures plus provenance.
+- [x] Cash-and-Carry preparation accepts explicit entry/exit dates and future ID/spec provenance.
+- [x] Cash batch discovery identifies historical dates/instruments without inventing expired metadata.
 - [ ] Add at least one additional pinned real-market day per strategy through the generalized path.
 - [ ] CI/historical smoke remain green.
 - [ ] Docs explain how to add a day and how 30/90 readiness is computed.
@@ -71,9 +71,9 @@ without committing raw exchange archives, and without weakening provenance.
 
 - [x] 1. Add corpus contract + validator/index.
 - [x] 2. Generalize Funding Carry single-day preparation.
-- [ ] 3. Add Funding date-range/batch workflow.
-- [ ] 4. Generalize Cash-and-Carry preparation inputs.
-- [ ] 5. Add Cash historical-date discovery/batch preparation.
+- [x] 3. Add Funding date-range/batch workflow.
+- [x] 4. Generalize Cash-and-Carry preparation inputs.
+- [ ] 5. Cash discovery batch implemented; prepare second discovered day.
 - [ ] 6. Pin additional days through generalized workflows.
 - [ ] 7. Verify corpus/readiness evidence and document reproduction.
 
@@ -108,6 +108,20 @@ are proposed. Accumulating evidence does not require a new decision.
 - 2026-10-05: Funding preparation workflow is generalized with a required
   `history_date` workflow input and emits both full provenance evidence and a
   commit-ready compact fixture for that UTC date.
+- 2026-10-05: Funding batch preparation accepts an inclusive UTC date range up
+  to 31 days and executes each date as an independent matrix job with
+  fail-fast=false. The batch reuses the single-day workflow rather than
+  duplicating provenance logic.
+- 2026-10-05: Cash preparation accepts explicit entry_at, exit_at, future_id,
+  and expiry_at. The historical future ID remains an explicit input and product
+  specification provenance is separated from unavailable expired-instrument
+  metadata.
+- 2026-10-05: Cash preparation now derives and finalizes a compact fixture using
+  the same frozen-capital/depth-preservation rule as Funding.
+- 2026-10-05: Cash batch discovery accepts a bounded date range; each date
+  independently queries official module-4 FUTURES history, verifies the archive
+  member identity, checks public delivery evidence, and leaves missing delivery
+  evidence unassessed rather than synthesizing it.
 
 ## Deviations and discoveries
 
@@ -115,10 +129,10 @@ None.
 
 ## Resume from here
 
-Add a resumable Funding Carry date-range batch workflow. Each UTC date must run
-as an independent matrix job and emit its own full/compact artifacts so one
-failed market day does not invalidate successfully prepared days. Then inspect
-and generalize Cash-and-Carry preparation inputs.
+Use the generalized workflows to prepare a second pinned day for each strategy:
+Funding 2026-09-02 and, if official Cash discovery succeeds, Cash 2026-06-02
+with the discovered future ID. Validate compact artifacts, commit them to the
+corpus index, then recompute readiness.
 
 ## Completion
 
