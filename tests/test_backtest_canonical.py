@@ -6,13 +6,16 @@ import pytest
 
 from future_opportunity.backtest.canonical import (
     iter_canonical_funding,
+    iter_canonical_mark_prices,
     iter_canonical_order_books,
     sha256_file,
     write_canonical_funding,
+    write_canonical_mark_prices,
     write_canonical_order_books,
 )
 from future_opportunity.backtest.model import (
     HistoricalFundingObservation,
+    HistoricalMarkPriceCandle,
     HistoricalOrderBookObservation,
 )
 from future_opportunity.domain.market.snapshot import OrderBook, OrderBookLevel
@@ -120,4 +123,27 @@ def test_canonical_funding_round_trips_with_deterministic_checksum(
 
     assert tuple(iter_canonical_funding(destination)) == source
     assert summary.sample_count == 2
+    assert summary.sha256 == sha256_file(destination)
+
+
+def test_canonical_mark_price_round_trips_exact_interval_evidence(
+    tmp_path: Path,
+) -> None:
+    candles = (
+        HistoricalMarkPriceCandle(
+            instrument_id="BTC-USDT-SWAP",
+            started_at=datetime(2026, 9, 1, 8, tzinfo=UTC),
+            open_price=Decimal(100_000),
+            high_price=Decimal(101_000),
+            low_price=Decimal(99_000),
+            close_price=Decimal(100_500),
+            confirmed=True,
+        ),
+    )
+    destination = tmp_path / "mark.jsonl"
+
+    summary = write_canonical_mark_prices(candles, destination)
+
+    assert tuple(iter_canonical_mark_prices(destination)) == candles
+    assert summary.sample_count == 1
     assert summary.sha256 == sha256_file(destination)
