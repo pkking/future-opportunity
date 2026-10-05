@@ -323,6 +323,39 @@ def probe_50_level(
         return result
 
 
+def probe_expired_future_metadata() -> dict[str, Any]:
+    instrument_id = "BTC-USDT-260626"
+    with httpx.Client(timeout=30.0, follow_redirects=True) as client:
+        instruments = get_json(
+            client,
+            INSTRUMENTS_PATH,
+            {
+                "instType": "FUTURES",
+                "instId": instrument_id,
+            },
+        )
+        delivery = get_json(
+            client,
+            "/api/v5/public/delivery-exercise-history",
+            {
+                "instType": "FUTURES",
+                "uly": "BTC-USDT",
+                "after": str(
+                    int(datetime(2026, 6, 27, tzinfo=UTC).timestamp() * 1000)
+                ),
+                "before": str(
+                    int(datetime(2026, 6, 25, tzinfo=UTC).timestamp() * 1000)
+                ),
+                "limit": "100",
+            },
+        )
+        return {
+            "instrument_id": instrument_id,
+            "instruments": instruments,
+            "delivery_history": delivery,
+        }
+
+
 def scan_futures_catalog_dates() -> dict[str, Any]:
     dates = (
         datetime(2026, 9, 1, tzinfo=UTC),
@@ -462,6 +495,19 @@ def main() -> None:
     summary["results"]["FUNDING"] = funding
     (OUTPUT / "funding-probe.json").write_text(
         json.dumps(funding, indent=2, sort_keys=True) + "\n"
+    )
+
+    try:
+        expired_future = probe_expired_future_metadata()
+    except Exception as error:
+        expired_future = {
+            "status": "error",
+            "error_type": type(error).__name__,
+            "error": str(error),
+        }
+    summary["results"]["EXPIRED_FUTURE_METADATA"] = expired_future
+    (OUTPUT / "expired-future-metadata.json").write_text(
+        json.dumps(expired_future, indent=2, sort_keys=True) + "\n"
     )
 
     try:
