@@ -5,11 +5,16 @@ from pathlib import Path
 import pytest
 
 from future_opportunity.backtest.canonical import (
+    iter_canonical_funding,
     iter_canonical_order_books,
     sha256_file,
+    write_canonical_funding,
     write_canonical_order_books,
 )
-from future_opportunity.backtest.model import HistoricalOrderBookObservation
+from future_opportunity.backtest.model import (
+    HistoricalFundingObservation,
+    HistoricalOrderBookObservation,
+)
 from future_opportunity.domain.market.snapshot import OrderBook, OrderBookLevel
 
 
@@ -90,3 +95,29 @@ def test_canonical_reader_rejects_schema_drift(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="unsupported canonical schema"):
         tuple(iter_canonical_order_books(source))
+
+
+def test_canonical_funding_round_trips_with_deterministic_checksum(
+    tmp_path: Path,
+) -> None:
+    source = (
+        HistoricalFundingObservation(
+            instrument_id="BTC-USDT-SWAP",
+            source_line=2,
+            funding_time=datetime(2026, 9, 1, tzinfo=UTC),
+            funding_rate=Decimal("0.0001"),
+        ),
+        HistoricalFundingObservation(
+            instrument_id="BTC-USDT-SWAP",
+            source_line=3,
+            funding_time=datetime(2026, 9, 1, 8, tzinfo=UTC),
+            funding_rate=Decimal("-0.00002"),
+        ),
+    )
+    destination = tmp_path / "funding.jsonl"
+
+    summary = write_canonical_funding(source, destination)
+
+    assert tuple(iter_canonical_funding(destination)) == source
+    assert summary.sample_count == 2
+    assert summary.sha256 == sha256_file(destination)
