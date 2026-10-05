@@ -215,3 +215,42 @@ settlement cadence.
 The archive does **not** contain mark price. A Funding Carry historical cash-flow
 calculation therefore requires a separately pinned mark-price evidence source.
 The importer must not infer settlement notional from the funding rate alone.
+
+
+## Real BTC Funding dataset checkpoint
+
+Preparation workflow run `37250411433` produced
+`okx-btc-usdt-funding-carry-2026-09-01-v1` from official OKX sources.
+
+- SPOT module-4 raw SHA-256:
+  `3651c6a1764da45b37192ea1f70c9b5e16ecb1baa9bd9044f3713ed74a40c3dd`
+- SWAP module-4 raw SHA-256:
+  `0578d114ceee62b2997c1a8b1b52a63fc046ab3a7235c74ffe5c3b26d0f41b80`
+- September funding archive raw SHA-256:
+  `ce5a600e578678a73294a316592afea9cc2a7f0702bf15d56eb0c9ee68fa5a65`
+- 15-minute SPOT/SWAP alignment: 95 of 96 requested samples, with zero stale
+  aligned samples under a 5-second freshness bound.
+- Three funding events on 2026-09-01 have matching confirmed one-minute
+  historical mark-price candles. Funding cash flow remains interval-bounded,
+  not falsely point-estimated.
+
+Evaluation run `37311428410` rejected the one-day Funding Carry case because
+expected net return after the frozen cost model was negative. Historical
+datasets are therefore allowed to demonstrate that the strategy should *not*
+trade; fixture preparation is not required to manufacture qualifying periods.
+
+## Expired dated-future metadata
+
+OKX module-4 historical FUTURES archives are available for some historical
+dates. The 2026-06-01 BTC-USDT futureschain archive resolves to the concrete
+instrument `BTC-USDT-260626`.
+
+The current public instruments endpoint returns error 51001 for that expired
+instrument. Consequently, an expired-contract fixture must never claim that
+`ctVal` or `ctMult` were recovered from the current instruments API.
+
+For BTCUSDT expiry futures, official OKX product documentation states a face
+value of 0.01 BTC and contract multiplier of 1. If this product-level rule is
+used to normalize an expired archive, the manifest must identify it explicitly
+as product-spec provenance and separately pin delivery-history evidence for the
+concrete expired instrument.
