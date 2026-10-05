@@ -344,11 +344,31 @@ def scan_futures_catalog_dates() -> dict[str, Any]:
                 selectors=("BTC-USDT",),
             )
             candidates = archive_candidates(payload)
-            results[day.date().isoformat()] = {
+            result: dict[str, Any] = {
                 "query": params,
                 "candidate_count": len(candidates),
                 "candidates": candidates,
             }
+            if day.date().isoformat() == "2026-06-01":
+                selected = select_small_archive(candidates)
+                if selected is not None:
+                    with tempfile.TemporaryDirectory() as temporary:
+                        archive_path = Path(temporary) / str(
+                            selected["filename"]
+                        )
+                        sha256, size, http = download(
+                            client,
+                            selected,
+                            archive_path,
+                        )
+                        result["sample"] = {
+                            "selected": selected,
+                            "raw_sha256": sha256,
+                            "downloaded_bytes": size,
+                            "http": http,
+                            "archive": inspect_archive(archive_path),
+                        }
+            results[day.date().isoformat()] = result
             time.sleep(0.5)
     return results
 
