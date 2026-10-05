@@ -1,6 +1,6 @@
 # 2026-10-05-historical-backtest-evidence: Historical strategy backtest evidence
 
-Status: WAITING_FOR_DECISION
+Status: VERIFYING
 Owner: agent
 Started: 2026-10-05
 Last checkpoint: 2026-10-05
@@ -74,8 +74,8 @@ real market history.
 - [x] 3. Add canonical replay-domain format and importer.
 - [x] 4. Add backtest application workflow and metrics.
 - [x] 5. Add pinned historical fixtures + provenance/checksum manifest.
-- [ ] 6. Decide historical target semantics; CI evidence is implemented.
-- [ ] 7. Close the plan after target-semantics decision.
+- [x] 6. Define V0 provenance-and-semantics gate and progressive 3 -> 2 policy.
+- [ ] 7. Verify final CI/historical smoke and archive the plan.
 
 ## Verification matrix
 
@@ -89,19 +89,27 @@ real market history.
 
 ## Decision gates
 
-### Historical target semantics
+### Historical target semantics — resolved
 
-Implementation can continue through pinned offline fixtures and actuals. Before
-turning historical evidence into a pass/fail acceptance gate, human approval is
-required on whether historical targets:
+Approved progression:
 
-1. reuse deterministic reference per-opportunity return thresholds;
-2. use separate historical aggregate/distribution thresholds; or
-3. gate evidence/provenance/strategy semantics while reporting historical return
-   distributions without requiring every historical period to hit the reference
-   return target.
+```text
+Stage 1 / V0:
+  provenance + deterministic replay + business semantics are gating
+  historical returns are reporting-only
 
-Do not lower the existing reference targets to make historical data pass.
+Stage 2:
+  distribution-based historical targets
+  eligible after >= 30 distinct pinned entry-market days per strategy
+  90 days per strategy preferred
+  separate ADR + human approval required before activation
+```
+
+The policy is versioned in
+`tests/e2e/historical-target-policy.json` and recorded by ADR-0007.
+
+Existing deterministic reference targets remain unchanged and MUST NOT be reused
+automatically as historical return gates.
 
 ## Evidence log
 
@@ -226,19 +234,18 @@ None.
 
 ## Resume from here
 
-Human decision required: choose the historical target semantics in the
-Decision gates section. All non-target implementation is complete. Do not
-change reference targets or convert reporting-only comparisons into pass/fail
-until that decision is approved.
-After all non-target implementation is complete, stop at the historical target
-semantics decision gate; do not change existing reference return targets.
+Wait for the latest policy/docs commits to finish CI plus Historical Backtest
+Smoke. Verify the evidence reports `historical_gate_semantics=`
+`provenance_and_semantics`, all required checks true, Funding Carry pinned
+entry days=1, Cash-and-Carry pinned entry days=1, and Stage 2 readiness=false.
+If green, record final run/artifact and move this plan to completed/.
 
 ## Completion
 
-Final implementation commit: pending target-semantics decision
-CI run: historical smoke 37315646389 passed; current main CI remains independently gated
-Historical evidence artifact: 11347462701
-Remaining unassessed items: historical acceptance target semantics only
+Final implementation commit: pending final verification
+CI run: historical smoke 37315646389 passed before policy activation; final run pending
+Historical evidence artifact: final policy-enforced artifact pending
+Remaining unassessed items: none; Stage 2 distribution thresholds are intentionally future policy work
 
 - 2026-10-05: committed compact Funding Carry fixture
   `okx-btc-usdt-funding-carry-2026-09-01-v1-target-compact`, derived from
@@ -257,3 +264,14 @@ Remaining unassessed items: historical acceptance target semantics only
   both strategies. Existing deterministic reference targets are included only
   as reporting context; `historical_gate_semantics` is
   `pending_human_decision`.
+
+- 2026-10-05: human decision accepted progressive 3 -> 2 semantics. V0 uses
+  provenance-and-semantics historical gating; distribution targets are deferred
+  until at least 30 distinct pinned entry-market days per strategy, with 90 days
+  preferred. Stage 2 still requires separate ADR + human approval.
+- 2026-10-05: ADR-0007 and
+  `tests/e2e/historical-target-policy.json` encode the decision. The policy
+  explicitly forbids deterministic reference returns from gating V0 history.
+- 2026-10-05: historical policy loader/gate now validates the V0 mode and
+  transition invariants, counts pinned entry-market days automatically, and
+  fails closed if any required provenance/replay-semantics check is false.
