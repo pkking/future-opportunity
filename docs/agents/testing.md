@@ -58,6 +58,30 @@ E2E_EVIDENCE_PATH=artifacts/e2e/strategy-evidence.json \
 
 CI uploads `artifacts/e2e/` even when the test fails.
 
+### Historical smoke — pinned real-market replay
+
+Historical smoke is an additional offline evidence layer. It does not replace
+Gate 4 reference scenarios.
+
+```bash
+uv run python scripts/run_pinned_historical_smoke.py
+uv run pytest tests/e2e/test_historical_backtest_acceptance.py -v
+```
+
+Rules:
+
+- raw exchange archives stay out of git;
+- committed historical fixtures must include provenance and checksums;
+- compact derived books must state the frozen capital scenario and prove the
+  retained depth covers the required base quantity with the declared margin;
+- missing historical evidence remains `unassessed`; it is never synthesized;
+- historical negative opportunities are valid evidence when the production
+  qualification workflow rejects them for the expected reason;
+- the historical evidence artifact must be uploaded with `if: always()`;
+- until a historical target policy is approved, deterministic reference targets
+  may be displayed for comparison but must not be silently reused as historical
+  pass/fail criteria.
+
 ## What an E2E scenario must cover
 
 A strategy E2E scenario should exercise the real application workflow rather
