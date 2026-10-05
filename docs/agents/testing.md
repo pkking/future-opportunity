@@ -78,9 +78,70 @@ Rules:
 - historical negative opportunities are valid evidence when the production
   qualification workflow rejects them for the expected reason;
 - the historical evidence artifact must be uploaded with `if: always()`;
-- until a historical target policy is approved, deterministic reference targets
-  may be displayed for comparison but must not be silently reused as historical
-  pass/fail criteria.
+- V0 historical acceptance is defined by
+  `tests/e2e/historical-target-policy.json` and gates provenance + replay
+  semantics, not historical return magnitude;
+- deterministic reference targets may be displayed for comparison but must not
+  be reused as historical pass/fail criteria;
+- distribution-based historical targets become eligible for design only after
+  at least 30 distinct pinned entry-market days per strategy; 90 days is the
+  preferred evidence base;
+- switching to distribution-based historical gating requires a separate ADR and
+  explicit human approval.
+
+## Historical target policy
+
+The repository deliberately separates **capability targets** from **observed
+market distributions**.
+
+Reference E2E answers:
+
+```text
+Can the strategy meet the intended business target when a qualifying
+market state exists?
+```
+
+Historical replay answers:
+
+```text
+Did the product correctly interpret and handle this auditable real market
+period?
+```
+
+The active V0 historical gate therefore requires:
+
+```text
+valid provenance/checksums
++ deterministic offline replay
++ stable normalization/derivation semantics
++ expected qualification semantics
+= historical pass
+```
+
+A real market period does not fail historical CI merely because it contains no
+profitable opportunity.
+
+The progressive transition rule is:
+
+```text
+Stage 1 (current)
+  provenance + semantics gate
+  returns = reporting evidence
+
+>= 30 pinned entry-market days / strategy
+  eligible to design Stage 2
+
+90 days / strategy
+  preferred evidence base
+
+Stage 2
+  distribution-based targets
+  requires separate ADR + human approval
+```
+
+Stage 2 thresholds must be product decisions based on accumulated evidence.
+Agents must not automatically infer them from existing reference targets or
+lower targets to make history pass.
 
 ## What an E2E scenario must cover
 
