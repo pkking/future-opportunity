@@ -12,6 +12,12 @@
       "strategy": "cash-and-carry",
       "entry_market_date": "2026-06-01",
       "fixture_path": "okx-btc-cash-and-carry-2026-06-v1-target-compact"
+    },
+    {
+      "dataset_id": "okx-btc-usdt-cash-and-carry-2026-06-02-BTC-USDT-260626-v1-target-compact",
+      "strategy": "cash-and-carry",
+      "entry_market_date": "2026-06-02",
+      "fixture_path": "okx-btc-usdt-cash-and-carry-2026-06-02-BTC-USDT-260626-v1-target-compact"
     }
   ]
 }
