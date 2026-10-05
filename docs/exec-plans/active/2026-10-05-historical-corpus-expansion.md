@@ -55,10 +55,10 @@ without committing raw exchange archives, and without weakening provenance.
 
 ## Acceptance criteria
 
-- [ ] Define a versioned corpus index/manifest contract.
-- [ ] Corpus validator discovers pinned strategy/date entries and rejects duplicates.
-- [ ] Historical smoke readiness is derived from validated corpus facts.
-- [ ] Funding Carry preparation accepts arbitrary UTC entry dates.
+- [x] Define a versioned corpus index/manifest contract.
+- [x] Corpus validator discovers pinned strategy/date entries and rejects duplicates.
+- [x] Historical smoke readiness is derived from validated corpus facts.
+- [x] Funding Carry preparation accepts arbitrary UTC entry dates.
 - [ ] Funding Carry batch workflow can prepare multiple dates independently.
 - [ ] Prepared Funding days emit compact, commit-ready fixtures plus provenance.
 - [ ] Cash-and-Carry preparation accepts explicit entry/exit dates and future ID/spec provenance.
@@ -69,8 +69,8 @@ without committing raw exchange archives, and without weakening provenance.
 
 ## Implementation slices
 
-- [ ] 1. Add corpus contract + validator/index.
-- [ ] 2. Generalize Funding Carry single-day preparation.
+- [x] 1. Add corpus contract + validator/index.
+- [x] 2. Generalize Funding Carry single-day preparation.
 - [ ] 3. Add Funding date-range/batch workflow.
 - [ ] 4. Generalize Cash-and-Carry preparation inputs.
 - [ ] 5. Add Cash historical-date discovery/batch preparation.
@@ -99,6 +99,15 @@ are proposed. Accumulating evidence does not require a new decision.
 
 - 2026-10-05: ADR-0007 Stage-1 policy completed and archived.
 - 2026-10-05: Stage-1 final archive CI run 37321809733 passed.
+- 2026-10-05: versioned corpus index and validator implemented. Corpus loading
+  fails closed on duplicate dataset IDs, duplicate strategy/date entries,
+  duplicate paths, unindexed pinned fixtures, and manifest/index drift.
+- 2026-10-05: historical readiness is derived from validated corpus facts. The
+  current repository count is 1 pinned entry-market day for Funding Carry and 1
+  for Cash-and-Carry; minimum/preferred readiness remains false at 30/90.
+- 2026-10-05: Funding preparation workflow is generalized with a required
+  `history_date` workflow input and emits both full provenance evidence and a
+  commit-ready compact fixture for that UTC date.
 
 ## Deviations and discoveries
 
@@ -106,10 +115,10 @@ None.
 
 ## Resume from here
 
-Implement a corpus contract that validates committed historical fixtures as
-strategy/date facts, rejects duplicate strategy/date entries, and exposes the
-same readiness counts used by Historical Backtest Smoke. Then generalize the
-Funding Carry preparation script to accept arbitrary dates.
+Add a resumable Funding Carry date-range batch workflow. Each UTC date must run
+as an independent matrix job and emit its own full/compact artifacts so one
+failed market day does not invalidate successfully prepared days. Then inspect
+and generalize Cash-and-Carry preparation inputs.
 
 ## Completion
 
