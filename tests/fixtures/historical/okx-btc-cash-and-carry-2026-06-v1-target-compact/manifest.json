@@ -241,5 +241,6 @@
     }
   },
   "strategy": "cash-and-carry",
-  "venue": "okx"
+  "venue": "okx",
+  "entry_market_date": "2026-06-01"
 }
