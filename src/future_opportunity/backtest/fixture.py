@@ -55,6 +55,7 @@ def load_funding_history_fixture(
     normalized = manifest.get("normalized")
     if not isinstance(normalized, dict):
         raise ValueError("historical fixture is missing normalized components")
+    _validate_derived_funding_fixture(manifest, normalized)
 
     paths: dict[str, Path] = {}
     for key in ("spot_books", "swap_books", "funding", "mark_price"):
@@ -249,3 +250,111 @@ def _snapshot(
         funding_history=history,
         observed_at=sampled_at,
     )
+
+
+
+def _validate_derived_funding_fixture(
+    manifest: dict[str, Any],
+    normalized: dict[str, Any],
+) -> None:
+    derived = manifest.get("derived_from_artifact")
+    scope = manifest.get("fixture_scope")
+    if derived is None and scope is None:
+        return
+    if not isinstance(derived, dict) or not isinstance(scope, dict):
+        raise ValueError(
+            "derived funding fixture requires artifact and scope provenance"
+        )
+
+    artifact_sha = derived.get("artifact_zip_sha256")
+    if not isinstance(artifact_sha, str) or len(artifact_sha) != 64:
+        raise ValueError("derived funding fixture artifact checksum is invalid")
+    if not str(derived.get("workflow_run", "")).isdigit():
+        raise ValueError("derived funding fixture workflow run is invalid")
+    if not str(derived.get("artifact_id", "")).isdigit():
+        raise ValueError("derived funding fixture artifact id is invalid")
+
+    if scope.get("capital") != "10000":
+        raise ValueError("derived funding fixture frozen capital is unsupported")
+    if scope.get("reserve_ratio") != "0.10":
+        raise ValueError("derived funding fixture reserve ratio drifted")
+    if scope.get("futures_leverage") != "1":
+        raise ValueError("derived funding fixture leverage drifted")
+    if scope.get("quantity_margin") != "1.20":
+        raise ValueError("derived funding fixture quantity margin drifted")
+
+    preserve = _derived_decimal(
+        scope.get("preserve_base_quantity"),
+        "preserve_base_quantity",
+    )
+    if preserve <= 0:
+        raise ValueError("derived funding fixture preserve quantity must be positive")
+
+    for key in ("spot_books", "swap_books"):
+        component = normalized.get(key)
+        if not isinstance(component, dict):
+            raise ValueError(f"derived funding fixture is missing {key}")
+        derivation = component.get("derivation")
+        if not isinstance(derivation, dict):
+            raise ValueError(
+                f"derived funding fixture {key} is missing derivation evidence"
+            )
+        parent_sha = derivation.get("parent_canonical_sha256")
+        if not isinstance(parent_sha, str) or len(parent_sha) != 64:
+            raise ValueError(
+                f"derived funding fixture {key} parent checksum is invalid"
+            )
+        if derivation.get("frozen_capital") != scope.get("capital"):
+            raise ValueError(
+                f"derived funding fixture {key} capital provenance drifted"
+            )
+        if derivation.get("quantity_margin") != scope.get("quantity_margin"):
+            raise ValueError(
+                f"derived funding fixture {key} quantity margin drifted"
+            )
+        component_preserve = _derived_decimal(
+            derivation.get("preserve_base_quantity"),
+            f"{key} preserve_base_quantity",
+        )
+        if component_preserve != preserve:
+            raise ValueError(
+                f"derived funding fixture {key} preserve quantity drifted"
+            )
+
+        observations = derivation.get("observations")
+        if not isinstance(observations, dict):
+            raise ValueError(
+                f"derived funding fixture {key} observations are missing"
+            )
+        for label in ("entry", "exit"):
+            evidence = observations.get(label)
+            if not isinstance(evidence, dict):
+                raise ValueError(
+                    f"derived funding fixture {key} {label} evidence missing"
+                )
+            retained = evidence.get("retained")
+            if not isinstance(retained, dict):
+                raise ValueError(
+                    f"derived funding fixture {key} {label} retained depth missing"
+                )
+            for side in ("bids", "asks"):
+                retained_quantity = _derived_decimal(
+                    retained.get(side),
+                    f"{key} {label} retained {side}",
+                )
+                if retained_quantity < preserve:
+                    raise ValueError(
+                        f"derived funding fixture {key} {label} {side} "
+                        "does not preserve target quantity"
+                    )
+
+
+def _derived_decimal(value: Any, name: str) -> Decimal:
+    if not isinstance(value, str):
+        raise ValueError(f"derived funding fixture {name} must be a string")
+    try:
+        return Decimal(value)
+    except Exception as error:
+        raise ValueError(
+            f"derived funding fixture {name} is not decimal"
+        ) from error
