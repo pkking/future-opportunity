@@ -6,6 +6,7 @@ import os
 import tarfile
 import tempfile
 import zipfile
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -15,7 +16,8 @@ import httpx
 BASE_URL = "https://www.okx.com"
 CATALOG_PATH = "/api/v5/public/market-data-history"
 INSTRUMENTS_PATH = "/api/v5/public/instruments"
-DATE_MS = 1790812800000  # 2026-10-01T00:00:00Z
+DATE_MS = int(datetime(2026, 10, 1, tzinfo=UTC).timestamp() * 1000)
+FUNDING_MONTH_MS = int(datetime(2026, 9, 1, tzinfo=UTC).timestamp() * 1000)
 MAX_DOWNLOAD_MB = float(os.getenv("MAX_ARCHIVE_MB", "64"))
 OUTPUT = Path(
     os.getenv(
@@ -45,17 +47,21 @@ def catalog(
     client: httpx.Client,
     *,
     instrument_type: str,
+    module: str = "4",
+    date_aggregation: str = "daily",
+    timestamp_ms: int = DATE_MS,
+    selectors: tuple[str, ...] = CANDIDATES,
 ) -> tuple[dict[str, str], dict[str, Any]]:
     selector = (
         "instIdList" if instrument_type == "SPOT" else "instFamilyList"
     )
     params = {
-        "module": "4",
+        "module": module,
         "instType": instrument_type,
-        selector: ",".join(CANDIDATES),
-        "dateAggrType": "daily",
-        "begin": str(DATE_MS),
-        "end": str(DATE_MS),
+        selector: ",".join(selectors),
+        "dateAggrType": date_aggregation,
+        "begin": str(timestamp_ms),
+        "end": str(timestamp_ms),
     }
     return params, get_json(client, CATALOG_PATH, params)
 
@@ -266,13 +272,59 @@ def probe(instrument_type: str) -> dict[str, Any]:
         return result
 
 
+def probe_funding() -> dict[str, Any]:
+    with httpx.Client(timeout=30.0, follow_redirects=True) as client:
+        params, payload = catalog(
+            client,
+            instrument_type="SWAP",
+            module="3",
+            date_aggregation="monthly",
+            timestamp_ms=FUNDING_MONTH_MS,
+            selectors=("BTC-USDT",),
+        )
+        candidates = archive_candidates(payload)
+        selected = select_small_archive(candidates)
+        result: dict[str, Any] = {
+            "source": f"{BASE_URL}{CATALOG_PATH}",
+            "query": params,
+            "max_download_mb": MAX_DOWNLOAD_MB,
+            "catalog_candidates": candidates,
+            "status": "catalog_only",
+        }
+        if selected is None:
+            result["reason"] = "no_archive_within_probe_size_limit"
+            return result
+
+        with tempfile.TemporaryDirectory() as temporary:
+            archive_path = Path(temporary) / str(selected["filename"])
+            sha256, size, http = download(client, selected, archive_path)
+            result.update(
+                {
+                    "selected": selected,
+                    "raw_sha256": sha256,
+                    "downloaded_bytes": size,
+                    "http": http,
+                    "first_256_bytes_hex": archive_path.read_bytes()[:256].hex(),
+                    "first_256_bytes_text": archive_path.read_bytes()[:256]
+                    .decode("utf-8", errors="replace"),
+                    "instrument_metadata": instrument_metadata(
+                        client,
+                        selected,
+                    ),
+                    "archive": inspect_archive(archive_path),
+                    "status": "schema_sampled",
+                }
+            )
+        return result
+
+
 def main() -> None:
     OUTPUT.mkdir(parents=True, exist_ok=True)
 
     summary: dict[str, Any] = {
         "probe_date": "2026-10-01",
-        "module": "4",
-        "source_timezone": "UTC",
+        "order_book_module": "4",
+        "funding_module": "3",
         "results": {},
     }
     failures: list[str] = []
@@ -294,6 +346,24 @@ def main() -> None:
         (OUTPUT / f"{instrument_type.lower()}-probe.json").write_text(
             json.dumps(result, indent=2, sort_keys=True) + "\n"
         )
+
+    try:
+        funding = probe_funding()
+        if funding.get("status") != "schema_sampled":
+            failures.append("FUNDING")
+    except Exception as error:
+        funding = {
+            "status": "error",
+            "error_type": type(error).__name__,
+            "error": str(error),
+        }
+        failures.append("FUNDING")
+    summary["results"]["FUNDING"] = funding
+    (OUTPUT / "funding-probe.json").write_text(
+        json.dumps(funding, indent=2, sort_keys=True) + "\n"
+    )
+
+    print(json.dumps(summary, indent=2, sort_keys=True))
 
     (OUTPUT / "summary.json").write_text(
         json.dumps(summary, indent=2, sort_keys=True) + "\n"
