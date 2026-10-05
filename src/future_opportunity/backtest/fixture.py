@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
 
@@ -354,7 +354,7 @@ def _derived_decimal(value: Any, name: str) -> Decimal:
         raise ValueError(f"derived funding fixture {name} must be a string")
     try:
         return Decimal(value)
-    except Exception as error:
+    except InvalidOperation as error:
         raise ValueError(
             f"derived funding fixture {name} is not decimal"
         ) from error
