@@ -1,6 +1,6 @@
 # 2026-10-05-historical-backtest-evidence: Historical strategy backtest evidence
 
-Status: VERIFYING
+Status: COMPLETED
 Owner: agent
 Started: 2026-10-05
 Last checkpoint: 2026-10-05
@@ -65,7 +65,7 @@ real market history.
 - [x] CI has an offline pinned historical-backtest smoke/acceptance dataset.
 - [x] Evidence artifact is uploaded even on failure.
 - [x] README/testing docs describe provenance and reproduction.
-- [ ] Final CI green.
+- [x] Final CI green.
 
 ## Implementation slices
 
@@ -75,17 +75,17 @@ real market history.
 - [x] 4. Add backtest application workflow and metrics.
 - [x] 5. Add pinned historical fixtures + provenance/checksum manifest.
 - [x] 6. Define V0 provenance-and-semantics gate and progressive 3 -> 2 policy.
-- [ ] 7. Verify final CI/historical smoke and archive the plan.
+- [x] 7. Verify final CI/historical smoke and archive the plan.
 
 ## Verification matrix
 
 | Scope | Command / CI gate | Expected evidence | Status |
 |---|---|---|---|
-| Static | existing static gate | zero violations | verified on current implementation commits |
-| Code | code-level test gate | importer/replay/metrics tests | verified on current implementation commits |
-| API | API contract gate | no regression | verified on current implementation commits |
-| Reference E2E | existing strategy E2E | reference scenarios remain green | verified; compact historical tests also run offline |
-| Historical backtest | Historical Backtest Smoke | metrics + provenance artifact | verified run 37315646389, artifact 11347462701 |
+| Static | existing static gate | zero violations | passed in final CI 37321557950 |
+| Code | code-level test gate | importer/replay/metrics tests | passed in final CI 37321557950 |
+| API | API contract gate | no regression | passed in final CI 37321557950 |
+| Reference E2E | existing strategy E2E | reference scenarios remain green | passed in final CI 37321557950 |
+| Historical backtest | Historical Backtest Smoke | policy-enforced provenance + semantics evidence | passed run 37321387071, artifact 11351120087 |
 
 ## Decision gates
 
@@ -234,18 +234,18 @@ None.
 
 ## Resume from here
 
-Wait for the latest policy/docs commits to finish CI plus Historical Backtest
-Smoke. Verify the evidence reports `historical_gate_semantics=`
-`provenance_and_semantics`, all required checks true, Funding Carry pinned
-entry days=1, Cash-and-Carry pinned entry days=1, and Stage 2 readiness=false.
-If green, record final run/artifact and move this plan to completed/.
+Completed. Future work toward Stage 2 must start from a new execution plan.
+Accumulate additional pinned entry-market days without changing V0 reference
+targets. Once each required strategy has at least 30 distinct pinned entry days,
+a new plan may propose the distribution-policy ADR; 90 days remains preferred.
 
 ## Completion
 
-Final implementation commit: pending final verification
-CI run: historical smoke 37315646389 passed before policy activation; final run pending
-Historical evidence artifact: final policy-enforced artifact pending
-Remaining unassessed items: none; Stage 2 distribution thresholds are intentionally future policy work
+Final verified repository commit: 57fe8b9d35b47ca00989c6ae58a92bce3a8bc265
+CI run: https://github.com/pkking/future-opportunity/actions/runs/37321557950
+Historical smoke run: https://github.com/pkking/future-opportunity/actions/runs/37321387071
+Historical evidence artifact: historical-backtest-smoke-evidence (artifact ID 11351120087)
+Remaining unassessed items: none for Stage 1. Stage 2 distribution metrics/thresholds are intentionally future product-policy work.
 
 - 2026-10-05: committed compact Funding Carry fixture
   `okx-btc-usdt-funding-carry-2026-09-01-v1-target-compact`, derived from
@@ -275,3 +275,14 @@ Remaining unassessed items: none; Stage 2 distribution thresholds are intentiona
 - 2026-10-05: historical policy loader/gate now validates the V0 mode and
   transition invariants, counts pinned entry-market days automatically, and
   fails closed if any required provenance/replay-semantics check is false.
+
+- 2026-10-05: policy-enforced Historical Backtest Smoke run 37321387071
+  passed. Evidence artifact 11351120087 reports
+  `historical_gate_semantics=provenance_and_semantics`,
+  `gate.passed=true`, and all four required checks true.
+- 2026-10-05: transition readiness is observable from repository fixtures:
+  Funding Carry pinned entry-market days=1 and Cash-and-Carry=1; minimum 30 and
+  preferred 90 are both not yet satisfied.
+- 2026-10-05: final repository CI run 37321557950 passed Static, Code-level,
+  API contract, and E2E strategy acceptance on commit
+  57fe8b9d35b47ca00989c6ae58a92bce3a8bc265.
