@@ -19,11 +19,28 @@ on:
         description: Contract expiry timestamp (ISO-8601)
         required: true
         default: "2026-06-26T08:00:00+00:00"
+  workflow_call:
+    inputs:
+      entry_at:
+        required: true
+        type: string
+      exit_at:
+        required: true
+        type: string
+      future_id:
+        required: true
+        type: string
+      expiry_at:
+        required: true
+        type: string
   push:
     paths:
       - scripts/prepare_okx_cash_and_carry_fixture.py
       - scripts/run_cash_historical_backtest.py
+      - scripts/finalize_cash_compact_fixture.py
       - src/future_opportunity/backtest/cash_fixture.py
+      - src/future_opportunity/backtest/cash_compact.py
+      - src/future_opportunity/backtest/compact.py
       - .github/workflows/prepare-cash-historical-fixture.yml
 
 permissions:
@@ -42,23 +59,50 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
       - run: uv sync --all-extras --dev
-      - name: Download, verify and normalize official history
+
+      - name: Download, verify, normalize and compact official history
         env:
           CASH_HISTORICAL_FIXTURE_DIR: artifacts/cash-historical-fixture
           CASH_HISTORY_MAX_RAW_MB: "600"
           CASH_HISTORY_MAX_STALENESS_MS: "5000"
         run: uv run python scripts/prepare_okx_cash_and_carry_fixture.py
+
       - name: Evaluate historical actuals
         run: |
-          uv run python scripts/run_cash_historical_backtest.py             artifacts/cash-historical-fixture             --output artifacts/cash-historical-backtest/report.json             --capital 10000
+          uv run python scripts/run_cash_historical_backtest.py \
+            artifacts/cash-historical-fixture \
+            --output artifacts/cash-historical-backtest/report.json \
+            --capital 10000
           cat artifacts/cash-historical-backtest/report.json
-      - name: Upload fixture
-        if: always()
+
+      - name: Upload full preparation evidence
+        id: upload-prepared
         uses: actions/upload-artifact@v4
         with:
           name: okx-btc-cash-and-carry-${{ env.CASH_FUTURE_ID }}-${{ github.run_id }}
-          path: artifacts/cash-historical-fixture/
+          path: |
+            artifacts/cash-historical-fixture/**
+            !artifacts/cash-historical-fixture/compact/**
           if-no-files-found: error
+
+      - name: Finalize compact provenance
+        env:
+          PREPARED_ARTIFACT_ID: ${{ steps.upload-prepared.outputs.artifact-id }}
+          PREPARED_ARTIFACT_DIGEST: ${{ steps.upload-prepared.outputs.artifact-digest }}
+        run: |
+          uv run python scripts/finalize_cash_compact_fixture.py \
+            artifacts/cash-historical-fixture/compact \
+            --workflow-run "${GITHUB_RUN_ID}" \
+            --artifact-id "${PREPARED_ARTIFACT_ID}" \
+            --artifact-digest "${PREPARED_ARTIFACT_DIGEST}"
+
+      - name: Upload commit-ready compact fixture
+        uses: actions/upload-artifact@v4
+        with:
+          name: okx-btc-cash-and-carry-compact-${{ env.CASH_FUTURE_ID }}-${{ github.run_id }}
+          path: artifacts/cash-historical-fixture/compact/
+          if-no-files-found: error
+
       - name: Upload actuals
         if: always()
         uses: actions/upload-artifact@v4
