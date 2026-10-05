@@ -158,5 +158,6 @@
     "reason": "official funding archive has no settlement mark; confirmed 1m mark-price low/high bounds the funding settlement minute"
   },
   "strategy": "funding-carry",
-  "entry_market_date": "2026-09-01"
+  "entry_market_date": "2026-09-01",
+  "pinning_status": "commit_ready"
 }
