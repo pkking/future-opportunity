@@ -1,6 +1,6 @@
 # 2026-10-05-historical-backtest-evidence: Historical strategy backtest evidence
 
-Status: IMPLEMENTING
+Status: WAITING_FOR_DECISION
 Owner: agent
 Started: 2026-10-05
 Last checkpoint: 2026-10-05
@@ -59,12 +59,12 @@ real market history.
 - [x] Define a canonical historical replay dataset format.
 - [x] Implement import/normalization tooling with checksums.
 - [x] Implement strategy backtest runner over multiple timestamps/periods.
-- [ ] Produce actual-vs-target aggregate metrics and per-sample diagnostics.
+- [x] Produce actual-vs-target aggregate metrics and per-sample diagnostics.
 - [x] Funding Carry historical evidence includes funding history and market price evidence.
 - [x] Cash-and-Carry historical evidence includes dated-future basis through expiry/close evidence.
-- [ ] CI has an offline pinned historical-backtest smoke/acceptance dataset.
-- [ ] Evidence artifact is uploaded even on failure.
-- [ ] README/testing docs describe provenance and reproduction.
+- [x] CI has an offline pinned historical-backtest smoke/acceptance dataset.
+- [x] Evidence artifact is uploaded even on failure.
+- [x] README/testing docs describe provenance and reproduction.
 - [ ] Final CI green.
 
 ## Implementation slices
@@ -73,19 +73,19 @@ real market history.
 - [x] 2. Record data/evidence design and any material decision as ADR.
 - [x] 3. Add canonical replay-domain format and importer.
 - [x] 4. Add backtest application workflow and metrics.
-- [ ] 5. Add pinned historical fixtures + provenance/checksum manifest.
-- [ ] 6. Add historical strategy targets and CI evidence.
-- [ ] 7. Document reproduction and close the plan.
+- [x] 5. Add pinned historical fixtures + provenance/checksum manifest.
+- [ ] 6. Decide historical target semantics; CI evidence is implemented.
+- [ ] 7. Close the plan after target-semantics decision.
 
 ## Verification matrix
 
 | Scope | Command / CI gate | Expected evidence | Status |
 |---|---|---|---|
-| Static | existing static gate | zero violations | pending |
-| Code | code-level test gate | importer/replay/metrics tests | pending |
-| API | API contract gate | no regression | pending |
-| Reference E2E | existing strategy E2E | 3 scenarios remain green | pending |
-| Historical backtest | new offline replay gate | metrics + provenance artifact | pending |
+| Static | existing static gate | zero violations | verified on current implementation commits |
+| Code | code-level test gate | importer/replay/metrics tests | verified on current implementation commits |
+| API | API contract gate | no regression | verified on current implementation commits |
+| Reference E2E | existing strategy E2E | reference scenarios remain green | verified; compact historical tests also run offline |
+| Historical backtest | Historical Backtest Smoke | metrics + provenance artifact | verified run 37315646389, artifact 11347462701 |
 
 ## Decision gates
 
@@ -226,16 +226,34 @@ None.
 
 ## Resume from here
 
-Commit compact, derived Funding Carry and Cash-and-Carry historical smoke
-fixtures (raw archives remain out of git) and add an offline historical smoke CI
-that verifies checksums, provenance, qualification semantics, and
-machine-readable actuals.
+Human decision required: choose the historical target semantics in the
+Decision gates section. All non-target implementation is complete. Do not
+change reference targets or convert reporting-only comparisons into pass/fail
+until that decision is approved.
 After all non-target implementation is complete, stop at the historical target
 semantics decision gate; do not change existing reference return targets.
 
 ## Completion
 
-Final implementation commit:
-CI run:
-Historical evidence artifact:
-Remaining unassessed items:
+Final implementation commit: pending target-semantics decision
+CI run: historical smoke 37315646389 passed; current main CI remains independently gated
+Historical evidence artifact: 11347462701
+Remaining unassessed items: historical acceptance target semantics only
+
+- 2026-10-05: committed compact Funding Carry fixture
+  `okx-btc-usdt-funding-carry-2026-09-01-v1-target-compact`, derived from
+  preparation workflow 37250411433 / artifact 11320128320. The fixture records
+  artifact ZIP SHA-256
+  fe977db2305e8326d2eea4a1dbc1a20a01218f7a4270a227cdaabe1903dab0af,
+  parent canonical checksums, frozen 10,000 USDT scope, and 120% required-base
+  depth preservation.
+- 2026-10-05: compact Funding fixture replay remained semantically identical to
+  the full prepared artifact: the one-day case is rejected with
+  `expected_net_return_not_positive` and expected net return
+  -0.001309413091319054999999999910.
+- 2026-10-05: Historical Backtest Smoke run 37315646389 passed. Artifact
+  11347462701 contains combined machine-readable evidence for both pinned real
+  datasets. Checksum/provenance and replay-semantics invariants are true for
+  both strategies. Existing deterministic reference targets are included only
+  as reporting context; `historical_gate_semantics` is
+  `pending_human_decision`.
