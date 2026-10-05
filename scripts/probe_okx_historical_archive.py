@@ -384,6 +384,8 @@ def scan_futures_catalog_dates() -> dict[str, Any]:
         datetime(2026, 8, 1, tzinfo=UTC),
         datetime(2026, 7, 1, tzinfo=UTC),
         datetime(2026, 6, 1, tzinfo=UTC),
+        datetime(2026, 6, 25, tzinfo=UTC),
+        datetime(2026, 6, 26, tzinfo=UTC),
         datetime(2026, 3, 1, tzinfo=UTC),
     )
     results: dict[str, Any] = {}
