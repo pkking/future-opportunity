@@ -374,7 +374,7 @@ def main() -> None:
     }
     failures: list[str] = []
 
-    for instrument_type in ("SPOT", "SWAP"):
+    for instrument_type in ("SPOT", "SWAP", "FUTURES"):
         try:
             result = probe(instrument_type)
             if result.get("status") != "schema_sampled":
