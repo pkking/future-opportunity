@@ -261,6 +261,10 @@ def _validate_derived_funding_fixture(
     scope = manifest.get("fixture_scope")
     if derived is None and scope is None:
         return
+    if manifest.get("pinning_status") != "commit_ready":
+        raise ValueError(
+            "derived funding fixture must be finalized as commit_ready"
+        )
     if not isinstance(derived, dict) or not isinstance(scope, dict):
         raise ValueError(
             "derived funding fixture requires artifact and scope provenance"
