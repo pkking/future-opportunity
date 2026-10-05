@@ -361,6 +361,59 @@ Cash-and-Carry can be marked `realized` when the close evidence is complete. If 
 
 See [ADR-0003](docs/adr/0003-unassessed-return-components.md) and [ADR-0004](docs/adr/0004-public-delivery-settlement.md).
 
+## Historical backtest evidence
+
+The repository keeps deterministic reference E2E and real historical replay as
+two separate evidence layers.
+
+Pinned historical smoke fixtures live under:
+
+```text
+tests/fixtures/historical/
+```
+
+The committed fixtures are **compact derivatives** of larger official OKX
+archives. Raw exchange archives remain outside git. Each manifest records:
+
+- official source endpoint / filename;
+- raw SHA-256;
+- parent canonical SHA-256;
+- preparation workflow run + artifact ID + artifact ZIP SHA-256;
+- instrument metadata provenance;
+- sample timestamps and staleness bounds;
+- the frozen 10,000 USDT scenario and the exact base quantity preserved;
+- the compact-depth derivation rule.
+
+The compact order books retain at least 120% of the frozen scenario's required
+base quantity on both sides. They are therefore suitable for deterministic
+replay of that frozen scenario, but are **not** presented as full-book
+market-capacity datasets.
+
+Current pinned real-market evidence includes:
+
+- OKX BTC-USDT Funding Carry, 2026-09-01;
+- OKX BTC-USDT / BTC-USDT-260626 Cash-and-Carry, June 2026.
+
+Both current historical cases are legitimate negative examples under the
+existing default cost assumptions: the product workflow rejects them because
+expected net return is not positive. This is evidence that qualification works;
+it is not a reason to lower the deterministic reference targets.
+
+Run the offline historical smoke directly:
+
+```bash
+uv run python scripts/run_pinned_historical_smoke.py
+uv run pytest tests/e2e/test_historical_backtest_acceptance.py -v
+```
+
+CI workflow `Historical Backtest Smoke` uploads machine-readable historical
+evidence even on failure.
+
+Historical return thresholds are intentionally not yet used as a pass/fail gate.
+The reference thresholds in `tests/e2e/strategy-targets.json` are shown in the
+historical evidence only for context until historical target semantics are
+explicitly approved.
+
 ## Architecture
 
 The system follows a domain-centric Ports & Adapters design.
