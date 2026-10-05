@@ -2,9 +2,17 @@ name: Prepare Historical Backtest Fixture
 
 on:
   workflow_dispatch:
+    inputs:
+      history_date:
+        description: UTC market date (YYYY-MM-DD)
+        required: true
+        default: "2026-09-01"
   push:
     paths:
       - scripts/prepare_okx_funding_history_fixture.py
+      - scripts/finalize_funding_compact_fixture.py
+      - src/future_opportunity/backtest/funding_compact.py
+      - src/future_opportunity/backtest/compact.py
       - .github/workflows/prepare-historical-fixture.yml
 
 permissions:
@@ -15,22 +23,40 @@ jobs:
     name: Prepare official OKX BTC fixture
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      HISTORY_DATE: ${{ inputs.history_date || '2026-09-01' }}
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
       - run: uv sync --all-extras --dev
-      - name: Download, verify and normalize official history
+      - name: Download, verify, normalize and compact official history
         env:
           HISTORICAL_FIXTURE_DIR: artifacts/historical-fixture
-          HISTORY_DATE: "2026-09-01"
           HISTORY_CADENCE_SECONDS: "900"
           HISTORY_MAX_STALENESS_SECONDS: "5"
           HISTORY_MAX_RAW_MB: "600"
         run: uv run python scripts/prepare_okx_funding_history_fixture.py
-      - name: Upload canonical fixture and provenance
-        if: always()
+
+      - name: Upload full preparation evidence
+        id: upload-prepared
         uses: actions/upload-artifact@v4
         with:
-          name: okx-btc-funding-history-2026-09-01
-          path: artifacts/historical-fixture/
+          name: okx-btc-funding-history-${{ env.HISTORY_DATE }}
+          path: |
+            artifacts/historical-fixture/**
+            !artifacts/historical-fixture/compact/**
+          if-no-files-found: error
+
+      - name: Finalize compact provenance
+        env:
+          PREPARED_ARTIFACT_ID: ${{ steps.upload-prepared.outputs.artifact-id }}
+          PREPARED_ARTIFACT_DIGEST: ${{ steps.upload-prepared.outputs.artifact-digest }}
+        run: |
+          uv run python scripts/finalize_funding_compact_fixture.py             artifacts/historical-fixture/compact             --workflow-run "${GITHUB_RUN_ID}"             --artifact-id "${PREPARED_ARTIFACT_ID}"             --artifact-digest "${PREPARED_ARTIFACT_DIGEST}"
+
+      - name: Upload commit-ready compact fixture
+        uses: actions/upload-artifact@v4
+        with:
+          name: okx-btc-funding-compact-${{ env.HISTORY_DATE }}
+          path: artifacts/historical-fixture/compact/
           if-no-files-found: error
