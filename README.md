@@ -409,10 +409,30 @@ uv run pytest tests/e2e/test_historical_backtest_acceptance.py -v
 CI workflow `Historical Backtest Smoke` uploads machine-readable historical
 evidence even on failure.
 
-Historical return thresholds are intentionally not yet used as a pass/fail gate.
-The reference thresholds in `tests/e2e/strategy-targets.json` are shown in the
-historical evidence only for context until historical target semantics are
-explicitly approved.
+Historical acceptance follows
+[ADR-0007](docs/adr/0007-progressive-historical-acceptance-policy.md).
+
+V0 uses a **provenance-and-semantics gate**:
+
+- fixture checksums and source provenance must verify;
+- replay must be deterministic and offline;
+- compact-fixture derivation and quantity normalization must remain valid;
+- pinned real-market cases must reproduce their expected business qualification
+  semantics;
+- historical returns are reported but do not determine pass/fail.
+
+This means a real historical **negative** opportunity can correctly pass the
+historical gate when the production workflow rejects it for the expected reason.
+The deterministic reference targets in `tests/e2e/strategy-targets.json`
+remain unchanged and continue to gate the synthetic/reference strategy E2E.
+
+The active policy is versioned in
+`tests/e2e/historical-target-policy.json`. The transition to a distribution-
+based historical return gate becomes eligible only after at least **30 distinct
+pinned entry-market days per strategy**; **90 days per strategy** is preferred
+before freezing stable thresholds. Activation still requires a separate ADR and
+human approval. Distribution thresholds must not be copied automatically from
+the deterministic reference targets.
 
 ## Architecture
 
@@ -426,5 +446,7 @@ See:
 - [ADR-0003: Explicit Unassessed Return Components](docs/adr/0003-unassessed-return-components.md)
 - [ADR-0004: Public Delivery Settlement as Execution Evidence](docs/adr/0004-public-delivery-settlement.md)
 - [ADR-0005: Liquidity-Bounded Deployment Policy](docs/adr/0005-liquidity-bounded-deployment.md)
+- [ADR-0006: Historical Backtest Dataset Provenance](docs/adr/0006-historical-backtest-dataset-provenance.md)
+- [ADR-0007: Progressive Historical Acceptance Policy](docs/adr/0007-progressive-historical-acceptance-policy.md)
 
 Changes to frozen domain boundaries, return semantics, capital semantics, or the paper/live safety boundary require an ADR.
