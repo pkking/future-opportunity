@@ -56,8 +56,8 @@ real market history.
 ## Acceptance criteria
 
 - [x] Select an official/open historical data source with documented provenance.
-- [ ] Define a canonical historical replay dataset format.
-- [ ] Implement import/normalization tooling with checksums.
+- [x] Define a canonical historical replay dataset format.
+- [x] Implement import/normalization tooling with checksums.
 - [ ] Implement strategy backtest runner over multiple timestamps/periods.
 - [ ] Produce actual-vs-target aggregate metrics and per-sample diagnostics.
 - [ ] Funding Carry historical evidence includes funding history and market price evidence.
@@ -71,7 +71,7 @@ real market history.
 
 - [x] 1. Research official/open historical data sources and reusable tooling.
 - [x] 2. Record data/evidence design and any material decision as ADR.
-- [ ] 3. Add canonical replay-domain format and importer.
+- [x] 3. Add canonical replay-domain format and importer.
 - [ ] 4. Add backtest application workflow and metrics.
 - [ ] 5. Add pinned historical fixtures + provenance/checksum manifest.
 - [ ] 6. Add historical strategy targets and CI evidence.
@@ -134,6 +134,23 @@ None yet. Research first.
   ce5a600e578678a73294a316592afea9cc2a7f0702bf15d56eb0c9ee68fa5a65.
   The funding archive contains no mark price, so historical funding cash-flow
   evidence requires a separately pinned mark-price source.
+- 2026-10-05: fail-closed module-4 tar.gz/JSONL L2 parser implemented and CI
+  verified. Derivative quantity normalization requires pinned contract metadata
+  and refuses price-dependent normalization when ctValCcy is not the base asset.
+- 2026-10-05: canonical full-book JSONL schema v1 implemented with deterministic
+  serialization and SHA-256 round-trip verification.
+- 2026-10-05: asynchronous book alignment implemented as explicit as-of join
+  with max-staleness; missing/stale samples are counted instead of silently
+  filled forward.
+- 2026-10-05: strict module-3 funding ZIP/CSV parser implemented and CI verified.
+- 2026-10-05: Cash-and-Carry historical multi-case runner implemented through
+  the production Discover -> Simulate -> Delivery Close workflow; CI run
+  37249303268 passed.
+- 2026-10-05: module-6 BTC 50-level files are not suitable as small fixtures:
+  2026-10-01 SPOT catalog size 228.7 MB, SWAP 318.11 MB; FUTURES had no module-6
+  candidate. Module-4 FUTURES also returned no candidate for BTC-USDT on that
+  date, so dated-future historical coverage remains an evidence gap rather than
+  an assumed capability.
 
 ## Deviations and discoveries
 
@@ -141,8 +158,11 @@ None.
 
 ## Resume from here
 
-Implement the verified funding ZIP/CSV parser, then add a separately pinned
-mark-price history source before calculating historical funding cash flows.
+Add an offline preparation workflow that downloads official BTC module-4
+SPOT/SWAP archives once, validates raw SHA-256 and metadata, streams them through
+the strict normalizer, samples aligned books, and emits a small canonical fixture
+plus provenance manifest as an artifact. In parallel, probe dated FUTURES
+coverage on additional dates; do not invent a future-book source if absent.
 
 ## Completion
 
