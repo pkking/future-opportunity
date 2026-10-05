@@ -1,0 +1,61 @@
+name: Prepare Funding Historical Corpus
+
+on:
+  workflow_dispatch:
+    inputs:
+      dates_json:
+        description: JSON array of UTC market dates
+        required: true
+        default: '["2026-09-02","2026-09-03"]'
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    name: Prepare Funding day ${{ matrix.history_date }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        history_date: ${{ fromJSON(inputs.dates_json) }}
+    env:
+      HISTORY_DATE: ${{ matrix.history_date }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+
+      - name: Download, verify, normalize and compact official history
+        env:
+          HISTORICAL_FIXTURE_DIR: artifacts/historical-fixture
+          HISTORY_CADENCE_SECONDS: "900"
+          HISTORY_MAX_STALENESS_SECONDS: "5"
+          HISTORY_MAX_RAW_MB: "600"
+        run: uv run python scripts/prepare_okx_funding_history_fixture.py
+
+      - name: Upload full preparation evidence
+        id: upload-prepared
+        uses: actions/upload-artifact@v4
+        with:
+          name: okx-btc-funding-history-${{ matrix.history_date }}
+          path: |
+            artifacts/historical-fixture/**
+            !artifacts/historical-fixture/compact/**
+          if-no-files-found: error
+
+      - name: Finalize compact provenance
+        env:
+          PREPARED_ARTIFACT_ID: ${{ steps.upload-prepared.outputs.artifact-id }}
+          PREPARED_ARTIFACT_DIGEST: ${{ steps.upload-prepared.outputs.artifact-digest }}
+        run: |
+          uv run python scripts/finalize_funding_compact_fixture.py             artifacts/historical-fixture/compact             --workflow-run "${GITHUB_RUN_ID}"             --artifact-id "${PREPARED_ARTIFACT_ID}"             --artifact-digest "${PREPARED_ARTIFACT_DIGEST}"
+
+      - name: Upload commit-ready compact fixture
+        uses: actions/upload-artifact@v4
+        with:
+          name: okx-btc-funding-compact-${{ matrix.history_date }}
+          path: artifacts/historical-fixture/compact/
+          if-no-files-found: error
