@@ -127,6 +127,13 @@ None yet. Research first.
 - 2026-10-05: hftbacktest is useful reference material for deterministic L2
   replay methodology, but is not required as a dependency for the current
   taker/capacity execution model.
+- 2026-10-05: funding schema probe run 37249021018 verified the official
+  BTC-USDT-SWAP monthly funding archive. It is a ZIP containing CSV with exactly
+  `instrument_name,funding_rate,funding_time`; sampled rows are 8-hour funding
+  events. Raw SHA-256:
+  ce5a600e578678a73294a316592afea9cc2a7f0702bf15d56eb0c9ee68fa5a65.
+  The funding archive contains no mark price, so historical funding cash-flow
+  evidence requires a separately pinned mark-price source.
 
 ## Deviations and discoveries
 
@@ -134,9 +141,8 @@ None.
 
 ## Resume from here
 
-Implement the verified streaming tar.gz JSONL order-book replayer. Require an
-initial snapshot, fail closed on unknown actions/schema, and require pinned
-contract metadata before normalizing derivative sizes.
+Implement the verified funding ZIP/CSV parser, then add a separately pinned
+mark-price history source before calculating historical funding cash flows.
 
 ## Completion
 
