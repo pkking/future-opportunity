@@ -228,8 +228,11 @@ def _mark_candle(
 
 def _source_view(source, raw_sha256: str, downloaded_bytes: int) -> dict[str, Any]:
     view = asdict(source)
-    for key in ("date_range_start", "date_range_end", "data_date"):
-        view[key] = view[key].isoformat()
+    for key, value in tuple(view.items()):
+        if isinstance(value, datetime):
+            view[key] = value.isoformat()
+        elif isinstance(value, Decimal):
+            view[key] = str(value)
     view["raw_sha256"] = raw_sha256
     view["downloaded_bytes"] = downloaded_bytes
     return view
