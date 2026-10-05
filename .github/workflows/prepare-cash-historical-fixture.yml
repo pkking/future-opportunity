@@ -2,10 +2,28 @@ name: Prepare Cash and Carry Historical Fixture
 
 on:
   workflow_dispatch:
+    inputs:
+      entry_at:
+        description: Entry sample timestamp (ISO-8601)
+        required: true
+        default: "2026-06-01T00:15:00+00:00"
+      exit_at:
+        description: Pre-expiry close timestamp (ISO-8601)
+        required: true
+        default: "2026-06-25T00:15:00+00:00"
+      future_id:
+        description: Concrete historical OKX BTC-USDT expiry future ID
+        required: true
+        default: "BTC-USDT-260626"
+      expiry_at:
+        description: Contract expiry timestamp (ISO-8601)
+        required: true
+        default: "2026-06-26T08:00:00+00:00"
   push:
     paths:
       - scripts/prepare_okx_cash_and_carry_fixture.py
       - scripts/run_cash_historical_backtest.py
+      - src/future_opportunity/backtest/cash_fixture.py
       - .github/workflows/prepare-cash-historical-fixture.yml
 
 permissions:
@@ -15,6 +33,11 @@ jobs:
   prepare:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      CASH_ENTRY_AT: ${{ inputs.entry_at || '2026-06-01T00:15:00+00:00' }}
+      CASH_EXIT_AT: ${{ inputs.exit_at || '2026-06-25T00:15:00+00:00' }}
+      CASH_FUTURE_ID: ${{ inputs.future_id || 'BTC-USDT-260626' }}
+      CASH_EXPIRY_AT: ${{ inputs.expiry_at || '2026-06-26T08:00:00+00:00' }}
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
@@ -27,22 +50,19 @@ jobs:
         run: uv run python scripts/prepare_okx_cash_and_carry_fixture.py
       - name: Evaluate historical actuals
         run: |
-          uv run python scripts/run_cash_historical_backtest.py \
-            artifacts/cash-historical-fixture \
-            --output artifacts/cash-historical-backtest/report.json \
-            --capital 10000
+          uv run python scripts/run_cash_historical_backtest.py             artifacts/cash-historical-fixture             --output artifacts/cash-historical-backtest/report.json             --capital 10000
           cat artifacts/cash-historical-backtest/report.json
       - name: Upload fixture
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: okx-btc-cash-and-carry-2026-06
+          name: okx-btc-cash-and-carry-${{ env.CASH_FUTURE_ID }}-${{ github.run_id }}
           path: artifacts/cash-historical-fixture/
           if-no-files-found: error
       - name: Upload actuals
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: okx-btc-cash-and-carry-actuals-2026-06
+          name: okx-btc-cash-and-carry-actuals-${{ env.CASH_FUTURE_ID }}-${{ github.run_id }}
           path: artifacts/cash-historical-backtest/report.json
           if-no-files-found: warn
