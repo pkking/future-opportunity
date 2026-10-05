@@ -148,3 +148,15 @@ class HistoricalAlignmentReport:
         if self.requested_samples == 0:
             return Decimal(0)
         return Decimal(self.emitted_samples) / Decimal(self.requested_samples)
+
+
+@dataclass(frozen=True, slots=True)
+class HistoricalFundingObservation:
+    instrument_id: str
+    source_line: int
+    funding_time: datetime
+    funding_rate: Decimal
+
+    def __post_init__(self) -> None:
+        if self.source_line <= 1:
+            raise ValueError("funding source_line must refer to a CSV data row")
