@@ -337,11 +337,11 @@ def test_sampled_replay_does_not_backfill_before_initial_snapshot() -> None:
             instrument_type="SPOT",
             expected_instrument_id="BTC-USDT",
             start=start,
-            end=start + timedelta(seconds=30),
+            end=start + timedelta(seconds=20),
             cadence=timedelta(seconds=10),
         )
     )
 
     assert len(observations) == 1
-    assert observations[0].observed_at == start + timedelta(seconds=25)
-    assert observations[0].source_line == 2
+    assert observations[0].observed_at == start + timedelta(seconds=15)
+    assert observations[0].source_line == 1
