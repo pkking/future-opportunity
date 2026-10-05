@@ -9,6 +9,9 @@ on:
       end_date:
         description: Last UTC market date (YYYY-MM-DD), inclusive
         required: true
+  push:
+    paths:
+      - ".github/workflows/prepare-funding-historical-batch.yml"
 
 permissions:
   contents: read
@@ -26,8 +29,8 @@ jobs:
       - id: range
         name: Build bounded date matrix
         env:
-          START_DATE: ${{ inputs.start_date }}
-          END_DATE: ${{ inputs.end_date }}
+          START_DATE: ${{ inputs.start_date || '2026-09-02' }}
+          END_DATE: ${{ inputs.end_date || '2026-09-02' }}
         run: |
           dates="$(uv run python scripts/list_historical_dates.py \
             "${START_DATE}" "${END_DATE}" --max-days 31)"
