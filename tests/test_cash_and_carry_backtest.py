@@ -5,6 +5,7 @@ import pytest
 
 from future_opportunity.application.backtest.cash_and_carry import (
     HistoricalCashAndCarryCase,
+    HistoricalCashAndCarryCloseCase,
     run_cash_and_carry_backtest,
 )
 from future_opportunity.domain.market.snapshot import (
@@ -137,3 +138,84 @@ async def test_cash_backtest_aggregates_qualified_and_realized_cases() -> None:
         assert accepted.initial_delta_pct == Decimal(0)
         assert accepted.realized_net_return is not None
         assert accepted.evidence_ids
+
+
+def close_case(
+    case_id: str,
+    *,
+    future_entry_bid: str,
+    spot_exit_bid: str,
+    future_exit_ask: str,
+) -> HistoricalCashAndCarryCloseCase:
+    observed_at = BASE
+    expiry = observed_at + timedelta(days=30)
+    exit_at = observed_at + timedelta(days=24)
+    return HistoricalCashAndCarryCloseCase(
+        case_id=case_id,
+        entry=CashAndCarryMarketSnapshot(
+            venue="fixture",
+            base="BTC",
+            quote="USDT",
+            spot_instrument_id="fixture:spot",
+            future_instrument_id="fixture:future:close",
+            spot_book=book("99", "100", observed_at),
+            future_book=book(
+                future_entry_bid,
+                str(Decimal(future_entry_bid) + Decimal(1)),
+                observed_at,
+            ),
+            expiry=expiry,
+            observed_at=observed_at,
+        ),
+        exit=CashAndCarryMarketSnapshot(
+            venue="fixture",
+            base="BTC",
+            quote="USDT",
+            spot_instrument_id="fixture:spot",
+            future_instrument_id="fixture:future:close",
+            spot_book=book(
+                spot_exit_bid,
+                str(Decimal(spot_exit_bid) + Decimal("0.5")),
+                exit_at,
+            ),
+            future_book=book(
+                str(Decimal(future_exit_ask) - Decimal("0.5")),
+                future_exit_ask,
+                exit_at,
+            ),
+            expiry=expiry,
+            observed_at=exit_at,
+        ),
+        evidence_ids=(f"fixture:{case_id}:entry", f"fixture:{case_id}:exit"),
+    )
+
+
+@pytest.mark.asyncio
+async def test_cash_backtest_supports_pre_expiry_two_leg_close() -> None:
+    report = await run_cash_and_carry_backtest(
+        (
+            close_case(
+                "pre-expiry",
+                future_entry_bid="105",
+                spot_exit_bid="103",
+                future_exit_ask="103.5",
+            ),
+        ),
+        capital=Decimal(10_000),
+        assumptions=CashAndCarryAssumptions(
+            spot_entry_fee_bps=Decimal(0),
+            futures_entry_fee_bps=Decimal(0),
+            spot_exit_fee_bps=Decimal(0),
+            futures_settlement_fee_bps=Decimal(0),
+            exit_buffer_bps=Decimal(0),
+        ),
+    )
+
+    result = report.cases[0]
+    assert result.qualified is True
+    assert result.close_mode == "pre-expiry"
+    assert result.return_complete is True
+    assert result.realized_net_return is not None
+    assert result.initial_delta_pct == Decimal(0)
+    assert result.residual_directional_pnl == Decimal(0)
+    assert result.exit_at == (BASE + timedelta(days=24)).isoformat()
