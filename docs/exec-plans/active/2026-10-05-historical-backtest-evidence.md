@@ -60,8 +60,8 @@ real market history.
 - [x] Implement import/normalization tooling with checksums.
 - [x] Implement strategy backtest runner over multiple timestamps/periods.
 - [ ] Produce actual-vs-target aggregate metrics and per-sample diagnostics.
-- [ ] Funding Carry historical evidence includes funding history and market price evidence.
-- [ ] Cash-and-Carry historical evidence includes dated-future basis through expiry/close evidence.
+- [x] Funding Carry historical evidence includes funding history and market price evidence.
+- [x] Cash-and-Carry historical evidence includes dated-future basis through expiry/close evidence.
 - [ ] CI has an offline pinned historical-backtest smoke/acceptance dataset.
 - [ ] Evidence artifact is uploaded even on failure.
 - [ ] README/testing docs describe provenance and reproduction.
@@ -89,7 +89,19 @@ real market history.
 
 ## Decision gates
 
-None yet. Research first.
+### Historical target semantics
+
+Implementation can continue through pinned offline fixtures and actuals. Before
+turning historical evidence into a pass/fail acceptance gate, human approval is
+required on whether historical targets:
+
+1. reuse deterministic reference per-opportunity return thresholds;
+2. use separate historical aggregate/distribution thresholds; or
+3. gate evidence/provenance/strategy semantics while reporting historical return
+   distributions without requiring every historical period to hit the reference
+   return target.
+
+Do not lower the existing reference targets to make historical data pass.
 
 ## Evidence log
 
@@ -173,6 +185,24 @@ None yet. Research first.
   The 2026-06-01 archive contains exactly one member,
   `BTC-USDT-260626-L2orderbook-400lv-2026-06-01.data`, so the existing strict
   single-instrument L2 replay shape applies.
+- 2026-10-05: real Cash-and-Carry preparation run 37312871269
+  succeeded for `okx-btc-usdt-cash-and-carry-2026-06-v1`. The case uses
+  2026-06-01T00:15Z entry and 2026-06-25T00:15Z pre-expiry close for
+  `BTC-USDT-260626`, with four official module-4 L2 archives and explicit
+  product-spec metadata provenance. Canonical books are all within 28 ms of
+  their requested sample times. Fixture artifact ID 11346248569 (17 KB).
+- 2026-10-05: the first real Cash-and-Carry case was correctly rejected:
+  entry spot ask=73812.1, future bid=73955.9, expected_net_return=
+  -0.0007469851510475881110930647630, reason
+  `expected_net_return_not_positive`. Actuals artifact ID 11346154209.
+- 2026-10-05: Funding optimistic-horizon run 37312306663 scanned all 30
+  September daily entries at a 30-day horizon using real official funding
+  history and the production economics formula with zero slippage/infinite
+  liquidity. 27/30 optimistic returns were positive, but 0/30 reached the
+  deterministic reference threshold of 0.005. Best entry was 2026-09-20 with
+  optimistic_net_return=0.001984296236776657714285714286. This is an upper
+  bound before real L2 impact and establishes a product target decision gate;
+  it is not permission to lower the reference target.
 - 2026-10-05: querying the expired `BTC-USDT-260626` through current
   `/api/v5/public/instruments` returns OKX 51001. Historical derivative
   metadata therefore cannot be reconstructed from the current-instrument API.
@@ -188,13 +218,12 @@ None.
 
 ## Resume from here
 
-Prepare a longer-horizon Funding dataset with explicit entry/exit snapshots and
-30-day pre-entry funding context so the current cost model can be evaluated over
-economically relevant 7/22/29-day windows. Fetch mark-price interval evidence
-only from official confirmed 1-minute candles and emit actuals without changing
-targets. In parallel, finish BTC-USDT-260626 delivery-history capture and add an
-explicit expired-contract spec provenance record (0.01 BTC face value,
-multiplier 1) before normalizing the dated-future archive.
+Finish the June-1 full-day Cash-and-Carry entry scan and record its qualification
+distribution. Then commit a compact, derived historical smoke fixture (raw
+archives remain out of git) and add an offline historical smoke CI that verifies
+checksums, provenance, qualification semantics, and machine-readable actuals.
+After all non-target implementation is complete, stop at the historical target
+semantics decision gate; do not change existing reference return targets.
 
 ## Completion
 
