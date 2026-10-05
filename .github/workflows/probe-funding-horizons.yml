@@ -1,0 +1,31 @@
+name: Funding Horizon Feasibility Probe
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - scripts/probe_okx_funding_horizon_feasibility.py
+      - .github/workflows/probe-funding-horizons.yml
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - name: Evaluate funding-only optimistic horizon economics
+        run: |
+          mkdir -p artifacts/funding-horizon-probe
+          uv run python scripts/probe_okx_funding_horizon_feasibility.py \
+            | tee artifacts/funding-horizon-probe/report.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: funding-horizon-feasibility
+          path: artifacts/funding-horizon-probe/report.json
+          if-no-files-found: error
