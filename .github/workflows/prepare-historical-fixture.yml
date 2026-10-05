@@ -1,0 +1,36 @@
+name: Prepare Historical Backtest Fixture
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - scripts/prepare_okx_funding_history_fixture.py
+      - .github/workflows/prepare-historical-fixture.yml
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    name: Prepare official OKX BTC fixture
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - name: Download, verify and normalize official history
+        env:
+          HISTORICAL_FIXTURE_DIR: artifacts/historical-fixture
+          HISTORY_DATE: "2026-09-01"
+          HISTORY_CADENCE_SECONDS: "900"
+          HISTORY_MAX_STALENESS_SECONDS: "5"
+          HISTORY_MAX_RAW_MB: "600"
+        run: uv run python scripts/prepare_okx_funding_history_fixture.py
+      - name: Upload canonical fixture and provenance
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: okx-btc-funding-history-2026-09-01
+          path: artifacts/historical-fixture/
+          if-no-files-found: error
