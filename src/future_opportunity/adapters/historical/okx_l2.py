@@ -4,7 +4,7 @@ import io
 import json
 import tarfile
 from collections.abc import Iterable, Iterator
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
@@ -342,3 +342,209 @@ def _non_negative_integer(
             f"at line {source_line}"
         )
     return int(value)
+
+
+
+def iter_okx_l2_sampled_archive(
+    path: Path,
+    *,
+    instrument_type: str,
+    expected_instrument_id: str,
+    start: datetime,
+    end: datetime,
+    cadence: timedelta,
+    metadata: HistoricalInstrumentMetadata | None = None,
+) -> Iterator[HistoricalOrderBookObservation]:
+    """Sample a large official archive without materializing every update book."""
+    if not path.is_file():
+        raise FileNotFoundError(path)
+    try:
+        archive = tarfile.open(path, mode="r:gz")
+    except tarfile.TarError as error:
+        raise ValueError(f"unsupported OKX L2 archive: {path}") from error
+
+    with archive:
+        members = [
+            item
+            for item in archive.getmembers()
+            if item.isfile() and item.name.endswith(".data")
+        ]
+        if len(members) != 1:
+            raise ValueError(
+                "OKX L2 archive must contain exactly one .data member"
+            )
+        source = archive.extractfile(members[0])
+        if source is None:
+            raise ValueError("unable to open OKX L2 archive member")
+        with source, io.TextIOWrapper(source, encoding="utf-8-sig") as text:
+            yield from iter_okx_l2_sampled_jsonl(
+                text,
+                instrument_type=instrument_type,
+                expected_instrument_id=expected_instrument_id,
+                start=start,
+                end=end,
+                cadence=cadence,
+                metadata=metadata,
+            )
+
+
+def iter_okx_l2_sampled_jsonl(
+    lines: Iterable[str],
+    *,
+    instrument_type: str,
+    expected_instrument_id: str,
+    start: datetime,
+    end: datetime,
+    cadence: timedelta,
+    metadata: HistoricalInstrumentMetadata | None = None,
+) -> Iterator[HistoricalOrderBookObservation]:
+    """Emit latest-as-of books only at requested sample cadence.
+
+    Source timestamps remain the timestamp of the last applied exchange event,
+    allowing downstream alignment to measure staleness explicitly.
+    """
+    if start.tzinfo is None or end.tzinfo is None:
+        raise ValueError("sampling timestamps must be timezone-aware")
+    if end < start:
+        raise ValueError("sampling end must not be before start")
+    if cadence <= timedelta(0):
+        raise ValueError("sampling cadence must be positive")
+
+    instrument_type = instrument_type.upper()
+    if instrument_type not in _SUPPORTED_INSTRUMENT_TYPES:
+        raise ValueError(
+            f"unsupported OKX L2 instrument type: {instrument_type}"
+        )
+    quantity_multiplier = _quantity_multiplier(
+        instrument_type=instrument_type,
+        expected_instrument_id=expected_instrument_id,
+        metadata=metadata,
+    )
+
+    bids: dict[Decimal, Decimal] = {}
+    asks: dict[Decimal, Decimal] = {}
+    initialized = False
+    last_source_line = 0
+    last_action = ""
+    last_observed_at: datetime | None = None
+    previous_event_time: datetime | None = None
+    sampled_at = start
+
+    for source_line, raw_line in enumerate(lines, start=1):
+        line = raw_line.strip()
+        if not line:
+            continue
+
+        event = _parse_event(line, source_line)
+        instrument_id = _required_string(event, "instId", source_line)
+        if instrument_id != expected_instrument_id:
+            raise ValueError(
+                "historical event instrument mismatch at line "
+                f"{source_line}: {instrument_id} != {expected_instrument_id}"
+            )
+        action = _required_string(event, "action", source_line)
+        if action not in {"snapshot", "update"}:
+            raise ValueError(
+                f"unsupported historical action at line {source_line}: {action}"
+            )
+        if not initialized and action != "snapshot":
+            raise ValueError(
+                "historical replay must begin with a snapshot "
+                f"(line {source_line})"
+            )
+
+        observed_at = _timestamp(event, source_line)
+        if previous_event_time is not None and observed_at < previous_event_time:
+            raise ValueError(
+                "historical timestamps must be non-decreasing "
+                f"(line {source_line})"
+            )
+        previous_event_time = observed_at
+
+        while (
+            initialized
+            and sampled_at <= end
+            and observed_at > sampled_at
+        ):
+            if last_observed_at is None:
+                raise RuntimeError("initialized replay has no source timestamp")
+            yield _materialize_observation(
+                instrument_id=expected_instrument_id,
+                action=last_action,
+                source_line=last_source_line,
+                observed_at=last_observed_at,
+                bids=bids,
+                asks=asks,
+            )
+            sampled_at += cadence
+
+        if sampled_at > end:
+            return
+
+        raw_bids = _levels(event, "bids", source_line)
+        raw_asks = _levels(event, "asks", source_line)
+        if action == "snapshot":
+            bids = {}
+            asks = {}
+            initialized = True
+
+        _apply_levels(
+            bids,
+            raw_bids,
+            quantity_multiplier=quantity_multiplier,
+            source_line=source_line,
+        )
+        _apply_levels(
+            asks,
+            raw_asks,
+            quantity_multiplier=quantity_multiplier,
+            source_line=source_line,
+        )
+        last_source_line = source_line
+        last_action = action
+        last_observed_at = observed_at
+
+    while initialized and sampled_at <= end:
+        if last_observed_at is None:
+            raise RuntimeError("initialized replay has no source timestamp")
+        yield _materialize_observation(
+            instrument_id=expected_instrument_id,
+            action=last_action,
+            source_line=last_source_line,
+            observed_at=last_observed_at,
+            bids=bids,
+            asks=asks,
+        )
+        sampled_at += cadence
+
+
+def _materialize_observation(
+    *,
+    instrument_id: str,
+    action: str,
+    source_line: int,
+    observed_at: datetime,
+    bids: dict[Decimal, Decimal],
+    asks: dict[Decimal, Decimal],
+) -> HistoricalOrderBookObservation:
+    return HistoricalOrderBookObservation(
+        instrument_id=instrument_id,
+        action=action,
+        source_line=source_line,
+        observed_at=observed_at,
+        book=OrderBook(
+            bids=tuple(
+                OrderBookLevel(price=price, quantity=quantity)
+                for price, quantity in sorted(
+                    bids.items(),
+                    key=lambda item: item[0],
+                    reverse=True,
+                )
+            ),
+            asks=tuple(
+                OrderBookLevel(price=price, quantity=quantity)
+                for price, quantity in sorted(asks.items())
+            ),
+            observed_at=observed_at,
+        ),
+    )
