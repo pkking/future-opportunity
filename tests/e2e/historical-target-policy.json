@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "policy_id": "historical-acceptance-v0",
+  "mode": "provenance_and_semantics",
+  "reference_targets": {
+    "usage": "reporting_only",
+    "must_not_gate_historical_returns": true
+  },
+  "required_gate_checks": [
+    "funding_fixture_checksum_and_provenance_valid",
+    "cash_fixture_checksum_and_provenance_valid",
+    "funding_replay_semantics_stable",
+    "cash_replay_semantics_stable"
+  ],
+  "pinned_smoke_semantics": {
+    "funding_carry": {
+      "qualified": false,
+      "qualification_reasons": [
+        "expected_net_return_not_positive"
+      ]
+    },
+    "cash_and_carry": {
+      "qualified": false,
+      "qualification_reasons": [
+        "expected_net_return_not_positive"
+      ]
+    }
+  },
+  "transition_to_distribution_mode": {
+    "minimum_distinct_market_days_per_strategy": 30,
+    "preferred_distinct_market_days_per_strategy": 90,
+    "requires_separate_adr": true,
+    "thresholds_must_not_be_auto_derived_from_reference_targets": true,
+    "activation_requires_human_approval": true
+  }
+}
