@@ -189,3 +189,29 @@ USDC-USDT SPOT:
 USDC-USDT-SWAP:
 c21b083f6116cb9411d6738d85a2776db2db5fde579d0fd2d8cfbba2b5426835
 ```
+
+
+## Verified funding archive evidence
+
+The official module-3 funding archive was verified independently:
+
+```text
+workflow run: 37249021018
+instrument: BTC-USDT-SWAP
+archive: BTC-USDT-SWAP-fundingrates-2026-09.zip
+raw SHA-256:
+ce5a600e578678a73294a316592afea9cc2a7f0702bf15d56eb0c9ee68fa5a65
+```
+
+The archive contains one CSV member with the exact header:
+
+```text
+instrument_name,funding_rate,funding_time
+```
+
+Funding timestamps are milliseconds and sampled data shows the expected 8-hour
+settlement cadence.
+
+The archive does **not** contain mark price. A Funding Carry historical cash-flow
+calculation therefore requires a separately pinned mark-price evidence source.
+The importer must not infer settlement notional from the funding rate alone.
