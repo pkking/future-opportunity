@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import tempfile
@@ -23,10 +24,15 @@ from future_opportunity.adapters.historical.okx_funding import (
 from future_opportunity.adapters.historical.okx_l2 import (
     iter_okx_l2_sampled_archive,
 )
+from future_opportunity.adapters.historical.okx_mark_price import (
+    OKX_MARK_PRICE_HISTORY_ENDPOINT,
+    parse_okx_mark_price_page,
+)
 from future_opportunity.backtest.alignment import align_order_books
 from future_opportunity.backtest.canonical import (
     iter_canonical_order_books,
     write_canonical_funding,
+    write_canonical_mark_prices,
     write_canonical_order_books,
 )
 from future_opportunity.backtest.model import HistoricalInstrumentMetadata
@@ -164,6 +170,62 @@ def _swap_metadata(
     )
 
 
+def _mark_candle(
+    client: httpx.Client,
+    funding_time: datetime,
+):
+    target_ms = int(funding_time.timestamp() * 1000)
+    attempts = (
+        {
+            "instId": "BTC-USDT-SWAP",
+            "bar": "1m",
+            "after": str(target_ms + 60_000),
+            "limit": "5",
+        },
+        {
+            "instId": "BTC-USDT-SWAP",
+            "bar": "1m",
+            "before": str(target_ms - 60_000),
+            "limit": "5",
+        },
+    )
+    evidence: list[dict[str, str]] = []
+    for params in attempts:
+        payload = _request_json(
+            client,
+            OKX_MARK_PRICE_HISTORY_ENDPOINT,
+            params,
+        )
+        payload_sha256 = hashlib.sha256(
+            json.dumps(
+                payload,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode()
+        ).hexdigest()
+        evidence.append(
+            {
+                "query": json.dumps(params, sort_keys=True),
+                "response_sha256": payload_sha256,
+            }
+        )
+        page = parse_okx_mark_price_page(
+            payload,
+            instrument_id="BTC-USDT-SWAP",
+        )
+        exact = [
+            candle
+            for candle in page
+            if candle.started_at == funding_time
+        ]
+        if len(exact) == 1 and exact[0].confirmed:
+            return exact[0], tuple(evidence)
+    raise RuntimeError(
+        "unable to resolve confirmed 1m mark-price candle for "
+        f"{funding_time.isoformat()}"
+    )
+
+
 def _source_view(source, raw_sha256: str, downloaded_bytes: int) -> dict[str, Any]:
     view = asdict(source)
     for key in ("date_range_start", "date_range_end", "data_date"):
@@ -277,16 +339,36 @@ def main() -> None:
                 ),
                 swap_path,
             )
+            funding_observations = tuple(
+                observation
+                for observation in iter_okx_funding_archive(
+                    funding_raw,
+                    expected_instrument_id="BTC-USDT-SWAP",
+                )
+                if day <= observation.funding_time < day_end
+            )
             funding_summary = write_canonical_funding(
-                (
-                    observation
-                    for observation in iter_okx_funding_archive(
-                        funding_raw,
-                        expected_instrument_id="BTC-USDT-SWAP",
-                    )
-                    if day <= observation.funding_time < day_end
-                ),
+                funding_observations,
                 funding_path,
+            )
+
+            mark_candles = []
+            mark_evidence: dict[str, object] = {}
+            for observation in funding_observations:
+                candle, requests = _mark_candle(
+                    client,
+                    observation.funding_time,
+                )
+                mark_candles.append(candle)
+                mark_evidence[observation.funding_time.isoformat()] = {
+                    "requests": list(requests),
+                }
+                time.sleep(0.15)
+
+            mark_path = OUTPUT / "btc-usdt-swap-mark-price.jsonl"
+            mark_summary = write_canonical_mark_prices(
+                tuple(mark_candles),
+                mark_path,
             )
 
     alignment = align_order_books(
@@ -333,6 +415,11 @@ def main() -> None:
                     funding_bytes,
                 ),
             },
+            "mark_price": {
+                "endpoint": f"{BASE_URL}{OKX_MARK_PRICE_HISTORY_ENDPOINT}",
+                "bar": "1m",
+                "responses": mark_evidence,
+            },
         },
         "instrument_metadata": {
             key: (
@@ -366,6 +453,13 @@ def main() -> None:
                 "observed_start": funding_summary.observed_start.isoformat(),
                 "observed_end": funding_summary.observed_end.isoformat(),
             },
+            "mark_price": {
+                "path": mark_path.name,
+                "sha256": mark_summary.sha256,
+                "sample_count": mark_summary.sample_count,
+                "observed_start": mark_summary.observed_start.isoformat(),
+                "observed_end": mark_summary.observed_end.isoformat(),
+            },
         },
         "alignment": {
             "requested_samples": alignment.requested_samples,
@@ -377,10 +471,10 @@ def main() -> None:
             "stale_hedge_samples": alignment.stale_hedge_samples,
         },
         "evidence_limits": {
-            "funding_mark_price": "unassessed",
+            "funding_mark_price": "interval_bound",
             "reason": (
-                "official funding archive contains funding rate/time only; "
-                "mark-price evidence must be pinned separately"
+                "official funding archive has no settlement mark; confirmed "
+                "1m mark-price low/high bounds the funding settlement minute"
             ),
         },
     }
