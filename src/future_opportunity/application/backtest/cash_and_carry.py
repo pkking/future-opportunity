@@ -52,10 +52,37 @@ class HistoricalCashAndCarryCase:
 
 
 @dataclass(frozen=True, slots=True)
+class HistoricalCashAndCarryCloseCase:
+    case_id: str
+    entry: CashAndCarryMarketSnapshot
+    exit: CashAndCarryMarketSnapshot
+    evidence_ids: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        if not self.case_id:
+            raise ValueError("case_id is required")
+        if self.exit.future_instrument_id != self.entry.future_instrument_id:
+            raise ValueError("close future instrument must match entry future")
+        if self.exit.spot_instrument_id != self.entry.spot_instrument_id:
+            raise ValueError("close spot instrument must match entry spot")
+        if self.exit.observed_at <= self.entry.observed_at:
+            raise ValueError("close snapshot must be after entry")
+        if self.exit.observed_at >= self.entry.expiry:
+            raise ValueError("pre-expiry close must occur before future expiry")
+
+
+HistoricalCashAndCarryBacktestCase = (
+    HistoricalCashAndCarryCase | HistoricalCashAndCarryCloseCase
+)
+
+
+@dataclass(frozen=True, slots=True)
 class CashAndCarryBacktestCaseResult:
     case_id: str
     observed_at: str
     expiry: str
+    exit_at: str | None
+    close_mode: str
     qualified: bool
     qualification_reasons: tuple[str, ...]
     expected_net_return: Decimal
@@ -87,8 +114,8 @@ class CashAndCarryBacktestReport:
 
 @dataclass(slots=True)
 class _HistoricalCaseMarketData:
-    case: HistoricalCashAndCarryCase
-    delivered: bool = False
+    case: HistoricalCashAndCarryBacktestCase
+    closing: bool = False
 
     async def snapshots(
         self,
@@ -97,7 +124,11 @@ class _HistoricalCaseMarketData:
     ) -> tuple[CashAndCarryMarketSnapshot, ...]:
         if base != self.case.entry.base or quote != self.case.entry.quote:
             return ()
-        return () if self.delivered else (self.case.entry,)
+        if not self.closing:
+            return (self.case.entry,)
+        if isinstance(self.case, HistoricalCashAndCarryCloseCase):
+            return (self.case.exit,)
+        return ()
 
     async def spot_book(
         self,
@@ -106,6 +137,8 @@ class _HistoricalCaseMarketData:
     ) -> tuple[str, OrderBook]:
         if base != self.case.entry.base or quote != self.case.entry.quote:
             raise ValueError("historical case spot pair mismatch")
+        if not isinstance(self.case, HistoricalCashAndCarryCase):
+            raise ValueError("pre-expiry close does not use delivery spot evidence")
         return self.case.spot_close_instrument_id, self.case.spot_close_book
 
     async def delivery_settlement(
@@ -118,11 +151,13 @@ class _HistoricalCaseMarketData:
             return None
         if future_instrument_id != self.case.entry.future_instrument_id:
             return None
+        if not isinstance(self.case, HistoricalCashAndCarryCase):
+            return None
         return self.case.settlement
 
 
 async def run_cash_and_carry_backtest(
-    cases: tuple[HistoricalCashAndCarryCase, ...],
+    cases: tuple[HistoricalCashAndCarryBacktestCase, ...],
     *,
     capital: Decimal,
     assumptions: CashAndCarryAssumptions,
@@ -174,6 +209,16 @@ async def run_cash_and_carry_backtest(
                     case_id=case.case_id,
                     observed_at=case.entry.observed_at.isoformat(),
                     expiry=case.entry.expiry.isoformat(),
+                    exit_at=(
+                        case.exit.observed_at.isoformat()
+                        if isinstance(case, HistoricalCashAndCarryCloseCase)
+                        else case.spot_close_book.observed_at.isoformat()
+                    ),
+                    close_mode=(
+                        "pre-expiry"
+                        if isinstance(case, HistoricalCashAndCarryCloseCase)
+                        else "delivery"
+                    ),
                     qualified=False,
                     qualification_reasons=candidate.qualification.reasons,
                     expected_net_return=(
@@ -194,7 +239,7 @@ async def run_cash_and_carry_backtest(
             )
             continue
 
-        market.delivered = True
+        market.closing = True
         closed = await CloseCashAndCarry(
             market,
             simulations,
@@ -212,6 +257,16 @@ async def run_cash_and_carry_backtest(
                 case_id=case.case_id,
                 observed_at=case.entry.observed_at.isoformat(),
                 expiry=case.entry.expiry.isoformat(),
+                exit_at=(
+                    case.exit.observed_at.isoformat()
+                    if isinstance(case, HistoricalCashAndCarryCloseCase)
+                    else case.spot_close_book.observed_at.isoformat()
+                ),
+                close_mode=(
+                    "pre-expiry"
+                    if isinstance(case, HistoricalCashAndCarryCloseCase)
+                    else "delivery"
+                ),
                 qualified=True,
                 qualification_reasons=(),
                 expected_net_return=expected.expected_net_return,
