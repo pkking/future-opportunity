@@ -1,0 +1,64 @@
+name: Prepare Cash Historical Batch
+
+on:
+  workflow_dispatch:
+    inputs:
+      cases_json:
+        description: JSON array of {entry_at,exit_at,future_id,expiry_at}
+        required: true
+  push:
+    paths:
+      - ".github/workflows/prepare-cash-historical-batch.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  cases:
+    name: Resolve explicit Cash cases
+    runs-on: ubuntu-latest
+    outputs:
+      cases: ${{ steps.resolve.outputs.cases }}
+    steps:
+      - id: resolve
+        name: Validate case matrix shape
+        env:
+          CASES_JSON: ${{ inputs.cases_json || '[{"entry_at":"2026-06-02T00:15:00+00:00","exit_at":"2026-06-25T00:15:00+00:00","future_id":"BTC-USDT-260626","expiry_at":"2026-06-26T08:00:00+00:00"}]' }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+
+          cases = json.loads(os.environ["CASES_JSON"])
+          if not isinstance(cases, list) or not cases:
+              raise SystemExit("cases_json must be a non-empty JSON array")
+          if len(cases) > 31:
+              raise SystemExit("cases_json supports at most 31 cases")
+          required = {"entry_at", "exit_at", "future_id", "expiry_at"}
+          for index, case in enumerate(cases):
+              if not isinstance(case, dict) or set(case) != required:
+                  raise SystemExit(
+                      f"case {index} must contain exactly {sorted(required)}"
+                  )
+              if not all(isinstance(case[key], str) and case[key] for key in required):
+                  raise SystemExit(f"case {index} values must be non-empty strings")
+          compact = json.dumps(cases, separators=(",", ":"))
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"cases={compact}\n")
+          print(compact)
+          PY
+
+  prepare:
+    name: Prepare ${{ matrix.case.entry_at }} ${{ matrix.case.future_id }}
+    needs: cases
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        case: ${{ fromJSON(needs.cases.outputs.cases) }}
+    uses: ./.github/workflows/prepare-cash-historical-fixture.yml
+    with:
+      entry_at: ${{ matrix.case.entry_at }}
+      exit_at: ${{ matrix.case.exit_at }}
+      future_id: ${{ matrix.case.future_id }}
+      expiry_at: ${{ matrix.case.expiry_at }}
