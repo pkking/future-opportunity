@@ -31,6 +31,10 @@
     "preferred_distinct_market_days_per_strategy": 90,
     "requires_separate_adr": true,
     "thresholds_must_not_be_auto_derived_from_reference_targets": true,
-    "activation_requires_human_approval": true
+    "activation_requires_human_approval": true,
+    "required_strategies": [
+      "funding-carry",
+      "cash-and-carry"
+    ]
   }
 }
