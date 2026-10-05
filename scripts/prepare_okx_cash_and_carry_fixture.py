@@ -33,10 +33,27 @@ OUTPUT = Path(
         "artifacts/cash-historical-fixture",
     )
 )
-ENTRY_AT = datetime(2026, 6, 1, 0, 15, tzinfo=UTC)
-EXIT_AT = datetime(2026, 6, 25, 0, 15, tzinfo=UTC)
-EXPIRY = datetime(2026, 6, 26, 8, 0, tzinfo=UTC)
-RAW_FUTURE_ID = "BTC-USDT-260626"
+def env_datetime(name: str, default: str) -> datetime:
+    raw = os.getenv(name, default)
+    value = datetime.fromisoformat(raw)
+    if value.tzinfo is None:
+        raise ValueError(f"{name} must be timezone-aware")
+    return value.astimezone(UTC)
+
+
+ENTRY_AT = env_datetime(
+    "CASH_ENTRY_AT",
+    "2026-06-01T00:15:00+00:00",
+)
+EXIT_AT = env_datetime(
+    "CASH_EXIT_AT",
+    "2026-06-25T00:15:00+00:00",
+)
+EXPIRY = env_datetime(
+    "CASH_EXPIRY_AT",
+    "2026-06-26T08:00:00+00:00",
+)
+RAW_FUTURE_ID = os.getenv("CASH_FUTURE_ID", "BTC-USDT-260626")
 MAX_RAW_MB = int(os.getenv("CASH_HISTORY_MAX_RAW_MB", "600"))
 MAX_STALENESS_MS = int(os.getenv("CASH_HISTORY_MAX_STALENESS_MS", "5000"))
 
@@ -274,6 +291,13 @@ def prepare_component(
 
 
 def main() -> None:
+    if not RAW_FUTURE_ID.startswith("BTC-USDT-"):
+        raise ValueError("CASH_FUTURE_ID must identify a BTC-USDT expiry future")
+    if not ENTRY_AT < EXIT_AT < EXPIRY:
+        raise ValueError(
+            "Cash historical times must satisfy entry < exit < expiry"
+        )
+
     OUTPUT.mkdir(parents=True, exist_ok=True)
 
     with httpx.Client(timeout=120.0, follow_redirects=True) as client:
@@ -302,7 +326,11 @@ def main() -> None:
         "schema_version": 1,
         "strategy": "cash-and-carry",
         "close_mode": "pre-expiry",
-        "dataset_id": "okx-btc-usdt-cash-and-carry-2026-06-v1",
+        "dataset_id": (
+            "okx-btc-usdt-cash-and-carry-"
+            f"{ENTRY_AT.date().isoformat()}-{RAW_FUTURE_ID}-v1"
+        ),
+        "entry_market_date": ENTRY_AT.date().isoformat(),
         "venue": "okx",
         "base": "BTC",
         "quote": "USDT",
@@ -322,14 +350,15 @@ def main() -> None:
                 "contract_value_currency": "BTC",
                 "settlement_currency": "USDT",
                 "delivery_rule": "Friday 08:00 UTC",
-                "current_expired_instrument_lookup": {
-                    "status": "unavailable",
-                    "okx_error": "51001",
-                    "probe_workflow_run": "37311509216",
+                "input_contract": {
+                    "future_instrument_id": RAW_FUTURE_ID,
+                    "expiry": EXPIRY.isoformat(),
                 },
                 "note": (
-                    "These are documented BTCUSDT expiry-futures product "
-                    "specifications, not a recovered expired instrument row."
+                    "Contract value/multiplier are documented BTCUSDT "
+                    "expiry-futures product specifications. The concrete "
+                    "historical future ID and expiry are explicit preparation "
+                    "inputs, not reconstructed from the current-instrument API."
                 ),
             },
         },
