@@ -9,6 +9,7 @@ on:
       - "src/future_opportunity/backtest/**"
       - "tests/fixtures/historical/**"
       - "tests/e2e/test_historical_backtest_acceptance.py"
+      - "tests/e2e/historical-target-policy.json"
       - "scripts/run_pinned_historical_smoke.py"
       - ".github/workflows/historical-smoke.yml"
   workflow_dispatch:
