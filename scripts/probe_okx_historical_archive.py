@@ -272,6 +272,51 @@ def probe(instrument_type: str) -> dict[str, Any]:
         return result
 
 
+def probe_50_level(
+    instrument_type: str,
+) -> dict[str, Any]:
+    with httpx.Client(timeout=30.0, follow_redirects=True) as client:
+        params, payload = catalog(
+            client,
+            instrument_type=instrument_type,
+            module="6",
+            date_aggregation="daily",
+            timestamp_ms=DATE_MS,
+            selectors=("BTC-USDT",),
+        )
+        candidates = archive_candidates(payload)
+        selected = select_small_archive(candidates)
+        result: dict[str, Any] = {
+            "source": f"{BASE_URL}{CATALOG_PATH}",
+            "query": params,
+            "max_download_mb": MAX_DOWNLOAD_MB,
+            "catalog_candidates": candidates,
+            "status": "catalog_only",
+        }
+        if selected is None:
+            result["reason"] = "no_archive_within_probe_size_limit"
+            return result
+
+        with tempfile.TemporaryDirectory() as temporary:
+            archive_path = Path(temporary) / str(selected["filename"])
+            sha256, size, http = download(client, selected, archive_path)
+            result.update(
+                {
+                    "selected": selected,
+                    "raw_sha256": sha256,
+                    "downloaded_bytes": size,
+                    "http": http,
+                    "instrument_metadata": instrument_metadata(
+                        client,
+                        selected,
+                    ),
+                    "archive": inspect_archive(archive_path),
+                    "status": "schema_sampled",
+                }
+            )
+        return result
+
+
 def probe_funding() -> dict[str, Any]:
     with httpx.Client(timeout=30.0, follow_redirects=True) as client:
         params, payload = catalog(
@@ -362,6 +407,21 @@ def main() -> None:
     (OUTPUT / "funding-probe.json").write_text(
         json.dumps(funding, indent=2, sort_keys=True) + "\n"
     )
+
+    for instrument_type in ("SPOT", "SWAP", "FUTURES"):
+        key = f"BOOK50_{instrument_type}"
+        try:
+            result = probe_50_level(instrument_type)
+        except Exception as error:
+            result = {
+                "status": "error",
+                "error_type": type(error).__name__,
+                "error": str(error),
+            }
+        summary["results"][key] = result
+        (OUTPUT / f"{key.lower()}-probe.json").write_text(
+            json.dumps(result, indent=2, sort_keys=True) + "\n"
+        )
 
     print(json.dumps(summary, indent=2, sort_keys=True))
 
