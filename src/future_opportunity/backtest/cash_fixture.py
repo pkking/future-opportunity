@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
 
@@ -34,6 +35,7 @@ def load_cash_and_carry_close_fixture(
     normalized = manifest.get("normalized")
     if not isinstance(normalized, dict):
         raise ValueError("cash fixture is missing normalized evidence")
+    _validate_derived_fixture(manifest, normalized)
 
     observations = {}
     for key in (
@@ -166,3 +168,87 @@ def _aware_datetime(value: Any) -> datetime:
     if result.tzinfo is None:
         raise ValueError("fixture timestamp must be timezone-aware")
     return result
+
+
+
+def _validate_derived_fixture(
+    manifest: dict[str, Any],
+    normalized: dict[str, Any],
+) -> None:
+    derived = manifest.get("derived_from_artifact")
+    scope = manifest.get("fixture_scope")
+    if derived is None and scope is None:
+        return
+    if not isinstance(derived, dict) or not isinstance(scope, dict):
+        raise ValueError(
+            "derived cash fixture requires artifact and scope provenance"
+        )
+
+    artifact_sha = derived.get("artifact_zip_sha256")
+    if not isinstance(artifact_sha, str) or len(artifact_sha) != 64:
+        raise ValueError("derived cash fixture artifact checksum is invalid")
+    if not str(derived.get("workflow_run", "")).isdigit():
+        raise ValueError("derived cash fixture workflow run is invalid")
+    if not str(derived.get("artifact_id", "")).isdigit():
+        raise ValueError("derived cash fixture artifact id is invalid")
+
+    capital = scope.get("capital")
+    if capital != "10000":
+        raise ValueError("derived cash fixture frozen capital is unsupported")
+    if scope.get("quantity_margin") != "1.20":
+        raise ValueError("derived cash fixture quantity margin is unsupported")
+
+    for key in (
+        "entry_spot",
+        "entry_future",
+        "exit_spot",
+        "exit_future",
+    ):
+        component = normalized.get(key)
+        if not isinstance(component, dict):
+            raise ValueError(f"derived cash fixture is missing {key}")
+        derivation = component.get("derivation")
+        if not isinstance(derivation, dict):
+            raise ValueError(
+                f"derived cash fixture {key} is missing derivation evidence"
+            )
+        parent_sha = derivation.get("parent_canonical_sha256")
+        if not isinstance(parent_sha, str) or len(parent_sha) != 64:
+            raise ValueError(
+                f"derived cash fixture {key} parent checksum is invalid"
+            )
+        if derivation.get("frozen_capital") != capital:
+            raise ValueError(
+                f"derived cash fixture {key} capital provenance drifted"
+            )
+        preserve = _decimal_field(
+            derivation.get("preserve_base_quantity"),
+            f"{key} preserve_base_quantity",
+        )
+        retained_ask = _decimal_field(
+            derivation.get("retained_ask_quantity"),
+            f"{key} retained_ask_quantity",
+        )
+        retained_bid = _decimal_field(
+            derivation.get("retained_bid_quantity"),
+            f"{key} retained_bid_quantity",
+        )
+        if preserve <= 0:
+            raise ValueError(
+                f"derived cash fixture {key} preserve quantity must be positive"
+            )
+        if retained_ask < preserve or retained_bid < preserve:
+            raise ValueError(
+                f"derived cash fixture {key} does not preserve target quantity"
+            )
+
+
+def _decimal_field(value: Any, name: str) -> Decimal:
+    if not isinstance(value, str):
+        raise ValueError(f"derived cash fixture {name} must be a string")
+    try:
+        return Decimal(value)
+    except InvalidOperation as error:
+        raise ValueError(
+            f"derived cash fixture {name} is not decimal"
+        ) from error
