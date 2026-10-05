@@ -69,3 +69,29 @@ def test_corpus_rejects_manifest_index_drift(tmp_path: Path) -> None:
             fixture_root=FIXTURES,
             required_strategies=STRATEGIES,
         )
+
+
+def test_corpus_rejects_unfinalized_compact_fixture(tmp_path: Path) -> None:
+    raw = json.loads(INDEX.read_text())
+    fixture_path = FIXTURES / raw["entries"][0]["fixture_path"]
+    copied_root = tmp_path / "fixtures"
+    copied_root.mkdir()
+    target = copied_root / raw["entries"][0]["fixture_path"]
+
+    import shutil
+
+    shutil.copytree(fixture_path, target)
+    manifest_path = target / "manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["pinning_status"] = "prepared_unpinned"
+    manifest_path.write_text(json.dumps(manifest))
+
+    index = copied_root / "corpus-index.json"
+    index.write_text(json.dumps({"schema_version": 1, "entries": [raw["entries"][0]]}))
+
+    with pytest.raises(ValueError, match="not commit_ready"):
+        load_historical_corpus(
+            index_path=index,
+            fixture_root=copied_root,
+            required_strategies=STRATEGIES,
+        )
