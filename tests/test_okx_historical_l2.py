@@ -3,7 +3,7 @@ from __future__ import annotations
 import io
 import json
 import tarfile
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
 
@@ -12,6 +12,7 @@ import pytest
 from future_opportunity.adapters.historical.okx_l2 import (
     iter_okx_l2_archive,
     iter_okx_l2_jsonl,
+    iter_okx_l2_sampled_jsonl,
 )
 from future_opportunity.backtest.model import HistoricalInstrumentMetadata
 
@@ -263,3 +264,84 @@ def test_tar_gz_archive_rejects_ambiguous_multiple_data_members(
                 expected_instrument_id="BTC-USDT",
             )
         )
+
+
+def test_sampled_replay_emits_as_of_books_only_at_cadence() -> None:
+    start = datetime.fromtimestamp(1760000000, tz=UTC)
+    observations = tuple(
+        iter_okx_l2_sampled_jsonl(
+            [
+                line(
+                    action="snapshot",
+                    ts="1760000000000",
+                    bids=[["100", "1", "1"]],
+                    asks=[["101", "1", "1"]],
+                ),
+                line(
+                    action="update",
+                    ts="1760000005000",
+                    bids=[["100", "2", "1"]],
+                    asks=[],
+                ),
+                line(
+                    action="update",
+                    ts="1760000015000",
+                    bids=[["100.5", "1", "1"]],
+                    asks=[],
+                ),
+                line(
+                    action="update",
+                    ts="1760000025000",
+                    bids=[],
+                    asks=[["101", "2", "1"]],
+                ),
+            ],
+            instrument_type="SPOT",
+            expected_instrument_id="BTC-USDT",
+            start=start,
+            end=start + timedelta(seconds=20),
+            cadence=timedelta(seconds=10),
+        )
+    )
+
+    assert len(observations) == 3
+    at_0, at_10, at_20 = observations
+    assert at_0.observed_at == start
+    assert at_0.book.bids[0].quantity == Decimal(1)
+
+    assert at_10.observed_at == start + timedelta(seconds=5)
+    assert at_10.book.bids[0].quantity == Decimal(2)
+
+    assert at_20.observed_at == start + timedelta(seconds=15)
+    assert at_20.book.bids[0].price == Decimal("100.5")
+
+
+def test_sampled_replay_does_not_backfill_before_initial_snapshot() -> None:
+    start = datetime.fromtimestamp(1760000000, tz=UTC)
+    observations = tuple(
+        iter_okx_l2_sampled_jsonl(
+            [
+                line(
+                    action="snapshot",
+                    ts="1760000015000",
+                    bids=[["100", "1", "1"]],
+                    asks=[["101", "1", "1"]],
+                ),
+                line(
+                    action="update",
+                    ts="1760000025000",
+                    bids=[["100", "2", "1"]],
+                    asks=[],
+                ),
+            ],
+            instrument_type="SPOT",
+            expected_instrument_id="BTC-USDT",
+            start=start,
+            end=start + timedelta(seconds=30),
+            cadence=timedelta(seconds=10),
+        )
+    )
+
+    assert len(observations) == 1
+    assert observations[0].observed_at == start + timedelta(seconds=25)
+    assert observations[0].source_line == 2
