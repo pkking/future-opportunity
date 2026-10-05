@@ -1,0 +1,46 @@
+name: Evaluate Prepared Historical Fixture
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/evaluate-historical-fixture.yml
+      - scripts/run_historical_backtest.py
+      - src/future_opportunity/application/backtest/**
+      - src/future_opportunity/backtest/**
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  evaluate:
+    name: Evaluate pinned OKX BTC fixture
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - name: Download pinned prepared fixture
+        uses: actions/download-artifact@v4
+        with:
+          name: okx-btc-funding-history-2026-09-01
+          path: artifacts/historical-fixture
+          github-token: ${{ github.token }}
+          repository: pkking/future-opportunity
+          run-id: 37250411433
+      - name: Validate fixture and emit actuals
+        run: |
+          uv run python scripts/run_historical_backtest.py \
+            artifacts/historical-fixture \
+            --output artifacts/historical-backtest/report.json \
+            --capital 10000 \
+            --horizon-days 1
+          cat artifacts/historical-backtest/report.json
+      - name: Upload backtest actuals
+        uses: actions/upload-artifact@v4
+        with:
+          name: okx-btc-funding-backtest-actuals-2026-09-01
+          path: artifacts/historical-backtest/report.json
+          if-no-files-found: error
