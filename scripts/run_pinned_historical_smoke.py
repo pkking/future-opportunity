@@ -20,6 +20,12 @@ from future_opportunity.backtest.fixture import (
     build_funding_case,
     load_funding_history_fixture,
 )
+from future_opportunity.backtest.historical_policy import (
+    collect_pinned_entry_market_days,
+    distribution_transition_readiness,
+    evaluate_historical_gate,
+    load_historical_acceptance_policy,
+)
 from future_opportunity.domain.strategy.cash_and_carry import (
     CashAndCarryAssumptions,
 )
@@ -40,11 +46,16 @@ CASH_FIXTURE = (
     / "okx-btc-cash-and-carry-2026-06-v1-target-compact"
 )
 TARGETS = ROOT / "tests/e2e/strategy-targets.json"
+HISTORICAL_POLICY = ROOT / "tests/e2e/historical-target-policy.json"
+HISTORICAL_FIXTURES = ROOT / "tests/fixtures/historical"
 OUTPUT = ROOT / "artifacts/historical-smoke/evidence.json"
 
 
 async def build_evidence() -> dict[str, object]:
     targets = json.loads(TARGETS.read_text())
+    policy, raw_policy = load_historical_acceptance_policy(
+        HISTORICAL_POLICY
+    )
 
     funding_fixture = load_funding_history_fixture(FUNDING_FIXTURE)
     funding_case = build_funding_case(
@@ -72,15 +83,49 @@ async def build_evidence() -> dict[str, object]:
         "cash-and-carry-delivery-reference-v1"
     ]
 
+    semantics = raw_policy["pinned_smoke_semantics"]
+    funding_expected = semantics["funding_carry"]
+    cash_expected = semantics["cash_and_carry"]
+
+    checks = {
+        "funding_fixture_checksum_and_provenance_valid": True,
+        "cash_fixture_checksum_and_provenance_valid": True,
+        "funding_replay_semantics_stable": (
+            funding_actual.qualified
+            is funding_expected["qualified"]
+            and list(funding_actual.qualification_reasons)
+            == funding_expected["qualification_reasons"]
+        ),
+        "cash_replay_semantics_stable": (
+            cash_actual.qualified
+            is cash_expected["qualified"]
+            and list(cash_actual.qualification_reasons)
+            == cash_expected["qualification_reasons"]
+        ),
+    }
+    gate_passed, evaluated_checks = evaluate_historical_gate(
+        policy,
+        checks,
+    )
+    pinned_days = collect_pinned_entry_market_days(
+        HISTORICAL_FIXTURES,
+        required_strategies=policy.required_strategies,
+    )
+    readiness = distribution_transition_readiness(
+        policy,
+        pinned_days,
+    )
+
     return {
         "schema_version": 1,
         "evidence_type": "pinned_historical_smoke",
-        "historical_gate_semantics": "pending_human_decision",
-        "decision_options": [
-            "reuse_reference_per_opportunity_thresholds",
-            "separate_historical_distribution_thresholds",
-            "gate_provenance_and_semantics_only_report_returns",
-        ],
+        "policy_id": policy.policy_id,
+        "historical_gate_semantics": policy.mode,
+        "gate": {
+            "passed": gate_passed,
+            "required_checks": evaluated_checks,
+        },
+        "distribution_transition_readiness": readiness,
         "datasets": {
             "funding_carry": {
                 "dataset_id": funding_fixture.dataset_id,
@@ -105,7 +150,8 @@ async def build_evidence() -> dict[str, object]:
                     ),
                     "note": (
                         "reference target is displayed for context only; "
-                        "historical gate semantics are not yet approved"
+                        "V0 historical acceptance gates provenance and "
+                        "replay semantics, not historical return"
                     ),
                 },
             },
@@ -128,20 +174,7 @@ async def build_evidence() -> dict[str, object]:
                 },
             },
         },
-        "smoke_invariants": {
-            "funding_fixture_checksum_and_provenance_valid": True,
-            "cash_fixture_checksum_and_provenance_valid": True,
-            "funding_replay_semantics_stable": (
-                not funding_actual.qualified
-                and funding_actual.qualification_reasons
-                == ("expected_net_return_not_positive",)
-            ),
-            "cash_replay_semantics_stable": (
-                not cash_actual.qualified
-                and cash_actual.qualification_reasons
-                == ("expected_net_return_not_positive",)
-            ),
-        },
+        "smoke_invariants": checks,
     }
 
 
@@ -149,13 +182,13 @@ def main() -> None:
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     try:
         evidence = asyncio.run(build_evidence())
-        write_backtest_evidence(evidence, OUTPUT)
     except Exception as error:
         write_backtest_evidence(
             {
                 "schema_version": 1,
                 "evidence_type": "pinned_historical_smoke",
-                "historical_gate_semantics": "pending_human_decision",
+                "policy_id": "historical-acceptance-v0",
+                "historical_gate_semantics": "provenance_and_semantics",
                 "status": "error",
                 "error_type": type(error).__name__,
                 "error": str(error),
@@ -164,6 +197,11 @@ def main() -> None:
             OUTPUT,
         )
         raise
+
+    write_backtest_evidence(evidence, OUTPUT)
+    gate = evidence.get("gate")
+    if not isinstance(gate, dict) or gate.get("passed") is not True:
+        raise SystemExit("historical provenance-and-semantics gate failed")
 
 
 if __name__ == "__main__":
