@@ -1,0 +1,39 @@
+name: Historical Backtest Smoke
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    paths:
+      - "src/future_opportunity/application/backtest/**"
+      - "src/future_opportunity/backtest/**"
+      - "tests/fixtures/historical/**"
+      - "tests/e2e/test_historical_backtest_acceptance.py"
+      - "scripts/run_pinned_historical_smoke.py"
+      - ".github/workflows/historical-smoke.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  historical-smoke:
+    name: Offline pinned historical replay
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - name: Replay pinned real historical fixtures
+        run: |
+          mkdir -p artifacts/historical-smoke
+          uv run python scripts/run_pinned_historical_smoke.py
+          uv run pytest tests/e2e/test_historical_backtest_acceptance.py -v             --junitxml=artifacts/historical-smoke/junit.xml
+          cat artifacts/historical-smoke/evidence.json
+      - name: Upload historical smoke evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: historical-backtest-smoke-evidence
+          path: artifacts/historical-smoke/
+          if-no-files-found: warn
