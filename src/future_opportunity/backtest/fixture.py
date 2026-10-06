@@ -17,6 +17,9 @@ from future_opportunity.backtest.canonical import (
     iter_canonical_order_books,
     sha256_file,
 )
+from future_opportunity.backtest.selection_provenance import (
+    validate_selection_provenance_for_market_date,
+)
 from future_opportunity.backtest.model import (
     HistoricalAlignmentReport,
     HistoricalFundingObservation,
@@ -84,6 +87,13 @@ def load_funding_history_fixture(
     max_staleness_seconds = manifest.get("max_staleness_seconds")
     if not isinstance(history_date, str):
         raise ValueError("historical fixture date is invalid")
+    selection_provenance = manifest.get("selection_provenance")
+    if selection_provenance is not None:
+        validate_selection_provenance_for_market_date(
+            selection_provenance,
+            strategy="funding-carry",
+            market_date=history_date,
+        )
     if not isinstance(cadence_seconds, int) or cadence_seconds <= 0:
         raise ValueError("historical fixture cadence is invalid")
     if (
