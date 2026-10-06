@@ -9,6 +9,11 @@ from future_opportunity.backtest.acquisition_composition import (
     acquisition_cash_cases_from_plan,
     compose_historical_acquisition,
 )
+from future_opportunity.backtest.sampling import (
+    HistoricalSamplingRequest,
+    historical_sampling_payload,
+    sample_historical_market_days,
+)
 
 
 def case_plan(
@@ -55,6 +60,23 @@ def case_plan(
         "source_reports": ["000/report.json"],
         "note": "read-only",
     }
+
+
+def funding_sample(
+    *,
+    strategy: str = "funding-carry",
+) -> dict[str, object]:
+    return historical_sampling_payload(
+        sample_historical_market_days(
+            HistoricalSamplingRequest(
+                strategy=strategy,
+                start_date="2026-01-01",
+                end_date="2026-01-31",
+                sample_size=5,
+                seed="stage2-baseline-v1",
+            )
+        )
+    )
 
 
 def test_composer_supports_funding_only() -> None:
@@ -170,3 +192,73 @@ def test_case_plan_validation_requires_source_evidence_and_entry_time_consistenc
     drifted_time["cash_cases"][0]["entry_at"] = "2026-06-03T00:30:00+00:00"
     with pytest.raises(ValueError, match="entry time differs from template"):
         acquisition_cash_cases_from_plan(drifted_time)
+
+
+def test_composer_accepts_verified_sampled_funding_dates_without_gap_fill() -> None:
+    manifest = compose_historical_acquisition(
+        acquisition_id="sampled-funding",
+        planner_campaign_prefix="sampled-review",
+        funding_sample=funding_sample(),
+    )
+
+    assert manifest.funding is not None
+    assert manifest.funding.source_kind == "explicit_dates"
+    assert manifest.funding.market_dates == (
+        "2026-01-01",
+        "2026-01-08",
+        "2026-01-13",
+        "2026-01-22",
+        "2026-01-29",
+    )
+    assert acquisition_dispatch_payload(manifest)["funding"] == {
+        "market_dates": [
+            "2026-01-01",
+            "2026-01-08",
+            "2026-01-13",
+            "2026-01-22",
+            "2026-01-29",
+        ]
+    }
+
+
+def test_composer_supports_mixed_sampled_funding_and_cash_plan() -> None:
+    manifest = compose_historical_acquisition(
+        acquisition_id="sampled-mixed",
+        planner_campaign_prefix="sampled-mixed-review",
+        funding_sample=funding_sample(),
+        cash_case_plan=case_plan(),
+    )
+
+    assert manifest.total_items == 6
+    assert manifest.funding is not None
+    assert len(manifest.funding.market_dates) == 5
+    assert len(manifest.cash_cases) == 1
+
+
+def test_composer_rejects_tampered_or_wrong_strategy_sampling_evidence() -> None:
+    tampered = funding_sample()
+    tampered["selected_dates"][0] = "2026-01-02"
+    with pytest.raises(ValueError, match="deterministic replay"):
+        compose_historical_acquisition(
+            acquisition_id="tampered",
+            planner_campaign_prefix="tampered-review",
+            funding_sample=tampered,
+        )
+
+    with pytest.raises(ValueError, match="funding-carry sampling"):
+        compose_historical_acquisition(
+            acquisition_id="wrong-strategy",
+            planner_campaign_prefix="wrong-strategy-review",
+            funding_sample=funding_sample(strategy="cash-and-carry"),
+        )
+
+
+def test_composer_rejects_funding_range_plus_sampling_evidence() -> None:
+    with pytest.raises(ValueError, match="mutually exclusive"):
+        compose_historical_acquisition(
+            acquisition_id="ambiguous-funding",
+            planner_campaign_prefix="ambiguous-review",
+            funding_start_date="2026-01-01",
+            funding_end_date="2026-01-31",
+            funding_sample=funding_sample(),
+        )
