@@ -1,6 +1,6 @@
 # 2026-10-05-historical-corpus-expansion: Expand pinned historical corpus
 
-Status: PLANNING
+Status: VERIFYING
 Owner: agent
 Started: 2026-10-05
 Last checkpoint: 2026-10-05
@@ -32,8 +32,8 @@ without committing raw exchange archives, and without weakening provenance.
 
 - Stage-1 historical gate is active: provenance + deterministic replay +
   business semantics.
-- Funding Carry pinned entry-market days: 1 (2026-09-01).
-- Cash-and-Carry pinned entry-market days: 1 (2026-06-01).
+- Funding Carry pinned entry-market days: 2 (2026-09-01, 2026-09-02).
+- Cash-and-Carry pinned entry-market days: 2 (2026-06-01, 2026-06-02).
 - Stage-2 minimum eligibility: 30 distinct pinned entry-market days per strategy.
 - Stage-2 preferred evidence base: 90 days per strategy.
 - Historical Backtest Smoke run 37321387071 passed with artifact 11351120087.
@@ -63,7 +63,7 @@ without committing raw exchange archives, and without weakening provenance.
 - [x] Prepared Funding days emit compact, commit-ready fixtures plus provenance.
 - [x] Cash-and-Carry preparation accepts explicit entry/exit dates and future ID/spec provenance.
 - [x] Cash batch discovery identifies historical dates/instruments without inventing expired metadata.
-- [ ] Add at least one additional pinned real-market day per strategy through the generalized path.
+- [x] Add at least one additional pinned real-market day per strategy through the generalized path.
 - [ ] CI/historical smoke remain green.
 - [ ] Docs explain how to add a day and how 30/90 readiness is computed.
 
@@ -74,7 +74,7 @@ without committing raw exchange archives, and without weakening provenance.
 - [x] 3. Add Funding date-range/batch workflow.
 - [x] 4. Generalize Cash-and-Carry preparation inputs.
 - [ ] 5. Cash discovery batch implemented; prepare second discovered day.
-- [ ] 6. Pin additional days through generalized workflows.
+- [x] 6. Pin additional days through generalized workflows.
 - [ ] 7. Verify corpus/readiness evidence and document reproduction.
 
 ## Verification matrix
@@ -108,6 +108,18 @@ are proposed. Accumulating evidence does not require a new decision.
 - 2026-10-05: Funding preparation workflow is generalized with a required
   `history_date` workflow input and emits both full provenance evidence and a
   commit-ready compact fixture for that UTC date.
+- 2026-10-06: Funding batch run 37327493270 prepared 2026-09-02 successfully.
+  Full artifact 11353260627 and commit-ready compact artifact 11353595058 were
+  produced; 2026-09-02 is now pinned in the corpus.
+- 2026-10-06: Cash discovery run 37327462529 discovered 2026-06-02 successfully.
+  Cash batch run 37327804191 then prepared the explicit BTC-USDT-260626 case;
+  compact artifact 11353141045 was produced and 2026-06-02 is pinned.
+- 2026-10-06: corpus counts are now Funding Carry 2 days and Cash-and-Carry
+  2 days. Historical Backtest Smoke run 37431012300 passed after the Funding
+  2026-09-02 corpus index update.
+- 2026-10-06: code-level CI exposed stale tests that hard-coded the original
+  1+1 corpus. The tests were changed to derive expectations from the versioned
+  corpus index so future corpus growth does not create false failures.
 - 2026-10-05: Funding batch preparation accepts an inclusive UTC date range up
   to 31 days and executes each date as an independent matrix job with
   fail-fast=false. The batch reuses the single-day workflow rather than
