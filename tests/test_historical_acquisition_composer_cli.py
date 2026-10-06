@@ -135,3 +135,77 @@ def test_acquisition_composer_cli_accepts_verified_sampling_evidence(
             "2026-01-29",
         ]
     }
+
+
+def test_acquisition_composer_cli_preserves_selection_provenance(
+    tmp_path: Path,
+) -> None:
+    from future_opportunity.backtest.sampling import (
+        HistoricalSamplingRequest,
+        historical_sampling_payload,
+        sample_historical_market_days,
+    )
+    from future_opportunity.backtest.selection_provenance import (
+        historical_selection_provenance_payload,
+        selection_provenance_from_sampling_evidence,
+    )
+
+    sampling = historical_sampling_payload(
+        sample_historical_market_days(
+            HistoricalSamplingRequest(
+                strategy="funding-carry",
+                start_date="2026-01-01",
+                end_date="2026-01-31",
+                sample_size=5,
+                seed="stage2-baseline-v1",
+            )
+        )
+    )
+    provenance = historical_selection_provenance_payload(
+        selection_provenance_from_sampling_evidence(
+            sampling,
+            source_workflow_run="37482498880",
+            artifact_name="historical-market-day-sample-37482498880",
+            artifact_id="11421537670",
+            artifact_digest=(
+                "sha256:bdaab43d0be70a2fc8b43059d39f5341"
+                "a2405bf9a0aff00306b90e92e24b8fa2"
+            ),
+        )
+    )
+    provenance_path = tmp_path / "selection.json"
+    provenance_path.write_text(json.dumps(provenance) + "\n")
+    output = tmp_path / "provenance-acquisition.json"
+
+    subprocess.run(
+        [
+            sys.executable,
+            "scripts/compose_historical_acquisition.py",
+            "--acquisition-id",
+            "provenance-cli-wave",
+            "--planner-campaign-prefix",
+            "provenance-cli-review",
+            "--funding-selection-provenance",
+            str(provenance_path),
+            "--output",
+            str(output),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    payload = json.loads(output.read_text())
+    assert payload["funding"] == {
+        "market_dates": [
+            "2026-01-01",
+            "2026-01-08",
+            "2026-01-13",
+            "2026-01-22",
+            "2026-01-29",
+        ]
+    }
+    assert payload["selection_provenance"] == {
+        "funding": provenance,
+        "cash": None,
+    }
