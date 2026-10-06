@@ -20,6 +20,7 @@ jobs:
     outputs:
       funding_dates: ${{ steps.resolve.outputs.funding_dates }}
       funding_count: ${{ steps.resolve.outputs.funding_count }}
+      funding_selection_provenance: ${{ steps.resolve.outputs.funding_selection_provenance }}
       cash_cases: ${{ steps.resolve.outputs.cash_cases }}
       cash_count: ${{ steps.resolve.outputs.cash_count }}
       planner_campaign_prefix: ${{ steps.resolve.outputs.planner_campaign_prefix }}
@@ -63,6 +64,7 @@ jobs:
     uses: ./.github/workflows/prepare-historical-fixture.yml
     with:
       history_date: ${{ matrix.history_date }}
+      selection_provenance_json: ${{ needs.resolve.outputs.funding_selection_provenance }}
 
   cash:
     name: Cash ${{ matrix.case.entry_at }} ${{ matrix.case.future_id }}
