@@ -553,6 +553,19 @@ manifest. The local promotion is then atomic: if any later item fails
 provenance, checksum, identity, or corpus validation, all fixtures newly staged
 by that campaign are removed and `corpus-index.json` is restored.
 
+A workflow code push uses a **pinned, already-present Funding+Cash pair** as a
+safe no-op integration self-check. To promote new days, explicitly dispatch a
+campaign with its actual preparation run IDs and compact artifact names; a code
+push never implicitly selects unpinned market days.
+
+The first real mixed campaign was validated by Actions run
+[37435411557](https://github.com/pkking/future-opportunity/actions/runs/37435411557)
+and proposed as [PR #3](https://github.com/pkking/future-opportunity/pull/3):
+Funding 2026-09-03 and Cash 2026-06-03. Its PR-triggered CI and historical smoke
+passed. These dates do **not** count as pinned on `main` until the PR is
+reviewed and merged. PR #2 was closed without merge, superseded by the mixed
+campaign; do not open a second PR with the same strategy/date facts.
+
 Already-pinned identical items are allowed as no-ops. Input order does not
 control corpus order. One effective campaign produces one review branch and one
 PR or policy-safe PR handoff, reducing review overhead while preserving
