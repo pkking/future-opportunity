@@ -73,27 +73,27 @@ Cash:
 
 ## Acceptance criteria
 
-- [ ] Acquisition composer is reusable and exposes normalized acquisition JSON.
-- [ ] Acquisition campaign is reusable and accepts normalized acquisition JSON.
-- [ ] Existing workflow_dispatch/push behavior remains backward compatible.
-- [ ] Add thin pre-registered-wave workflow using exact reviewed artifacts.
-- [ ] Wave composition contains Funding and Cash selection provenance.
-- [ ] Funding preparation matrix contains exactly the five reviewed dates.
-- [ ] Cash preparation matrix contains exactly the three reviewed cases.
-- [ ] No unsampled replacement date appears.
+- [x] Acquisition composer is reusable and exposes normalized acquisition JSON.
+- [x] Acquisition campaign is reusable and accepts normalized acquisition JSON.
+- [x] Existing workflow_dispatch/push behavior remains backward compatible.
+- [x] Add thin pre-registered-wave workflow using exact reviewed artifacts.
+- [x] Wave composition contains Funding and Cash selection provenance.
+- [x] Funding preparation matrix contains exactly the five reviewed dates.
+- [x] Cash preparation matrix contains exactly the three reviewed cases.
+- [x] No unsampled replacement date appears.
 - [ ] Successful full/compact artifacts retain selection provenance.
 - [ ] Failed sampled dates, if any, remain explicit failures and are not replaced.
 - [ ] Acquisition summary proves corpus was not mutated.
-- [ ] Workflow/contract tests lock reusable composition and acquisition behavior.
+- [x] Workflow/contract tests lock reusable composition and acquisition behavior.
 - [ ] Final CI green.
 - [ ] Document first-wave evidence and next promotion step.
 
 ## Implementation slices
 
-- [ ] 1. Make composer reusable with acquisition_json output.
-- [ ] 2. Make acquisition campaign reusable with acquisition_json input.
-- [ ] 3. Add pre-registered acquisition-wave orchestration.
-- [ ] 4. Add workflow-contract tests.
+- [x] 1. Make composer reusable with acquisition_json output.
+- [x] 2. Make acquisition campaign reusable with acquisition_json input.
+- [x] 3. Add pre-registered acquisition-wave orchestration.
+- [x] 4. Add workflow-contract tests.
 - [ ] 5. Execute first 5+3 sampled wave and inspect artifacts.
 - [ ] 6. Record failures/exclusions without replacement.
 - [ ] 7. Document/verify/archive.
@@ -123,12 +123,26 @@ human review/merge of promotion PRs.
   37490819625 passed.
 - 2026-10-06: sampled Cash discovery 37488688098, case plan 37490008931 and
   mixed acquisition composer 37490187894 succeeded.
+- 2026-10-06: composer and acquisition campaign now expose reusable
+  `workflow_call` contracts. Composer returns canonical normalized
+  `acquisition_json`; acquisition accepts the same versioned JSON while
+  retaining original manual dispatch and push self-tests.
+- 2026-10-06: first pre-registered wave run 37491514724 started successfully.
+  The composed acquisition is exactly Funding
+  [2026-01-01, 01-08, 01-13, 01-22, 01-29] plus Cash
+  [2026-06-02, 06-04, 06-08], and includes both canonical selection-provenance
+  records. Acquisition resolver completed successfully and launched the
+  strategy preparation matrices under existing concurrency bounds.
+- 2026-10-06: main CI runs 37491396261, 37491402987 and 37491513856 verified
+  the reusable workflow changes and orchestration definition before the
+  long-running market-data preparation phase.
 
 ## Resume from here
 
-Add `workflow_call` contracts and outputs to the existing composer and
-acquisition workflows. Then create a thin orchestration workflow that feeds the
-reviewed artifacts above through those reusable workflows.
+Wait for wave run 37491514724 to finish all eight sampled preparations. Record
+successful compact artifact IDs/digests and any failed sampled dates exactly as
+observed; do not replace failures. Verify compact manifests retain
+selection_provenance, then document the next explicit promotion/planning step.
 
 ## Completion
 
