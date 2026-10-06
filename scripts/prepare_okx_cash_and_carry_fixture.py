@@ -25,6 +25,10 @@ from future_opportunity.adapters.historical.okx_l2 import (
 from future_opportunity.backtest.canonical import write_canonical_order_books
 from future_opportunity.backtest.cash_compact import derive_cash_compact_fixture
 from future_opportunity.backtest.model import HistoricalInstrumentMetadata
+from future_opportunity.backtest.selection_provenance import (
+    historical_selection_provenance_payload,
+    validate_selection_provenance_for_market_date,
+)
 
 
 BASE_URL = "https://www.okx.com"
@@ -57,6 +61,7 @@ EXPIRY = env_datetime(
 RAW_FUTURE_ID = os.getenv("CASH_FUTURE_ID", "BTC-USDT-260626")
 MAX_RAW_MB = int(os.getenv("CASH_HISTORY_MAX_RAW_MB", "600"))
 MAX_STALENESS_MS = int(os.getenv("CASH_HISTORY_MAX_STALENESS_MS", "5000"))
+RAW_SELECTION_PROVENANCE = os.getenv("CASH_SELECTION_PROVENANCE_JSON", "")
 
 
 def get_json(
@@ -292,6 +297,15 @@ def prepare_component(
 
 
 def main() -> None:
+    selection_provenance = None
+    if RAW_SELECTION_PROVENANCE:
+        raw_selection = json.loads(RAW_SELECTION_PROVENANCE)
+        selection_provenance = validate_selection_provenance_for_market_date(
+            raw_selection,
+            strategy="cash-and-carry",
+            market_date=ENTRY_AT.date().isoformat(),
+        )
+
     if not RAW_FUTURE_ID.startswith("BTC-USDT-"):
         raise ValueError("CASH_FUTURE_ID must identify a BTC-USDT expiry future")
     if not ENTRY_AT < EXIT_AT < EXPIRY:
@@ -366,6 +380,10 @@ def main() -> None:
         "sources": sources,
         "normalized": components,
     }
+    if selection_provenance is not None:
+        manifest["selection_provenance"] = (
+            historical_selection_provenance_payload(selection_provenance)
+        )
     (OUTPUT / "manifest.json").write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n"
     )
