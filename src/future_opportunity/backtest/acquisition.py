@@ -265,6 +265,20 @@ def workflow_funding_selection_provenance_json(
     )
 
 
+def workflow_cash_selection_provenance_json(
+    manifest: HistoricalAcquisitionManifest,
+) -> str:
+    if manifest.cash_selection_provenance is None:
+        return ""
+    return json.dumps(
+        historical_selection_provenance_payload(
+            manifest.cash_selection_provenance
+        ),
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+
+
 def workflow_cash_cases_json(
     manifest: HistoricalAcquisitionManifest,
 ) -> str:
