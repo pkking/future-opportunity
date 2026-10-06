@@ -10,6 +10,7 @@ from future_opportunity.backtest.acquisition import (
     load_historical_acquisition_manifest,
     workflow_cash_cases_json,
     workflow_funding_dates_json,
+    workflow_funding_selection_provenance_json,
 )
 
 
@@ -44,6 +45,11 @@ def main() -> None:
             )
             output.write(
                 f"funding_dates={workflow_funding_dates_json(manifest)}\n"
+            )
+            output.write(
+                "funding_selection_provenance="
+                + workflow_funding_selection_provenance_json(manifest)
+                + "\n"
             )
             output.write(
                 f"cash_cases={workflow_cash_cases_json(manifest)}\n"
