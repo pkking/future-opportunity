@@ -7,6 +7,9 @@ from future_opportunity.backtest.acquisition import (
     HistoricalAcquisitionManifest,
     parse_historical_acquisition_manifest,
 )
+from future_opportunity.backtest.sampling import (
+    parse_historical_sampling_evidence,
+)
 
 
 _CASE_PLAN_KEYS = {
@@ -41,12 +44,14 @@ def compose_historical_acquisition(
     planner_campaign_prefix: str,
     funding_start_date: str | None = None,
     funding_end_date: str | None = None,
+    funding_sample: Any | None = None,
     cash_case_plan: Any | None = None,
     max_total_items: int = 31,
 ) -> HistoricalAcquisitionManifest:
     funding = _funding_payload(
         funding_start_date,
         funding_end_date,
+        funding_sample,
     )
     cash_cases = (
         acquisition_cash_cases_from_plan(cash_case_plan)
@@ -205,7 +210,22 @@ def acquisition_cash_cases_from_plan(
 def _funding_payload(
     start_date: str | None,
     end_date: str | None,
-) -> dict[str, str] | None:
+    sampling_evidence: Any | None,
+) -> dict[str, object] | None:
+    if sampling_evidence is not None:
+        if start_date is not None or end_date is not None:
+            raise ValueError(
+                "Funding range and sampling evidence are mutually exclusive"
+            )
+        sample = parse_historical_sampling_evidence(sampling_evidence)
+        if sample.request.strategy != "funding-carry":
+            raise ValueError(
+                "Funding acquisition requires a funding-carry sampling artifact"
+            )
+        return {
+            "market_dates": list(sample.selected_dates),
+        }
+
     if start_date is None and end_date is None:
         return None
     if start_date is None or end_date is None:
