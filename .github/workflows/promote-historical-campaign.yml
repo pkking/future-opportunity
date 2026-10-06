@@ -1,0 +1,195 @@
+name: Promote Historical Corpus Campaign
+
+on:
+  workflow_dispatch:
+    inputs:
+      campaign_json:
+        description: Versioned campaign JSON with exact run/artifact pairs
+        required: true
+  push:
+    paths:
+      - ".github/workflows/promote-historical-campaign.yml"
+
+permissions:
+  actions: read
+  contents: write
+  pull-requests: write
+
+jobs:
+  promote-campaign:
+    name: Validate and stage historical corpus campaign
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      CAMPAIGN_JSON: >-
+        ${{ inputs.campaign_json || '{"schema_version":1,"campaign_id":"self-test-pinned-mixed","items":[{"source_workflow_run":"37327493270","compact_artifact_name":"okx-btc-funding-compact-2026-09-02"},{"source_workflow_run":"37327804191","compact_artifact_name":"okx-btc-cash-and-carry-compact-BTC-USDT-260626-37327804191"}]}' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: astral-sh/setup-uv@v6
+
+      - run: uv sync --all-extras --dev
+
+      - id: campaign
+        name: Validate operator campaign
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/historical-campaign/incoming
+          printf '%s\n' "${CAMPAIGN_JSON}"             > artifacts/historical-campaign/operator.json
+          uv run python scripts/validate_historical_campaign.py             artifacts/historical-campaign/operator.json             --output artifacts/historical-campaign/campaign.json             --max-items 31
+
+      - name: Resolve and verify every exact artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s\n' '{"schema_version":1,"items":[]}'             > artifacts/historical-campaign/resolved.json
+          printf '%s\n' '{"schema_version":1,"items":[]}'             > artifacts/historical-campaign/acquisition.json
+
+          index=0
+          while IFS= read -r item; do
+            run_id="$(jq -r '.source_workflow_run' <<<"${item}")"
+            artifact_name="$(jq -r '.compact_artifact_name' <<<"${item}")"
+            item_dir="artifacts/historical-campaign/incoming/${index}"
+            mkdir -p "${item_dir}"
+
+            artifact_list="artifacts/historical-campaign/artifacts-${index}.json"
+            gh api               "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/artifacts?per_page=100"               > "${artifact_list}"
+
+            compact_count="$(jq --arg name "${artifact_name}"               '[.artifacts[] | select(.name == $name)] | length'               "${artifact_list}")"
+            test "${compact_count}" = "1"
+
+            compact_id="$(jq -r --arg name "${artifact_name}"               '.artifacts[] | select(.name == $name) | .id'               "${artifact_list}")"
+            compact_digest="$(jq -r --arg name "${artifact_name}"               '.artifacts[] | select(.name == $name) | .digest'               "${artifact_list}")"
+            compact_expired="$(jq -r --arg name "${artifact_name}"               '.artifacts[] | select(.name == $name) | .expired'               "${artifact_list}")"
+            test "${compact_expired}" = "false"
+            [[ "${compact_digest}" =~ ^sha256:[0-9a-fA-F]{64}$ ]]
+
+            gh run download "${run_id}"               --repo "${GITHUB_REPOSITORY}"               --name "${artifact_name}"               --dir "${item_dir}"
+
+            mapfile -t manifests < <(
+              find "${item_dir}" -type f -name manifest.json -print
+            )
+            test "${#manifests[@]}" = "1"
+            manifest="${manifests[0]}"
+            source_dir="$(dirname "${manifest}")"
+
+            manifest_run="$(jq -r '.derived_from_artifact.workflow_run' "${manifest}")"
+            parent_id="$(jq -r '.derived_from_artifact.artifact_id' "${manifest}")"
+            parent_sha="$(jq -r '.derived_from_artifact.artifact_zip_sha256' "${manifest}")"
+            test "${manifest_run}" = "${run_id}"
+            [[ "${parent_id}" =~ ^[0-9]+$ ]]
+            [[ "${parent_sha}" =~ ^[0-9a-fA-F]{64}$ ]]
+
+            parent_count="$(jq --argjson id "${parent_id}"               '[.artifacts[] | select(.id == $id)] | length'               "${artifact_list}")"
+            test "${parent_count}" = "1"
+            parent_expired="$(jq -r --argjson id "${parent_id}"               '.artifacts[] | select(.id == $id) | .expired'               "${artifact_list}")"
+            parent_digest="$(jq -r --argjson id "${parent_id}"               '.artifacts[] | select(.id == $id) | .digest'               "${artifact_list}")"
+            test "${parent_expired}" = "false"
+            [[ "${parent_digest}" =~ ^sha256:[0-9a-fA-F]{64}$ ]]
+            test "${parent_digest#sha256:}" = "${parent_sha,,}"
+
+            tmp="$(mktemp)"
+            jq               --arg source_root "${source_dir}"               --arg run "${run_id}"               --arg name "${artifact_name}"               --arg parent_id "${parent_id}"               --arg parent_sha "${parent_digest}"               '.items += [{
+                source_root: $source_root,
+                source_workflow_run: $run,
+                compact_artifact_name: $name,
+                parent_artifact_id: $parent_id,
+                parent_artifact_sha256: $parent_sha
+              }]'               artifacts/historical-campaign/resolved.json               > "${tmp}"
+            mv "${tmp}" artifacts/historical-campaign/resolved.json
+
+            tmp="$(mktemp)"
+            jq               --arg run "${run_id}"               --arg name "${artifact_name}"               --arg compact_id "${compact_id}"               --arg compact_digest "${compact_digest}"               --arg parent_id "${parent_id}"               --arg parent_digest "${parent_digest}"               '.items += [{
+                source_workflow_run: $run,
+                compact_artifact_name: $name,
+                compact_artifact_id: $compact_id,
+                compact_artifact_digest: $compact_digest,
+                parent_artifact_id: $parent_id,
+                parent_artifact_digest: $parent_digest
+              }]'               artifacts/historical-campaign/acquisition.json               > "${tmp}"
+            mv "${tmp}" artifacts/historical-campaign/acquisition.json
+
+            index=$((index + 1))
+          done < <(jq -c '.items[]' artifacts/historical-campaign/campaign.json)
+
+      - id: promote
+        name: Atomically stage campaign into versioned corpus
+        shell: bash
+        run: |
+          set -euo pipefail
+          uv run python scripts/promote_historical_campaign.py             artifacts/historical-campaign/campaign.json             artifacts/historical-campaign/resolved.json             --output artifacts/historical-campaign/promotion.json             --max-items 31
+          cat artifacts/historical-campaign/promotion.json
+
+      - name: Verify staged campaign offline
+        if: steps.promote.outputs.changed == 'true'
+        run: |
+          uv run pytest             tests/test_historical_corpus.py             tests/test_historical_policy.py             tests/e2e/test_historical_backtest_acceptance.py             -v             --junitxml=artifacts/historical-campaign/junit.xml
+          uv run python scripts/run_pinned_historical_smoke.py
+          cp artifacts/historical-smoke/evidence.json             artifacts/historical-campaign/historical-smoke-evidence.json
+
+      - id: review
+        name: Create campaign review branch and PR or handoff
+        if: steps.promote.outputs.changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          campaign_id="${{ steps.promote.outputs.campaign_id }}"
+          funding_days="${{ steps.promote.outputs.funding_days }}"
+          cash_days="${{ steps.promote.outputs.cash_days }}"
+          branch="historical-corpus-campaign/${campaign_id}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          title="test: promote historical corpus campaign ${campaign_id}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "${branch}"
+          git add tests/fixtures/historical
+          git diff --cached --quiet && {
+            echo "Campaign reported changes but git has no staged diff" >&2
+            exit 1
+          }
+          git commit -m "${title}"
+          git push --set-upstream origin "${branch}"
+
+          {
+            printf '%s\n'               "Promotes one validated historical corpus campaign."               ""               "- Campaign: ${campaign_id}"               "- Funding Carry pinned days after staging: ${funding_days}"               "- Cash-and-Carry pinned days after staging: ${cash_days}"               "- Workflow run: ${GITHUB_RUN_ID}"               ""               "Every item was resolved from an exact preparation run/artifact pair."               "The workflow verified compact and parent artifact digests, staged the"               "campaign atomically, then ran corpus validation and historical smoke."               "Normal repository CI and Historical Backtest Smoke remain required"               "before human merge."
+          } > artifacts/historical-campaign/pr-body.md
+
+          set +e
+          pr_url="$(gh pr create             --base main             --head "${branch}"             --title "${title}"             --body-file artifacts/historical-campaign/pr-body.md             2>artifacts/historical-campaign/pr-create-error.txt)"
+          pr_exit=$?
+          set -e
+
+          echo "branch=${branch}" >> "${GITHUB_OUTPUT}"
+          if [ "${pr_exit}" -eq 0 ]; then
+            echo "status=created" >> "${GITHUB_OUTPUT}"
+            echo "url=${pr_url}" >> "${GITHUB_OUTPUT}"
+          elif grep -Fq             "GitHub Actions is not permitted to create or approve pull requests"             artifacts/historical-campaign/pr-create-error.txt; then
+            jq -n               --arg status "handoff_required"               --arg reason "repository_policy_blocks_actions_pr_creation"               --arg branch "${branch}"               --arg title "${title}"               --arg body_file "artifacts/historical-campaign/pr-body.md"               --arg campaign_id "${campaign_id}"               '{
+                status: $status,
+                reason: $reason,
+                branch: $branch,
+                title: $title,
+                body_file: $body_file,
+                campaign_id: $campaign_id
+              }'               > artifacts/historical-campaign/pr-handoff.json
+            echo "status=handoff_required" >> "${GITHUB_OUTPUT}"
+          else
+            cat artifacts/historical-campaign/pr-create-error.txt >&2
+            exit "${pr_exit}"
+          fi
+
+      - name: Record no-op campaign
+        if: steps.promote.outputs.changed == 'false'
+        run: |
+          printf '%s\n'             "Every campaign item is already present and identical in corpus."             > artifacts/historical-campaign/no-op.txt
+
+      - name: Upload campaign evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: historical-campaign-evidence-${{ github.run_id }}
+          path: artifacts/historical-campaign/
+          if-no-files-found: warn
