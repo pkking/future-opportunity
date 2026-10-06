@@ -27,6 +27,45 @@ on:
       cash_case_plan_artifact_name:
         description: Optional exact Cash case-plan artifact name
         required: false
+  workflow_call:
+    inputs:
+      acquisition_id:
+        required: true
+        type: string
+      planner_campaign_prefix:
+        required: true
+        type: string
+      funding_start_date:
+        required: false
+        type: string
+        default: ""
+      funding_end_date:
+        required: false
+        type: string
+        default: ""
+      funding_sample_run_id:
+        required: false
+        type: string
+        default: ""
+      funding_sample_artifact_name:
+        required: false
+        type: string
+        default: ""
+      cash_case_plan_run_id:
+        required: false
+        type: string
+        default: ""
+      cash_case_plan_artifact_name:
+        required: false
+        type: string
+        default: ""
+    outputs:
+      acquisition_json:
+        description: Canonical normalized acquisition JSON
+        value: ${{ jobs.compose.outputs.acquisition_json }}
+      acquisition_id:
+        description: Normalized acquisition identifier
+        value: ${{ jobs.compose.outputs.acquisition_id }}
   push:
     paths:
       - ".github/workflows/compose-historical-acquisition.yml"
@@ -39,6 +78,9 @@ jobs:
   compose:
     name: Verify reviewed evidence and compose acquisition JSON
     runs-on: ubuntu-latest
+    outputs:
+      acquisition_json: ${{ steps.compose.outputs.acquisition_json }}
+      acquisition_id: ${{ steps.compose.outputs.acquisition_id }}
     env:
       GH_TOKEN: ${{ github.token }}
       ACQUISITION_ID: ${{ github.event_name == 'push' && 'selftest-sampled-acquisition' || inputs.acquisition_id }}
@@ -222,7 +264,8 @@ jobs:
             }' > "${work}/cash-source.json"
           echo "cash_plan_path=${reports[0]}" >> "${GITHUB_OUTPUT}"
 
-      - name: Compose acquisition-ready dispatch JSON
+      - id: compose
+        name: Compose acquisition-ready dispatch JSON
         shell: bash
         run: |
           set -euo pipefail
@@ -255,6 +298,11 @@ jobs:
 
           uv run python scripts/compose_historical_acquisition.py "${args[@]}"
           cat "${work}/acquisition.json"
+          acquisition_json="$(jq -c . "${work}/acquisition.json")"
+          normalized_id="$(jq -r '.acquisition_id' "${work}/acquisition.json")"
+          test -n "${normalized_id}"
+          echo "acquisition_json=${acquisition_json}" >> "${GITHUB_OUTPUT}"
+          echo "acquisition_id=${normalized_id}" >> "${GITHUB_OUTPUT}"
 
       - name: Upload read-only acquisition composition evidence
         if: always()
