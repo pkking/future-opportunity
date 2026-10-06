@@ -43,7 +43,8 @@ def test_acquisition_composer_verifies_exact_successful_sampling_artifact() -> N
     assert "37482498880" in text
     assert "historical-market-day-sample-37482498880" in text
     assert "sample.json" in text
-    assert "--funding-sample" in text
+    assert "--funding-selection-provenance" in text
+    assert 'args+=(--funding-sample' not in text
 
 
 def test_push_selftest_defaults_do_not_leak_into_manual_dispatch_inputs() -> None:
