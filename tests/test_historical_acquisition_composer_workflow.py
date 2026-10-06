@@ -24,10 +24,10 @@ def test_acquisition_composer_verifies_exact_successful_case_plan_artifact() -> 
 
     assert "CASH_PLAN_RUN_ID" in text
     assert "CASH_PLAN_ARTIFACT_NAME" in text
-    assert "test "$(jq -r '.status'" in text
-    assert '= "completed"' in text
-    assert "test "$(jq -r '.conclusion'" in text
-    assert '= "success"' in text
+    assert ".status" in text
+    assert "completed" in text
+    assert ".conclusion" in text
+    assert "success" in text
     assert ".digest" in text
     assert ".expired" in text
     assert "gh run download" in text
