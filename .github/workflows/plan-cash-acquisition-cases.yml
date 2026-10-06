@@ -44,7 +44,8 @@ jobs:
 
       - run: uv sync --all-extras --dev
 
-      - name: Verify exact discovery run and download reports
+      - id: source
+        name: Verify exact discovery run and download reports
         shell: bash
         run: |
           set -euo pipefail
@@ -73,6 +74,28 @@ jobs:
           )
           test "${#names[@]}" -ge 1
           test "${#names[@]}" -le 31
+
+          control_count="$(jq             '[.artifacts[] | select(.name == "cash-sampled-discovery-control")] | length'             "${work}/source-artifacts.json")"
+          test "${control_count}" -le 1
+          selection_path=""
+          if [ "${control_count}" = "1" ]; then
+            control_id="$(jq -r               '.artifacts[] | select(.name == "cash-sampled-discovery-control") | .id'               "${work}/source-artifacts.json")"
+            control_digest="$(jq -r               '.artifacts[] | select(.name == "cash-sampled-discovery-control") | .digest'               "${work}/source-artifacts.json")"
+            control_expired="$(jq -r               '.artifacts[] | select(.name == "cash-sampled-discovery-control") | .expired'               "${work}/source-artifacts.json")"
+            [[ "${control_id}" =~ ^[0-9]+$ ]]
+            [[ "${control_digest}" =~ ^sha256:[0-9a-fA-F]{64}$ ]]
+            test "${control_expired}" = "false"
+
+            control_dir="${work}/control"
+            mkdir -p "${control_dir}"
+            gh run download "${DISCOVERY_RUN_ID}"               --repo "${GITHUB_REPOSITORY}"               --name "cash-sampled-discovery-control"               --dir "${control_dir}"
+            mapfile -t selections < <(
+              find "${control_dir}" -type f -name selection.json -print
+            )
+            test "${#selections[@]}" = "1"
+            selection_path="${selections[0]}"
+          fi
+          echo "selection_path=${selection_path}" >> "${GITHUB_OUTPUT}"
 
           printf '%s\n' '{"schema_version":1,"items":[]}'             > "${work}/acquisition.json"
 
@@ -115,7 +138,20 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          uv run python scripts/plan_cash_acquisition_cases.py             artifacts/cash-case-plan/discovery             --future-id "${FUTURE_ID}"             --expiry-at "${EXPIRY_AT}"             --exit-at "${EXIT_AT}"             --entry-time-utc "${ENTRY_TIME_UTC}"             --output artifacts/cash-case-plan/report.json             --max-cases 31
+          args=(
+            artifacts/cash-case-plan/discovery
+            --future-id "${FUTURE_ID}"
+            --expiry-at "${EXPIRY_AT}"
+            --exit-at "${EXIT_AT}"
+            --entry-time-utc "${ENTRY_TIME_UTC}"
+            --output artifacts/cash-case-plan/report.json
+            --max-cases 31
+          )
+          selection_path="${{ steps.source.outputs.selection_path }}"
+          if [ -n "${selection_path}" ]; then
+            args+=(--selection-provenance "${selection_path}")
+          fi
+          uv run python scripts/plan_cash_acquisition_cases.py "${args[@]}"
 
           jq '{
             selected_count,
