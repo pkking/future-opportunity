@@ -19,6 +19,10 @@ on:
         description: Contract expiry timestamp (ISO-8601)
         required: true
         default: "2026-06-26T08:00:00+00:00"
+      selection_provenance_json:
+        description: Optional verified selection provenance JSON
+        required: false
+        default: ""
   workflow_call:
     inputs:
       entry_at:
@@ -33,6 +37,10 @@ on:
       expiry_at:
         required: true
         type: string
+      selection_provenance_json:
+        required: false
+        type: string
+        default: ""
   push:
     paths:
       - scripts/prepare_okx_cash_and_carry_fixture.py
@@ -55,6 +63,7 @@ jobs:
       CASH_EXIT_AT: ${{ inputs.exit_at || '2026-06-25T00:15:00+00:00' }}
       CASH_FUTURE_ID: ${{ inputs.future_id || 'BTC-USDT-260626' }}
       CASH_EXPIRY_AT: ${{ inputs.expiry_at || '2026-06-26T08:00:00+00:00' }}
+      CASH_SELECTION_PROVENANCE_JSON: ${{ inputs.selection_provenance_json }}
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
