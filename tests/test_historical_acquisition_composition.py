@@ -14,6 +14,10 @@ from future_opportunity.backtest.sampling import (
     historical_sampling_payload,
     sample_historical_market_days,
 )
+from future_opportunity.backtest.selection_provenance import (
+    historical_selection_provenance_payload,
+    selection_provenance_from_sampling_evidence,
+)
 
 
 def case_plan(
@@ -77,6 +81,20 @@ def funding_sample(
             )
         )
     )
+
+
+def funding_selection_provenance() -> dict[str, object]:
+    provenance = selection_provenance_from_sampling_evidence(
+        funding_sample(),
+        source_workflow_run="37482498880",
+        artifact_name="historical-market-day-sample-37482498880",
+        artifact_id="11421537670",
+        artifact_digest=(
+            "sha256:bdaab43d0be70a2fc8b43059d39f5341"
+            "a2405bf9a0aff00306b90e92e24b8fa2"
+        ),
+    )
+    return historical_selection_provenance_payload(provenance)
 
 
 def test_composer_supports_funding_only() -> None:
@@ -261,4 +279,61 @@ def test_composer_rejects_funding_range_plus_sampling_evidence() -> None:
             funding_start_date="2026-01-01",
             funding_end_date="2026-01-31",
             funding_sample=funding_sample(),
+        )
+
+
+def test_composer_preserves_verified_funding_selection_provenance() -> None:
+    provenance = funding_selection_provenance()
+    manifest = compose_historical_acquisition(
+        acquisition_id="provenance-funding",
+        planner_campaign_prefix="provenance-review",
+        funding_selection_provenance=provenance,
+    )
+
+    assert manifest.funding is not None
+    assert manifest.funding.market_dates == (
+        "2026-01-01",
+        "2026-01-08",
+        "2026-01-13",
+        "2026-01-22",
+        "2026-01-29",
+    )
+    assert manifest.funding_selection_provenance is not None
+    assert (
+        historical_selection_provenance_payload(
+            manifest.funding_selection_provenance
+        )
+        == provenance
+    )
+
+
+def test_composer_raw_sampling_compatibility_does_not_invent_provenance() -> None:
+    manifest = compose_historical_acquisition(
+        acquisition_id="legacy-sample",
+        planner_campaign_prefix="legacy-sample-review",
+        funding_sample=funding_sample(),
+    )
+
+    assert manifest.funding is not None
+    assert manifest.funding_selection_provenance is None
+
+
+def test_composer_rejects_provenance_combined_with_other_funding_inputs() -> None:
+    provenance = funding_selection_provenance()
+
+    with pytest.raises(ValueError, match="mutually exclusive"):
+        compose_historical_acquisition(
+            acquisition_id="provenance-plus-range",
+            planner_campaign_prefix="provenance-plus-range-review",
+            funding_start_date="2026-01-01",
+            funding_end_date="2026-01-31",
+            funding_selection_provenance=provenance,
+        )
+
+    with pytest.raises(ValueError, match="mutually exclusive"):
+        compose_historical_acquisition(
+            acquisition_id="provenance-plus-sample",
+            planner_campaign_prefix="provenance-plus-sample-review",
+            funding_sample=funding_sample(),
+            funding_selection_provenance=provenance,
         )
