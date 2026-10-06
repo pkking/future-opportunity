@@ -1,0 +1,107 @@
+name: Acquire Pre-registered Historical Wave
+
+on:
+  workflow_dispatch:
+    inputs:
+      acquisition_id:
+        description: Safe acquisition identifier
+        required: false
+        default: "preregistered-wave-001"
+      planner_campaign_prefix:
+        description: Future read-only planner prefix
+        required: false
+        default: "preregistered-review-001"
+      funding_sample_run_id:
+        description: Exact successful Funding sampling run
+        required: false
+        default: "37482498880"
+      funding_sample_artifact_name:
+        description: Exact Funding sampling artifact
+        required: false
+        default: "historical-market-day-sample-37482498880"
+      cash_case_plan_run_id:
+        description: Exact successful sampled Cash case-plan run
+        required: false
+        default: "37490008931"
+      cash_case_plan_artifact_name:
+        description: Exact sampled Cash case-plan artifact
+        required: false
+        default: "cash-acquisition-case-plan-37490008931"
+  push:
+    paths:
+      - ".github/workflows/acquire-pre-registered-historical-wave.yml"
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  compose:
+    name: Compose reviewed pre-registered acquisition
+    uses: ./.github/workflows/compose-historical-acquisition.yml
+    with:
+      acquisition_id: ${{ inputs.acquisition_id || 'preregistered-wave-001' }}
+      planner_campaign_prefix: ${{ inputs.planner_campaign_prefix || 'preregistered-review-001' }}
+      funding_sample_run_id: ${{ inputs.funding_sample_run_id || '37482498880' }}
+      funding_sample_artifact_name: ${{ inputs.funding_sample_artifact_name || 'historical-market-day-sample-37482498880' }}
+      cash_case_plan_run_id: ${{ inputs.cash_case_plan_run_id || '37490008931' }}
+      cash_case_plan_artifact_name: ${{ inputs.cash_case_plan_artifact_name || 'cash-acquisition-case-plan-37490008931' }}
+
+  acquire:
+    name: Prepare reviewed pre-registered market days
+    needs: compose
+    uses: ./.github/workflows/acquire-historical-campaign.yml
+    with:
+      acquisition_json: ${{ needs.compose.outputs.acquisition_json }}
+
+  summary:
+    name: Verify wave boundary
+    needs: [compose, acquire]
+    if: always() && needs.compose.result == 'success' && needs.acquire.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Assert exact reviewed 5+3 wave and record evidence
+        env:
+          ACQUISITION_JSON: ${{ needs.compose.outputs.acquisition_json }}
+          ACQUISITION_ID: ${{ needs.compose.outputs.acquisition_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/pre-registered-wave
+          printf '%s\n' "${ACQUISITION_JSON}" \
+            > artifacts/pre-registered-wave/acquisition.json
+
+          test "$(jq -r '.acquisition_id' artifacts/pre-registered-wave/acquisition.json)" \
+            = "${ACQUISITION_ID}"
+          test "$(jq '.funding.market_dates | length' artifacts/pre-registered-wave/acquisition.json)" \
+            = "5"
+          test "$(jq '.cash_cases | length' artifacts/pre-registered-wave/acquisition.json)" \
+            = "3"
+          test "$(jq -r '.selection_provenance.funding.strategy' artifacts/pre-registered-wave/acquisition.json)" \
+            = "funding-carry"
+          test "$(jq -r '.selection_provenance.cash.strategy' artifacts/pre-registered-wave/acquisition.json)" \
+            = "cash-and-carry"
+
+          jq -n \
+            --arg acquisition_id "${ACQUISITION_ID}" \
+            --argjson funding_dates "$(jq -c '.funding.market_dates' artifacts/pre-registered-wave/acquisition.json)" \
+            --argjson cash_dates "$(jq -c '[.cash_cases[].entry_at[0:10]]' artifacts/pre-registered-wave/acquisition.json)" \
+            '{
+              schema_version: 1,
+              evidence_type: "pre_registered_acquisition_wave",
+              acquisition_id: $acquisition_id,
+              funding_market_dates: $funding_dates,
+              cash_entry_market_dates: $cash_dates,
+              expected_funding_count: 5,
+              expected_cash_count: 3,
+              corpus_mutation: false
+            }' > artifacts/pre-registered-wave/summary.json
+
+          cat artifacts/pre-registered-wave/summary.json
+
+      - name: Upload pre-registered wave control evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: pre-registered-acquisition-wave-${{ github.run_id }}
+          path: artifacts/pre-registered-wave/
+          if-no-files-found: error
