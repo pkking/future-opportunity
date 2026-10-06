@@ -12,6 +12,9 @@ on:
   push:
     paths:
       - ".github/workflows/plan-historical-campaign.yml"
+  workflow_run:
+    workflows: ["Acquire Historical Campaign"]
+    types: [completed]
 
 permissions:
   actions: read
@@ -20,11 +23,14 @@ permissions:
 jobs:
   plan:
     name: Verify prepared compact inventory and plan waves
+    if: >-
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
       # Push runs are read-only self-tests: one pinned and one unpinned Funding day.
-      SOURCE_RUN_IDS: ${{ inputs.source_run_ids || '37327493270,37434976457' }}
+      SOURCE_RUN_IDS: ${{ inputs.source_run_ids || github.event.workflow_run.id || '37327493270,37434976457' }}
       CAMPAIGN_PREFIX: ${{ inputs.campaign_prefix || 'selftest-review-only' }}
     steps:
       - uses: actions/checkout@v4
@@ -32,6 +38,37 @@ jobs:
       - uses: astral-sh/setup-uv@v6
 
       - run: uv sync --all-extras --dev
+
+      - name: Resolve acquisition planner control
+        if: github.event_name == 'workflow_run'
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="artifacts/historical-campaign-planner"
+          mkdir -p "${work}/acquisition-control"
+          gh run download "${SOURCE_RUN_IDS}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --name historical-acquisition-control \
+            --dir "${work}/acquisition-control"
+
+          mapfile -t resolved < <(
+            find "${work}/acquisition-control" -type f -name acquisition.json -print
+          )
+          test "${#resolved[@]}" = "1"
+          acquisition="${resolved[0]}"
+          prefix="$(jq -r '.planner_campaign_prefix' "${acquisition}")"
+          [[ "${prefix}" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]]
+          echo "CAMPAIGN_PREFIX=${prefix}" >> "${GITHUB_ENV}"
+
+          source_id="$(jq -r '.acquisition_id' "${acquisition}")"
+          funding_count="$(jq -r '.funding.market_dates // [] | length' "${acquisition}")"
+          cash_count="$(jq -r '.cash_cases | length' "${acquisition}")"
+          printf '%s\n' \
+            "Acquisition: ${source_id}" \
+            "Source run: ${SOURCE_RUN_IDS}" \
+            "Funding artifacts expected: ${funding_count}" \
+            "Cash artifacts expected: ${cash_count}" \
+            "Planner prefix: ${prefix}"
 
       - name: Verify source runs and enumerate compact artifacts
         shell: bash
