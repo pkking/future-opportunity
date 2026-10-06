@@ -1,6 +1,6 @@
 # 2026-10-06-historical-corpus-report: Stage-1 corpus-wide historical distribution reporting
 
-Status: PLANNING
+Status: VERIFYING
 Owner: agent
 Started: 2026-10-06
 Last checkpoint: 2026-10-06
@@ -51,35 +51,35 @@ as null rather than zero.
 
 ## Acceptance criteria
 
-- [ ] Add corpus-wide historical replay/report application and deterministic
+- [x] Add corpus-wide historical replay/report application and deterministic
       per-strategy summary statistics.
-- [ ] Provenance and per-case qualification/risk/unassessed evidence retained.
-- [ ] Correct null return distribution when no realized cases are assessed.
-- [ ] Properly distinguish entry-case qualification rate from market-wide rate.
-- [ ] Stable percentile definitions and tests including zero/one/multiple samples.
-- [ ] Unit + offline corpus integration tests cover both strategies.
-- [ ] CLI emits JSON evidence and error evidence on failure.
-- [ ] Historical Smoke uploads corpus distribution actuals without gating return.
-- [ ] README/testing contract documents meaning, limitations and reproduction.
-- [ ] Final Static, Code, API, E2E and historical-smoke CI green.
+- [x] Provenance and per-case qualification/risk/unassessed evidence retained.
+- [x] Correct null return distribution when no realized cases are assessed.
+- [x] Properly distinguish entry-case qualification rate from market-wide rate.
+- [x] Stable percentile definitions and tests including zero/one/multiple samples.
+- [x] Unit + offline corpus integration tests cover both strategies.
+- [x] CLI emits JSON evidence and error evidence on failure.
+- [x] Historical Smoke uploads corpus distribution actuals without gating return.
+- [x] README/testing contract documents meaning, limitations and reproduction.
+- [x] Final Static, Code, API, E2E and historical-smoke CI green.
 
 ## Implementation slices
 
-- [ ] 1. Model reporting semantics and deterministic quantiles.
-- [ ] 2. Replay all indexed Funding/Cash fixtures through production workflow.
-- [ ] 3. Write machine-readable reporting CLI and offline tests.
-- [ ] 4. Integrate as additional reporting artifact into Historical Smoke.
-- [ ] 5. Document, validate final CI and archive.
+- [x] 1. Model reporting semantics and deterministic quantiles.
+- [x] 2. Replay all indexed Funding/Cash fixtures through production workflow.
+- [x] 3. Write machine-readable reporting CLI and offline tests.
+- [x] 4. Integrate as additional reporting artifact into Historical Smoke.
+- [x] 5. Document, validate final CI and archive.
 
 ## Verification matrix
 
 | Scope | Expected evidence | Status |
 |---|---|---|
-| Static | ruff + architecture/safety | pending |
-| Code | report/quantiles/corpus integration tests | pending |
-| API | no regression | pending |
-| E2E | frozen strategy targets unchanged | pending |
-| Historical smoke | full validated corpus report artifact, reporting_only | pending |
+| Static | ruff + architecture/safety | passed CI 37440505065 |
+| Code | report/quantiles/corpus integration tests | passed CI 37440505065 |
+| API | no regression | passed CI 37440505065 |
+| E2E | frozen strategy targets unchanged | passed CI 37440505065 |
+| Historical smoke | full validated corpus report artifact, reporting_only | passed 37440355869; artifact 11400672797 |
 
 ## Decision gates
 
@@ -91,16 +91,28 @@ approval under ADR-0007.
 - 2026-10-06: prior corpus campaign completed; main CI 37439106863 green.
 - 2026-10-06: PR #3 open, PR CI 37435522881 and Historical Smoke
   37435522957 green. No automatic merge.
+- 2026-10-06: corpus report replays all indexed cases through existing Funding
+  Carry/Cash-and-Carry product workflows, preserving case/provenance evidence,
+  exact Decimal expected-return distributions, bounded or complete realized-
+  return distributions and explicit nulls for unavailable outcomes.
+- 2026-10-06: tests lock percentile interpolation and fail-closed behavior for
+  missing realized data. Report distinguishes pinned-case qualification from
+  market-wide opportunity arrival; latter remains null/unassessed.
+- 2026-10-06: Historical Smoke run 37440355869 succeeded and uploaded artifact
+  11400672797. Log confirms reporting_only and case counts Funding=2, Cash=2.
+  README/testing contract documents the sample-selection limitations.
+- 2026-10-06: main CI 37440505065 passed Static, Code, API and E2E gates.
+
 
 ## Resume from here
 
-Inspect current historical Funding/Cash result types and fixture semantics.
-Implement an exact Decimal distribution summary over assessed values with
-zero-sample = null and report explicitly named pinned-case qualification rate.
+All features and test evidence are complete. After the final plan-only CI
+is green, mark COMPLETED and archive. Future evidence accumulation happens
+through reviewed corpus campaigns; no automatic Stage-2 threshold activation.
 
 ## Completion
 
-Final commit:
-CI:
-Historical report artifact:
-Remaining unassessed items:
+Final implementation/documentation commit: b8822769122a4eb7bcd63abb911a512719f41d25
+CI: 37440505065 (success)
+Historical report artifact: 11400672797 from Historical Smoke run 37440355869
+Remaining unassessed items: market-wide opportunity arrival rate (sampled corpus cannot establish it), exact funding mark/returns, Stage-2 statistical thresholds
