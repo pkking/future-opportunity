@@ -7,12 +7,21 @@ on:
         description: UTC market date (YYYY-MM-DD)
         required: true
         default: "2026-09-01"
+      selection_provenance_json:
+        description: Optional verified selection provenance JSON
+        required: false
+        default: ""
   workflow_call:
     inputs:
       history_date:
         description: UTC market date (YYYY-MM-DD)
         required: true
         type: string
+      selection_provenance_json:
+        description: Optional verified selection provenance JSON
+        required: false
+        type: string
+        default: ""
   push:
     paths:
       - scripts/prepare_okx_funding_history_fixture.py
@@ -31,6 +40,7 @@ jobs:
     timeout-minutes: 30
     env:
       HISTORY_DATE: ${{ inputs.history_date || '2026-09-01' }}
+      HISTORICAL_SELECTION_PROVENANCE_JSON: ${{ inputs.selection_provenance_json }}
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
