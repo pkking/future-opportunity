@@ -1,6 +1,6 @@
 # 2026-10-06-cash-acquisition-case-planner: Expand verified Cash discovery into explicit acquisition cases
 
-Status: PLANNING
+Status: COMPLETED
 Owner: agent
 Started: 2026-10-06
 Last checkpoint: 2026-10-06
@@ -77,8 +77,8 @@ No preparation, promotion, corpus write, branch, PR, or merge.
 - [x] Workflow permissions remain actions:read + contents:read.
 - [x] Workflow uploads planning evidence only.
 - [x] README/testing docs explain discovery -> case plan -> acquisition boundary.
-- [ ] Final CI + workflow self-test green.
-- [ ] Archive after verification.
+- [x] Final CI + workflow self-test green.
+- [x] Archive after verification.
 
 ## Evidence log
 
@@ -119,7 +119,11 @@ The generated cases remain review-only input for a later explicit acquisition.
 
 ## Completion
 
-Final implementation commit: pending final documentation CI
-CI run: pending final documentation CI
+Final implementation commit: c679f137ed8e5e4a489101df9183eecc9d087501
+CI run: 37478216535 passed all four required gates
 Workflow evidence: run 37477835622 / artifact 11420145596
 Remaining unassessed items: none for case planning; acquisition dispatch remains explicit
+
+- 2026-10-06: final evidence commit
+  c679f137ed8e5e4a489101df9183eecc9d087501 passed CI run 37478216535.
+  Static/architecture, code-level, API, and reference E2E were all green.
