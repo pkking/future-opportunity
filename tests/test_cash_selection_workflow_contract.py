@@ -44,3 +44,17 @@ def test_cash_preparation_accepts_optional_selection_provenance_read_only() -> N
     assert "contents: write" not in text
     assert "pull-requests:" not in text
     assert "git push" not in text
+
+
+def test_cash_preparation_artifact_names_are_unique_per_entry_market_day() -> None:
+    text = PREPARE.read_text()
+
+    assert "id: identity" in text
+    assert 'entry_market_date="${CASH_ENTRY_AT%%T*}"' in text
+    assert "steps.identity.outputs.entry_market_date" in text
+    assert (
+        "okx-btc-cash-and-carry-compact-"
+        "${{ steps.identity.outputs.entry_market_date }}-"
+        "${{ env.CASH_FUTURE_ID }}-${{ github.run_id }}"
+        in text
+    )
