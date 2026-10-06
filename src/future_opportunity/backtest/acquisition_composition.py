@@ -10,6 +10,10 @@ from future_opportunity.backtest.acquisition import (
 from future_opportunity.backtest.sampling import (
     parse_historical_sampling_evidence,
 )
+from future_opportunity.backtest.selection_provenance import (
+    historical_selection_provenance_payload,
+    parse_historical_selection_provenance,
+)
 
 
 _CASE_PLAN_KEYS = {
@@ -45,13 +49,15 @@ def compose_historical_acquisition(
     funding_start_date: str | None = None,
     funding_end_date: str | None = None,
     funding_sample: Any | None = None,
+    funding_selection_provenance: Any | None = None,
     cash_case_plan: Any | None = None,
     max_total_items: int = 31,
 ) -> HistoricalAcquisitionManifest:
-    funding = _funding_payload(
+    funding, funding_selection = _funding_payload(
         funding_start_date,
         funding_end_date,
         funding_sample,
+        funding_selection_provenance,
     )
     cash_cases = (
         acquisition_cash_cases_from_plan(cash_case_plan)
@@ -59,14 +65,23 @@ def compose_historical_acquisition(
         else []
     )
 
+    raw: dict[str, object] = {
+        "schema_version": 1,
+        "acquisition_id": acquisition_id,
+        "planner_campaign_prefix": planner_campaign_prefix,
+        "funding": funding,
+        "cash_cases": cash_cases,
+    }
+    if funding_selection is not None:
+        raw["selection_provenance"] = {
+            "funding": historical_selection_provenance_payload(
+                funding_selection
+            ),
+            "cash": None,
+        }
+
     return parse_historical_acquisition_manifest(
-        {
-            "schema_version": 1,
-            "acquisition_id": acquisition_id,
-            "planner_campaign_prefix": planner_campaign_prefix,
-            "funding": funding,
-            "cash_cases": cash_cases,
-        },
+        raw,
         max_total_items=max_total_items,
     )
 
@@ -211,7 +226,31 @@ def _funding_payload(
     start_date: str | None,
     end_date: str | None,
     sampling_evidence: Any | None,
-) -> dict[str, object] | None:
+    selection_provenance: Any | None,
+):
+    if selection_provenance is not None:
+        if (
+            start_date is not None
+            or end_date is not None
+            or sampling_evidence is not None
+        ):
+            raise ValueError(
+                "Funding range, sampling evidence and selection provenance "
+                "are mutually exclusive"
+            )
+        provenance = parse_historical_selection_provenance(
+            selection_provenance
+        )
+        if provenance.strategy != "funding-carry":
+            raise ValueError(
+                "Funding acquisition requires funding-carry "
+                "selection provenance"
+            )
+        return (
+            {"market_dates": list(provenance.selected_market_dates)},
+            provenance,
+        )
+
     if sampling_evidence is not None:
         if start_date is not None or end_date is not None:
             raise ValueError(
@@ -222,20 +261,24 @@ def _funding_payload(
             raise ValueError(
                 "Funding acquisition requires a funding-carry sampling artifact"
             )
-        return {
-            "market_dates": list(sample.selected_dates),
-        }
+        return (
+            {"market_dates": list(sample.selected_dates)},
+            None,
+        )
 
     if start_date is None and end_date is None:
-        return None
+        return None, None
     if start_date is None or end_date is None:
         raise ValueError(
             "Funding start_date and end_date must be supplied together"
         )
-    return {
-        "start_date": start_date,
-        "end_date": end_date,
-    }
+    return (
+        {
+            "start_date": start_date,
+            "end_date": end_date,
+        },
+        None,
+    )
 
 
 def _required_string(
