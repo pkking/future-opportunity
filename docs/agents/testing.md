@@ -256,6 +256,37 @@ The report must replay every valid, indexed pinned case. The report is
 pinned-case gate evidence. The distribution report does not change the
 ADR-0007 30/90-day eligibility or activate Stage 2.
 
+### Read-only candidate campaign planner
+
+The candidate planner is a separate **read-only** artifact inventory workflow
+and must never be treated as a promotion gate. Its permissions are limited to
+`actions: read` and `contents: read`.
+
+It accepts explicit successful preparation run IDs and verifies:
+
+- the source run status is completed/success and artifact listing is complete;
+- each selected compact artifact is unexpired and has an Actions SHA-256 digest;
+- each compact manifest points to the exact source run;
+- each parent preparation artifact belongs to the same run and its digest
+  matches the compact manifest;
+- the compact fixture is commit-ready, contains no unexpected files/symlinks,
+  and passes canonical checksums and strategy-specific validation;
+- repeated candidate strategy/date, dataset ID, or source pair fails closed;
+- pinned strategy/date with a different dataset ID fails closed;
+- the generated campaign waves are deterministic and have at most 31 items;
+- report counts distinguish committed pinned days from unmerged candidate days;
+- no corpus files, Git branches, or PRs are mutated.
+
+The planner uses only the **committed** corpus index as its comparison baseline;
+open PRs are deliberately not counted as pinned and are not automatically
+deduplicated. The operator must review existing PRs before dispatching the
+generated explicit campaign manifest.
+
+`historical-campaign-planner-<run_id>` should include a review-only
+`report.json`, an acquisition `inventory.json`, and the generated
+`waves/*.json` manifests. CI gating remains on the committed corpus, not
+on a planner projection.
+
 ## What an E2E scenario must cover
 
 A strategy E2E scenario should exercise the real application workflow rather
