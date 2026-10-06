@@ -605,6 +605,46 @@ zero assessed returns, distributions have zero assessed count and null
 statistics. Stage-2 thresholds remain disabled pending sufficient evidence
 and a separate human-approved ADR.
 
+### Planning future campaigns from prepared artifacts
+
+For larger batches, use the **read-only** planning workflow:
+
+```text
+Actions -> Plan Historical Corpus Campaign
+
+source_run_ids  = 37327493270,37434976457
+campaign_prefix = stage1-reviewed-wave
+```
+
+The input is an explicit, comma-separated set of **successful** preparation
+workflow run IDs (at most 20 runs). The planner checks the exact compact artifact
+and parent preparation artifact IDs/digests against the GitHub Actions API,
+revalidates compact manifest provenance and canonical checksums, then compares
+strategy/date identities against the versioned `corpus-index.json`.
+
+The resulting `historical-campaign-planner-<run-id>` Actions artifact contains:
+
+- `inventory.json`: downloaded artifact identities and provenance inputs;
+- `report.json`: excluded pinned days, selected candidate days, **actual pinned
+  counts** and **projected counts if all proposals were merged**;
+- `waves/*.json`: deterministic candidate campaigns containing no more than
+  31 items each, suitable as explicit inputs to `Promote Historical Corpus
+  Campaign`.
+
+A planner run **never stages fixtures, creates a branch or PR, changes the
+corpus, or activates Stage 2**. Its default push-trigger integration check uses
+Funding 2026-09-02 (already pinned) and Funding 2026-09-04 (prepared but not
+pinned). Self-check run
+[37441177683](https://github.com/pkking/future-opportunity/actions/runs/37441177683)
+verified one exclusion, one proposal, and a Funding forecast of 2 pinned to
+3 if merged without changing current pinned counts.
+
+The planner compares with `main` and does **not** automatically subtract
+unmerged/open PR candidates. Review outstanding campaign PRs (currently
+[PR #3](https://github.com/pkking/future-opportunity/pull/3)) before
+dispatching a generated wave to avoid duplicate proposals. Actual promotion
+revalidates all source identities and fails closed on corpus collisions.
+
 Readiness is computed from distinct `entry_market_date` values in the validated
 versioned corpus, separately for each required strategy:
 
