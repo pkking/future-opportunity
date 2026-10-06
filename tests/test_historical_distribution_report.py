@@ -13,11 +13,21 @@ from future_opportunity.application.backtest.funding_carry import (
     FundingCarryBacktestCaseResult,
 )
 from future_opportunity.backtest.distribution_report import (
+    _selection_provenance_view,
     _summary,
     build_historical_corpus_distribution,
     decimal_distribution,
 )
 from future_opportunity.backtest.evidence import write_backtest_evidence
+from future_opportunity.backtest.sampling import (
+    HistoricalSamplingRequest,
+    historical_sampling_payload,
+    sample_historical_market_days,
+)
+from future_opportunity.backtest.selection_provenance import (
+    historical_selection_provenance_payload,
+    selection_provenance_from_sampling_evidence,
+)
 
 
 ROOT = Path(__file__).parents[1]
@@ -150,6 +160,15 @@ async def test_report_replays_all_versioned_corpus_days_offline(
     assert report["reference_targets_used_as_thresholds"] is False
     assert report["capital_usdt"] == Decimal("10000")
 
+    coverage = report["selection_provenance_coverage"]
+    assert coverage["total_pinned_day_count"] == len(entries)
+    assert coverage["pre_registered_sample_day_count"] == 0
+    assert coverage["legacy_untracked_day_count"] == len(entries)
+    assert coverage["pre_registered_coverage_ratio"] == Decimal(0)
+    assert "readiness still counts all validated" in coverage[
+        "readiness_semantics"
+    ]
+
     for strategy in ("funding-carry", "cash-and-carry"):
         pinned = {
             entry["dataset_id"]
@@ -164,6 +183,11 @@ async def test_report_replays_all_versioned_corpus_days_offline(
         assert summary["market_wide_opportunity_arrival_rate"] is None
         assert summary["economics_gate"] == "reporting_only"
         assert all(item["actual"]["evidence_ids"] for item in cases)
+        assert all(
+            item["provenance"]["selection"]["classification"]
+            == "legacy_untracked"
+            for item in cases
+        )
 
     destination = tmp_path / "distribution.json"
     write_backtest_evidence(report, destination)
@@ -174,3 +198,42 @@ async def test_report_replays_all_versioned_corpus_days_offline(
         for items in serialized["cases"].values()
         for item in items
     )
+
+
+def test_selection_provenance_reporting_distinguishes_preregistered_from_legacy() -> None:
+    legacy = _selection_provenance_view(
+        {},
+        strategy="funding-carry",
+        market_date="2026-09-01",
+    )
+    assert legacy["classification"] == "legacy_untracked"
+    assert legacy["source"] is None
+
+    sample = historical_sampling_payload(
+        sample_historical_market_days(
+            HistoricalSamplingRequest(
+                strategy="funding-carry",
+                start_date="2026-09-01",
+                end_date="2026-09-01",
+                sample_size=1,
+                seed="report-selection-test",
+            )
+        )
+    )
+    provenance = historical_selection_provenance_payload(
+        selection_provenance_from_sampling_evidence(
+            sample,
+            source_workflow_run="123",
+            artifact_name="sample-123",
+            artifact_id="456",
+            artifact_digest="sha256:" + "a" * 64,
+        )
+    )
+    tracked = _selection_provenance_view(
+        {"selection_provenance": provenance},
+        strategy="funding-carry",
+        market_date="2026-09-01",
+    )
+    assert tracked["classification"] == "pre_registered_sample"
+    assert tracked["selection_kind"] == "pre_registered_sample"
+    assert tracked["source"]["workflow_run"] == "123"
