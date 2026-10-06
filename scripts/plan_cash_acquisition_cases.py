@@ -8,7 +8,12 @@ from pathlib import Path
 
 from future_opportunity.backtest.cash_case_planning import (
     CashAcquisitionTemplate,
+    parse_cash_discovery_report,
     plan_cash_acquisition_cases,
+)
+from future_opportunity.backtest.selection_provenance import (
+    historical_selection_provenance_payload,
+    parse_historical_selection_provenance,
 )
 
 
@@ -20,6 +25,7 @@ def main() -> None:
     parser.add_argument("--exit-at", required=True)
     parser.add_argument("--entry-time-utc", required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--selection-provenance", type=Path)
     parser.add_argument("--max-cases", type=int, default=31)
     args = parser.parse_args()
 
@@ -39,6 +45,26 @@ def main() -> None:
         template=template,
         max_cases=args.max_cases,
     )
+
+    selection_provenance = None
+    if args.selection_provenance is not None:
+        selection_provenance = parse_historical_selection_provenance(
+            json.loads(args.selection_provenance.read_text())
+        )
+        if selection_provenance.strategy != "cash-and-carry":
+            raise ValueError(
+                "Cash case-plan selection provenance must be cash-and-carry"
+            )
+        discovered_dates = tuple(
+            sorted(
+                parse_cash_discovery_report(report).market_date
+                for report in raw_reports
+            )
+        )
+        if discovered_dates != selection_provenance.selected_market_dates:
+            raise ValueError(
+                "Cash discovery dates do not exactly cover selection provenance"
+            )
 
     payload = {
         "schema_version": 1,
@@ -66,6 +92,10 @@ def main() -> None:
             "this output does not prepare, promote, or pin any historical day."
         ),
     }
+    if selection_provenance is not None:
+        payload["selection_provenance"] = (
+            historical_selection_provenance_payload(selection_provenance)
+        )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
         json.dumps(payload, indent=2, sort_keys=True) + "\n"
