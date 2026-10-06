@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import inspect
-from datetime import date, timedelta
-
 import pytest
 
 from future_opportunity.backtest.sampling import (
