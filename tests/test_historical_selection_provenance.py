@@ -13,6 +13,7 @@ from future_opportunity.backtest.selection_provenance import (
     historical_selection_provenance_payload,
     parse_historical_selection_provenance,
     selection_provenance_from_sampling_evidence,
+    validate_selection_provenance_for_market_date,
 )
 
 
@@ -121,3 +122,28 @@ def test_selection_provenance_preserves_cash_strategy_hash_domain() -> None:
     assert provenance.strategy == "cash-and-carry"
     assert provenance.source.artifact_digest == "sha256:" + "a" * 64
     assert len(provenance.selected_market_dates) == 4
+
+
+def test_selection_provenance_market_date_validation_is_strategy_specific() -> None:
+    payload = golden_provenance_payload()
+
+    accepted = validate_selection_provenance_for_market_date(
+        payload,
+        strategy="funding-carry",
+        market_date="2026-01-13",
+    )
+    assert accepted.contains_market_date("2026-01-13")
+
+    with pytest.raises(ValueError, match="strategy mismatch"):
+        validate_selection_provenance_for_market_date(
+            payload,
+            strategy="cash-and-carry",
+            market_date="2026-01-13",
+        )
+
+    with pytest.raises(ValueError, match="outside selection provenance"):
+        validate_selection_provenance_for_market_date(
+            payload,
+            strategy="funding-carry",
+            market_date="2026-01-14",
+        )
