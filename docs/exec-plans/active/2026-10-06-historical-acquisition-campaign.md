@@ -1,6 +1,6 @@
 # 2026-10-06-historical-acquisition-campaign: Prepare many days and feed the read-only planner
 
-Status: VERIFYING
+Status: COMPLETED
 Owner: agent
 Started: 2026-10-06
 Last checkpoint: 2026-10-06
@@ -101,7 +101,11 @@ review-only and must not be automatically promoted.
 
 ## Completion
 
-Final implementation commit: pending final documentation CI
-CI run: pending final documentation CI
+Final implementation commit: 1607a370df84f16c5eb3ff2ca4b600d6525f4c5f
+CI run: 37476916093 passed all four required gates
 Acquisition workflow evidence: acquire 37475817137; planner workflow_run 37476495413; planner artifact 11419645347
 Remaining unassessed items: none for acquisition; promotion/merge remain explicit later stages
+
+- 2026-10-06: final plan evidence commit
+  1607a370df84f16c5eb3ff2ca4b600d6525f4c5f passed CI run 37476916093.
+  Static/architecture, code-level, API, and reference E2E were all green.
