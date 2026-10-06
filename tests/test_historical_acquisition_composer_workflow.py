@@ -60,3 +60,16 @@ def test_push_selftest_defaults_do_not_leak_into_manual_dispatch_inputs() -> Non
         "github.event_name == 'push' && '37477835622'"
         in text
     )
+
+
+def test_acquisition_composer_builds_and_consumes_selection_provenance() -> None:
+    text = COMPOSER.read_text()
+
+    assert "scripts/build_historical_selection_provenance.py" in text
+    assert "--source-workflow-run" in text
+    assert "--artifact-name" in text
+    assert "--artifact-id" in text
+    assert "--artifact-digest" in text
+    assert "funding-selection-provenance.json" in text
+    assert "--funding-selection-provenance" in text
+    assert "selection_provenance_path" in text
