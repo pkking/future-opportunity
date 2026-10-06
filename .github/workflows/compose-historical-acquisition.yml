@@ -47,8 +47,8 @@ jobs:
       FUNDING_END_DATE: ${{ inputs.funding_end_date }}
       FUNDING_SAMPLE_RUN_ID: ${{ github.event_name == 'push' && '37482498880' || inputs.funding_sample_run_id }}
       FUNDING_SAMPLE_ARTIFACT_NAME: ${{ github.event_name == 'push' && 'historical-market-day-sample-37482498880' || inputs.funding_sample_artifact_name }}
-      CASH_PLAN_RUN_ID: ${{ github.event_name == 'push' && '37477835622' || inputs.cash_case_plan_run_id }}
-      CASH_PLAN_ARTIFACT_NAME: ${{ github.event_name == 'push' && 'cash-acquisition-case-plan-37477835622' || inputs.cash_case_plan_artifact_name }}
+      CASH_PLAN_RUN_ID: ${{ github.event_name == 'push' && '37490008931' || inputs.cash_case_plan_run_id }}
+      CASH_PLAN_ARTIFACT_NAME: ${{ github.event_name == 'push' && 'cash-acquisition-case-plan-37490008931' || inputs.cash_case_plan_artifact_name }}
     steps:
       - uses: actions/checkout@v4
 
