@@ -220,6 +220,11 @@ def derive_funding_compact_fixture(
         "sources": manifest.get("sources"),
         "evidence_limits": manifest.get("evidence_limits"),
     }
+    if "selection_provenance" in manifest:
+        compact_manifest["selection_provenance"] = manifest[
+            "selection_provenance"
+        ]
+
     compact_manifest_path = output_root / "manifest.json"
     compact_manifest_path.write_text(
         json.dumps(compact_manifest, indent=2, sort_keys=True) + "\n"
