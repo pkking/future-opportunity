@@ -1,6 +1,6 @@
 # 2026-10-06-historical-acquisition-campaign: Prepare many days and feed the read-only planner
 
-Status: PLANNING
+Status: VERIFYING
 Owner: agent
 Started: 2026-10-06
 Last checkpoint: 2026-10-06
@@ -58,18 +58,18 @@ or merge anything.
 
 ## Acceptance criteria
 
-- [ ] Add a versioned acquisition-manifest parser/model.
-- [ ] Funding range is inclusive, bounded and optional.
-- [ ] Cash cases are explicit, bounded and schema-strict.
-- [ ] Manifest requires at least one Funding day or Cash case.
-- [ ] Duplicate Cash cases / duplicate entry market dates fail closed.
-- [ ] Add CLI that emits deterministic Funding date matrix and Cash case matrix.
-- [ ] Add tests for malformed ranges, duplicate Cash dates, bounds and ordering.
-- [ ] Make read-only planner workflow reusable via workflow_call.
-- [ ] Add acquisition workflow that calls existing Funding/Cash reusable preparations.
-- [ ] Acquisition workflow passes its exact run ID into the read-only planner.
+- [x] Add a versioned acquisition-manifest parser/model.
+- [x] Funding range is inclusive, bounded and optional.
+- [x] Cash cases are explicit, bounded and schema-strict.
+- [x] Manifest requires at least one Funding day or Cash case.
+- [x] Duplicate Cash cases / duplicate entry market dates fail closed.
+- [x] Add CLI that emits deterministic Funding date matrix and Cash case matrix.
+- [x] Add tests for malformed ranges, duplicate Cash dates, bounds and ordering.
+- [x] Feed completed acquisition runs into the read-only planner via workflow_run.
+- [x] Add acquisition workflow that calls existing Funding/Cash reusable preparations.
+- [x] Acquisition workflow passes its exact run ID into the read-only planner.
 - [ ] Planner wave evidence is uploaded from the acquisition run.
-- [ ] Acquisition has no contents:write / pull-requests:write permission.
+- [x] Acquisition has no contents:write / pull-requests:write permission.
 - [ ] Push self-test uses one already-supported Funding day and one explicit Cash case.
 - [ ] Normal CI + acquisition self-test green.
 - [ ] Document operator flow and failure recovery.
@@ -94,10 +94,12 @@ A future decision is still required before automatic promotion or merge.
 
 ## Resume from here
 
-Implement the acquisition manifest as pure package code plus tests. Reuse the
-existing date-range validator and keep Cash cases explicit. Then make the
-planner reusable and wire one acquisition workflow around existing reusable
-preparation workflows.
+Wait for acquisition self-test run 37475817137 to finish Funding 2026-09-04.
+Cash preparation and acquisition-control upload are already green. On successful
+completion, verify that a workflow_run-triggered Plan Historical Corpus Campaign
+run inventories the exact acquisition run and emits review-only waves. Then
+document the acquisition -> planner boundary and archive if all normal CI gates
+remain green.
 
 ## Completion
 
