@@ -13,6 +13,15 @@ from future_opportunity.backtest.funding_compact import (
     derive_funding_compact_fixture,
     finalize_funding_compact_fixture,
 )
+from future_opportunity.backtest.sampling import (
+    HistoricalSamplingRequest,
+    historical_sampling_payload,
+    sample_historical_market_days,
+)
+from future_opportunity.backtest.selection_provenance import (
+    historical_selection_provenance_payload,
+    selection_provenance_from_sampling_evidence,
+)
 from future_opportunity.backtest.model import (
     HistoricalFundingObservation,
     HistoricalMarkPriceCandle,
@@ -48,7 +57,11 @@ def book_observation(
     )
 
 
-def build_prepared(root: Path) -> None:
+def build_prepared(
+    root: Path,
+    *,
+    with_selection_provenance: bool = False,
+) -> None:
     spot_path = root / "btc-usdt-spot-books.jsonl"
     swap_path = root / "btc-usdt-swap-books.jsonl"
     funding_path = root / "btc-usdt-swap-funding.jsonl"
@@ -158,6 +171,29 @@ def build_prepared(root: Path) -> None:
         },
         "evidence_limits": {"funding_mark_price": "interval_bound"},
     }
+    if with_selection_provenance:
+        sampling = historical_sampling_payload(
+            sample_historical_market_days(
+                HistoricalSamplingRequest(
+                    strategy="funding-carry",
+                    start_date="2026-09-02",
+                    end_date="2026-09-02",
+                    sample_size=1,
+                    seed="fixture-selection",
+                )
+            )
+        )
+        provenance = selection_provenance_from_sampling_evidence(
+            sampling,
+            source_workflow_run="123",
+            artifact_name="sample-123",
+            artifact_id="456",
+            artifact_digest="a" * 64,
+        )
+        manifest["selection_provenance"] = (
+            historical_selection_provenance_payload(provenance)
+        )
+
     (root / "manifest.json").write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n"
     )
@@ -199,3 +235,39 @@ def test_funding_compact_derivation_is_commit_ready_after_finalization(
         "okx-btc-usdt-funding-carry-2026-09-02-v1-target-compact"
     )
     assert loaded.alignment.emitted_samples == 2
+
+
+def test_funding_compact_preserves_and_loader_validates_selection_provenance(
+    tmp_path: Path,
+) -> None:
+    prepared = tmp_path / "prepared-selection"
+    compact = tmp_path / "compact-selection"
+    prepared.mkdir()
+    build_prepared(prepared, with_selection_provenance=True)
+
+    parent_manifest = json.loads((prepared / "manifest.json").read_text())
+    draft = derive_funding_compact_fixture(prepared, compact)
+
+    assert draft["selection_provenance"] == parent_manifest["selection_provenance"]
+
+    finalize_funding_compact_fixture(
+        compact,
+        workflow_run="12345",
+        artifact_id="67890",
+        artifact_digest="b" * 64,
+    )
+    loaded = load_funding_history_fixture(compact)
+    assert loaded.manifest["selection_provenance"] == (
+        parent_manifest["selection_provenance"]
+    )
+
+    manifest_path = compact / "manifest.json"
+    tampered = json.loads(manifest_path.read_text())
+    tampered["history_date_utc"] = "2026-09-03"
+    tampered["entry_market_date"] = "2026-09-03"
+    manifest_path.write_text(json.dumps(tampered, indent=2) + "\n")
+
+    import pytest
+
+    with pytest.raises(ValueError, match="outside selection provenance"):
+        load_funding_history_fixture(compact)
