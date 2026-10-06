@@ -20,7 +20,9 @@ successful preparation artifact
   -> stage fixture
   -> update corpus-index.json deterministically
   -> run corpus/historical smoke validation
-  -> open PR
+  -> push review branch
+  -> open PR when repository policy permits
+     OR emit a machine-readable PR handoff
 ```
 
 The workflow MUST NOT push directly to main.
@@ -60,7 +62,9 @@ The workflow MUST NOT push directly to main.
   or existing divergent fixture content must fail closed.
 - Re-running the same promotion on an already indexed identical fixture should be
   idempotent/no-op.
-- Promotion creates a branch + PR for review; never direct main mutation.
+- Promotion always creates a review branch and never mutates main directly.
+- It opens a PR when repository policy permits; otherwise it emits an exact
+  machine-readable handoff for a connected GitHub integration/operator.
 - The PR branch must run normal CI and Historical Backtest Smoke before merge.
 - Raw archives remain excluded.
 
@@ -74,7 +78,8 @@ The workflow MUST NOT push directly to main.
 - [x] Add code tests for Funding and Cash promotion paths.
 - [x] Add workflow_dispatch promotion workflow that downloads an exact artifact from an exact run.
 - [x] Workflow verifies source run/artifact identity against manifest provenance.
-- [x] Workflow creates a review branch/PR and never writes main directly.
+- [x] Workflow creates a review branch and either a PR or an exact PR handoff;
+  never writes main directly.
 - [x] Promotion PR runs normal CI + Historical Backtest Smoke.
 - [x] Documentation explains prepare -> promote -> review -> merge.
 - [ ] Final CI green.
@@ -84,7 +89,7 @@ The workflow MUST NOT push directly to main.
 - [x] 1. Define promotion result/errors and local staging algorithm.
 - [x] 2. Add deterministic corpus-index update + idempotency tests.
 - [x] 3. Add exact artifact/run provenance verification.
-- [x] 4. Add GitHub Actions promotion workflow with PR creation.
+- [x] 4. Add GitHub Actions promotion workflow with review branch + PR/handoff.
 - [x] 5. Document operator workflow and recovery.
 - [ ] 6. Verify complete CI and archive.
 
@@ -92,12 +97,12 @@ The workflow MUST NOT push directly to main.
 
 | Scope | Expected evidence | Status |
 |---|---|---|
-| Static | ruff + architecture/agent contract | pending |
-| Code | promotion/idempotency/divergence tests | pending |
-| API | no regression | pending |
-| Reference E2E | unchanged deterministic targets green | pending |
-| Historical smoke | existing corpus remains green | pending |
-| Promotion workflow | exact artifact -> proposed corpus PR | pending |
+| Static | ruff + architecture/agent contract | passed CI 37433904415 |
+| Code | promotion/idempotency/divergence tests | passed CI 37433904415 |
+| API | no regression | passed CI 37433904415 |
+| Reference E2E | unchanged deterministic targets green | passed CI 37433904415 |
+| Historical smoke | existing corpus remains green | passed; PR run 37433749712 green |
+| Promotion workflow | exact artifact -> validated branch -> PR/handoff | 9/2 no-op 37433173833 green; 9/3 staging 37433493554 passed through branch push |
 
 ## Decision gates
 
@@ -140,20 +145,32 @@ A future decision would be required before automatic promotion or automatic merg
 
 ## Deviations and discoveries
 
-None.
+- Repository policy currently disallows pull requests created by
+  `GITHUB_TOKEN`, even though the job receives `pull-requests: write`.
+  Promotion run 37433493554 therefore validated/staged/replayed the 2026-09-03
+  fixture and pushed review branch
+  `historical-corpus/okx-btc-usdt-funding-carry-2026-09-03-v1-target-compact-37433493554-1`,
+  but GitHub rejected `gh pr create`.
+- Increasing repository Actions authority is not required. The safer implementation
+  now treats this policy as a review handoff: the workflow records the exact
+  branch/title/source evidence in `pr-handoff.json` instead of failing the
+  validated promotion. A connected GitHub integration can open the PR.
+- The first PR-body implementation used Markdown backticks inside an interpolated
+  shell heredoc, causing command substitution. It was replaced with safe
+  `printf` construction.
+- PR #2 was opened from the exact validated 2026-09-03 review branch via the
+  connected GitHub integration. PR-triggered CI run 37433749631 and Historical
+  Backtest Smoke run 37433749712 both passed. No auto-merge was enabled.
 
 ## Resume from here
 
-Wait for Funding 2026-09-03 preparation run 37432822497 to produce a new
-commit-ready compact artifact. Point the promotion workflow push self-test at
-that exact run/artifact and verify the full changed path: download -> strict
-provenance validation -> stage -> offline replay -> review branch -> PR. Then
-verify the PR-triggered normal CI and Historical Backtest Smoke before
-archiving this plan.
+Wait for the latest documentation/PR-handoff contract commit to pass all CI
+gates. If green, record the final run and archive this plan. PR #2 remains open
+for human review/merge; automatic merge is explicitly outside this plan.
 
 ## Completion
 
-Final implementation commit:
-CI run:
-Promotion workflow evidence:
-Remaining unassessed items:
+Final implementation commit: 0a7e2afe0ffb9bc32e2ce6e2667099d6d9da4f4b
+CI run: 37433904415 passed
+Promotion workflow evidence: no-op 37433173833; real 9/3 promotion 37433493554; PR #2 checks 37433749631 / 37433749712 passed
+Remaining unassessed items: PR #2 human review/merge only; intentionally outside automatic promotion
