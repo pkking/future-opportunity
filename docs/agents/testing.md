@@ -256,6 +256,34 @@ The report must replay every valid, indexed pinned case. The report is
 pinned-case gate evidence. The distribution report does not change the
 ADR-0007 30/90-day eligibility or activate Stage 2.
 
+### Selection provenance contract
+
+A fixture may omit `selection_provenance` only for legacy Stage-1 evidence.
+When the field is present, it is fail-closed evidence and must validate
+independently.
+
+Required semantics:
+
+- source workflow run/artifact ID/name/digest identify the reviewed sampling
+  evidence;
+- canonical sampling-evidence SHA-256 must match deterministic replay;
+- policy version, strategy, seed, study window, population and selected dates
+  must match the replayed sample;
+- the fixture `entry_market_date` must belong to the selected date set;
+- Funding acquisition dates with selection provenance must exactly equal the
+  reviewed draw;
+- sampled Cash discovery may run only selected dates;
+- Cash case planning must account for the complete draw as selected cases plus
+  explicit exclusions; missing dates cannot disappear;
+- full and compact fixture manifests must preserve the same provenance
+  structurally;
+- promotion/loader validation must reject strategy/date/provenance drift.
+
+Corpus reporting classifies days as `pre_registered_sample` or
+`legacy_untracked` and reports provenance coverage. This is reporting-only:
+ADR-0007 readiness continues to count every valid pinned day until a separate
+policy decision changes it.
+
 ### Cash acquisition case planning
 
 Cash case planning is a read-only bridge between historical FUTURES discovery
