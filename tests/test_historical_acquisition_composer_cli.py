@@ -77,3 +77,61 @@ def test_acquisition_composer_cli_emits_dispatch_ready_json(
         "2026-09-05",
     )
     assert parsed.cash_cases[0].entry_market_date == "2026-06-03"
+
+
+def test_acquisition_composer_cli_accepts_verified_sampling_evidence(
+    tmp_path: Path,
+) -> None:
+    from future_opportunity.backtest.sampling import (
+        HistoricalSamplingRequest,
+        historical_sampling_payload,
+        sample_historical_market_days,
+    )
+
+    sample = tmp_path / "sample.json"
+    sample.write_text(
+        json.dumps(
+            historical_sampling_payload(
+                sample_historical_market_days(
+                    HistoricalSamplingRequest(
+                        strategy="funding-carry",
+                        start_date="2026-01-01",
+                        end_date="2026-01-31",
+                        sample_size=5,
+                        seed="stage2-baseline-v1",
+                    )
+                )
+            )
+        )
+        + "\n"
+    )
+    output = tmp_path / "sampled-acquisition.json"
+
+    subprocess.run(
+        [
+            sys.executable,
+            "scripts/compose_historical_acquisition.py",
+            "--acquisition-id",
+            "sampled-cli-wave",
+            "--planner-campaign-prefix",
+            "sampled-cli-review",
+            "--funding-sample",
+            str(sample),
+            "--output",
+            str(output),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    payload = json.loads(output.read_text())
+    assert payload["funding"] == {
+        "market_dates": [
+            "2026-01-01",
+            "2026-01-08",
+            "2026-01-13",
+            "2026-01-22",
+            "2026-01-29",
+        ]
+    }
