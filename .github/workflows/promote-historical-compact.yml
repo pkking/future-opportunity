@@ -24,6 +24,8 @@ jobs:
     runs-on: ubuntu-latest
     # Push-trigger fallback replays one already-pinned artifact to prove the
     # download/provenance/idempotency path without mutating the corpus.
+    # Manifest JSON formatting is intentionally non-semantic; canonical evidence
+    # files remain byte-sensitive and checksum-gated.
     env:
       SOURCE_RUN_ID: ${{ inputs.source_run_id || '37327493270' }}
       COMPACT_ARTIFACT_NAME: ${{ inputs.compact_artifact_name || 'okx-btc-funding-compact-2026-09-02' }}
