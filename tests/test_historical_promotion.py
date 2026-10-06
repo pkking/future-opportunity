@@ -133,7 +133,10 @@ def test_repromotion_rejects_divergent_existing_fixture(
     book = destination / "btc-usdt-spot-books.jsonl"
     book.write_text(book.read_text() + "\n")
 
-    with pytest.raises(ValueError, match="differs from promoted artifact"):
+    with pytest.raises(
+        ValueError,
+        match="checksum mismatch|differs from promoted artifact",
+    ):
         promote_historical_compact_fixture(
             FUNDING,
             fixture_root=fixture_root,
