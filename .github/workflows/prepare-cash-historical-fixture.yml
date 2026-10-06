@@ -69,6 +69,15 @@ jobs:
       - uses: astral-sh/setup-uv@v6
       - run: uv sync --all-extras --dev
 
+      - id: identity
+        name: Resolve safe Cash artifact identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          entry_market_date="${CASH_ENTRY_AT%%T*}"
+          [[ "${entry_market_date}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]
+          echo "entry_market_date=${entry_market_date}" >> "${GITHUB_OUTPUT}"
+
       - name: Download, verify, normalize and compact official history
         env:
           CASH_HISTORICAL_FIXTURE_DIR: artifacts/cash-historical-fixture
@@ -88,7 +97,7 @@ jobs:
         id: upload-prepared
         uses: actions/upload-artifact@v4
         with:
-          name: okx-btc-cash-and-carry-${{ env.CASH_FUTURE_ID }}-${{ github.run_id }}
+          name: okx-btc-cash-and-carry-${{ steps.identity.outputs.entry_market_date }}-${{ env.CASH_FUTURE_ID }}-${{ github.run_id }}
           path: |
             artifacts/cash-historical-fixture/**
             !artifacts/cash-historical-fixture/compact/**
@@ -108,7 +117,7 @@ jobs:
       - name: Upload commit-ready compact fixture
         uses: actions/upload-artifact@v4
         with:
-          name: okx-btc-cash-and-carry-compact-${{ env.CASH_FUTURE_ID }}-${{ github.run_id }}
+          name: okx-btc-cash-and-carry-compact-${{ steps.identity.outputs.entry_market_date }}-${{ env.CASH_FUTURE_ID }}-${{ github.run_id }}
           path: artifacts/cash-historical-fixture/compact/
           if-no-files-found: error
 
@@ -116,6 +125,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: okx-btc-cash-and-carry-actuals-${{ env.CASH_FUTURE_ID }}-${{ github.run_id }}
+          name: okx-btc-cash-and-carry-actuals-${{ steps.identity.outputs.entry_market_date }}-${{ env.CASH_FUTURE_ID }}-${{ github.run_id }}
           path: artifacts/cash-historical-backtest/report.json
           if-no-files-found: warn
