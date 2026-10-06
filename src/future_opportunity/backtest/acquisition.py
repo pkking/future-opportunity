@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -16,9 +16,29 @@ _FUTURE_ID = re.compile(r"^BTC-USDT-(?P<expiry>\d{6})$")
 
 @dataclass(frozen=True, slots=True)
 class HistoricalFundingAcquisition:
-    start_date: str
-    end_date: str
+    source_kind: str
+    start_date: str | None
+    end_date: str | None
     market_dates: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        if self.source_kind not in {"range", "explicit_dates"}:
+            raise ValueError(
+                f"unsupported historical Funding source_kind: {self.source_kind}"
+            )
+        if not self.market_dates:
+            raise ValueError(
+                "historical Funding acquisition requires market_dates"
+            )
+        if self.source_kind == "range":
+            if self.start_date is None or self.end_date is None:
+                raise ValueError(
+                    "range Funding acquisition requires start_date/end_date"
+                )
+        elif self.start_date is not None or self.end_date is not None:
+            raise ValueError(
+                "explicit Funding acquisition must not carry range boundaries"
+            )
 
 
 @dataclass(frozen=True, slots=True)
@@ -139,10 +159,7 @@ def acquisition_dispatch_payload(
         "acquisition_id": manifest.acquisition_id,
         "planner_campaign_prefix": manifest.planner_campaign_prefix,
         "funding": (
-            {
-                "start_date": manifest.funding.start_date,
-                "end_date": manifest.funding.end_date,
-            }
+            _funding_dispatch_payload(manifest.funding)
             if manifest.funding is not None
             else None
         ),
@@ -167,6 +184,7 @@ def acquisition_manifest_payload(
         "planner_campaign_prefix": manifest.planner_campaign_prefix,
         "funding": (
             {
+                "source_kind": manifest.funding.source_kind,
                 "start_date": manifest.funding.start_date,
                 "end_date": manifest.funding.end_date,
                 "market_dates": list(manifest.funding.market_dates),
@@ -223,17 +241,86 @@ def _parse_funding(
         return None
     if not isinstance(raw, dict):
         raise TypeError("historical acquisition funding must be object or null")
-    if set(raw) != {"start_date", "end_date"}:
-        raise ValueError("historical acquisition funding fields differ from schema")
-    start = raw.get("start_date")
-    end = raw.get("end_date")
-    if not isinstance(start, str) or not isinstance(end, str):
-        raise TypeError("Funding start_date/end_date must be strings")
-    dates = historical_date_range(start, end, max_days=max_days)
-    return HistoricalFundingAcquisition(
-        start_date=dates[0],
-        end_date=dates[-1],
-        market_dates=dates,
+
+    fields = set(raw)
+    if fields == {"start_date", "end_date"}:
+        start = raw.get("start_date")
+        end = raw.get("end_date")
+        if not isinstance(start, str) or not isinstance(end, str):
+            raise TypeError("Funding start_date/end_date must be strings")
+        dates = historical_date_range(start, end, max_days=max_days)
+        return HistoricalFundingAcquisition(
+            source_kind="range",
+            start_date=dates[0],
+            end_date=dates[-1],
+            market_dates=dates,
+        )
+
+    if fields == {"market_dates"}:
+        values = raw.get("market_dates")
+        if not isinstance(values, list):
+            raise TypeError("Funding market_dates must be an array")
+        if not values:
+            raise ValueError("Funding market_dates must not be empty")
+        if len(values) > max_days:
+            raise ValueError(
+                f"historical acquisition contains {len(values)} Funding days; "
+                f"maximum is {max_days}"
+            )
+
+        dates: list[str] = []
+        previous: date | None = None
+        seen: set[str] = set()
+        for position, value in enumerate(values):
+            if not isinstance(value, str):
+                raise TypeError(
+                    f"Funding market_dates[{position}] must be a string"
+                )
+            try:
+                parsed = date.fromisoformat(value)
+            except ValueError as error:
+                raise ValueError(
+                    f"Funding market_dates[{position}] must use YYYY-MM-DD"
+                ) from error
+            canonical = parsed.isoformat()
+            if canonical in seen:
+                raise ValueError(
+                    f"duplicate Funding market date: {canonical}"
+                )
+            if previous is not None and parsed <= previous:
+                raise ValueError(
+                    "Funding market_dates must be strictly chronological"
+                )
+            seen.add(canonical)
+            previous = parsed
+            dates.append(canonical)
+
+        return HistoricalFundingAcquisition(
+            source_kind="explicit_dates",
+            start_date=None,
+            end_date=None,
+            market_dates=tuple(dates),
+        )
+
+    raise ValueError("historical acquisition funding fields differ from schema")
+
+
+def _funding_dispatch_payload(
+    funding: HistoricalFundingAcquisition,
+) -> dict[str, Any]:
+    if funding.source_kind == "range":
+        if funding.start_date is None or funding.end_date is None:
+            raise RuntimeError("range Funding acquisition lost boundaries")
+        return {
+            "start_date": funding.start_date,
+            "end_date": funding.end_date,
+        }
+    if funding.source_kind == "explicit_dates":
+        return {
+            "market_dates": list(funding.market_dates),
+        }
+    raise RuntimeError(
+        f"unsupported Funding acquisition source_kind: {funding.source_kind}"
     )
 
 
