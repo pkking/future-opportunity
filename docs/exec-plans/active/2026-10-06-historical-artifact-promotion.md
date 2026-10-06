@@ -76,7 +76,7 @@ The workflow MUST NOT push directly to main.
 - [x] Workflow verifies source run/artifact identity against manifest provenance.
 - [x] Workflow creates a review branch/PR and never writes main directly.
 - [x] Promotion PR runs normal CI + Historical Backtest Smoke.
-- [ ] Documentation explains prepare -> promote -> review -> merge.
+- [x] Documentation explains prepare -> promote -> review -> merge.
 - [ ] Final CI green.
 
 ## Implementation slices
@@ -85,7 +85,7 @@ The workflow MUST NOT push directly to main.
 - [x] 2. Add deterministic corpus-index update + idempotency tests.
 - [x] 3. Add exact artifact/run provenance verification.
 - [x] 4. Add GitHub Actions promotion workflow with PR creation.
-- [ ] 5. Document operator workflow and recovery.
+- [x] 5. Document operator workflow and recovery.
 - [ ] 6. Verify complete CI and archive.
 
 ## Verification matrix
@@ -130,6 +130,13 @@ A future decision would be required before automatic promotion or automatic merg
   comparison treated formatting as data drift. Idempotency was refined to
   structural JSON equality for manifest plus bytewise equality for canonical
   evidence files. This does not weaken checksum validation.
+- 2026-10-06: no-op promotion self-verification run 37433173833 succeeded after
+  the identity fix. Exact run/artifact/parent-digest validation passed, the
+  staged result was `already_present`, corpus verification/PR creation were
+  correctly skipped, and promotion evidence was uploaded.
+- 2026-10-06: README and testing contract now document prepare -> promote ->
+  review -> merge, explicit no-direct-main/no-auto-merge boundaries, artifact
+  identity checks, idempotent recovery, and PR gating requirements.
 
 ## Deviations and discoveries
 
@@ -142,7 +149,7 @@ commit-ready compact artifact. Point the promotion workflow push self-test at
 that exact run/artifact and verify the full changed path: download -> strict
 provenance validation -> stage -> offline replay -> review branch -> PR. Then
 verify the PR-triggered normal CI and Historical Backtest Smoke before
-documenting/archiving this plan.
+archiving this plan.
 
 ## Completion
 
