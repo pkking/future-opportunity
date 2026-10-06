@@ -222,6 +222,40 @@ Required behavior:
 - the review branch must pass normal CI and Historical Backtest Smoke before
   human merge.
 
+### Corpus distribution reporting semantics (not Stage-2 gating)
+
+```bash
+uv run python scripts/report_historical_corpus_distribution.py
+```
+
+The report must replay every valid, indexed pinned case. The report is
+`economics_gate=reporting_only` regardless of the case return.
+
+- Each distinct pinned market day currently contributes one frozen entry/exit
+  case. Report `pinned_case_qualification_rate` with its case denominator.
+  Market-wide opportunity arrival rate remains `null`/unassessed.
+- Expected-return distributions may include qualified and rejected cases but
+  must be labeled `expected_net_return_all_cases`.
+- Realized returns belong only to qualified cases with sufficiently complete
+  evidence. Unqualified cases and incomplete realized returns must never enter
+  distributions as numerical zero.
+- Funding Carry returns are separately bounded using 1-minute mark-price
+  evidence; an exact funding settlement mark remains unavailable.
+- Report quantiles use `(n - 1) * percentile` linear interpolation over exact
+  `Decimal` data; no assessed sample means zero assessed count and null
+  min/P25/P50/P90/max/mean.
+- Returns reflect their case-specific holding horizons, not annualized APR.
+- Store each case's dataset ID, date, manifest provenance and workflow
+  actuals, including qualification, delta/risk invariants and return evidence.
+- A report-generation failure is an evidence failure and must leave an error
+  artifact. A poor or negative realized return, by itself, must not fail
+  Stage-1 historical acceptance.
+
+`Historical Backtest Smoke` uploads
+`artifacts/historical-smoke/corpus-distribution.json` alongside the original
+pinned-case gate evidence. The distribution report does not change the
+ADR-0007 30/90-day eligibility or activate Stage 2.
+
 ## What an E2E scenario must cover
 
 A strategy E2E scenario should exercise the real application workflow rather
