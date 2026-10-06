@@ -6,6 +6,12 @@ on:
       acquisition_json:
         description: Versioned acquisition JSON (Funding range + explicit Cash cases)
         required: true
+  workflow_call:
+    inputs:
+      acquisition_json:
+        description: Versioned normalized acquisition JSON
+        required: true
+        type: string
   push:
     paths:
       - ".github/workflows/acquire-historical-campaign.yml"
