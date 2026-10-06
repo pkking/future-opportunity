@@ -131,6 +131,7 @@ jobs:
             --arg artifact_id "${artifact_id}" \
             --arg digest "${digest}" \
             --arg sample "${samples[0]}" \
+            --arg selection "${selection}" \
             '{
               funding_sample: {
                 source_workflow_run: $run,
@@ -141,7 +142,6 @@ jobs:
                 selection_provenance_path: $selection
               }
             }' \
-            --arg selection "${selection}" \
             > "${work}/funding-source.json"
           echo "selection_path=${selection}" >> "${GITHUB_OUTPUT}"
 
