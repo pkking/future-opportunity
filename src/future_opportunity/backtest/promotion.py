@@ -375,18 +375,42 @@ def _assert_directories_identical(
     manifest: dict[str, Any],
 ) -> None:
     _validate_source_file_set(destination, manifest)
-    source_files = _relative_file_hashes(source)
-    destination_files = _relative_file_hashes(destination)
+
+    source_manifest = json.loads((source / "manifest.json").read_text())
+    destination_manifest = json.loads(
+        (destination / "manifest.json").read_text()
+    )
+    if source_manifest != destination_manifest:
+        raise ValueError(
+            "existing indexed historical fixture manifest differs "
+            "from promoted artifact"
+        )
+
+    source_files = _relative_file_hashes(
+        source,
+        exclude={"manifest.json"},
+    )
+    destination_files = _relative_file_hashes(
+        destination,
+        exclude={"manifest.json"},
+    )
     if source_files != destination_files:
         raise ValueError(
             "existing indexed historical fixture differs from promoted artifact"
         )
 
 
-def _relative_file_hashes(root: Path) -> dict[str, str]:
+def _relative_file_hashes(
+    root: Path,
+    *,
+    exclude: set[str] | None = None,
+) -> dict[str, str]:
+    excluded = exclude or set()
     result: dict[str, str] = {}
     for path in sorted(item for item in root.rglob("*") if item.is_file()):
         relative = path.relative_to(root).as_posix()
+        if relative in excluded:
+            continue
         digest = hashlib.sha256(path.read_bytes()).hexdigest()
         result[relative] = digest
     return result
