@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from dataclasses import asdict, dataclass
 from decimal import Decimal
 from pathlib import Path
@@ -207,7 +208,7 @@ async def build_historical_corpus_distribution(
                 "dataset_id": entry.dataset_id,
                 "entry_market_date": entry.entry_market_date,
                 "fixture_path": entry.fixture_path,
-                "source_artifact": __import__("json").loads(
+                "source_artifact": json.loads(
                     (root / "manifest.json").read_text()
                 ).get("derived_from_artifact"),
             }
