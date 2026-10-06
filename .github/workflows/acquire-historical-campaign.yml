@@ -1,0 +1,100 @@
+name: Acquire Historical Campaign
+
+on:
+  workflow_dispatch:
+    inputs:
+      acquisition_json:
+        description: Versioned acquisition JSON (Funding range + explicit Cash cases)
+        required: true
+  push:
+    paths:
+      - ".github/workflows/acquire-historical-campaign.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  resolve:
+    name: Validate acquisition manifest
+    runs-on: ubuntu-latest
+    outputs:
+      funding_dates: ${{ steps.resolve.outputs.funding_dates }}
+      funding_count: ${{ steps.resolve.outputs.funding_count }}
+      cash_cases: ${{ steps.resolve.outputs.cash_cases }}
+      cash_count: ${{ steps.resolve.outputs.cash_count }}
+      planner_campaign_prefix: ${{ steps.resolve.outputs.planner_campaign_prefix }}
+      acquisition_id: ${{ steps.resolve.outputs.acquisition_id }}
+    env:
+      ACQUISITION_JSON: >-
+        ${{ inputs.acquisition_json || '{"schema_version":1,"acquisition_id":"selftest-acquisition-wave","planner_campaign_prefix":"selftest-acquisition-review","funding":{"start_date":"2026-09-04","end_date":"2026-09-04"},"cash_cases":[{"entry_at":"2026-06-03T00:15:00+00:00","exit_at":"2026-06-25T00:15:00+00:00","future_id":"BTC-USDT-260626","expiry_at":"2026-06-26T08:00:00+00:00"}]}' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+
+      - run: uv sync --all-extras --dev
+
+      - id: resolve
+        name: Resolve deterministic preparation matrices
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/historical-acquisition
+          printf '%s\n' "${ACQUISITION_JSON}"             > artifacts/historical-acquisition/operator.json
+          uv run python scripts/resolve_historical_acquisition.py             artifacts/historical-acquisition/operator.json             --output artifacts/historical-acquisition/acquisition.json             --max-total-items 31
+          cat artifacts/historical-acquisition/acquisition.json
+
+      - name: Upload acquisition control evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: historical-acquisition-control
+          path: artifacts/historical-acquisition/
+          if-no-files-found: error
+
+  funding:
+    name: Funding ${{ matrix.history_date }}
+    needs: resolve
+    if: needs.resolve.outputs.funding_count != '0'
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        history_date: ${{ fromJSON(needs.resolve.outputs.funding_dates) }}
+    uses: ./.github/workflows/prepare-historical-fixture.yml
+    with:
+      history_date: ${{ matrix.history_date }}
+
+  cash:
+    name: Cash ${{ matrix.case.entry_at }} ${{ matrix.case.future_id }}
+    needs: resolve
+    if: needs.resolve.outputs.cash_count != '0'
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        case: ${{ fromJSON(needs.resolve.outputs.cash_cases) }}
+    uses: ./.github/workflows/prepare-cash-historical-fixture.yml
+    with:
+      entry_at: ${{ matrix.case.entry_at }}
+      exit_at: ${{ matrix.case.exit_at }}
+      future_id: ${{ matrix.case.future_id }}
+      expiry_at: ${{ matrix.case.expiry_at }}
+
+  summary:
+    name: Acquisition completion evidence
+    needs: [resolve, funding, cash]
+    if: >-
+      always() &&
+      needs.resolve.result == 'success' &&
+      (needs.funding.result == 'success' || needs.funding.result == 'skipped') &&
+      (needs.cash.result == 'success' || needs.cash.result == 'skipped')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Record successful acquisition boundary
+        env:
+          ACQUISITION_ID: ${{ needs.resolve.outputs.acquisition_id }}
+          PLANNER_PREFIX: ${{ needs.resolve.outputs.planner_campaign_prefix }}
+          FUNDING_COUNT: ${{ needs.resolve.outputs.funding_count }}
+          CASH_COUNT: ${{ needs.resolve.outputs.cash_count }}
+        run: |
+          printf '%s\n'             "Acquisition: ${ACQUISITION_ID}"             "Planner prefix: ${PLANNER_PREFIX}"             "Funding items: ${FUNDING_COUNT}"             "Cash items: ${CASH_COUNT}"             "This run only prepares artifacts; it does not modify the corpus."
