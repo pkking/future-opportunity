@@ -31,8 +31,8 @@ def test_acquisition_composer_verifies_exact_successful_case_plan_artifact() -> 
     assert ".digest" in text
     assert ".expired" in text
     assert "gh run download" in text
-    assert "37477835622" in text
-    assert "cash-acquisition-case-plan-37477835622" in text
+    assert "37490008931" in text
+    assert "cash-acquisition-case-plan-37490008931" in text
 
 
 def test_acquisition_composer_verifies_exact_successful_sampling_artifact() -> None:
@@ -58,7 +58,7 @@ def test_push_selftest_defaults_do_not_leak_into_manual_dispatch_inputs() -> Non
         in text
     )
     assert (
-        "github.event_name == 'push' && '37477835622'"
+        "github.event_name == 'push' && '37490008931'"
         in text
     )
 
@@ -77,7 +77,7 @@ def test_acquisition_composer_builds_and_consumes_selection_provenance() -> None
 
 
 def test_acquisition_composer_selftest_uses_sampled_cash_case_plan_provenance() -> None:
-    text = WORKFLOW.read_text()
+    text = COMPOSER.read_text()
 
     assert "37490008931" in text
     assert "cash-acquisition-case-plan-37490008931" in text
