@@ -256,6 +256,37 @@ The report must replay every valid, indexed pinned case. The report is
 pinned-case gate evidence. The distribution report does not change the
 ADR-0007 30/90-day eligibility or activate Stage 2.
 
+### Historical acquisition campaign
+
+Acquisition is an **artifact-producing but corpus-read-only** workflow layer.
+
+The acquisition manifest may contain:
+
+- one optional inclusive Funding UTC date range;
+- explicit Cash cases with `entry_at`, `exit_at`, `future_id`, and
+  `expiry_at`;
+- a planner campaign prefix.
+
+Rules:
+
+- one acquisition is bounded to at most 31 total prepared items;
+- Cash entry/exit/expiry semantics are explicit inputs and are never inferred
+  from discovery output;
+- Cash timestamps must be UTC and satisfy `entry < exit < expiry`;
+- BTC-USDT expiry-future ID/date must agree with the explicit expiry timestamp;
+- duplicate Cash entry-market dates fail closed;
+- Funding/Cash jobs reuse the existing preparation workflow_call contracts;
+- acquisition permissions remain `contents: read` only;
+- acquisition must not modify `tests/fixtures/historical/`, push a branch,
+  create a PR, or count anything as pinned readiness;
+- the normalized acquisition-control artifact is part of the evidence contract;
+- only after the entire acquisition run completes successfully may the
+  read-only planner inventory that exact run through a `workflow_run` trigger;
+- a failed/partial acquisition run must not be planned or promoted.
+
+The acquisition run is therefore a producer of prepared candidate evidence,
+not a corpus mutation step.
+
 ### Read-only candidate campaign planner
 
 The candidate planner is a separate **read-only** artifact inventory workflow
