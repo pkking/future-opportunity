@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import inspect
+import json
 import pytest
 
 from future_opportunity.backtest.sampling import (
     HistoricalSamplingRequest,
     historical_sampling_json,
+    historical_sampling_payload,
+    parse_historical_sampling_evidence,
     sample_historical_market_days,
 )
 
@@ -212,3 +215,50 @@ def test_each_selection_is_inside_its_nonoverlapping_stratum() -> None:
         previous_end = item.population_end_index_exclusive
 
     assert previous_end == result.population_size
+
+
+def test_sampling_evidence_parser_recomputes_and_rejects_tampering() -> None:
+    request = HistoricalSamplingRequest(
+        strategy="funding-carry",
+        start_date="2026-01-01",
+        end_date="2026-01-31",
+        sample_size=5,
+        seed="stage2-baseline-v1",
+    )
+    original = historical_sampling_payload(
+        sample_historical_market_days(request)
+    )
+
+    parsed = parse_historical_sampling_evidence(original)
+    assert parsed.selected_dates == (
+        "2026-01-01",
+        "2026-01-08",
+        "2026-01-13",
+        "2026-01-22",
+        "2026-01-29",
+    )
+
+    tampered = json.loads(json.dumps(original))
+    tampered["selected_dates"][0] = "2026-01-02"
+    with pytest.raises(ValueError, match="deterministic replay"):
+        parse_historical_sampling_evidence(tampered)
+
+    wrong_hash = json.loads(json.dumps(original))
+    wrong_hash["strata"][0]["sha256"] = "0" * 64
+    with pytest.raises(ValueError, match="deterministic replay"):
+        parse_historical_sampling_evidence(wrong_hash)
+
+
+def test_sampling_evidence_parser_rejects_schema_drift() -> None:
+    request = HistoricalSamplingRequest(
+        strategy="cash-and-carry",
+        start_date="2026-01-01",
+        end_date="2026-01-10",
+        sample_size=2,
+        seed="schema",
+    )
+    raw = historical_sampling_payload(sample_historical_market_days(request))
+    raw["unexpected"] = True
+
+    with pytest.raises(ValueError, match="fields differ from schema"):
+        parse_historical_sampling_evidence(raw)
