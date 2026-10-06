@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
-      DISCOVERY_RUN_ID: ${{ inputs.discovery_run_id || '37434982233' }}
+      DISCOVERY_RUN_ID: ${{ inputs.discovery_run_id || '37488688098' }}
       FUTURE_ID: ${{ inputs.future_id || 'BTC-USDT-260626' }}
       EXPIRY_AT: ${{ inputs.expiry_at || '2026-06-26T08:00:00+00:00' }}
       EXIT_AT: ${{ inputs.exit_at || '2026-06-25T00:15:00+00:00' }}
