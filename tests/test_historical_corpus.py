@@ -19,11 +19,20 @@ def test_repository_historical_corpus_is_explicit_and_replayable() -> None:
         required_strategies=STRATEGIES,
     )
 
-    assert len(corpus.entries) == 2
-    assert corpus.entry_days_by_strategy() == {
-        "funding-carry": ("2026-09-01",),
-        "cash-and-carry": ("2026-06-01",),
+    raw = json.loads(INDEX.read_text())
+    expected_days = {
+        strategy: tuple(
+            sorted(
+                entry["entry_market_date"]
+                for entry in raw["entries"]
+                if entry["strategy"] == strategy
+            )
+        )
+        for strategy in STRATEGIES
     }
+
+    assert len(corpus.entries) == len(raw["entries"])
+    assert corpus.entry_days_by_strategy() == expected_days
 
 
 def test_corpus_rejects_duplicate_strategy_date(tmp_path: Path) -> None:
