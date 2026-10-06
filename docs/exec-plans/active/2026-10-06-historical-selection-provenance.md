@@ -198,6 +198,16 @@ decision but does not make it.
 - 2026-10-06: report key regression was fixed in commit
   aa96d8cfa8fc8dabd976097a5b39da509a59396a; CI 37489829881 and Historical
   Backtest Smoke 37489829905 passed.
+- 2026-10-06: sampled Cash case-plan run 37490008931 completed successfully
+  against sampled discovery run 37488688098. Artifact 11425760361 contains
+  selected_count=3, excluded_count=0 for 2026-06-02/04/08 and preserves the
+  exact cash-and-carry selection provenance.
+- 2026-10-06: acquisition composer run 37490187894 consumed Funding sampling
+  evidence plus sampled Cash case-plan evidence successfully and emitted both
+  strategy provenance records in one read-only acquisition manifest.
+- 2026-10-06: workflow/static contracts and CLI tests now lock sampled Cash
+  discovery, complete draw accounting, Cash preparation propagation, composer
+  use of the sampled case-plan artifact, and legacy compatibility.
 - 2026-10-06: current committed corpus remains 2 Funding + 2 Cash days and does
   not yet encode whether a pinned fixture was pre-registered.
 
@@ -207,9 +217,9 @@ None.
 
 ## Resume from here
 
-Verify acquisition composer self-test against sampled Cash case-plan run
-37490008931. Then add final workflow-contract/documentation coverage, record
-selection-provenance reporting evidence, run final CI + relevant self-tests and
+Wait for final candidate commit 1404ba68be4f3a0e1b2550887ac126e7d55addd8
+to pass all CI gates. Then record final CI and Historical Smoke evidence,
+complete the remaining documentation/final-verification checklist items, and
 archive. Do not change readiness semantics.
 
 ## Completion
