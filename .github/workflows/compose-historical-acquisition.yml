@@ -15,6 +15,12 @@ on:
       funding_end_date:
         description: Optional inclusive Funding UTC end date
         required: false
+      funding_sample_run_id:
+        description: Optional exact successful historical sampling run ID
+        required: false
+      funding_sample_artifact_name:
+        description: Optional exact historical sampling artifact name
+        required: false
       cash_case_plan_run_id:
         description: Optional exact successful Cash case-plan run ID
         required: false
@@ -31,16 +37,18 @@ permissions:
 
 jobs:
   compose:
-    name: Verify source plan and compose acquisition JSON
+    name: Verify reviewed evidence and compose acquisition JSON
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
-      ACQUISITION_ID: ${{ inputs.acquisition_id || 'selftest-composed-acquisition' }}
-      PLANNER_PREFIX: ${{ inputs.planner_campaign_prefix || 'selftest-composed-review' }}
-      FUNDING_START_DATE: ${{ inputs.funding_start_date || '2026-09-04' }}
-      FUNDING_END_DATE: ${{ inputs.funding_end_date || '2026-09-04' }}
-      CASH_PLAN_RUN_ID: ${{ inputs.cash_case_plan_run_id || '37477835622' }}
-      CASH_PLAN_ARTIFACT_NAME: ${{ inputs.cash_case_plan_artifact_name || 'cash-acquisition-case-plan-37477835622' }}
+      ACQUISITION_ID: ${{ github.event_name == 'push' && 'selftest-sampled-acquisition' || inputs.acquisition_id }}
+      PLANNER_PREFIX: ${{ github.event_name == 'push' && 'selftest-sampled-review' || inputs.planner_campaign_prefix }}
+      FUNDING_START_DATE: ${{ inputs.funding_start_date }}
+      FUNDING_END_DATE: ${{ inputs.funding_end_date }}
+      FUNDING_SAMPLE_RUN_ID: ${{ github.event_name == 'push' && '37482498880' || inputs.funding_sample_run_id }}
+      FUNDING_SAMPLE_ARTIFACT_NAME: ${{ github.event_name == 'push' && 'historical-market-day-sample-37482498880' || inputs.funding_sample_artifact_name }}
+      CASH_PLAN_RUN_ID: ${{ github.event_name == 'push' && '37477835622' || inputs.cash_case_plan_run_id }}
+      CASH_PLAN_ARTIFACT_NAME: ${{ github.event_name == 'push' && 'cash-acquisition-case-plan-37477835622' || inputs.cash_case_plan_artifact_name }}
     steps:
       - uses: actions/checkout@v4
 
@@ -48,16 +56,94 @@ jobs:
 
       - run: uv sync --all-extras --dev
 
-      - id: source
+      - id: funding_source
+        name: Verify optional exact Funding sampling artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="artifacts/historical-acquisition-composer"
+          incoming="${work}/incoming/funding-sample"
+          mkdir -p "${incoming}"
+
+          if [ -z "${FUNDING_SAMPLE_RUN_ID}" ] && [ -z "${FUNDING_SAMPLE_ARTIFACT_NAME}" ]; then
+            printf '%s\n' '{"funding_sample":null}' > "${work}/funding-source.json"
+            echo "sample_path=" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          if [ -z "${FUNDING_SAMPLE_RUN_ID}" ] || [ -z "${FUNDING_SAMPLE_ARTIFACT_NAME}" ]; then
+            echo "funding_sample_run_id and artifact_name must be supplied together" >&2
+            exit 1
+          fi
+          [[ "${FUNDING_SAMPLE_RUN_ID}" =~ ^[0-9]+$ ]]
+
+          gh api \
+            "repos/${GITHUB_REPOSITORY}/actions/runs/${FUNDING_SAMPLE_RUN_ID}" \
+            > "${work}/funding-source-run.json"
+          test "$(jq -r '.status' "${work}/funding-source-run.json")" = "completed"
+          test "$(jq -r '.conclusion' "${work}/funding-source-run.json")" = "success"
+
+          gh api \
+            "repos/${GITHUB_REPOSITORY}/actions/runs/${FUNDING_SAMPLE_RUN_ID}/artifacts?per_page=100" \
+            > "${work}/funding-source-artifacts.json"
+
+          count="$(jq --arg name "${FUNDING_SAMPLE_ARTIFACT_NAME}" \
+            '[.artifacts[] | select(.name == $name)] | length' \
+            "${work}/funding-source-artifacts.json")"
+          test "${count}" = "1"
+
+          artifact_id="$(jq -r --arg name "${FUNDING_SAMPLE_ARTIFACT_NAME}" \
+            '.artifacts[] | select(.name == $name) | .id' \
+            "${work}/funding-source-artifacts.json")"
+          digest="$(jq -r --arg name "${FUNDING_SAMPLE_ARTIFACT_NAME}" \
+            '.artifacts[] | select(.name == $name) | .digest' \
+            "${work}/funding-source-artifacts.json")"
+          expired="$(jq -r --arg name "${FUNDING_SAMPLE_ARTIFACT_NAME}" \
+            '.artifacts[] | select(.name == $name) | .expired' \
+            "${work}/funding-source-artifacts.json")"
+
+          [[ "${artifact_id}" =~ ^[0-9]+$ ]]
+          [[ "${digest}" =~ ^sha256:[0-9a-fA-F]{64}$ ]]
+          test "${expired}" = "false"
+
+          gh run download "${FUNDING_SAMPLE_RUN_ID}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --name "${FUNDING_SAMPLE_ARTIFACT_NAME}" \
+            --dir "${incoming}"
+
+          mapfile -t samples < <(
+            find "${incoming}" -maxdepth 1 -type f -name sample.json -print
+          )
+          test "${#samples[@]}" = "1"
+
+          jq -n \
+            --arg run "${FUNDING_SAMPLE_RUN_ID}" \
+            --arg name "${FUNDING_SAMPLE_ARTIFACT_NAME}" \
+            --arg artifact_id "${artifact_id}" \
+            --arg digest "${digest}" \
+            --arg sample "${samples[0]}" \
+            '{
+              funding_sample: {
+                source_workflow_run: $run,
+                artifact_name: $name,
+                artifact_id: $artifact_id,
+                artifact_digest: $digest,
+                sample_path: $sample
+              }
+            }' > "${work}/funding-source.json"
+          echo "sample_path=${samples[0]}" >> "${GITHUB_OUTPUT}"
+
+      - id: cash_source
         name: Verify optional exact Cash case-plan artifact
         shell: bash
         run: |
           set -euo pipefail
           work="artifacts/historical-acquisition-composer"
-          mkdir -p "${work}/incoming"
+          incoming="${work}/incoming/cash-plan"
+          mkdir -p "${incoming}"
 
           if [ -z "${CASH_PLAN_RUN_ID}" ] && [ -z "${CASH_PLAN_ARTIFACT_NAME}" ]; then
-            printf '%s\n' '{"cash_case_plan":null}' > "${work}/source.json"
+            printf '%s\n' '{"cash_case_plan":null}' > "${work}/cash-source.json"
             echo "cash_plan_path=" >> "${GITHUB_OUTPUT}"
             exit 0
           fi
@@ -68,31 +154,52 @@ jobs:
           fi
           [[ "${CASH_PLAN_RUN_ID}" =~ ^[0-9]+$ ]]
 
-          gh api             "repos/${GITHUB_REPOSITORY}/actions/runs/${CASH_PLAN_RUN_ID}"             > "${work}/source-run.json"
-          test "$(jq -r '.status' "${work}/source-run.json")" = "completed"
-          test "$(jq -r '.conclusion' "${work}/source-run.json")" = "success"
+          gh api \
+            "repos/${GITHUB_REPOSITORY}/actions/runs/${CASH_PLAN_RUN_ID}" \
+            > "${work}/cash-source-run.json"
+          test "$(jq -r '.status' "${work}/cash-source-run.json")" = "completed"
+          test "$(jq -r '.conclusion' "${work}/cash-source-run.json")" = "success"
 
-          gh api             "repos/${GITHUB_REPOSITORY}/actions/runs/${CASH_PLAN_RUN_ID}/artifacts?per_page=100"             > "${work}/source-artifacts.json"
+          gh api \
+            "repos/${GITHUB_REPOSITORY}/actions/runs/${CASH_PLAN_RUN_ID}/artifacts?per_page=100" \
+            > "${work}/cash-source-artifacts.json"
 
-          count="$(jq --arg name "${CASH_PLAN_ARTIFACT_NAME}"             '[.artifacts[] | select(.name == $name)] | length'             "${work}/source-artifacts.json")"
+          count="$(jq --arg name "${CASH_PLAN_ARTIFACT_NAME}" \
+            '[.artifacts[] | select(.name == $name)] | length' \
+            "${work}/cash-source-artifacts.json")"
           test "${count}" = "1"
 
-          artifact_id="$(jq -r --arg name "${CASH_PLAN_ARTIFACT_NAME}"             '.artifacts[] | select(.name == $name) | .id'             "${work}/source-artifacts.json")"
-          digest="$(jq -r --arg name "${CASH_PLAN_ARTIFACT_NAME}"             '.artifacts[] | select(.name == $name) | .digest'             "${work}/source-artifacts.json")"
-          expired="$(jq -r --arg name "${CASH_PLAN_ARTIFACT_NAME}"             '.artifacts[] | select(.name == $name) | .expired'             "${work}/source-artifacts.json")"
+          artifact_id="$(jq -r --arg name "${CASH_PLAN_ARTIFACT_NAME}" \
+            '.artifacts[] | select(.name == $name) | .id' \
+            "${work}/cash-source-artifacts.json")"
+          digest="$(jq -r --arg name "${CASH_PLAN_ARTIFACT_NAME}" \
+            '.artifacts[] | select(.name == $name) | .digest' \
+            "${work}/cash-source-artifacts.json")"
+          expired="$(jq -r --arg name "${CASH_PLAN_ARTIFACT_NAME}" \
+            '.artifacts[] | select(.name == $name) | .expired' \
+            "${work}/cash-source-artifacts.json")"
 
           [[ "${artifact_id}" =~ ^[0-9]+$ ]]
           [[ "${digest}" =~ ^sha256:[0-9a-fA-F]{64}$ ]]
           test "${expired}" = "false"
 
-          gh run download "${CASH_PLAN_RUN_ID}"             --repo "${GITHUB_REPOSITORY}"             --name "${CASH_PLAN_ARTIFACT_NAME}"             --dir "${work}/incoming"
+          gh run download "${CASH_PLAN_RUN_ID}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --name "${CASH_PLAN_ARTIFACT_NAME}" \
+            --dir "${incoming}"
 
           mapfile -t reports < <(
-            find "${work}/incoming" -maxdepth 1 -type f -name report.json -print
+            find "${incoming}" -maxdepth 1 -type f -name report.json -print
           )
           test "${#reports[@]}" = "1"
 
-          jq -n             --arg run "${CASH_PLAN_RUN_ID}"             --arg name "${CASH_PLAN_ARTIFACT_NAME}"             --arg artifact_id "${artifact_id}"             --arg digest "${digest}"             --arg report "${reports[0]}"             '{
+          jq -n \
+            --arg run "${CASH_PLAN_RUN_ID}" \
+            --arg name "${CASH_PLAN_ARTIFACT_NAME}" \
+            --arg artifact_id "${artifact_id}" \
+            --arg digest "${digest}" \
+            --arg report "${reports[0]}" \
+            '{
               cash_case_plan: {
                 source_workflow_run: $run,
                 artifact_name: $name,
@@ -100,7 +207,7 @@ jobs:
                 artifact_digest: $digest,
                 report_path: $report
               }
-            }' > "${work}/source.json"
+            }' > "${work}/cash-source.json"
           echo "cash_plan_path=${reports[0]}" >> "${GITHUB_OUTPUT}"
 
       - name: Compose acquisition-ready dispatch JSON
@@ -122,7 +229,12 @@ jobs:
             )
           fi
 
-          cash_plan="${{ steps.source.outputs.cash_plan_path }}"
+          funding_sample="${{ steps.funding_source.outputs.sample_path }}"
+          if [ -n "${funding_sample}" ]; then
+            args+=(--funding-sample "${funding_sample}")
+          fi
+
+          cash_plan="${{ steps.cash_source.outputs.cash_plan_path }}"
           if [ -n "${cash_plan}" ]; then
             args+=(--cash-case-plan "${cash_plan}")
           fi
