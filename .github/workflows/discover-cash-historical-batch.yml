@@ -29,8 +29,8 @@ jobs:
       - id: range
         name: Build bounded date matrix
         env:
-          START_DATE: ${{ inputs.start_date || '2026-06-02' }}
-          END_DATE: ${{ inputs.end_date || '2026-06-02' }}
+          START_DATE: ${{ inputs.start_date || '2026-06-03' }}
+          END_DATE: ${{ inputs.end_date || '2026-06-03' }}
         run: |
           dates="$(uv run python scripts/list_historical_dates.py \
             "${START_DATE}" "${END_DATE}" --max-days 31)"
