@@ -8,6 +8,11 @@ from pathlib import Path
 from typing import Any
 
 from future_opportunity.backtest.date_range import historical_date_range
+from future_opportunity.backtest.selection_provenance import (
+    HistoricalSelectionProvenance,
+    historical_selection_provenance_payload,
+    parse_historical_selection_provenance,
+)
 
 
 _SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
@@ -57,6 +62,8 @@ class HistoricalAcquisitionManifest:
     planner_campaign_prefix: str
     funding: HistoricalFundingAcquisition | None
     cash_cases: tuple[HistoricalCashAcquisitionCase, ...]
+    funding_selection_provenance: HistoricalSelectionProvenance | None = None
+    cash_selection_provenance: HistoricalSelectionProvenance | None = None
 
     @property
     def total_items(self) -> int:
@@ -98,7 +105,11 @@ def parse_historical_acquisition_manifest(
         "funding",
         "cash_cases",
     }
-    if set(raw) != expected:
+    allowed = (
+        expected,
+        expected | {"selection_provenance"},
+    )
+    if set(raw) not in allowed:
         raise ValueError("historical acquisition manifest fields differ from schema")
 
     schema_version = raw.get("schema_version")
@@ -141,12 +152,20 @@ def parse_historical_acquisition_manifest(
             f"maximum is {max_total_items}"
         )
 
+    funding_selection, cash_selection = _parse_selection_provenance(
+        raw.get("selection_provenance"),
+        funding=funding,
+        cash_cases=cash_cases,
+    )
+
     return HistoricalAcquisitionManifest(
         schema_version=1,
         acquisition_id=acquisition_id,
         planner_campaign_prefix=planner_prefix,
         funding=funding,
         cash_cases=cash_cases,
+        funding_selection_provenance=funding_selection,
+        cash_selection_provenance=cash_selection,
     )
 
 
@@ -172,6 +191,7 @@ def acquisition_dispatch_payload(
             }
             for case in manifest.cash_cases
         ],
+        **_selection_dispatch_payload(manifest),
     }
 
 
@@ -202,6 +222,22 @@ def acquisition_manifest_payload(
             }
             for case in manifest.cash_cases
         ],
+        "selection_provenance": {
+            "funding": (
+                historical_selection_provenance_payload(
+                    manifest.funding_selection_provenance
+                )
+                if manifest.funding_selection_provenance is not None
+                else None
+            ),
+            "cash": (
+                historical_selection_provenance_payload(
+                    manifest.cash_selection_provenance
+                )
+                if manifest.cash_selection_provenance is not None
+                else None
+            ),
+        },
         "total_items": manifest.total_items,
     }
 
@@ -230,6 +266,98 @@ def workflow_cash_cases_json(
         ],
         separators=(",", ":"),
     )
+
+
+def _parse_selection_provenance(
+    raw: Any,
+    *,
+    funding: HistoricalFundingAcquisition | None,
+    cash_cases: tuple[HistoricalCashAcquisitionCase, ...],
+) -> tuple[
+    HistoricalSelectionProvenance | None,
+    HistoricalSelectionProvenance | None,
+]:
+    if raw is None:
+        return None, None
+    if not isinstance(raw, dict):
+        raise TypeError(
+            "historical acquisition selection_provenance must be object"
+        )
+    if set(raw) != {"funding", "cash"}:
+        raise ValueError(
+            "historical acquisition selection_provenance fields differ "
+            "from schema"
+        )
+
+    funding_raw = raw.get("funding")
+    cash_raw = raw.get("cash")
+    funding_selection = (
+        parse_historical_selection_provenance(funding_raw)
+        if funding_raw is not None
+        else None
+    )
+    cash_selection = (
+        parse_historical_selection_provenance(cash_raw)
+        if cash_raw is not None
+        else None
+    )
+
+    if funding_selection is not None:
+        if funding_selection.strategy != "funding-carry":
+            raise ValueError(
+                "Funding selection provenance strategy must be funding-carry"
+            )
+        if funding is None:
+            raise ValueError(
+                "Funding selection provenance requires Funding acquisition"
+            )
+        if funding_selection.selected_market_dates != funding.market_dates:
+            raise ValueError(
+                "Funding acquisition dates differ from selection provenance"
+            )
+
+    if cash_selection is not None:
+        if cash_selection.strategy != "cash-and-carry":
+            raise ValueError(
+                "Cash selection provenance strategy must be cash-and-carry"
+            )
+        for case in cash_cases:
+            if not cash_selection.contains_market_date(
+                case.entry_market_date
+            ):
+                raise ValueError(
+                    "Cash acquisition case date is outside selection provenance"
+                )
+
+    return funding_selection, cash_selection
+
+
+def _selection_dispatch_payload(
+    manifest: HistoricalAcquisitionManifest,
+) -> dict[str, Any]:
+    if (
+        manifest.funding_selection_provenance is None
+        and manifest.cash_selection_provenance is None
+    ):
+        return {}
+    return {
+        "selection_provenance": {
+            "funding": (
+                historical_selection_provenance_payload(
+                    manifest.funding_selection_provenance
+                )
+                if manifest.funding_selection_provenance is not None
+                else None
+            ),
+            "cash": (
+                historical_selection_provenance_payload(
+                    manifest.cash_selection_provenance
+                )
+                if manifest.cash_selection_provenance is not None
+                else None
+            ),
+        }
+    }
 
 
 def _parse_funding(
