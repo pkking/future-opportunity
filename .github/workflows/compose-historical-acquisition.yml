@@ -1,0 +1,139 @@
+name: Compose Historical Acquisition Manifest
+
+on:
+  workflow_dispatch:
+    inputs:
+      acquisition_id:
+        description: Safe acquisition identifier
+        required: true
+      planner_campaign_prefix:
+        description: Safe read-only planner campaign prefix
+        required: true
+      funding_start_date:
+        description: Optional inclusive Funding UTC start date
+        required: false
+      funding_end_date:
+        description: Optional inclusive Funding UTC end date
+        required: false
+      cash_case_plan_run_id:
+        description: Optional exact successful Cash case-plan run ID
+        required: false
+      cash_case_plan_artifact_name:
+        description: Optional exact Cash case-plan artifact name
+        required: false
+  push:
+    paths:
+      - ".github/workflows/compose-historical-acquisition.yml"
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  compose:
+    name: Verify source plan and compose acquisition JSON
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      ACQUISITION_ID: ${{ inputs.acquisition_id || 'selftest-composed-acquisition' }}
+      PLANNER_PREFIX: ${{ inputs.planner_campaign_prefix || 'selftest-composed-review' }}
+      FUNDING_START_DATE: ${{ inputs.funding_start_date || '2026-09-04' }}
+      FUNDING_END_DATE: ${{ inputs.funding_end_date || '2026-09-04' }}
+      CASH_PLAN_RUN_ID: ${{ inputs.cash_case_plan_run_id || '37477835622' }}
+      CASH_PLAN_ARTIFACT_NAME: ${{ inputs.cash_case_plan_artifact_name || 'cash-acquisition-case-plan-37477835622' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+
+      - run: uv sync --all-extras --dev
+
+      - id: source
+        name: Verify optional exact Cash case-plan artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="artifacts/historical-acquisition-composer"
+          mkdir -p "${work}/incoming"
+
+          if [ -z "${CASH_PLAN_RUN_ID}" ] && [ -z "${CASH_PLAN_ARTIFACT_NAME}" ]; then
+            printf '%s\n' '{"cash_case_plan":null}' > "${work}/source.json"
+            echo "cash_plan_path=" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          if [ -z "${CASH_PLAN_RUN_ID}" ] || [ -z "${CASH_PLAN_ARTIFACT_NAME}" ]; then
+            echo "cash_case_plan_run_id and artifact_name must be supplied together" >&2
+            exit 1
+          fi
+          [[ "${CASH_PLAN_RUN_ID}" =~ ^[0-9]+$ ]]
+
+          gh api             "repos/${GITHUB_REPOSITORY}/actions/runs/${CASH_PLAN_RUN_ID}"             > "${work}/source-run.json"
+          test "$(jq -r '.status' "${work}/source-run.json")" = "completed"
+          test "$(jq -r '.conclusion' "${work}/source-run.json")" = "success"
+
+          gh api             "repos/${GITHUB_REPOSITORY}/actions/runs/${CASH_PLAN_RUN_ID}/artifacts?per_page=100"             > "${work}/source-artifacts.json"
+
+          count="$(jq --arg name "${CASH_PLAN_ARTIFACT_NAME}"             '[.artifacts[] | select(.name == $name)] | length'             "${work}/source-artifacts.json")"
+          test "${count}" = "1"
+
+          artifact_id="$(jq -r --arg name "${CASH_PLAN_ARTIFACT_NAME}"             '.artifacts[] | select(.name == $name) | .id'             "${work}/source-artifacts.json")"
+          digest="$(jq -r --arg name "${CASH_PLAN_ARTIFACT_NAME}"             '.artifacts[] | select(.name == $name) | .digest'             "${work}/source-artifacts.json")"
+          expired="$(jq -r --arg name "${CASH_PLAN_ARTIFACT_NAME}"             '.artifacts[] | select(.name == $name) | .expired'             "${work}/source-artifacts.json")"
+
+          [[ "${artifact_id}" =~ ^[0-9]+$ ]]
+          [[ "${digest}" =~ ^sha256:[0-9a-fA-F]{64}$ ]]
+          test "${expired}" = "false"
+
+          gh run download "${CASH_PLAN_RUN_ID}"             --repo "${GITHUB_REPOSITORY}"             --name "${CASH_PLAN_ARTIFACT_NAME}"             --dir "${work}/incoming"
+
+          mapfile -t reports < <(
+            find "${work}/incoming" -type f -name report.json -print
+          )
+          test "${#reports[@]}" = "1"
+
+          jq -n             --arg run "${CASH_PLAN_RUN_ID}"             --arg name "${CASH_PLAN_ARTIFACT_NAME}"             --arg artifact_id "${artifact_id}"             --arg digest "${digest}"             --arg report "${reports[0]}"             '{
+              cash_case_plan: {
+                source_workflow_run: $run,
+                artifact_name: $name,
+                artifact_id: $artifact_id,
+                artifact_digest: $digest,
+                report_path: $report
+              }
+            }' > "${work}/source.json"
+          echo "cash_plan_path=${reports[0]}" >> "${GITHUB_OUTPUT}"
+
+      - name: Compose acquisition-ready dispatch JSON
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="artifacts/historical-acquisition-composer"
+          args=(
+            --acquisition-id "${ACQUISITION_ID}"
+            --planner-campaign-prefix "${PLANNER_PREFIX}"
+            --output "${work}/acquisition.json"
+            --max-total-items 31
+          )
+
+          if [ -n "${FUNDING_START_DATE}" ] || [ -n "${FUNDING_END_DATE}" ]; then
+            args+=(
+              --funding-start-date "${FUNDING_START_DATE}"
+              --funding-end-date "${FUNDING_END_DATE}"
+            )
+          fi
+
+          cash_plan="${{ steps.source.outputs.cash_plan_path }}"
+          if [ -n "${cash_plan}" ]; then
+            args+=(--cash-case-plan "${cash_plan}")
+          fi
+
+          uv run python scripts/compose_historical_acquisition.py "${args[@]}"
+          cat "${work}/acquisition.json"
+
+      - name: Upload read-only acquisition composition evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: historical-acquisition-composer-${{ github.run_id }}
+          path: artifacts/historical-acquisition-composer/
+          if-no-files-found: warn
