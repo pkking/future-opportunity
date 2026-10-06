@@ -1,0 +1,157 @@
+name: Promote Historical Compact Artifact
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: Preparation workflow run ID containing the compact artifact
+        required: true
+      compact_artifact_name:
+        description: Exact compact artifact name from the source run
+        required: true
+  push:
+    paths:
+      - ".github/workflows/promote-historical-compact.yml"
+
+permissions:
+  actions: read
+  contents: write
+  pull-requests: write
+
+jobs:
+  promote:
+    name: Validate artifact and open corpus PR
+    runs-on: ubuntu-latest
+    env:
+      SOURCE_RUN_ID: ${{ inputs.source_run_id || '37327493270' }}
+      COMPACT_ARTIFACT_NAME: ${{ inputs.compact_artifact_name || 'okx-btc-funding-compact-2026-09-02' }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: astral-sh/setup-uv@v6
+
+      - run: uv sync --all-extras --dev
+
+      - id: source
+        name: Verify source run and exact artifact identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/historical-promotion/incoming
+          gh api             "repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}/artifacts?per_page=100"             > artifacts/historical-promotion/source-artifacts.json
+
+          compact_count="$(jq --arg name "${COMPACT_ARTIFACT_NAME}"             '[.artifacts[] | select(.name == $name)] | length'             artifacts/historical-promotion/source-artifacts.json)"
+          test "${compact_count}" = "1"
+
+          compact_id="$(jq -r --arg name "${COMPACT_ARTIFACT_NAME}"             '.artifacts[] | select(.name == $name) | .id'             artifacts/historical-promotion/source-artifacts.json)"
+          compact_digest="$(jq -r --arg name "${COMPACT_ARTIFACT_NAME}"             '.artifacts[] | select(.name == $name) | .digest'             artifacts/historical-promotion/source-artifacts.json)"
+          compact_expired="$(jq -r --arg name "${COMPACT_ARTIFACT_NAME}"             '.artifacts[] | select(.name == $name) | .expired'             artifacts/historical-promotion/source-artifacts.json)"
+          test "${compact_expired}" = "false"
+          test "${compact_digest}" != "null"
+
+          gh run download "${SOURCE_RUN_ID}"             --repo "${GITHUB_REPOSITORY}"             --name "${COMPACT_ARTIFACT_NAME}"             --dir artifacts/historical-promotion/incoming
+
+          mapfile -t manifests < <(
+            find artifacts/historical-promotion/incoming               -type f -name manifest.json -print
+          )
+          test "${#manifests[@]}" = "1"
+          manifest="${manifests[0]}"
+          source_dir="$(dirname "${manifest}")"
+
+          manifest_run="$(jq -r '.derived_from_artifact.workflow_run' "${manifest}")"
+          parent_id="$(jq -r '.derived_from_artifact.artifact_id' "${manifest}")"
+          parent_sha="$(jq -r '.derived_from_artifact.artifact_zip_sha256' "${manifest}")"
+
+          test "${manifest_run}" = "${SOURCE_RUN_ID}"
+          [[ "${parent_id}" =~ ^[0-9]+$ ]]
+          [[ "${parent_sha}" =~ ^[0-9a-fA-F]{64}$ ]]
+
+          parent_count="$(jq --argjson id "${parent_id}"             '[.artifacts[] | select(.id == $id)] | length'             artifacts/historical-promotion/source-artifacts.json)"
+          test "${parent_count}" = "1"
+
+          parent_expired="$(jq -r --argjson id "${parent_id}"             '.artifacts[] | select(.id == $id) | .expired'             artifacts/historical-promotion/source-artifacts.json)"
+          parent_digest="$(jq -r --argjson id "${parent_id}"             '.artifacts[] | select(.id == $id) | .digest'             artifacts/historical-promotion/source-artifacts.json)"
+          test "${parent_expired}" = "false"
+          test "${parent_digest}" != "null"
+          parent_digest_sha="${parent_digest#sha256:}"
+          test "${parent_digest_sha}" = "${parent_sha,,}"
+
+          echo "source_dir=${source_dir}" >> "${GITHUB_OUTPUT}"
+          echo "compact_artifact_id=${compact_id}" >> "${GITHUB_OUTPUT}"
+          echo "compact_artifact_digest=${compact_digest}" >> "${GITHUB_OUTPUT}"
+          echo "parent_artifact_id=${parent_id}" >> "${GITHUB_OUTPUT}"
+          echo "parent_artifact_digest=${parent_digest}" >> "${GITHUB_OUTPUT}"
+
+      - id: promote
+        name: Stage compact fixture into versioned corpus
+        shell: bash
+        run: |
+          set -euo pipefail
+          uv run python scripts/promote_historical_compact.py             "${{ steps.source.outputs.source_dir }}"             --source-workflow-run "${SOURCE_RUN_ID}"             --parent-artifact-id "${{ steps.source.outputs.parent_artifact_id }}"             --parent-artifact-sha256 "${{ steps.source.outputs.parent_artifact_digest }}"             | tee artifacts/historical-promotion/promotion.json
+
+      - name: Verify promoted corpus offline
+        if: steps.promote.outputs.changed == 'true'
+        run: |
+          uv run pytest             tests/test_historical_corpus.py             tests/test_historical_policy.py             tests/e2e/test_historical_backtest_acceptance.py             -v             --junitxml=artifacts/historical-promotion/junit.xml
+          uv run python scripts/run_pinned_historical_smoke.py
+          cp artifacts/historical-smoke/evidence.json             artifacts/historical-promotion/historical-smoke-evidence.json
+
+      - id: pr
+        name: Create reviewable corpus promotion PR
+        if: steps.promote.outputs.changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          dataset_id="${{ steps.promote.outputs.dataset_id }}"
+          strategy="${{ steps.promote.outputs.strategy }}"
+          market_date="${{ steps.promote.outputs.entry_market_date }}"
+          branch="historical-corpus/${dataset_id}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "${branch}"
+          git add tests/fixtures/historical
+          git diff --cached --quiet && {
+            echo "Promotion reported changes but git has no staged diff" >&2
+            exit 1
+          }
+          git commit -m "test: promote historical ${strategy} ${market_date}"
+          git push --set-upstream origin "${branch}"
+
+          cat > artifacts/historical-promotion/pr-body.md <<EOF
+          Promotes one validated compact historical fixture into the versioned corpus.
+
+          - Dataset: `${dataset_id}`
+          - Strategy: `${strategy}`
+          - Entry market date: `${market_date}`
+          - Source workflow run: `${SOURCE_RUN_ID}`
+          - Compact artifact: `${COMPACT_ARTIFACT_NAME}`
+          - Compact artifact ID: `${{ steps.source.outputs.compact_artifact_id }}`
+          - Compact artifact digest: `${{ steps.source.outputs.compact_artifact_digest }}`
+          - Parent preparation artifact ID: `${{ steps.source.outputs.parent_artifact_id }}`
+          - Parent preparation digest: `${{ steps.source.outputs.parent_artifact_digest }}`
+
+          The promotion workflow validated manifest provenance, canonical checksums,
+          corpus identity constraints, offline replay semantics, and historical smoke
+          before creating this PR. Normal repository CI and Historical Backtest Smoke
+          remain required before merge.
+          EOF
+
+          pr_url="$(gh pr create             --base main             --head "${branch}"             --title "test: promote historical ${strategy} ${market_date}"             --body-file artifacts/historical-promotion/pr-body.md)"
+          echo "url=${pr_url}" >> "${GITHUB_OUTPUT}"
+
+      - name: Record no-op promotion
+        if: steps.promote.outputs.changed == 'false'
+        run: |
+          echo "Artifact is already present and byte-identical in corpus."             | tee artifacts/historical-promotion/no-op.txt
+
+      - name: Upload promotion evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: historical-promotion-evidence-${{ github.run_id }}
+          path: artifacts/historical-promotion/
+          if-no-files-found: warn
