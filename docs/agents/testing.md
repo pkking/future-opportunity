@@ -166,6 +166,33 @@ Tests that assert corpus size/readiness must derive expectations from the
 versioned corpus index. They must not hard-code today's number of pinned days;
 corpus growth itself is an expected repository change.
 
+### Promotion evidence contract
+
+Prepared compact artifacts enter the corpus only through an explicit,
+review-based promotion.
+
+Promotion must verify:
+
+- the compact artifact is selected by exact name from an exact preparation run;
+- the compact artifact is not expired and exposes an Actions SHA-256 digest;
+- `derived_from_artifact.workflow_run` matches the selected source run;
+- the parent preparation artifact ID belongs to that same source run;
+- the parent Actions artifact digest matches the manifest SHA-256;
+- `pinning_status=commit_ready`;
+- only `manifest.json` plus manifest-referenced canonical evidence files are
+  present;
+- the existing corpus is already valid before staging;
+- dataset ID, strategy/date identity, fixture path, and canonical file content
+  cannot collide or drift silently.
+
+Promotion creates a pull request rather than committing directly to `main`.
+The PR must run normal CI and Historical Backtest Smoke. Automatic merge is not
+part of the promotion contract.
+
+Idempotent re-promotion is allowed only for the same corpus fact. Manifest JSON
+formatting differences are ignored after structural parsing, while canonical
+evidence files remain byte-sensitive and checksum-gated.
+
 ## What an E2E scenario must cover
 
 A strategy E2E scenario should exercise the real application workflow rather
