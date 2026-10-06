@@ -518,6 +518,46 @@ than creating a second conflicting corpus fact.
 A promotion PR—whether opened by the workflow or from its handoff—must pass the
 normal repository CI plus `Historical Backtest Smoke` before merge.
 
+### Promoting a corpus campaign
+
+For corpus growth, prefer one explicit multi-day campaign over one PR per market
+day:
+
+```text
+Actions -> Promote Historical Corpus Campaign
+```
+
+The input is a versioned JSON object containing exact preparation run/artifact
+pairs:
+
+```json
+{
+  "schema_version": 1,
+  "campaign_id": "stage1-wave-03",
+  "items": [
+    {
+      "source_workflow_run": "123456",
+      "compact_artifact_name": "okx-btc-funding-compact-YYYY-MM-DD"
+    },
+    {
+      "source_workflow_run": "123457",
+      "compact_artifact_name": "okx-btc-cash-and-carry-compact-..."
+    }
+  ]
+}
+```
+
+Campaigns are limited to 31 items. Each artifact and its parent preparation
+artifact are verified independently against the Actions API and the compact
+manifest. The local promotion is then atomic: if any later item fails
+provenance, checksum, identity, or corpus validation, all fixtures newly staged
+by that campaign are removed and `corpus-index.json` is restored.
+
+Already-pinned identical items are allowed as no-ops. Input order does not
+control corpus order. One effective campaign produces one review branch and one
+PR or policy-safe PR handoff, reducing review overhead while preserving
+per-market-day evidence.
+
 Readiness is computed from distinct `entry_market_date` values in the validated
 versioned corpus, separately for each required strategy:
 
