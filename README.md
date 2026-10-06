@@ -437,6 +437,68 @@ the deterministic reference targets.
 
 ### Adding historical market days
 
+For a reviewed multi-day preparation set, prefer the acquisition campaign:
+
+```text
+Actions -> Acquire Historical Campaign
+```
+
+Input is an explicit versioned JSON object:
+
+```json
+{
+  "schema_version": 1,
+  "acquisition_id": "stage1-acquisition-01",
+  "planner_campaign_prefix": "stage1-review-01",
+  "funding": {
+    "start_date": "2026-09-04",
+    "end_date": "2026-09-06"
+  },
+  "cash_cases": [
+    {
+      "entry_at": "2026-06-04T00:15:00+00:00",
+      "exit_at": "2026-06-25T00:15:00+00:00",
+      "future_id": "BTC-USDT-260626",
+      "expiry_at": "2026-06-26T08:00:00+00:00"
+    }
+  ]
+}
+```
+
+The acquisition manifest is bounded to **31 total items**. Funding uses an
+inclusive UTC date range. Cash remains explicit: the acquisition layer never
+infers a holding period or expiry case from discovery output.
+
+The workflow reuses the existing Funding/Cash preparation workflows. It has
+`contents: read` only and does not change
+`tests/fixtures/historical/`, push review branches, or create PRs.
+
+After the entire acquisition run completes successfully, a
+`workflow_run` trigger starts **Plan Historical Corpus Campaign** against that
+exact completed run. The planner retrieves the normalized
+`historical-acquisition-control` artifact, verifies every compact/parent
+artifact pair, compares only against the committed corpus, and uploads
+review-only campaign waves. A failed or partial acquisition is never planned.
+
+Verified integration example:
+
+```text
+Acquire run 37475817137
+  Funding 2026-09-04 + Cash 2026-06-03
+    -> success
+
+Planner workflow_run 37476495413
+  baseline pinned: Funding 2 / Cash 2
+  selected: 2
+  projected if later reviewed+merged: Funding 3 / Cash 3
+  wave: selftest-acquisition-review-wave-001.json
+```
+
+This projection is not pinned readiness and performs no promotion.
+
+For lower-level or one-off preparation, the individual batch workflows remain
+available.
+
 Historical acquisition is resumable and separated from CI gating.
 
 Funding Carry can prepare up to 31 UTC market days per batch:
