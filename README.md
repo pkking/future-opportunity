@@ -472,6 +472,46 @@ only after its compact fixture is committed under
 `tests/fixtures/historical/`, added to `corpus-index.json`, and accepted by
 the offline corpus validator and Historical Backtest Smoke.
 
+### Promoting a prepared day
+
+Promotion is explicit and review-based. Use:
+
+```text
+Actions -> Promote Historical Compact Artifact
+
+source_run_id          = preparation workflow run ID
+compact_artifact_name  = exact commit-ready compact artifact name
+```
+
+The promotion workflow:
+
+```text
+source run/artifact lookup
+  -> verify compact artifact belongs to the exact run
+  -> verify parent preparation artifact ID + SHA-256 from manifest
+  -> validate commit_ready manifest + canonical checksums
+  -> reject unexpected files/symlinks/identity collisions
+  -> stage fixture + deterministic corpus-index update
+  -> offline corpus + historical smoke verification
+  -> create review branch + pull request
+```
+
+It never writes directly to `main` and never auto-merges.
+
+Re-running promotion for an already indexed fixture is a no-op only when the
+manifest is structurally identical and all canonical evidence files are
+byte-identical. JSON whitespace/key order is not treated as data drift.
+Different canonical bytes, different provenance, or a duplicate strategy/date
+with another dataset fail closed.
+
+If a promotion run is interrupted, rerun it with the same source run and exact
+compact artifact. If the fixture has already landed unchanged, the rerun is
+idempotent. If a previous PR exists but is not merged, review that PR rather
+than creating a second conflicting corpus fact.
+
+A promotion PR must pass the normal repository CI plus
+`Historical Backtest Smoke` before merge.
+
 Readiness is computed from distinct `entry_market_date` values in the validated
 versioned corpus, separately for each required strategy:
 
