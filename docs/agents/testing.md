@@ -256,6 +256,39 @@ The report must replay every valid, indexed pinned case. The report is
 pinned-case gate evidence. The distribution report does not change the
 ADR-0007 30/90-day eligibility or activate Stage 2.
 
+### Cash acquisition case planning
+
+Cash case planning is a read-only bridge between historical FUTURES discovery
+and explicit acquisition manifests.
+
+Inputs remain operator facts:
+
+- exact successful Cash discovery run ID;
+- `future_id`;
+- `expiry_at`;
+- `exit_at`;
+- `entry_time_utc`.
+
+The planner must independently verify/download discovery artifacts from that
+exact run and then enforce:
+
+- supported discovery schema/status;
+- unique market dates;
+- explicit future ID match;
+- UTC entry/exit/expiry semantics;
+- `entry < exit < expiry`;
+- BTC-USDT YYMMDD suffix agreement with expiry date;
+- maximum 31 selected cases.
+
+Dates with no unique FUTURES archive, future mismatch, or entry not before the
+explicit exit remain explicit exclusions in evidence. They are never silently
+rewritten into different strategy cases.
+
+The planner workflow permissions are limited to `actions: read` and
+`contents: read`. It must not invoke preparation workflows, mutate the corpus,
+push branches, or create PRs. Its output is acquisition-ready `cash_cases`
+plus diagnostics only.
+
 ### Historical acquisition campaign
 
 Acquisition is an **artifact-producing but corpus-read-only** workflow layer.
