@@ -1,6 +1,6 @@
 # 2026-10-06-historical-corpus-campaign: Batch historical corpus promotion toward Stage 2
 
-Status: PLANNING
+Status: IMPLEMENTING
 Owner: agent
 Started: 2026-10-06
 Last checkpoint: 2026-10-06
@@ -76,27 +76,27 @@ the ADR-0007 minimum of 30 without changing Stage-1 acceptance semantics.
 
 ## Acceptance criteria
 
-- [ ] Define versioned campaign manifest schema.
-- [ ] Add local atomic batch promotion application.
-- [ ] Batch promotion supports mixed Funding + Cash compact fixtures.
-- [ ] Exact already-present fixtures are idempotent within a batch.
-- [ ] One invalid/divergent item rolls back all newly staged items.
-- [ ] Campaign order does not affect final corpus index.
-- [ ] Add code tests for atomicity, duplicates, mixed strategy, no-op and ordering.
-- [ ] Add workflow_dispatch batch promotion workflow.
-- [ ] Workflow verifies exact run/artifact/parent digests for every item.
-- [ ] Workflow limits batch size to a bounded number.
+- [x] Define versioned campaign manifest schema.
+- [x] Add local atomic batch promotion application.
+- [x] Batch promotion supports mixed Funding + Cash compact fixtures.
+- [x] Exact already-present fixtures are idempotent within a batch.
+- [x] One invalid/divergent item rolls back all newly staged items.
+- [x] Campaign order does not affect final corpus index.
+- [x] Add code tests for atomicity, duplicates, mixed strategy, no-op and ordering.
+- [x] Add workflow_dispatch batch promotion workflow.
+- [x] Workflow verifies exact run/artifact/parent digests for every item.
+- [x] Workflow limits batch size to a bounded number.
 - [ ] Workflow produces one review branch and one PR/handoff for effective changes.
-- [ ] Campaign evidence includes per-item status and resulting readiness counts.
+- [x] Campaign evidence includes per-item status and resulting readiness counts.
 - [ ] Documentation explains prepare-many -> promote-campaign -> review -> merge.
 - [ ] Final CI green.
 
 ## Implementation slices
 
-- [ ] 1. Campaign manifest model/parser.
-- [ ] 2. Atomic local batch staging + rollback.
-- [ ] 3. Campaign evidence/readiness output.
-- [ ] 4. Exact multi-artifact workflow acquisition/verification.
+- [x] 1. Campaign manifest model/parser.
+- [x] 2. Atomic local batch staging + rollback.
+- [x] 3. Campaign evidence/readiness output.
+- [x] 4. Exact multi-artifact workflow acquisition/verification.
 - [ ] 5. Single review branch + PR/handoff.
 - [ ] 6. Documentation and final verification.
 - [ ] 7. Archive.
@@ -124,6 +124,23 @@ separate explicit decisions.
 - 2026-10-06: single-artifact promotion completed and archived. Main CI and
   policy-safe promotion self-test were green; PR #2 demonstrates the review path
   with PR-triggered CI + Historical Smoke green.
+- 2026-10-06: versioned campaign schema implemented with safe campaign/artifact
+  identifiers, exact run/artifact pairs, duplicate rejection, and max 31 items.
+- 2026-10-06: local campaign promotion composes the verified single-artifact
+  promotion primitive and adds whole-campaign rollback. Mixed Funding+Cash,
+  no-op, ordering, duplicate input, and later-item failure rollback are covered
+  by code tests. CI 37434628064 passed.
+- 2026-10-06: campaign promotion evidence includes per-item promotion status and
+  post-staging ADR-0007 readiness counts. CLI re-verifies resolved acquisition
+  items against the operator campaign manifest.
+- 2026-10-06: multi-artifact workflow run 37434868861 succeeded with the pinned
+  Funding 2026-09-02 and Cash 2026-06-02 artifacts from two different source
+  runs. Exact compact + parent artifact digests were verified independently and
+  the campaign correctly resolved to an all-idempotent no-op.
+- 2026-10-06: Cash discovery run 37434982233 verified that 2026-06-03 official
+  futureschain history contains BTC-USDT-260626. Funding 2026-09-04 and Cash
+  2026-06-03 preparation runs were started as the first real changed mixed
+  campaign inputs.
 
 ## Deviations and discoveries
 
@@ -131,9 +148,11 @@ None.
 
 ## Resume from here
 
-Implement a versioned campaign manifest parser and an atomic local batch
-promotion function by composing the already-verified single-artifact promotion
-contract. Prove rollback when a later item fails before adding workflow logic.
+Wait for Funding 2026-09-04 preparation run 37434976457 and Cash 2026-06-03
+preparation run 37435117479. Build one explicit two-item campaign from the
+resulting compact artifacts and verify the changed path: exact multi-artifact
+acquisition -> atomic stage -> resulting 3/3+ readiness -> one review branch ->
+one PR/handoff -> PR CI + Historical Backtest Smoke.
 
 ## Completion
 
