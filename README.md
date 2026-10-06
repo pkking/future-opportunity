@@ -391,8 +391,9 @@ market-capacity datasets.
 
 Current pinned real-market evidence includes:
 
-- OKX BTC-USDT Funding Carry, 2026-09-01;
-- OKX BTC-USDT / BTC-USDT-260626 Cash-and-Carry, June 2026.
+- OKX BTC-USDT Funding Carry: 2026-09-01 and 2026-09-02;
+- OKX BTC-USDT / BTC-USDT-260626 Cash-and-Carry: 2026-06-01 and
+  2026-06-02.
 
 Both current historical cases are legitimate negative examples under the
 existing default cost assumptions: the product workflow rejects them because
@@ -433,6 +434,56 @@ pinned entry-market days per strategy**; **90 days per strategy** is preferred
 before freezing stable thresholds. Activation still requires a separate ADR and
 human approval. Distribution thresholds must not be copied automatically from
 the deterministic reference targets.
+
+### Adding historical market days
+
+Historical acquisition is resumable and separated from CI gating.
+
+Funding Carry can prepare up to 31 UTC market days per batch:
+
+```text
+Actions -> Prepare Funding Historical Batch
+start_date = YYYY-MM-DD
+end_date   = YYYY-MM-DD
+```
+
+Each date is an independent matrix job with `fail-fast=false`. Successful jobs
+produce:
+
+```text
+full provenance artifact
++
+commit-ready compact fixture artifact
+```
+
+Cash-and-Carry uses two steps:
+
+```text
+Actions -> Discover Cash Historical Batch
+  -> official historical FUTURES archive identity / expiry evidence
+
+Actions -> Prepare Cash Historical Batch
+  -> explicit entry/exit/future/expiry case
+  -> full provenance + commit-ready compact fixture
+```
+
+A prepared artifact does **not** count toward Stage-2 readiness. A day counts
+only after its compact fixture is committed under
+`tests/fixtures/historical/`, added to `corpus-index.json`, and accepted by
+the offline corpus validator and Historical Backtest Smoke.
+
+Readiness is computed from distinct `entry_market_date` values in the validated
+versioned corpus, separately for each required strategy:
+
+```text
+minimum_ready
+  = every required strategy has >= 30 distinct pinned entry-market days
+
+preferred_ready
+  = every required strategy has >= 90 distinct pinned entry-market days
+```
+
+Duplicate strategy/date entries fail closed.
 
 ## Architecture
 
