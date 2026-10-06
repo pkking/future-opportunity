@@ -1,0 +1,130 @@
+name: Discover Sampled Cash Historical Corpus
+
+on:
+  workflow_dispatch:
+    inputs:
+      sampling_run_id:
+        description: Exact successful Sample Historical Market Days run ID
+        required: true
+      sampling_artifact_name:
+        description: Exact cash-and-carry sampling artifact name
+        required: true
+  push:
+    paths:
+      - ".github/workflows/discover-sampled-cash-corpus.yml"
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  resolve:
+    name: Verify Cash sampling evidence
+    runs-on: ubuntu-latest
+    outputs:
+      selected_dates: ${{ steps.selection.outputs.selected_dates }}
+      selection_provenance: ${{ steps.selection.outputs.selection_provenance }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SAMPLING_RUN_ID: ${{ inputs.sampling_run_id || '37487331716' }}
+      SAMPLING_ARTIFACT_NAME: ${{ inputs.sampling_artifact_name || 'cash-historical-market-day-sample-37487331716' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+
+      - id: selection
+        name: Verify exact artifact and replay deterministic Cash sample
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "${SAMPLING_RUN_ID}" =~ ^[0-9]+$ ]]
+          work="artifacts/cash-sampled-discovery"
+          incoming="${work}/incoming"
+          mkdir -p "${incoming}"
+
+          gh api             "repos/${GITHUB_REPOSITORY}/actions/runs/${SAMPLING_RUN_ID}"             > "${work}/source-run.json"
+          test "$(jq -r '.status' "${work}/source-run.json")" = "completed"
+          test "$(jq -r '.conclusion' "${work}/source-run.json")" = "success"
+
+          gh api             "repos/${GITHUB_REPOSITORY}/actions/runs/${SAMPLING_RUN_ID}/artifacts?per_page=100"             > "${work}/source-artifacts.json"
+
+          count="$(jq --arg name "${SAMPLING_ARTIFACT_NAME}"             '[.artifacts[] | select(.name == $name)] | length'             "${work}/source-artifacts.json")"
+          test "${count}" = "1"
+
+          artifact_id="$(jq -r --arg name "${SAMPLING_ARTIFACT_NAME}"             '.artifacts[] | select(.name == $name) | .id'             "${work}/source-artifacts.json")"
+          digest="$(jq -r --arg name "${SAMPLING_ARTIFACT_NAME}"             '.artifacts[] | select(.name == $name) | .digest'             "${work}/source-artifacts.json")"
+          expired="$(jq -r --arg name "${SAMPLING_ARTIFACT_NAME}"             '.artifacts[] | select(.name == $name) | .expired'             "${work}/source-artifacts.json")"
+          [[ "${artifact_id}" =~ ^[0-9]+$ ]]
+          [[ "${digest}" =~ ^sha256:[0-9a-fA-F]{64}$ ]]
+          test "${expired}" = "false"
+
+          gh run download "${SAMPLING_RUN_ID}"             --repo "${GITHUB_REPOSITORY}"             --name "${SAMPLING_ARTIFACT_NAME}"             --dir "${incoming}"
+
+          mapfile -t samples < <(
+            find "${incoming}" -maxdepth 1 -type f -name sample.json -print
+          )
+          test "${#samples[@]}" = "1"
+
+          uv run python scripts/build_historical_selection_provenance.py             "${samples[0]}"             --source-workflow-run "${SAMPLING_RUN_ID}"             --artifact-name "${SAMPLING_ARTIFACT_NAME}"             --artifact-id "${artifact_id}"             --artifact-digest "${digest}"             --output "${work}/selection.json"
+
+          test "$(jq -r '.strategy' "${work}/selection.json")" = "cash-and-carry"
+          selected="$(jq -c '.sampling.selected_market_dates' "${work}/selection.json")"
+          test "$(jq 'length' <<<"${selected}")" -ge 1
+          test "$(jq 'length' <<<"${selected}")" -le 31
+
+          jq -n             --arg sampling_run_id "${SAMPLING_RUN_ID}"             --arg sampling_artifact_name "${SAMPLING_ARTIFACT_NAME}"             --arg sampling_artifact_id "${artifact_id}"             --arg sampling_artifact_digest "${digest}"             --slurpfile selection "${work}/selection.json"             '{
+              schema_version: 1,
+              evidence_type: "cash_sampled_discovery_control",
+              source: {
+                workflow_run: $sampling_run_id,
+                artifact_name: $sampling_artifact_name,
+                artifact_id: $sampling_artifact_id,
+                artifact_digest: $sampling_artifact_digest
+              },
+              selection_provenance: $selection[0]
+            }' > "${work}/control.json"
+
+          selection_compact="$(jq -c . "${work}/selection.json")"
+          echo "selected_dates=${selected}" >> "${GITHUB_OUTPUT}"
+          echo "selection_provenance=${selection_compact}" >> "${GITHUB_OUTPUT}"
+
+      - name: Upload sampled discovery control evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: cash-sampled-discovery-control
+          path: |
+            artifacts/cash-sampled-discovery/control.json
+            artifacts/cash-sampled-discovery/selection.json
+            artifacts/cash-sampled-discovery/source-run.json
+            artifacts/cash-sampled-discovery/source-artifacts.json
+          if-no-files-found: error
+
+  discover:
+    name: Discover sampled Cash ${{ matrix.market_date }}
+    needs: resolve
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        market_date: ${{ fromJSON(needs.resolve.outputs.selected_dates) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+
+      - name: Discover official historical future evidence
+        run: |
+          mkdir -p "artifacts/cash-discovery/${{ matrix.market_date }}"
+          uv run python scripts/discover_okx_cash_history.py             "${{ matrix.market_date }}"             --output "artifacts/cash-discovery/${{ matrix.market_date }}/report.json"
+          cat "artifacts/cash-discovery/${{ matrix.market_date }}/report.json"
+
+      - name: Upload discovery evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cash-history-discovery-${{ matrix.market_date }}
+          path: artifacts/cash-discovery/${{ matrix.market_date }}/
+          if-no-files-found: warn
