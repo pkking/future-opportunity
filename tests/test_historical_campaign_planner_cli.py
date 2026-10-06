@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts.plan_historical_campaign import (
+from future_opportunity.backtest.campaign_inventory import (
     verified_candidates_from_inventory,
 )
 
