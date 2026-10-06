@@ -26,6 +26,10 @@ from future_opportunity.backtest.historical_policy import (
     distribution_transition_readiness,
     load_historical_acceptance_policy,
 )
+from future_opportunity.backtest.selection_provenance import (
+    historical_selection_provenance_payload,
+    validate_selection_provenance_for_market_date,
+)
 from future_opportunity.domain.strategy.cash_and_carry import (
     CashAndCarryAssumptions,
 )
@@ -154,6 +158,85 @@ def _summary(
     }
 
 
+def _selection_provenance_view(
+    manifest: dict[str, Any],
+    *,
+    strategy: str,
+    market_date: str,
+) -> dict[str, Any]:
+    raw = manifest.get("selection_provenance")
+    if raw is None:
+        return {
+            "classification": "legacy_untracked",
+            "selection_kind": None,
+            "source": None,
+            "sampling": None,
+        }
+
+    provenance = validate_selection_provenance_for_market_date(
+        raw,
+        strategy=strategy,
+        market_date=market_date,
+    )
+    payload = historical_selection_provenance_payload(provenance)
+    return {
+        "classification": "pre_registered_sample",
+        "selection_kind": provenance.selection_kind,
+        "source": payload["source"],
+        "sampling": payload["sampling"],
+    }
+
+
+def _selection_coverage(
+    provenance_by_id: dict[str, dict[str, Any]],
+    *,
+    entries_by_strategy: dict[str, tuple[str, ...]],
+) -> dict[str, Any]:
+    by_strategy: dict[str, Any] = {}
+    total_pre_registered = 0
+    total_legacy = 0
+
+    for strategy, dataset_ids in entries_by_strategy.items():
+        pre_registered = sum(
+            1
+            for dataset_id in dataset_ids
+            if provenance_by_id[dataset_id]["selection"][
+                "classification"
+            ]
+            == "pre_registered_sample"
+        )
+        legacy = len(dataset_ids) - pre_registered
+        total_pre_registered += pre_registered
+        total_legacy += legacy
+        by_strategy[strategy] = {
+            "pinned_day_count": len(dataset_ids),
+            "pre_registered_sample_day_count": pre_registered,
+            "legacy_untracked_day_count": legacy,
+            "pre_registered_coverage_ratio": (
+                Decimal(pre_registered) / Decimal(len(dataset_ids))
+                if dataset_ids
+                else Decimal(0)
+            ),
+        }
+
+    total = total_pre_registered + total_legacy
+    return {
+        "by_strategy": by_strategy,
+        "total_pinned_day_count": total,
+        "pre_registered_sample_day_count": total_pre_registered,
+        "legacy_untracked_day_count": total_legacy,
+        "pre_registered_coverage_ratio": (
+            Decimal(total_pre_registered) / Decimal(total)
+            if total
+            else Decimal(0)
+        ),
+        "readiness_semantics": (
+            "reporting_only; ADR-0007 readiness still counts all validated "
+            "pinned entry-market days"
+        ),
+    }
+
+
 async def build_historical_corpus_distribution(
     *,
     fixture_root: Path,
@@ -200,17 +283,26 @@ async def build_historical_corpus_distribution(
                 "source_artifact": source.get("derived_from_artifact"),
                 "parent_alignment": source.get("parent_alignment"),
                 "compact_alignment": source.get("alignment"),
+                "selection": _selection_provenance_view(
+                    source,
+                    strategy=entry.strategy,
+                    market_date=entry.entry_market_date,
+                ),
             }
         elif entry.strategy == "cash-and-carry":
             case = load_cash_and_carry_close_fixture(root)
             cash_cases.append(case)
+            source = json.loads((root / "manifest.json").read_text())
             provenance_by_id[case.case_id] = {
                 "dataset_id": entry.dataset_id,
                 "entry_market_date": entry.entry_market_date,
                 "fixture_path": entry.fixture_path,
-                "source_artifact": json.loads(
-                    (root / "manifest.json").read_text()
-                ).get("derived_from_artifact"),
+                "source_artifact": source.get("derived_from_artifact"),
+                "selection": _selection_provenance_view(
+                    source,
+                    strategy=entry.strategy,
+                    market_date=entry.entry_market_date,
+                ),
             }
         else:
             raise ValueError(f"unsupported historical strategy: {entry.strategy}")
@@ -231,6 +323,18 @@ async def build_historical_corpus_distribution(
     readiness = distribution_transition_readiness(
         policy,
         corpus.entry_days_by_strategy(),
+    )
+    dataset_ids_by_strategy = {
+        strategy: tuple(
+            entry.dataset_id
+            for entry in corpus.entries
+            if entry.strategy == strategy
+        )
+        for strategy in policy.required_strategies
+    }
+    selection_coverage = _selection_coverage(
+        provenance_by_id,
+        entries_by_strategy=dataset_ids_by_strategy,
     )
 
     results_by_strategy = {
@@ -264,6 +368,7 @@ async def build_historical_corpus_distribution(
         "reference_targets_used_as_thresholds": False,
         "capital_usdt": capital,
         "readiness": asdict(readiness),
+        "selection_provenance_coverage": selection_coverage,
         "strategies": summaries,
         "cases": cases,
     }
