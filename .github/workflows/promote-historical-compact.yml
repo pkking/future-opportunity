@@ -22,13 +22,11 @@ jobs:
   promote:
     name: Validate artifact and open corpus PR
     runs-on: ubuntu-latest
-    # Push-trigger fallback uses one newly prepared, unpinned compact artifact
-    # to prove the complete promotion path through reviewable PR creation.
-    # Manifest JSON formatting is intentionally non-semantic; canonical evidence
-    # files remain byte-sensitive and checksum-gated.
+    # Push-trigger fallback replays an already-pinned fixture as an idempotent
+    # self-test. Real promotions are explicit workflow_dispatch executions.
     env:
-      SOURCE_RUN_ID: ${{ inputs.source_run_id || '37432822497' }}
-      COMPACT_ARTIFACT_NAME: ${{ inputs.compact_artifact_name || 'okx-btc-funding-compact-2026-09-03' }}
+      SOURCE_RUN_ID: ${{ inputs.source_run_id || '37327493270' }}
+      COMPACT_ARTIFACT_NAME: ${{ inputs.compact_artifact_name || 'okx-btc-funding-compact-2026-09-02' }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
@@ -104,7 +102,7 @@ jobs:
           cp artifacts/historical-smoke/evidence.json             artifacts/historical-promotion/historical-smoke-evidence.json
 
       - id: pr
-        name: Create reviewable corpus promotion PR
+        name: Create review branch and PR or handoff
         if: steps.promote.outputs.changed == 'true'
         shell: bash
         run: |
@@ -113,6 +111,7 @@ jobs:
           strategy="${{ steps.promote.outputs.strategy }}"
           market_date="${{ steps.promote.outputs.entry_market_date }}"
           branch="historical-corpus/${dataset_id}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          title="test: promote historical ${strategy} ${market_date}"
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -122,30 +121,38 @@ jobs:
             echo "Promotion reported changes but git has no staged diff" >&2
             exit 1
           }
-          git commit -m "test: promote historical ${strategy} ${market_date}"
+          git commit -m "${title}"
           git push --set-upstream origin "${branch}"
 
-          cat > artifacts/historical-promotion/pr-body.md <<EOF
-          Promotes one validated compact historical fixture into the versioned corpus.
+          {
+            printf '%s\n'               "Promotes one validated compact historical fixture into the versioned corpus."               ""               "- Dataset: ${dataset_id}"               "- Strategy: ${strategy}"               "- Entry market date: ${market_date}"               "- Source workflow run: ${SOURCE_RUN_ID}"               "- Compact artifact: ${COMPACT_ARTIFACT_NAME}"               "- Compact artifact ID: ${{ steps.source.outputs.compact_artifact_id }}"               "- Compact artifact digest: ${{ steps.source.outputs.compact_artifact_digest }}"               "- Parent preparation artifact ID: ${{ steps.source.outputs.parent_artifact_id }}"               "- Parent preparation digest: ${{ steps.source.outputs.parent_artifact_digest }}"               ""               "The promotion workflow validated manifest provenance, canonical checksums,"               "corpus identity constraints, offline replay semantics, and historical smoke."               "Normal repository CI and Historical Backtest Smoke remain required before merge."
+          } > artifacts/historical-promotion/pr-body.md
 
-          - Dataset: `${dataset_id}`
-          - Strategy: `${strategy}`
-          - Entry market date: `${market_date}`
-          - Source workflow run: `${SOURCE_RUN_ID}`
-          - Compact artifact: `${COMPACT_ARTIFACT_NAME}`
-          - Compact artifact ID: `${{ steps.source.outputs.compact_artifact_id }}`
-          - Compact artifact digest: `${{ steps.source.outputs.compact_artifact_digest }}`
-          - Parent preparation artifact ID: `${{ steps.source.outputs.parent_artifact_id }}`
-          - Parent preparation digest: `${{ steps.source.outputs.parent_artifact_digest }}`
+          set +e
+          pr_url="$(gh pr create             --base main             --head "${branch}"             --title "${title}"             --body-file artifacts/historical-promotion/pr-body.md             2>artifacts/historical-promotion/pr-create-error.txt)"
+          pr_exit=$?
+          set -e
 
-          The promotion workflow validated manifest provenance, canonical checksums,
-          corpus identity constraints, offline replay semantics, and historical smoke
-          before creating this PR. Normal repository CI and Historical Backtest Smoke
-          remain required before merge.
-          EOF
-
-          pr_url="$(gh pr create             --base main             --head "${branch}"             --title "test: promote historical ${strategy} ${market_date}"             --body-file artifacts/historical-promotion/pr-body.md)"
-          echo "url=${pr_url}" >> "${GITHUB_OUTPUT}"
+          echo "branch=${branch}" >> "${GITHUB_OUTPUT}"
+          if [ "${pr_exit}" -eq 0 ]; then
+            echo "status=created" >> "${GITHUB_OUTPUT}"
+            echo "url=${pr_url}" >> "${GITHUB_OUTPUT}"
+          elif grep -Fq             "GitHub Actions is not permitted to create or approve pull requests"             artifacts/historical-promotion/pr-create-error.txt; then
+            jq -n               --arg status "handoff_required"               --arg reason "repository_policy_blocks_actions_pr_creation"               --arg branch "${branch}"               --arg title "${title}"               --arg body_file "artifacts/historical-promotion/pr-body.md"               --arg source_run_id "${SOURCE_RUN_ID}"               --arg compact_artifact_name "${COMPACT_ARTIFACT_NAME}"               '{
+                status: $status,
+                reason: $reason,
+                branch: $branch,
+                title: $title,
+                body_file: $body_file,
+                source_run_id: $source_run_id,
+                compact_artifact_name: $compact_artifact_name
+              }'               > artifacts/historical-promotion/pr-handoff.json
+            echo "status=handoff_required" >> "${GITHUB_OUTPUT}"
+            echo "Repository policy blocks Actions-created PRs; branch is ready for review handoff."
+          else
+            cat artifacts/historical-promotion/pr-create-error.txt >&2
+            exit "${pr_exit}"
+          fi
 
       - name: Record no-op promotion
         if: steps.promote.outputs.changed == 'false'
