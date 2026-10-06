@@ -185,9 +185,18 @@ Promotion must verify:
 - dataset ID, strategy/date identity, fixture path, and canonical file content
   cannot collide or drift silently.
 
-Promotion creates a pull request rather than committing directly to `main`.
-The PR must run normal CI and Historical Backtest Smoke. Automatic merge is not
-part of the promotion contract.
+Promotion never commits directly to `main`. It pushes a dedicated review
+branch after offline validation. If repository policy permits Actions-created
+pull requests, the workflow opens the PR. If the repository blocks
+`GITHUB_TOKEN` from creating PRs, the workflow must emit machine-readable
+`pr-handoff.json` with the exact branch/title/source evidence and succeed as a
+review-handoff state rather than misclassifying the validated corpus data as a
+failure. A connected GitHub integration or operator may then open the PR from
+that exact branch.
+
+Whether opened automatically or via handoff, the PR must run normal CI and
+Historical Backtest Smoke. Automatic merge is not part of the promotion
+contract.
 
 Idempotent re-promotion is allowed only for the same corpus fact. Manifest JSON
 formatting differences are ignored after structural parsing, while canonical
