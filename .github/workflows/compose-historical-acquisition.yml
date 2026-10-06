@@ -67,7 +67,7 @@ jobs:
 
           if [ -z "${FUNDING_SAMPLE_RUN_ID}" ] && [ -z "${FUNDING_SAMPLE_ARTIFACT_NAME}" ]; then
             printf '%s\n' '{"funding_sample":null}' > "${work}/funding-source.json"
-            echo "sample_path=" >> "${GITHUB_OUTPUT}"
+            echo "selection_path=" >> "${GITHUB_OUTPUT}"
             exit 0
           fi
 
@@ -116,6 +116,15 @@ jobs:
           )
           test "${#samples[@]}" = "1"
 
+          selection="${work}/funding-selection-provenance.json"
+          uv run python scripts/build_historical_selection_provenance.py \
+            "${samples[0]}" \
+            --source-workflow-run "${FUNDING_SAMPLE_RUN_ID}" \
+            --artifact-name "${FUNDING_SAMPLE_ARTIFACT_NAME}" \
+            --artifact-id "${artifact_id}" \
+            --artifact-digest "${digest}" \
+            --output "${selection}"
+
           jq -n \
             --arg run "${FUNDING_SAMPLE_RUN_ID}" \
             --arg name "${FUNDING_SAMPLE_ARTIFACT_NAME}" \
@@ -128,10 +137,13 @@ jobs:
                 artifact_name: $name,
                 artifact_id: $artifact_id,
                 artifact_digest: $digest,
-                sample_path: $sample
+                sample_path: $sample,
+                selection_provenance_path: $selection
               }
-            }' > "${work}/funding-source.json"
-          echo "sample_path=${samples[0]}" >> "${GITHUB_OUTPUT}"
+            }' \
+            --arg selection "${selection}" \
+            > "${work}/funding-source.json"
+          echo "selection_path=${selection}" >> "${GITHUB_OUTPUT}"
 
       - id: cash_source
         name: Verify optional exact Cash case-plan artifact
@@ -229,9 +241,11 @@ jobs:
             )
           fi
 
-          funding_sample="${{ steps.funding_source.outputs.sample_path }}"
-          if [ -n "${funding_sample}" ]; then
-            args+=(--funding-sample "${funding_sample}")
+          funding_selection="${{ steps.funding_source.outputs.selection_path }}"
+          if [ -n "${funding_selection}" ]; then
+            args+=(
+              --funding-selection-provenance "${funding_selection}"
+            )
           fi
 
           cash_plan="${{ steps.cash_source.outputs.cash_plan_path }}"
