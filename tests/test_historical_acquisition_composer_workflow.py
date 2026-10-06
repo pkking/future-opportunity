@@ -33,3 +33,30 @@ def test_acquisition_composer_verifies_exact_successful_case_plan_artifact() -> 
     assert "gh run download" in text
     assert "37477835622" in text
     assert "cash-acquisition-case-plan-37477835622" in text
+
+
+def test_acquisition_composer_verifies_exact_successful_sampling_artifact() -> None:
+    text = COMPOSER.read_text()
+
+    assert "FUNDING_SAMPLE_RUN_ID" in text
+    assert "FUNDING_SAMPLE_ARTIFACT_NAME" in text
+    assert "37482498880" in text
+    assert "historical-market-day-sample-37482498880" in text
+    assert "sample.json" in text
+    assert "--funding-sample" in text
+
+
+def test_push_selftest_defaults_do_not_leak_into_manual_dispatch_inputs() -> None:
+    text = COMPOSER.read_text()
+
+    assert "github.event_name == 'push'" in text
+    assert "FUNDING_START_DATE: ${{ inputs.funding_start_date }}" in text
+    assert "FUNDING_END_DATE: ${{ inputs.funding_end_date }}" in text
+    assert (
+        "github.event_name == 'push' && '37482498880'"
+        in text
+    )
+    assert (
+        "github.event_name == 'push' && '37477835622'"
+        in text
+    )
