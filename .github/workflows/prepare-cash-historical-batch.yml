@@ -23,7 +23,7 @@ jobs:
       - id: resolve
         name: Validate case matrix shape
         env:
-          CASES_JSON: ${{ inputs.cases_json || '[{"entry_at":"2026-06-02T00:15:00+00:00","exit_at":"2026-06-25T00:15:00+00:00","future_id":"BTC-USDT-260626","expiry_at":"2026-06-26T08:00:00+00:00"}]' }}
+          CASES_JSON: ${{ inputs.cases_json || '[{"entry_at":"2026-06-03T00:15:00+00:00","exit_at":"2026-06-25T00:15:00+00:00","future_id":"BTC-USDT-260626","expiry_at":"2026-06-26T08:00:00+00:00"}]' }}
         run: |
           python - <<'PY'
           import json
