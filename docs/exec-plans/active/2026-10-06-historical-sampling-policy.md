@@ -1,6 +1,6 @@
 # 2026-10-06-historical-sampling-policy: Reproducible unbiased market-day sampling for Stage-2 evidence
 
-Status: PLANNING
+Status: COMPLETED
 Owner: agent
 Started: 2026-10-06
 Last checkpoint: 2026-10-06
@@ -108,43 +108,43 @@ Rationale:
 
 ## Acceptance criteria
 
-- [ ] Add versioned sampling request/result model.
-- [ ] Implement deterministic systematic-stratified sampler.
-- [ ] Same request is byte-for-byte deterministic.
-- [ ] Different strategy or seed changes hash domain.
-- [ ] Full-population request returns every day exactly once.
-- [ ] Invalid dates/sample counts fail closed.
-- [ ] Tests prove sampler never depends on market/profitability inputs.
-- [ ] CLI emits machine-readable sampling evidence.
-- [ ] Add read-only workflow_dispatch sampling workflow.
-- [ ] Workflow permissions remain contents:read only.
-- [ ] Workflow uploads sample request/result evidence only.
-- [ ] Add acquisition-composition bridge from a reviewed sample artifact for
+- [x] Add versioned sampling request/result model.
+- [x] Implement deterministic systematic-stratified sampler.
+- [x] Same request is byte-for-byte deterministic.
+- [x] Different strategy or seed changes hash domain.
+- [x] Full-population request returns every day exactly once.
+- [x] Invalid dates/sample counts fail closed.
+- [x] Tests prove sampler never depends on market/profitability inputs.
+- [x] CLI emits machine-readable sampling evidence.
+- [x] Add read-only workflow_dispatch sampling workflow.
+- [x] Workflow permissions remain contents:read only.
+- [x] Workflow uploads sample request/result evidence only.
+- [x] Add acquisition-composition bridge from a reviewed sample artifact for
       Funding dates without silently replacing unavailable dates.
-- [ ] README/testing docs define pre-registration and exclusion semantics.
-- [ ] Final CI + workflow self-test green.
-- [ ] Archive after verification.
+- [x] README/testing docs define pre-registration and exclusion semantics.
+- [x] Final CI + workflow self-test green.
+- [x] Archive after verification.
 
 ## Implementation slices
 
-- [ ] 1. Sampling domain model and deterministic algorithm.
-- [ ] 2. Unit/property-style boundary tests.
-- [ ] 3. Sampling CLI + evidence schema.
-- [ ] 4. Read-only Actions workflow and self-test.
-- [ ] 5. Reviewed-sample -> Funding acquisition composition bridge.
-- [ ] 6. Documentation and final verification.
-- [ ] 7. Archive.
+- [x] 1. Sampling domain model and deterministic algorithm.
+- [x] 2. Unit/property-style boundary tests.
+- [x] 3. Sampling CLI + evidence schema.
+- [x] 4. Read-only Actions workflow and self-test.
+- [x] 5. Reviewed-sample -> Funding acquisition composition bridge.
+- [x] 6. Documentation and final verification.
+- [x] 7. Archive.
 
 ## Verification matrix
 
 | Gate | Evidence | Status |
 |---|---|---|
-| Static/architecture | normal CI | pending |
-| Code | deterministic sampling + boundaries | pending |
-| API | no regression | pending |
-| Reference E2E | unchanged | pending |
-| Workflow | request -> sample evidence | pending |
-| Safety boundary | no market/backtest/profitability dependency or mutation | pending |
+| Static/architecture | normal CI | passed 37483945384 |
+| Code | deterministic sampling + boundaries | passed 37483945384 |
+| API | no regression | passed 37483945384 |
+| Reference E2E | unchanged | passed 37483945384 |
+| Workflow | request -> sample evidence | passed 37482498880; artifact 11421537670 |
+| Safety boundary | no market/backtest/profitability dependency or mutation | workflow contract + pure sampler signature tests passed |
 
 ## Decision gates
 
@@ -170,13 +170,44 @@ None.
 
 ## Resume from here
 
-Implement the pure sampler with no market-data imports. Persist enough
-per-stratum evidence to reconstruct every selected date from request facts
-alone, then add deterministic tests before any workflow integration.
+Completed. Future Stage-2-oriented corpus growth should start from a reviewed,
+pre-registered sampling artifact. Missing source data remains an explicit
+exclusion; the draw is not mutated after outcomes are observed.
 
 ## Completion
 
-Final implementation commit:
-CI run:
-Sampling workflow evidence:
-Remaining unassessed items:
+Final implementation/documentation commit: 5a6b055a8770d4d2d37add2c23c8f677d16642df
+CI run: 37483945384 passed all required gates
+Sampling workflow evidence: run 37482498880; artifact 11421537670; SHA-256 bdaab43d0be70a2fc8b43059d39f5341a2405bf9a0aff00306b90e92e24b8fa2
+Sampled acquisition bridge evidence: composer run 37483512784; artifact 11422581630; SHA-256 05ba4d4c322ee86343cd3d01fb676d55e9d3c5c3b6acf8780c0267e5bc9a9b38
+Remaining unassessed items: market-wide opportunity arrival remains unassessed until a sufficiently broad pre-registered corpus is pinned; Stage-2 thresholds remain a separate ADR/human decision
+
+## Evidence log
+
+- 2026-10-06: sampler v1 implemented as deterministic systematic strata with
+  SHA-256-derived within-stratum offsets. Golden request
+  Funding/2026-01-01..2026-01-31/n=5/seed=stage2-baseline-v1 selects
+  2026-01-01, 2026-01-08, 2026-01-13, 2026-01-22 and 2026-01-29.
+- 2026-10-06: tests lock byte-for-byte determinism, strategy/seed hash-domain
+  separation, full-population behavior, invalid inputs, non-overlapping strata
+  and the sampler's absence of market/profitability inputs.
+- 2026-10-06: sampling evidence parser recomputes the full draw from the embedded
+  request and rejects selected-date/hash/schema tampering.
+- 2026-10-06: read-only workflow run 37482498880 passed and uploaded artifact
+  11421537670 with digest
+  bdaab43d0be70a2fc8b43059d39f5341a2405bf9a0aff00306b90e92e24b8fa2.
+- 2026-10-06: acquisition Funding schema now accepts either a contiguous
+  start/end range or explicit chronological market_dates, never both. Existing
+  range workflows remain compatible.
+- 2026-10-06: acquisition composer independently verifies the exact sampling
+  run/artifact and deterministically replays the sample before converting a
+  funding-carry sample to explicit market_dates. Self-test run 37483512784
+  produced the five sampled Funding dates plus the reviewed 2026-06-03 Cash
+  case without filling date gaps; artifact 11422581630.
+- 2026-10-06: composer push defaults were scoped to push events so optional
+  manual workflow_dispatch inputs no longer inherit self-test Funding/Cash data.
+- 2026-10-06: README/testing contracts now define pre-registration,
+  no-replacement exclusions, explicit-date acquisition, and the continued
+  separation between composition and explicit acquisition dispatch.
+- 2026-10-06: final CI run 37483945384 passed Static, Code-level, API contract
+  and E2E strategy acceptance gates.
