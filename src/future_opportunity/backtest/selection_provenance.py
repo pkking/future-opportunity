@@ -207,6 +207,26 @@ def parse_historical_selection_provenance(
     )
 
 
+def validate_selection_provenance_for_market_date(
+    raw: Any,
+    *,
+    strategy: str,
+    market_date: str,
+) -> HistoricalSelectionProvenance:
+    provenance = parse_historical_selection_provenance(raw)
+    if provenance.strategy != strategy:
+        raise ValueError(
+            "historical selection provenance strategy mismatch: "
+            f"{provenance.strategy} != {strategy}"
+        )
+    if not provenance.contains_market_date(market_date):
+        raise ValueError(
+            "historical market date is outside selection provenance: "
+            f"{market_date}"
+        )
+    return provenance
+
+
 def historical_selection_provenance_payload(
     provenance: HistoricalSelectionProvenance,
 ) -> dict[str, object]:
