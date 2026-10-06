@@ -1,6 +1,6 @@
 # 2026-10-06-historical-corpus-campaign: Batch historical corpus promotion toward Stage 2
 
-Status: IMPLEMENTING
+Status: VERIFYING
 Owner: agent
 Started: 2026-10-06
 Last checkpoint: 2026-10-06
@@ -86,10 +86,10 @@ the ADR-0007 minimum of 30 without changing Stage-1 acceptance semantics.
 - [x] Add workflow_dispatch batch promotion workflow.
 - [x] Workflow verifies exact run/artifact/parent digests for every item.
 - [x] Workflow limits batch size to a bounded number.
-- [ ] Workflow produces one review branch and one PR/handoff for effective changes.
+- [x] Workflow produces one review branch and one PR/handoff for effective changes.
 - [x] Campaign evidence includes per-item status and resulting readiness counts.
-- [ ] Documentation explains prepare-many -> promote-campaign -> review -> merge.
-- [ ] Final CI green.
+- [x] Documentation explains prepare-many -> promote-campaign -> review -> merge.
+- [x] Final CI green.
 
 ## Implementation slices
 
@@ -97,20 +97,20 @@ the ADR-0007 minimum of 30 without changing Stage-1 acceptance semantics.
 - [x] 2. Atomic local batch staging + rollback.
 - [x] 3. Campaign evidence/readiness output.
 - [x] 4. Exact multi-artifact workflow acquisition/verification.
-- [ ] 5. Single review branch + PR/handoff.
-- [ ] 6. Documentation and final verification.
+- [x] 5. Single review branch + PR/handoff.
+- [x] 6. Documentation and final verification.
 - [ ] 7. Archive.
 
 ## Verification matrix
 
 | Scope | Expected evidence | Status |
 |---|---|---|
-| Static | ruff + architecture/agent contract | pending |
-| Code | campaign parsing/atomicity/idempotency tests | pending |
-| API | no regression | pending |
-| Reference E2E | unchanged deterministic targets green | pending |
-| Historical smoke | existing + staged campaign corpus green | pending |
-| Campaign workflow | multiple exact artifacts -> one review proposal | pending |
+| Static | ruff + architecture/agent contract | passed PR CI 37435522881 |
+| Code | campaign parsing/atomicity/idempotency tests | passed PR CI 37435522881 |
+| API | no regression | passed PR CI 37435522881 |
+| Reference E2E | unchanged deterministic targets green | passed PR CI 37435522881 |
+| Historical smoke | existing + staged campaign corpus green | passed PR run 37435522957 |
+| Campaign workflow | multiple exact artifacts -> one review proposal | passed run 37435411557; PR #3 open |
 
 ## Decision gates
 
@@ -142,21 +142,35 @@ separate explicit decisions.
   2026-06-03 preparation runs were started as the first real changed mixed
   campaign inputs.
 
+- 2026-10-06: changed mixed campaign run 37435411557 completed successfully. Both
+  exact source artifact pairs were verified, the corpus was atomically staged,
+  the offline validation passed, and one review branch was pushed. Artifact
+  11398725802 contains campaign acquisition and promotion evidence.
+- 2026-10-06: GitHub integration created review PR #3
+  https://github.com/pkking/future-opportunity/pull/3 from that exact branch.
+  The branch contains Funding Carry 2026-09-03 and Cash-and-Carry 2026-06-03;
+  its readiness is 3/30 per strategy (3/90 preferred). Main remains at 2/30
+  per strategy until review/merge.
+- 2026-10-06: PR #3 head 0aa69001c9a940417ed379e49d49824171e77149
+  passed CI 37435522881 (Static, Code, API, Reference E2E) and Historical
+  Smoke 37435522957. No automated merge occurred.
+- 2026-10-06: README.md and docs/agents/testing.md document campaign input,
+  atomic rollback, evidence boundaries, PR handoff, and manual merge.
+
 ## Deviations and discoveries
 
 None.
 
 ## Resume from here
 
-Wait for Funding 2026-09-04 preparation run 37434976457 and Cash 2026-06-03
-preparation run 37435117479. Build one explicit two-item campaign from the
-resulting compact artifacts and verify the changed path: exact multi-artifact
-acquisition -> atomic stage -> resulting 3/3+ readiness -> one review branch ->
-one PR/handoff -> PR CI + Historical Backtest Smoke.
+The campaign implementation and real two-item review path are verified.
+Archive after the final plan-only commit clears CI. PR #3 remains open for
+human review; it is intentionally not auto-merged. Main corpus is still 2+2
+until that review is completed.
 
 ## Completion
 
-Final implementation commit:
-CI run:
-Campaign workflow evidence:
-Remaining unassessed items:
+Final implementation commit: 3f65f5859bbcc7629bb99206178847f00391bf96
+CI run: main CI 37435411518; PR CI 37435522881; PR Historical Smoke 37435522957
+Campaign workflow evidence: run 37435411557 / artifact 11398725802 / PR #3
+Remaining unassessed items: PR #3 human review/merge; Stage-2 distribution targets intentionally not approved
