@@ -1,6 +1,6 @@
 # 2026-10-06-historical-artifact-promotion: Promote prepared historical artifacts into corpus
 
-Status: PLANNING
+Status: IMPLEMENTING
 Owner: agent
 Started: 2026-10-06
 Last checkpoint: 2026-10-06
@@ -66,25 +66,25 @@ The workflow MUST NOT push directly to main.
 
 ## Acceptance criteria
 
-- [ ] Add a deterministic promotion application/script for a local compact artifact directory.
-- [ ] Promotion validates manifest provenance before staging.
-- [ ] Promotion updates corpus-index.json in stable order without duplicate facts.
-- [ ] Exact re-promotion is idempotent.
-- [ ] Divergent existing fixture fails closed.
-- [ ] Add code tests for Funding and Cash promotion paths.
-- [ ] Add workflow_dispatch promotion workflow that downloads an exact artifact from an exact run.
-- [ ] Workflow verifies source run/artifact identity against manifest provenance.
-- [ ] Workflow creates a review branch/PR and never writes main directly.
-- [ ] Promotion PR runs normal CI + Historical Backtest Smoke.
+- [x] Add a deterministic promotion application/script for a local compact artifact directory.
+- [x] Promotion validates manifest provenance before staging.
+- [x] Promotion updates corpus-index.json in stable order without duplicate facts.
+- [x] Exact re-promotion is idempotent.
+- [x] Divergent existing fixture fails closed.
+- [x] Add code tests for Funding and Cash promotion paths.
+- [x] Add workflow_dispatch promotion workflow that downloads an exact artifact from an exact run.
+- [x] Workflow verifies source run/artifact identity against manifest provenance.
+- [x] Workflow creates a review branch/PR and never writes main directly.
+- [x] Promotion PR runs normal CI + Historical Backtest Smoke.
 - [ ] Documentation explains prepare -> promote -> review -> merge.
 - [ ] Final CI green.
 
 ## Implementation slices
 
-- [ ] 1. Define promotion result/errors and local staging algorithm.
-- [ ] 2. Add deterministic corpus-index update + idempotency tests.
-- [ ] 3. Add exact artifact/run provenance verification.
-- [ ] 4. Add GitHub Actions promotion workflow with PR creation.
+- [x] 1. Define promotion result/errors and local staging algorithm.
+- [x] 2. Add deterministic corpus-index update + idempotency tests.
+- [x] 3. Add exact artifact/run provenance verification.
+- [x] 4. Add GitHub Actions promotion workflow with PR creation.
 - [ ] 5. Document operator workflow and recovery.
 - [ ] 6. Verify complete CI and archive.
 
@@ -109,6 +109,27 @@ A future decision would be required before automatic promotion or automatic merg
 
 - 2026-10-06: previous corpus-expansion plan completed at 2 pinned days per
   strategy; final CI run 37431649316 passed.
+- 2026-10-06: local promotion core implemented for both Funding and Cash compact
+  fixtures. It validates commit-ready manifests, exact normalized file sets,
+  safe dataset IDs, existing corpus validity, duplicate identities, stable index
+  ordering, and full offline corpus replay before leaving staged changes.
+- 2026-10-06: promotion tests cover Funding/Cash staging, exact re-promotion,
+  manifest-format-only idempotency, strategy/date collision, provenance-run
+  mismatch, extra files, and divergent canonical content. CI 37432920903 passed
+  after the promotion identity semantics update.
+- 2026-10-06: Actions artifact API was verified to expose digest values. The
+  promotion workflow now binds the selected compact artifact to an exact source
+  run and independently verifies the parent preparation artifact ID + SHA-256
+  against derived_from_artifact.
+- 2026-10-06: first no-op workflow run 37432507284 correctly exposed that the
+  repository's manually reconstructed Funding 2026-09-02 manifest was not the
+  authoritative compact artifact manifest. The pinned manifest was repaired to
+  the original commit-ready artifact provenance; CI 37432759685 and Historical
+  Smoke 37432759626 passed.
+- 2026-10-06: a second no-op workflow run 37432817169 exposed that bytewise JSON
+  comparison treated formatting as data drift. Idempotency was refined to
+  structural JSON equality for manifest plus bytewise equality for canonical
+  evidence files. This does not weaken checksum validation.
 
 ## Deviations and discoveries
 
@@ -116,9 +137,12 @@ None.
 
 ## Resume from here
 
-Inspect compact Funding/Cash manifest common fields and corpus validator APIs.
-Implement a local deterministic promotion function that stages one verified
-compact directory into a repository checkout and updates corpus-index.json.
+Wait for Funding 2026-09-03 preparation run 37432822497 to produce a new
+commit-ready compact artifact. Point the promotion workflow push self-test at
+that exact run/artifact and verify the full changed path: download -> strict
+provenance validation -> stage -> offline replay -> review branch -> PR. Then
+verify the PR-triggered normal CI and Historical Backtest Smoke before
+documenting/archiving this plan.
 
 ## Completion
 
