@@ -39,6 +39,10 @@ from future_opportunity.backtest.funding_compact import (
     derive_funding_compact_fixture,
 )
 from future_opportunity.backtest.model import HistoricalInstrumentMetadata
+from future_opportunity.backtest.selection_provenance import (
+    historical_selection_provenance_payload,
+    validate_selection_provenance_for_market_date,
+)
 
 
 BASE_URL = "https://www.okx.com"
@@ -53,6 +57,10 @@ HISTORY_DATE = os.getenv("HISTORY_DATE", "2026-09-01")
 CADENCE_SECONDS = int(os.getenv("HISTORY_CADENCE_SECONDS", "900"))
 MAX_STALENESS_SECONDS = int(os.getenv("HISTORY_MAX_STALENESS_SECONDS", "5"))
 MAX_RAW_MB = int(os.getenv("HISTORY_MAX_RAW_MB", "600"))
+SELECTION_PROVENANCE_JSON = os.getenv(
+    "HISTORICAL_SELECTION_PROVENANCE_JSON",
+    "",
+).strip()
 
 
 def _request_json(
@@ -242,6 +250,14 @@ def _source_view(source, raw_sha256: str, downloaded_bytes: int) -> dict[str, An
 
 
 def main() -> None:
+    selection_provenance = None
+    if SELECTION_PROVENANCE_JSON:
+        selection_provenance = validate_selection_provenance_for_market_date(
+            json.loads(SELECTION_PROVENANCE_JSON),
+            strategy="funding-carry",
+            market_date=HISTORY_DATE,
+        )
+
     day = datetime.fromisoformat(HISTORY_DATE).replace(tzinfo=UTC)
     day_end = day + timedelta(days=1)
     sample_end = day_end - timedelta(seconds=CADENCE_SECONDS)
@@ -484,6 +500,10 @@ def main() -> None:
             ),
         },
     }
+    if selection_provenance is not None:
+        manifest["selection_provenance"] = (
+            historical_selection_provenance_payload(selection_provenance)
+        )
     (OUTPUT / "manifest.json").write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n"
     )
