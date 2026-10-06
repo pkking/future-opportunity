@@ -548,6 +548,39 @@ Verified example: planner run `37477835622` consumed discovery run
 `37434982233` and produced the explicit 2026-06-03 BTC-USDT-260626 case with
 no exclusions. Evidence artifact: `11420145596`.
 
+To combine a reviewed Cash case plan with an optional Funding date range without
+copying JSON by hand, use the read-only composer:
+
+```text
+Actions -> Compose Historical Acquisition Manifest
+
+acquisition_id                 = explicit acquisition identifier
+planner_campaign_prefix        = explicit future planner prefix
+funding_start_date/end_date    = optional explicit inclusive UTC range
+cash_case_plan_run_id          = optional exact successful planner run
+cash_case_plan_artifact_name   = optional exact planner artifact
+```
+
+The composer verifies the exact Cash case-plan run/artifact, validates its
+schema/evidence type, strips reporting-only fields such as
+`entry_market_date`, combines it with the optional Funding range, and sends
+the result back through the existing acquisition manifest parser. It uploads
+an acquisition-ready JSON artifact only.
+
+It does **not** dispatch `Acquire Historical Campaign`. Acquisition remains a
+separate explicit operator action after reviewing the composed manifest.
+
+Verified composer self-test:
+
+```text
+run:      37479406303
+artifact: historical-acquisition-composer-37479406303
+id:       11420626824
+
+Funding: 2026-09-04
+Cash:    2026-06-03 / BTC-USDT-260626
+```
+
 A prepared artifact does **not** count toward Stage-2 readiness. A day counts
 only after its compact fixture is committed under
 `tests/fixtures/historical/`, added to `corpus-index.json`, and accepted by
