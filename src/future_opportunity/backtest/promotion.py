@@ -68,6 +68,12 @@ def promote_historical_compact_fixture(
     _validate_source_fixture(source_root, entry)
 
     raw_index = _load_index(index_path)
+    if raw_index["entries"]:
+        load_historical_corpus(
+            index_path=index_path,
+            fixture_root=fixture_root,
+            required_strategies=required_strategies,
+        )
     existing_entries = tuple(
         _entry_from_index(raw_entry, position)
         for position, raw_entry in enumerate(raw_index["entries"])
