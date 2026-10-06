@@ -97,9 +97,10 @@ def acquisition_cash_cases_from_plan(
         raise TypeError("Cash case-plan cash_cases must be an array")
     if not isinstance(excluded, list):
         raise TypeError("Cash case-plan excluded must be an array")
-    if not isinstance(source_reports, list) or not all(
-        isinstance(item, str) and item
-        for item in source_reports
+    if (
+        not isinstance(source_reports, list)
+        or not source_reports
+        or not all(isinstance(item, str) and item for item in source_reports)
     ):
         raise ValueError("Cash case-plan source_reports must be non-empty strings")
     if not isinstance(note, str) or not note:
@@ -108,6 +109,33 @@ def acquisition_cash_cases_from_plan(
         raise ValueError("Cash case-plan selected_count does not match cash_cases")
     if type(excluded_count) is not int or excluded_count != len(excluded):
         raise ValueError("Cash case-plan excluded_count does not match excluded")
+
+    for position, item in enumerate(excluded):
+        if not isinstance(item, dict) or set(item) != {
+            "market_date",
+            "reason",
+            "discovered_future_id",
+        }:
+            raise ValueError(
+                f"Cash case-plan excluded {position} fields differ from schema"
+            )
+        _required_string(
+            item,
+            "market_date",
+            f"Cash case-plan excluded {position}",
+        )
+        _required_string(
+            item,
+            "reason",
+            f"Cash case-plan excluded {position}",
+        )
+        discovered = item.get("discovered_future_id")
+        if discovered is not None and (
+            not isinstance(discovered, str) or not discovered
+        ):
+            raise ValueError(
+                f"Cash case-plan excluded {position} discovered_future_id invalid"
+            )
 
     result: list[dict[str, str]] = []
     seen_market_dates: set[str] = set()
