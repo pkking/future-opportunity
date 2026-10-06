@@ -38,3 +38,12 @@ def test_acquisition_workflow_propagates_funding_selection_provenance() -> None:
     assert "steps.resolve.outputs.funding_selection_provenance" in text
     assert "selection_provenance_json:" in text
     assert "needs.resolve.outputs.funding_selection_provenance" in text
+
+
+def test_acquisition_workflow_propagates_cash_selection_provenance() -> None:
+    text = ACQUIRE.read_text()
+
+    assert "cash_selection_provenance:" in text
+    assert "steps.resolve.outputs.cash_selection_provenance" in text
+    assert "selection_provenance_json:" in text
+    assert "needs.resolve.outputs.cash_selection_provenance" in text
