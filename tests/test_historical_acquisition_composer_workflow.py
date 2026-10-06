@@ -74,3 +74,11 @@ def test_acquisition_composer_builds_and_consumes_selection_provenance() -> None
     assert "funding-selection-provenance.json" in text
     assert "--funding-selection-provenance" in text
     assert "selection_provenance_path" in text
+
+
+def test_acquisition_composer_selftest_uses_sampled_cash_case_plan_provenance() -> None:
+    text = WORKFLOW.read_text()
+
+    assert "37490008931" in text
+    assert "cash-acquisition-case-plan-37490008931" in text
+    assert "--cash-case-plan" in text
