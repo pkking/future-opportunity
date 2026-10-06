@@ -1,6 +1,6 @@
 # 2026-10-05-historical-corpus-expansion: Expand pinned historical corpus
 
-Status: VERIFYING
+Status: COMPLETED
 Owner: agent
 Started: 2026-10-05
 Last checkpoint: 2026-10-05
@@ -64,8 +64,8 @@ without committing raw exchange archives, and without weakening provenance.
 - [x] Cash-and-Carry preparation accepts explicit entry/exit dates and future ID/spec provenance.
 - [x] Cash batch discovery identifies historical dates/instruments without inventing expired metadata.
 - [x] Add at least one additional pinned real-market day per strategy through the generalized path.
-- [ ] CI/historical smoke remain green.
-- [ ] Docs explain how to add a day and how 30/90 readiness is computed.
+- [x] CI/historical smoke remain green.
+- [x] Docs explain how to add a day and how 30/90 readiness is computed.
 
 ## Implementation slices
 
@@ -73,20 +73,20 @@ without committing raw exchange archives, and without weakening provenance.
 - [x] 2. Generalize Funding Carry single-day preparation.
 - [x] 3. Add Funding date-range/batch workflow.
 - [x] 4. Generalize Cash-and-Carry preparation inputs.
-- [ ] 5. Cash discovery batch implemented; prepare second discovered day.
+- [x] 5. Cash discovery batch implemented; prepare second discovered day.
 - [x] 6. Pin additional days through generalized workflows.
-- [ ] 7. Verify corpus/readiness evidence and document reproduction.
+- [x] 7. Verify corpus/readiness evidence and document reproduction.
 
 ## Verification matrix
 
 | Scope | Expected evidence | Status |
 |---|---|---|
-| Static | ruff + architecture/agent contract | pending |
-| Code | corpus/preparation/duplicate/idempotency tests | pending |
-| API | no regression | pending |
-| Reference E2E | unchanged deterministic targets green | pending |
-| Historical smoke | Stage-1 gate green, readiness count increases only for valid pinned days | pending |
-| Preparation diagnostics | source/checksum/compact derivation evidence | pending |
+| Static | ruff + architecture/agent contract | passed in final CI 37431649316 |
+| Code | corpus/preparation/duplicate/idempotency tests | passed in final CI 37431649316 |
+| API | no regression | passed in final CI 37431649316 |
+| Reference E2E | unchanged deterministic targets green | passed in final CI 37431649316 |
+| Historical smoke | Stage-1 gate green, readiness count increases only for valid pinned days | passed run 37431012300 |
+| Preparation diagnostics | source/checksum/compact derivation evidence | Funding 37327493270; Cash 37327804191 |
 
 ## Decision gates
 
@@ -148,8 +148,13 @@ corpus index, then recompute readiness.
 
 ## Completion
 
-Final commit:
-CI run:
-Historical smoke artifact:
-Pinned day counts:
-Remaining unassessed items:
+Final implementation/docs commit: 4950dab89a9fa94a6e5a6bdc980514a0ae409fc2
+CI run: https://github.com/pkking/future-opportunity/actions/runs/37431649316
+Historical smoke artifact: run 37431012300 (green)
+Pinned day counts: Funding Carry 2; Cash-and-Carry 2
+Remaining unassessed items: Stage-2 distribution thresholds; intentionally deferred by ADR-0007
+
+- 2026-10-06: final documentation commit 4950dab89a9fa94a6e5a6bdc980514a0ae409fc2
+  passed all CI gates in run 37431649316. Static, code-level, API contract, and
+  reference E2E were green. The corpus/readiness tests now derive expectations
+  from the versioned corpus index instead of hard-coding corpus size.
