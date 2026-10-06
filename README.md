@@ -493,10 +493,16 @@ source run/artifact lookup
   -> reject unexpected files/symlinks/identity collisions
   -> stage fixture + deterministic corpus-index update
   -> offline corpus + historical smoke verification
-  -> create review branch + pull request
+  -> create review branch
+  -> create PR when repository policy permits
+     OR emit machine-readable PR handoff
 ```
 
-It never writes directly to `main` and never auto-merges.
+It never writes directly to `main` and never auto-merges. This repository
+currently disables pull-request creation by `GITHUB_TOKEN`. In that case the
+workflow keeps the validated branch and writes `pr-handoff.json`; a connected
+GitHub integration or operator opens the PR from that exact branch without
+changing corpus contents.
 
 Re-running promotion for an already indexed fixture is a no-op only when the
 manifest is structurally identical and all canonical evidence files are
@@ -509,8 +515,8 @@ compact artifact. If the fixture has already landed unchanged, the rerun is
 idempotent. If a previous PR exists but is not merged, review that PR rather
 than creating a second conflicting corpus fact.
 
-A promotion PR must pass the normal repository CI plus
-`Historical Backtest Smoke` before merge.
+A promotion PR—whether opened by the workflow or from its handoff—must pass the
+normal repository CI plus `Historical Backtest Smoke` before merge.
 
 Readiness is computed from distinct `entry_market_date` values in the validated
 versioned corpus, separately for each required strategy:
