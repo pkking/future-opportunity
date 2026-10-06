@@ -571,6 +571,40 @@ control corpus order. One effective campaign produces one review branch and one
 PR or policy-safe PR handoff, reducing review overhead while preserving
 per-market-day evidence.
 
+### Reporting on the entire historical corpus
+
+The Stage-1 statistics report replays **every indexed pinned entry-market
+day** through the same Funding Carry and Cash-and-Carry application workflows:
+
+```bash
+uv run python scripts/report_historical_corpus_distribution.py
+```
+
+Output: `artifacts/historical-smoke/corpus-distribution.json`, also uploaded
+by `Historical Backtest Smoke`. This is additional reporting evidence,
+**not** a return-based acceptance gate.
+
+The key business distinction is the **pinned-case qualification rate**:
+the share of deliberately selected, frozen entry/exit cases that qualify.
+It does **not** measure the market-wide arrival frequency of profitable
+arbitrage opportunities. Every indexed market day contributes exactly one
+frozen case in the current compact corpus.
+
+For each strategy the report includes sample denominator, qualified/rejected
+cases, rejection reasons, per-case expected net return distribution, and
+realized-return distributions only where execution/return evidence is
+assessed. Missing realized returns remain `null`, never zero. Funding Carry
+retains separate lower/upper realized-return bounds; it does not invent an
+exact funding settlement mark. Cash-and-Carry includes only qualified,
+completely assessed closed cases in realized-return percentiles.
+
+P25/P50/P90 use deterministic linear interpolation at sorted index
+`(n - 1) * percentile`. These are **per-case horizon returns**, not
+annualized or directly comparable between different holding periods. With
+zero assessed returns, distributions have zero assessed count and null
+statistics. Stage-2 thresholds remain disabled pending sufficient evidence
+and a separate human-approved ADR.
+
 Readiness is computed from distinct `entry_market_date` values in the validated
 versioned corpus, separately for each required strategy:
 
