@@ -18,11 +18,17 @@ def main() -> None:
     parser.add_argument("--planner-campaign-prefix", required=True)
     parser.add_argument("--funding-start-date")
     parser.add_argument("--funding-end-date")
+    parser.add_argument("--funding-sample", type=Path)
     parser.add_argument("--cash-case-plan", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--max-total-items", type=int, default=31)
     args = parser.parse_args()
 
+    funding_sample = (
+        json.loads(args.funding_sample.read_text())
+        if args.funding_sample is not None
+        else None
+    )
     cash_plan = (
         json.loads(args.cash_case_plan.read_text())
         if args.cash_case_plan is not None
@@ -33,6 +39,7 @@ def main() -> None:
         planner_campaign_prefix=args.planner_campaign_prefix,
         funding_start_date=args.funding_start_date,
         funding_end_date=args.funding_end_date,
+        funding_sample=funding_sample,
         cash_case_plan=cash_plan,
         max_total_items=args.max_total_items,
     )
