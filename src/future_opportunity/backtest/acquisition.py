@@ -130,6 +130,34 @@ def parse_historical_acquisition_manifest(
     )
 
 
+def acquisition_dispatch_payload(
+    manifest: HistoricalAcquisitionManifest,
+) -> dict[str, Any]:
+    """Serialize the exact workflow-dispatch acquisition input schema."""
+    return {
+        "schema_version": manifest.schema_version,
+        "acquisition_id": manifest.acquisition_id,
+        "planner_campaign_prefix": manifest.planner_campaign_prefix,
+        "funding": (
+            {
+                "start_date": manifest.funding.start_date,
+                "end_date": manifest.funding.end_date,
+            }
+            if manifest.funding is not None
+            else None
+        ),
+        "cash_cases": [
+            {
+                "entry_at": case.entry_at,
+                "exit_at": case.exit_at,
+                "future_id": case.future_id,
+                "expiry_at": case.expiry_at,
+            }
+            for case in manifest.cash_cases
+        ],
+    }
+
+
 def acquisition_manifest_payload(
     manifest: HistoricalAcquisitionManifest,
 ) -> dict[str, Any]:
