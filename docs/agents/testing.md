@@ -289,6 +289,33 @@ The planner workflow permissions are limited to `actions: read` and
 push branches, or create PRs. Its output is acquisition-ready `cash_cases`
 plus diagnostics only.
 
+### Historical acquisition composition
+
+Acquisition composition is a read-only bridge between reviewed inputs and an
+explicit acquisition dispatch.
+
+The composer may combine:
+
+- an optional explicit Funding UTC start/end range;
+- an optional exact successful Cash case-plan run + artifact.
+
+Required behavior:
+
+- Funding start/end are supplied together or not at all;
+- at least one effective Funding day or selected Cash case exists;
+- exact Cash case-plan run status is completed/success;
+- exact artifact name resolves once, is unexpired, and exposes an Actions digest;
+- downloaded case-plan schema/evidence type/counts/template are revalidated;
+- reporting-only `entry_market_date` is removed before acquisition;
+- the final JSON is reparsed by the normal acquisition manifest parser and
+  therefore reuses the 31-item cap plus UTC/future/expiry rules;
+- permissions remain `actions: read` + `contents: read`;
+- the composer never dispatches preparation/acquisition, mutates the corpus,
+  pushes branches, creates PRs, or merges.
+
+The composed artifact is review input only. `Acquire Historical Campaign`
+remains a separate explicit operator action.
+
 ### Historical acquisition campaign
 
 Acquisition is an **artifact-producing but corpus-read-only** workflow layer.
