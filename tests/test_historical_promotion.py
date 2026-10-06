@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from future_opportunity.backtest.promotion import (
+    inspect_historical_compact_fixture,
     promote_historical_compact_fixture,
 )
 
@@ -194,3 +195,43 @@ def test_repromotion_tolerates_manifest_json_formatting_only(
 
     assert repeated.status == "already_present"
     assert repeated.changed_paths == ()
+
+
+def test_inspection_verifies_compact_without_changing_corpus(
+    tmp_path: Path,
+) -> None:
+    fixture_root, index = empty_corpus(tmp_path)
+    original = index.read_bytes()
+
+    entry = inspect_historical_compact_fixture(
+        FUNDING,
+        source_workflow_run="37327493270",
+        expected_parent_artifact_id="11353260627",
+        expected_parent_artifact_sha256=(
+            "sha256:4eed3e2eac19b19aca29dd4ce76bc3f596d6b09a51c22d587b734825d520af74"
+        ),
+    )
+
+    assert entry.entry_market_date == "2026-09-02"
+    assert entry.strategy == "funding-carry"
+    assert index.read_bytes() == original
+    assert list(fixture_root.iterdir()) == [index]
+
+
+def test_inspection_rejects_untrusted_compact_and_symlink(
+    tmp_path: Path,
+) -> None:
+    incoming = tmp_path / "incoming"
+    shutil.copytree(CASH, incoming)
+    manifest_path = incoming / "manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["pinning_status"] = "prepared_unpinned"
+    manifest_path.write_text(json.dumps(manifest))
+
+    with pytest.raises(ValueError, match="not commit_ready"):
+        inspect_historical_compact_fixture(incoming)
+
+    link = tmp_path / "linked"
+    link.symlink_to(CASH, target_is_directory=True)
+    with pytest.raises(ValueError, match="real directory"):
+        inspect_historical_compact_fixture(link)
