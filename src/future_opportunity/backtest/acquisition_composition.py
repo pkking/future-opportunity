@@ -64,6 +64,11 @@ def compose_historical_acquisition(
         if cash_case_plan is not None
         else []
     )
+    cash_selection = (
+        acquisition_cash_selection_from_plan(cash_case_plan)
+        if cash_case_plan is not None
+        else None
+    )
 
     raw: dict[str, object] = {
         "schema_version": 1,
@@ -72,12 +77,18 @@ def compose_historical_acquisition(
         "funding": funding,
         "cash_cases": cash_cases,
     }
-    if funding_selection is not None:
+    if funding_selection is not None or cash_selection is not None:
         raw["selection_provenance"] = {
-            "funding": historical_selection_provenance_payload(
-                funding_selection
+            "funding": (
+                historical_selection_provenance_payload(funding_selection)
+                if funding_selection is not None
+                else None
             ),
-            "cash": None,
+            "cash": (
+                historical_selection_provenance_payload(cash_selection)
+                if cash_selection is not None
+                else None
+            ),
         }
 
     return parse_historical_acquisition_manifest(
@@ -91,7 +102,11 @@ def acquisition_cash_cases_from_plan(
 ) -> list[dict[str, str]]:
     if not isinstance(raw, dict):
         raise TypeError("Cash case-plan report must be an object")
-    if set(raw) != _CASE_PLAN_KEYS:
+    allowed = (
+        _CASE_PLAN_KEYS,
+        _CASE_PLAN_KEYS | {"selection_provenance"},
+    )
+    if set(raw) not in allowed:
         raise ValueError("Cash case-plan report fields differ from schema")
     if raw.get("schema_version") != 1:
         raise ValueError("unsupported Cash case-plan report schema")
@@ -220,6 +235,67 @@ def acquisition_cash_cases_from_plan(
         )
 
     return result
+
+
+def acquisition_cash_selection_from_plan(
+    raw: Any,
+):
+    if not isinstance(raw, dict):
+        raise TypeError("Cash case-plan report must be an object")
+    if "selection_provenance" not in raw:
+        return None
+
+    provenance = parse_historical_selection_provenance(
+        raw.get("selection_provenance")
+    )
+    if provenance.strategy != "cash-and-carry":
+        raise ValueError(
+            "Cash case-plan selection provenance must be cash-and-carry"
+        )
+
+    cash_cases = raw.get("cash_cases")
+    excluded = raw.get("excluded")
+    if not isinstance(cash_cases, list) or not isinstance(excluded, list):
+        raise TypeError(
+            "Cash case-plan selection validation requires cases and exclusions"
+        )
+
+    dates: list[str] = []
+    for position, case in enumerate(cash_cases):
+        if not isinstance(case, dict):
+            raise TypeError(
+                f"Cash case-plan case {position} must be an object"
+            )
+        dates.append(
+            _required_string(
+                case,
+                "entry_market_date",
+                f"Cash case-plan case {position}",
+            )
+        )
+    for position, item in enumerate(excluded):
+        if not isinstance(item, dict):
+            raise TypeError(
+                f"Cash case-plan excluded {position} must be an object"
+            )
+        dates.append(
+            _required_string(
+                item,
+                "market_date",
+                f"Cash case-plan excluded {position}",
+            )
+        )
+
+    observed = tuple(sorted(dates))
+    if len(set(observed)) != len(observed):
+        raise ValueError(
+            "Cash case-plan selection dates contain duplicates"
+        )
+    if observed != provenance.selected_market_dates:
+        raise ValueError(
+            "Cash case-plan dates do not exactly cover selection provenance"
+        )
+    return provenance
 
 
 def _funding_payload(
