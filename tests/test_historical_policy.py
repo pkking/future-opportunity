@@ -14,6 +14,7 @@ from future_opportunity.backtest.historical_policy import (
 ROOT = Path(__file__).parents[1]
 POLICY = ROOT / "tests/e2e/historical-target-policy.json"
 FIXTURES = ROOT / "tests/fixtures/historical"
+INDEX = FIXTURES / "corpus-index.json"
 
 
 def test_repository_historical_policy_is_v0_provenance_semantics() -> None:
@@ -36,16 +37,37 @@ def test_distribution_readiness_counts_pinned_entry_market_days() -> None:
     )
     readiness = distribution_transition_readiness(policy, days)
 
-    assert days == {
-        "funding-carry": ("2026-09-01",),
-        "cash-and-carry": ("2026-06-01",),
+    raw = json.loads(INDEX.read_text())
+    expected_days = {
+        strategy: tuple(
+            sorted(
+                entry["entry_market_date"]
+                for entry in raw["entries"]
+                if entry["strategy"] == strategy
+            )
+        )
+        for strategy in policy.required_strategies
     }
+
+    assert days == expected_days
     assert readiness.counts() == {
-        "funding-carry": 1,
-        "cash-and-carry": 1,
+        strategy: len(expected_days[strategy])
+        for strategy in policy.required_strategies
     }
-    assert readiness.minimum_ready is False
-    assert readiness.preferred_ready is False
+    assert readiness.minimum_ready is (
+        all(
+            len(expected_days[strategy])
+            >= policy.minimum_distinct_market_days_per_strategy
+            for strategy in policy.required_strategies
+        )
+    )
+    assert readiness.preferred_ready is (
+        all(
+            len(expected_days[strategy])
+            >= policy.preferred_distinct_market_days_per_strategy
+            for strategy in policy.required_strategies
+        )
+    )
 
 
 def test_historical_gate_requires_every_versioned_check() -> None:
