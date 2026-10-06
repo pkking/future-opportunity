@@ -143,6 +143,29 @@ Stage 2 thresholds must be product decisions based on accumulated evidence.
 Agents must not automatically infer them from existing reference targets or
 lower targets to make history pass.
 
+### Corpus growth contract
+
+Prepared remote artifacts do not count toward distribution readiness. A market
+day counts only when all of the following are true:
+
+```text
+compact fixture committed
++ corpus-index.json entry committed
++ fixture manifest/index agreement
++ checksum/provenance validation
++ offline replay succeeds
+```
+
+Funding date-range preparation is bounded to 31 days per dispatch and executes
+one independent matrix job per UTC market day. Cash discovery is similarly
+date-scoped; expired futures metadata must come from verified historical archive
+identity plus explicit product-spec provenance, never from guessed current
+instrument metadata.
+
+Tests that assert corpus size/readiness must derive expectations from the
+versioned corpus index. They must not hard-code today's number of pinned days;
+corpus growth itself is an expected repository change.
+
 ## What an E2E scenario must cover
 
 A strategy E2E scenario should exercise the real application workflow rather
