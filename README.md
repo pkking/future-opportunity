@@ -480,6 +480,44 @@ Existing manually selected pinned fixtures remain valid Stage-1 regression
 evidence. They must not be retroactively described as an unbiased market-wide
 sample.
 
+A pre-registered fixture carries a versioned `selection_provenance` object all
+the way from the reviewed sampling artifact to the prepared full manifest,
+compact fixture and offline report. It records the exact source workflow/artifact
+identity and digest, policy version, seed, study window, population size,
+selected dates, and canonical sampling-evidence SHA-256. Loaders independently
+replay and validate that provenance against the fixture's strategy and
+`entry_market_date`.
+
+Funding uses the reviewed sample directly as explicit preparation dates. Cash
+uses a two-stage read-only path because a sampled calendar day still needs
+historical FUTURES identity evidence:
+
+```text
+Sample Historical Market Days
+  -> Discover Sampled Cash Historical Corpus
+       exact sample artifact -> selected dates only
+  -> Plan Cash Acquisition Cases
+       selected + excluded dates must exactly cover the draw
+  -> Compose Historical Acquisition Manifest
+  -> Acquire Historical Campaign
+  -> Cash preparation/full/compact fixture
+```
+
+Unavailable Cash dates remain explicit exclusions. They are not replaced with
+nearby dates.
+
+The corpus distribution report labels every pinned day as either:
+
+```text
+pre_registered_sample
+legacy_untracked
+```
+
+and reports provenance coverage by strategy. This classification is reporting
+evidence only. ADR-0007 readiness still counts all validated pinned
+entry-market days, so adding provenance reporting does **not** silently change
+the 30/90-day transition rule.
+
 ### Adding historical market days
 
 For a reviewed multi-day preparation set, prefer the acquisition campaign:
@@ -566,7 +604,30 @@ full provenance artifact
 commit-ready compact fixture artifact
 ```
 
-Cash-and-Carry uses discovery plus an explicit case-planning step:
+Cash-and-Carry uses discovery plus an explicit case-planning step. For
+pre-registered Stage-2 evidence, use the sample-bound discovery workflow:
+
+```text
+Actions -> Discover Sampled Cash Historical Corpus
+  sampling_run_id         = exact successful sampling run
+  sampling_artifact_name  = exact cash-and-carry sampling artifact
+  -> deterministic sample replay
+  -> selected dates only
+  -> selection control evidence
+
+Actions -> Plan Cash Acquisition Cases
+  discovery_run_id = exact successful sampled discovery run
+  future_id        = explicit BTC-USDT expiry future
+  expiry_at        = explicit UTC expiry
+  exit_at          = explicit UTC strategy exit
+  entry_time_utc   = explicit UTC clock time
+  -> acquisition-ready cash_cases[]
+  -> excluded-date diagnostics
+  -> preserved selection_provenance
+```
+
+The lower-level legacy discovery remains available for Stage-1 operational
+evidence:
 
 ```text
 Actions -> Discover Cash Historical Batch
