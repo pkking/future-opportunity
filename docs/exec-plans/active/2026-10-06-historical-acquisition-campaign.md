@@ -68,23 +68,23 @@ or merge anything.
 - [x] Feed completed acquisition runs into the read-only planner via workflow_run.
 - [x] Add acquisition workflow that calls existing Funding/Cash reusable preparations.
 - [x] Acquisition workflow passes its exact run ID into the read-only planner.
-- [ ] Planner wave evidence is uploaded from the acquisition run.
+- [x] Planner wave evidence is uploaded from the acquisition run.
 - [x] Acquisition has no contents:write / pull-requests:write permission.
-- [ ] Push self-test uses one already-supported Funding day and one explicit Cash case.
-- [ ] Normal CI + acquisition self-test green.
-- [ ] Document operator flow and failure recovery.
+- [x] Push self-test uses one already-supported Funding day and one explicit Cash case.
+- [x] Normal CI + acquisition self-test green.
+- [x] Document operator flow and failure recovery.
 - [ ] Archive after verification.
 
 ## Verification matrix
 
 | Gate | Evidence | Status |
 |---|---|---|
-| Static/architecture | normal CI | pending |
-| Code | manifest/CLI tests | pending |
-| API | no regression | pending |
-| Reference E2E | unchanged | pending |
-| Acquisition workflow | exact prep -> planner evidence | pending |
-| Write boundary | no corpus/branch/PR mutation | pending |
+| Static/architecture | normal CI | passed 37476394008 / later acquisition changes remain green |
+| Code | manifest/CLI/workflow-boundary tests | passed 37476394008; CLI integration 37476293026 |
+| API | no regression | passed |
+| Reference E2E | unchanged | passed |
+| Acquisition workflow | exact prep -> planner evidence | acquire 37475817137 -> planner 37476495413 |
+| Write boundary | no corpus/branch/PR mutation | verified by permissions contract + read-only planner artifact |
 
 ## Decision gates
 
@@ -94,16 +94,14 @@ A future decision is still required before automatic promotion or merge.
 
 ## Resume from here
 
-Wait for acquisition self-test run 37475817137 to finish Funding 2026-09-04.
-Cash preparation and acquisition-control upload are already green. On successful
-completion, verify that a workflow_run-triggered Plan Historical Corpus Campaign
-run inventories the exact acquisition run and emits review-only waves. Then
-document the acquisition -> planner boundary and archive if all normal CI gates
-remain green.
+All implementation and integration behavior is complete. Wait for the latest
+README/testing-contract commits to pass normal CI. If green, record final run
+IDs, mark COMPLETED, and archive this plan. The planner output remains
+review-only and must not be automatically promoted.
 
 ## Completion
 
-Final implementation commit:
-CI run:
-Acquisition workflow evidence:
-Remaining unassessed items:
+Final implementation commit: pending final documentation CI
+CI run: pending final documentation CI
+Acquisition workflow evidence: acquire 37475817137; planner workflow_run 37476495413; planner artifact 11419645347
+Remaining unassessed items: none for acquisition; promotion/merge remain explicit later stages
