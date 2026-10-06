@@ -289,6 +289,38 @@ The planner workflow permissions are limited to `actions: read` and
 push branches, or create PRs. Its output is acquisition-ready `cash_cases`
 plus diagnostics only.
 
+### Historical market-day sampling policy
+
+Market days intended to support future Stage-2 distribution design must be
+selected before strategy outcomes are inspected.
+
+The v1 sampler is deterministic systematic stratification with SHA-256-derived
+within-stratum offsets. Inputs are limited to:
+
+- strategy;
+- inclusive UTC start/end dates;
+- requested sample size;
+- stable seed;
+- policy version.
+
+Sampling code must not accept prices, funding rates, basis, volatility,
+qualification, returns, or other market outcomes.
+
+Required evidence includes the complete request, population size, stratum
+boundaries, hash inputs/digests, offsets and selected dates. Sampling evidence
+is valid only if the repository can recompute the entire result from the
+request and obtain the same payload.
+
+Missing historical source data is an explicit exclusion. It must not trigger a
+silent replacement with another date. A different replacement/resampling rule
+requires a new policy version.
+
+The read-only sampling workflow has `contents: read` only and must not invoke
+acquisition/preparation, mutate the corpus, push branches, or create PRs.
+
+Existing manually selected fixtures remain valid Stage-1 regression evidence
+but must not be interpreted as an unbiased market-wide sample.
+
 ### Historical acquisition composition
 
 Acquisition composition is a read-only bridge between reviewed inputs and an
@@ -296,12 +328,18 @@ explicit acquisition dispatch.
 
 The composer may combine:
 
-- an optional explicit Funding UTC start/end range;
+- either an optional explicit Funding UTC start/end range **or** an exact
+  successful Funding sampling run + artifact;
 - an optional exact successful Cash case-plan run + artifact.
 
 Required behavior:
 
+- Funding range and Funding sampling evidence are mutually exclusive;
 - Funding start/end are supplied together or not at all;
+- sampled Funding evidence is deterministically replayed and must use
+  `strategy=funding-carry`;
+- sampled Funding dates are passed as explicit chronological `market_dates`;
+  intermediate unsampled dates are never inserted;
 - at least one effective Funding day or selected Cash case exists;
 - exact Cash case-plan run status is completed/success;
 - exact artifact name resolves once, is unexpired, and exposes an Actions digest;
