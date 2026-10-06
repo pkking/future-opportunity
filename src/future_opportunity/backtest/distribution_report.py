@@ -257,6 +257,7 @@ async def build_historical_corpus_distribution(
     funding_cases = []
     cash_cases = []
     provenance_by_id: dict[str, dict[str, Any]] = {}
+    selection_by_dataset_id: dict[str, dict[str, Any]] = {}
 
     for entry in sorted(
         corpus.entries,
@@ -276,6 +277,12 @@ async def build_historical_corpus_distribution(
             )
             funding_cases.append(case)
             source = fixture.manifest
+            selection = _selection_provenance_view(
+                source,
+                strategy=entry.strategy,
+                market_date=entry.entry_market_date,
+            )
+            selection_by_dataset_id[entry.dataset_id] = selection
             provenance_by_id[case.case_id] = {
                 "dataset_id": entry.dataset_id,
                 "entry_market_date": entry.entry_market_date,
@@ -283,26 +290,24 @@ async def build_historical_corpus_distribution(
                 "source_artifact": source.get("derived_from_artifact"),
                 "parent_alignment": source.get("parent_alignment"),
                 "compact_alignment": source.get("alignment"),
-                "selection": _selection_provenance_view(
-                    source,
-                    strategy=entry.strategy,
-                    market_date=entry.entry_market_date,
-                ),
+                "selection": selection,
             }
         elif entry.strategy == "cash-and-carry":
             case = load_cash_and_carry_close_fixture(root)
             cash_cases.append(case)
             source = json.loads((root / "manifest.json").read_text())
+            selection = _selection_provenance_view(
+                source,
+                strategy=entry.strategy,
+                market_date=entry.entry_market_date,
+            )
+            selection_by_dataset_id[entry.dataset_id] = selection
             provenance_by_id[case.case_id] = {
                 "dataset_id": entry.dataset_id,
                 "entry_market_date": entry.entry_market_date,
                 "fixture_path": entry.fixture_path,
                 "source_artifact": source.get("derived_from_artifact"),
-                "selection": _selection_provenance_view(
-                    source,
-                    strategy=entry.strategy,
-                    market_date=entry.entry_market_date,
-                ),
+                "selection": selection,
             }
         else:
             raise ValueError(f"unsupported historical strategy: {entry.strategy}")
@@ -333,7 +338,7 @@ async def build_historical_corpus_distribution(
         for strategy in policy.required_strategies
     }
     selection_coverage = _selection_coverage(
-        provenance_by_id,
+        selection_by_dataset_id,
         entries_by_strategy=dataset_ids_by_strategy,
     )
 
