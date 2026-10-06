@@ -518,16 +518,35 @@ full provenance artifact
 commit-ready compact fixture artifact
 ```
 
-Cash-and-Carry uses two steps:
+Cash-and-Carry uses discovery plus an explicit case-planning step:
 
 ```text
 Actions -> Discover Cash Historical Batch
   -> official historical FUTURES archive identity / expiry evidence
 
+Actions -> Plan Cash Acquisition Cases
+  discovery_run_id = exact successful discovery run
+  future_id        = explicit BTC-USDT expiry future
+  expiry_at        = explicit UTC expiry
+  exit_at          = explicit UTC strategy exit
+  entry_time_utc   = explicit UTC clock time
+  -> acquisition-ready cash_cases[]
+  -> excluded-date diagnostics
+
 Actions -> Prepare Cash Historical Batch
   -> explicit entry/exit/future/expiry case
   -> full provenance + commit-ready compact fixture
 ```
+
+The Cash case planner is read-only. It never chooses the future, expiry, exit
+date, or holding period. It only verifies discovery evidence and expands the
+operator's explicit template across matching market dates. A discovery date
+with no unique future archive, a mismatched future ID, or an entry not before
+the explicit exit is reported as excluded rather than silently rewritten.
+
+Verified example: planner run `37477835622` consumed discovery run
+`37434982233` and produced the explicit 2026-06-03 BTC-USDT-260626 case with
+no exclusions. Evidence artifact: `11420145596`.
 
 A prepared artifact does **not** count toward Stage-2 readiness. A day counts
 only after its compact fixture is committed under
