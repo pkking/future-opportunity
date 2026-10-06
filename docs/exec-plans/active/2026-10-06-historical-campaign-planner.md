@@ -1,6 +1,6 @@
 # 2026-10-06-historical-campaign-planner: Read-only candidate inventory and wave planning
 
-Status: VERIFYING
+Status: COMPLETED
 Owner: agent
 Started: 2026-10-06
 Last checkpoint: 2026-10-06
@@ -72,7 +72,7 @@ No promotion or PR creation in this plan.
 - [x] Workflow self-check uses known historical runs, without promotion.
 - [x] README/testing contract explains planner vs promotion boundary.
 - [x] All Static/Code/API/Reference E2E plus workflow self-check green.
-- [ ] Plan evidence archived once verified.
+- [x] Plan evidence archived once verified.
 
 ## Implementation slices
 
@@ -132,11 +132,9 @@ None. Planning does not weaken manual human approval or write boundaries.
 
 ## Resume from here
 
-All behavior and documentation work is complete. After this plan evidence
-commit passes CI, mark COMPLETED and move it to
-`docs/exec-plans/completed/2026-10-06-historical-campaign-planner.md`.
-PR #3 remains open for human review. Do not automatically promote or merge
-any planner-produced wave.
+Completed. Begin an explicit corpus-campaign execution plan using verified
+planner output. PR #3 remains open for human review; planner outputs themselves
+remain read-only and never count as pinned readiness.
 
 ## Completion
 
@@ -144,3 +142,7 @@ Final implementation commit: d497b014120b3e5798fd4b3daf0edf0394bd2cb6
 CI runs: 37441854295 (all four gates green)
 Planner workflow: 37441177683 (success), artifact 11401521198
 Remaining unassessed items: pending PR #3 human review; future Stage-2 policy requires a separate ADR/approval
+
+- 2026-10-06: final planner evidence commit
+  7710dd2b82f6e139ed0fed5e3f1a360e35e8c672 passed CI run 37441991394.
+  The planner implementation and read-only workflow are therefore closed.
