@@ -1,6 +1,6 @@
 # 2026-10-06-historical-selection-provenance: Preserve pre-registration evidence through corpus fixtures
 
-Status: PLANNING
+Status: COMPLETED
 Owner: agent
 Started: 2026-10-06
 Last checkpoint: 2026-10-06
@@ -217,10 +217,10 @@ None.
 
 ## Resume from here
 
-Wait for final candidate commit 1404ba68be4f3a0e1b2550887ac126e7d55addd8
-to pass all CI gates. Then record final CI and Historical Smoke evidence,
-complete the remaining documentation/final-verification checklist items, and
-archive. Do not change readiness semantics.
+Completed. Future Stage-2 evidence acquisition should use the pre-registered
+selection-provenance path documented in README.md. Legacy pinned fixtures remain
+valid Stage-1 regression evidence and intentionally report as legacy_untracked.
+ADR-0007 readiness semantics remain unchanged.
 
 ## Completion
 
@@ -228,3 +228,9 @@ Final implementation commit:
 CI run:
 Workflow evidence:
 Remaining unassessed items:
+
+- 2026-10-06: final candidate dd61b3af70ba0efa567be27d14dc935b15e4f909
+  passed all four CI gates in run 37490819625.
+- 2026-10-06: current committed 2+2 corpus intentionally reports as
+  legacy_untracked. No existing fixture was retroactively relabeled as a
+  pre-registered sample, and ADR-0007 30/90 readiness counts were not changed.
