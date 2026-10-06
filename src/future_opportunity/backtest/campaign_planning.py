@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import re
 
 from future_opportunity.backtest.campaign import (
     HistoricalCampaignArtifactRef,
@@ -56,8 +57,8 @@ def plan_historical_campaigns(
     """Plan review-only campaigns; no corpus files are modified."""
     if not 1 <= max_items_per_wave <= 31:
         raise ValueError("campaign wave size must be within 1..31")
-    if not campaign_prefix:
-        raise ValueError("campaign_prefix must not be empty")
+    if re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", campaign_prefix) is None:
+        raise ValueError("campaign_prefix must be a safe identifier")
 
     required = policy.required_strategies
     pinned_date = {
