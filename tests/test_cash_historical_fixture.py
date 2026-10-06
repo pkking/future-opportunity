@@ -62,6 +62,7 @@ def build_fixture(
         "strategy": "cash-and-carry",
         "close_mode": "pre-expiry",
         "dataset_id": "cash-fixture-v1",
+        "entry_market_date": ENTRY.date().isoformat(),
         "sample_times": {
             "entry": ENTRY.isoformat(),
             "exit": EXIT.isoformat(),
