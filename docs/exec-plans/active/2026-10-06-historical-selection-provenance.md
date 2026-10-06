@@ -117,11 +117,11 @@ Legacy/manual acquisition remains valid with selection provenance absent.
 
 ## Acceptance criteria
 
-- [ ] Define versioned selection-provenance model + parser.
-- [ ] Canonical SHA-256 of sampling evidence is deterministic and verified.
-- [ ] Funding composer emits verified selection provenance with explicit dates.
-- [ ] Acquisition manifest carries optional Funding/Cash selection provenance.
-- [ ] Funding preparation/full/compact manifests preserve provenance.
+- [x] Define versioned selection-provenance model + parser.
+- [x] Canonical SHA-256 of sampling evidence is deterministic and verified.
+- [x] Funding composer emits verified selection provenance with explicit dates.
+- [x] Acquisition manifest carries optional Funding/Cash selection provenance.
+- [x] Funding preparation/full/compact manifests preserve provenance.
 - [ ] Add sampled Cash discovery workflow from exact sampling artifact.
 - [ ] Cash discovery control carries exact sample provenance.
 - [ ] Cash case planner preserves provenance into its report.
@@ -137,9 +137,9 @@ Legacy/manual acquisition remains valid with selection provenance absent.
 
 ## Implementation slices
 
-- [ ] 1. Selection provenance model and canonical sampling-evidence digest.
-- [ ] 2. Funding composer/acquisition propagation.
-- [ ] 3. Funding preparation/fixture propagation.
+- [x] 1. Selection provenance model and canonical sampling-evidence digest.
+- [x] 2. Funding composer/acquisition propagation.
+- [x] 3. Funding preparation/fixture propagation.
 - [ ] 4. Sampled Cash discovery + control evidence.
 - [ ] 5. Cash case-plan/acquisition/preparation propagation.
 - [ ] 6. Corpus validation/report classification.
@@ -168,6 +168,16 @@ decision but does not make it.
 
 - 2026-10-06: deterministic sampling workflow run 37482498880 produced Funding
   sample artifact 11421537670.
+- 2026-10-06: selection-provenance value object/parser now replays the exact
+  deterministic sample and verifies canonical sampling-evidence SHA-256, source
+  run/artifact identity shape, policy/seed/window/population, selected dates,
+  strategy and market-date membership. Tamper tests cover seed/date/hash/schema.
+- 2026-10-06: historical acquisition schema carries optional per-strategy
+  selection provenance. Funding explicit dates must exactly equal the reviewed
+  selected_market_dates when provenance is present.
+- 2026-10-06: Funding resolve/preparation path passes verified selection
+  provenance to each selected day; full and compact Funding manifests preserve
+  it byte-for-byte as JSON structure.
 - 2026-10-06: sampled composer run 37483512784 verified that exact artifact,
   replayed the draw, and emitted the five explicit Funding dates without gap
   filling.
@@ -180,10 +190,11 @@ None.
 
 ## Resume from here
 
-Define a standalone selection-provenance value object that can be validated
-without market data. Add a helper that constructs it only from a deterministically
-verified sampling evidence payload plus exact Actions artifact identity. Do not
-modify readiness policy.
+Implement Cash sampled discovery from an exact cash-and-carry sampling artifact.
+Discovery must run only selected dates and emit a control record containing the
+exact sampling artifact identity/digest plus canonical selection provenance.
+Then propagate that provenance through Cash case-plan -> acquisition ->
+preparation/full/compact fixture.
 
 ## Completion
 
