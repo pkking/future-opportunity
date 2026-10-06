@@ -1,0 +1,133 @@
+name: Plan Cash Acquisition Cases
+
+on:
+  workflow_dispatch:
+    inputs:
+      discovery_run_id:
+        description: Exact successful Discover Cash Historical Batch run ID
+        required: true
+      future_id:
+        description: Explicit BTC-USDT expiry future ID
+        required: true
+      expiry_at:
+        description: Explicit future expiry timestamp in UTC
+        required: true
+      exit_at:
+        description: Explicit strategy exit timestamp in UTC
+        required: true
+      entry_time_utc:
+        description: Explicit UTC entry clock time HH:MM:SS
+        required: true
+  push:
+    paths:
+      - ".github/workflows/plan-cash-acquisition-cases.yml"
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  plan:
+    name: Verify Cash discovery and plan explicit acquisition cases
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      DISCOVERY_RUN_ID: ${{ inputs.discovery_run_id || '37434982233' }}
+      FUTURE_ID: ${{ inputs.future_id || 'BTC-USDT-260626' }}
+      EXPIRY_AT: ${{ inputs.expiry_at || '2026-06-26T08:00:00+00:00' }}
+      EXIT_AT: ${{ inputs.exit_at || '2026-06-25T00:15:00+00:00' }}
+      ENTRY_TIME_UTC: ${{ inputs.entry_time_utc || '00:15:00' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+
+      - run: uv sync --all-extras --dev
+
+      - name: Verify exact discovery run and download reports
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "${DISCOVERY_RUN_ID}" =~ ^[0-9]+$ ]]
+
+          work="artifacts/cash-case-plan"
+          mkdir -p "${work}/discovery"
+
+          gh api             "repos/${GITHUB_REPOSITORY}/actions/runs/${DISCOVERY_RUN_ID}"             > "${work}/source-run.json"
+          test "$(jq -r '.status' "${work}/source-run.json")" = "completed"
+          test "$(jq -r '.conclusion' "${work}/source-run.json")" = "success"
+
+          gh api             "repos/${GITHUB_REPOSITORY}/actions/runs/${DISCOVERY_RUN_ID}/artifacts?per_page=100"             > "${work}/source-artifacts.json"
+
+          total="$(jq -r '.total_count' "${work}/source-artifacts.json")"
+          [[ "${total}" =~ ^[0-9]+$ ]]
+          test "${total}" -le 100
+
+          mapfile -t names < <(
+            jq -r '
+              [.artifacts[]
+               | select(.name | startswith("cash-history-discovery-"))
+               | .name]
+              | sort[]
+            ' "${work}/source-artifacts.json"
+          )
+          test "${#names[@]}" -ge 1
+          test "${#names[@]}" -le 31
+
+          printf '%s\n' '{"schema_version":1,"items":[]}'             > "${work}/acquisition.json"
+
+          index=0
+          for name in "${names[@]}"; do
+            count="$(jq --arg name "${name}"               '[.artifacts[] | select(.name == $name)] | length'               "${work}/source-artifacts.json")"
+            test "${count}" = "1"
+
+            artifact_id="$(jq -r --arg name "${name}"               '.artifacts[] | select(.name == $name) | .id'               "${work}/source-artifacts.json")"
+            digest="$(jq -r --arg name "${name}"               '.artifacts[] | select(.name == $name) | .digest'               "${work}/source-artifacts.json")"
+            expired="$(jq -r --arg name "${name}"               '.artifacts[] | select(.name == $name) | .expired'               "${work}/source-artifacts.json")"
+
+            [[ "${artifact_id}" =~ ^[0-9]+$ ]]
+            [[ "${digest}" =~ ^sha256:[0-9a-fA-F]{64}$ ]]
+            test "${expired}" = "false"
+
+            item_dir="${work}/discovery/$(printf '%03d' "${index}")"
+            mkdir -p "${item_dir}"
+            gh run download "${DISCOVERY_RUN_ID}"               --repo "${GITHUB_REPOSITORY}"               --name "${name}"               --dir "${item_dir}"
+
+            mapfile -t reports < <(
+              find "${item_dir}" -type f -name report.json -print
+            )
+            test "${#reports[@]}" = "1"
+
+            tmp="$(mktemp)"
+            jq               --arg name "${name}"               --arg artifact_id "${artifact_id}"               --arg digest "${digest}"               --arg report "${reports[0]}"               '.items += [{
+                artifact_name: $name,
+                artifact_id: $artifact_id,
+                artifact_digest: $digest,
+                report_path: $report
+              }]'               "${work}/acquisition.json" > "${tmp}"
+            mv "${tmp}" "${work}/acquisition.json"
+
+            index=$((index + 1))
+          done
+
+      - id: plan
+        name: Generate explicit Cash acquisition cases
+        shell: bash
+        run: |
+          set -euo pipefail
+          uv run python scripts/plan_cash_acquisition_cases.py             artifacts/cash-case-plan/discovery             --future-id "${FUTURE_ID}"             --expiry-at "${EXPIRY_AT}"             --exit-at "${EXIT_AT}"             --entry-time-utc "${ENTRY_TIME_UTC}"             --output artifacts/cash-case-plan/report.json             --max-cases 31
+
+          jq '{
+            selected_count,
+            excluded_count,
+            cash_cases,
+            excluded
+          }' artifacts/cash-case-plan/report.json
+
+      - name: Upload read-only Cash case planning evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cash-acquisition-case-plan-${{ github.run_id }}
+          path: artifacts/cash-case-plan/
+          if-no-files-found: warn
