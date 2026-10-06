@@ -1,0 +1,133 @@
+name: Plan Historical Corpus Campaign
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_run_ids:
+        description: Comma-separated exact successful preparation run IDs
+        required: true
+      campaign_prefix:
+        description: Safe identifier for generated review-only campaign waves
+        required: true
+  push:
+    paths:
+      - ".github/workflows/plan-historical-campaign.yml"
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  plan:
+    name: Verify prepared compact inventory and plan waves
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      # Push runs are read-only self-tests: one pinned and one unpinned Funding day.
+      SOURCE_RUN_IDS: ${{ inputs.source_run_ids || '37327493270,37434976457' }}
+      CAMPAIGN_PREFIX: ${{ inputs.campaign_prefix || 'selftest-review-only' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+
+      - run: uv sync --all-extras --dev
+
+      - name: Verify source runs and enumerate compact artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="artifacts/historical-campaign-planner"
+          mkdir -p "${work}/incoming"
+          printf '%s\n' '{"schema_version":1,"items":[]}' > "${work}/inventory.json"
+
+          IFS=',' read -r -a runs <<< "${SOURCE_RUN_IDS}"
+          test "${#runs[@]}" -ge 1
+          test "${#runs[@]}" -le 20
+
+          index=0
+          for run_id in "${runs[@]}"; do
+            [[ "${run_id}" =~ ^[0-9]+$ ]] || {
+              echo "invalid source workflow run: ${run_id}" >&2
+              exit 1
+            }
+            run_json="${work}/run-${run_id}.json"
+            gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}" > "${run_json}"
+            test "$(jq -r '.status' "${run_json}")" = "completed"
+            test "$(jq -r '.conclusion' "${run_json}")" = "success"
+
+            artifact_json="${work}/artifacts-${run_id}.json"
+            gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/artifacts?per_page=100" > "${artifact_json}"
+            total="$(jq -r '.total_count' "${artifact_json}")"
+            [[ "${total}" =~ ^[0-9]+$ ]]
+            test "${total}" -le 100
+
+            mapfile -t names < <(
+              jq -r '[.artifacts[] | select(.name | contains("-compact-")) | .name] | sort[]' "${artifact_json}"
+            )
+            test "${#names[@]}" -gt 0
+            for name in "${names[@]}"; do
+              item_dir="${work}/incoming/${index}"
+              mkdir -p "${item_dir}"
+
+              compact_count="$(jq --arg name "${name}" '[.artifacts[] | select(.name == $name)] | length' "${artifact_json}")"
+              test "${compact_count}" = "1"
+              compact_id="$(jq -r --arg name "${name}" '.artifacts[] | select(.name == $name) | .id' "${artifact_json}")"
+              compact_digest="$(jq -r --arg name "${name}" '.artifacts[] | select(.name == $name) | .digest' "${artifact_json}")"
+              compact_expired="$(jq -r --arg name "${name}" '.artifacts[] | select(.name == $name) | .expired' "${artifact_json}")"
+              test "${compact_expired}" = "false"
+              [[ "${compact_id}" =~ ^[0-9]+$ ]]
+              [[ "${compact_digest}" =~ ^sha256:[0-9a-fA-F]{64}$ ]]
+
+              gh run download "${run_id}" --repo "${GITHUB_REPOSITORY}" --name "${name}" --dir "${item_dir}"
+              mapfile -t manifests < <(find "${item_dir}" -type f -name manifest.json -print)
+              test "${#manifests[@]}" = "1"
+              manifest="${manifests[0]}"
+              source_dir="$(dirname "${manifest}")"
+
+              manifest_run="$(jq -r '.derived_from_artifact.workflow_run' "${manifest}")"
+              parent_id="$(jq -r '.derived_from_artifact.artifact_id' "${manifest}")"
+              parent_sha="$(jq -r '.derived_from_artifact.artifact_zip_sha256' "${manifest}")"
+              test "${manifest_run}" = "${run_id}"
+              [[ "${parent_id}" =~ ^[0-9]+$ ]]
+              [[ "${parent_sha}" =~ ^[0-9a-fA-F]{64}$ ]]
+
+              parent_count="$(jq --argjson id "${parent_id}" '[.artifacts[] | select(.id == $id)] | length' "${artifact_json}")"
+              test "${parent_count}" = "1"
+              parent_expired="$(jq -r --argjson id "${parent_id}" '.artifacts[] | select(.id == $id) | .expired' "${artifact_json}")"
+              parent_digest="$(jq -r --argjson id "${parent_id}" '.artifacts[] | select(.id == $id) | .digest' "${artifact_json}")"
+              test "${parent_expired}" = "false"
+              [[ "${parent_digest}" =~ ^sha256:[0-9a-fA-F]{64}$ ]]
+              test "${parent_digest#sha256:}" = "${parent_sha,,}"
+
+              tmp="$(mktemp)"
+              jq --arg source_root "${source_dir}"                  --arg run "${run_id}"                  --arg name "${name}"                  --arg compact_id "${compact_id}"                  --arg compact_digest "${compact_digest}"                  --arg parent_id "${parent_id}"                  --arg parent_digest "${parent_digest}"                  '.items += [{
+                   source_root: $source_root,
+                   source_workflow_run: $run,
+                   compact_artifact_name: $name,
+                   compact_artifact_id: $compact_id,
+                   compact_artifact_digest: $compact_digest,
+                   parent_artifact_id: $parent_id,
+                   parent_artifact_sha256: $parent_digest
+                 }]' "${work}/inventory.json" > "${tmp}"
+              mv "${tmp}" "${work}/inventory.json"
+              index=$((index + 1))
+            done
+          done
+
+      - id: plan
+        name: Build offline read-only campaign waves and readiness forecast
+        shell: bash
+        run: |
+          set -euo pipefail
+          uv run python scripts/plan_historical_campaign.py             artifacts/historical-campaign-planner/inventory.json             --campaign-prefix "${CAMPAIGN_PREFIX}"             --output-dir artifacts/historical-campaign-planner
+          test -f artifacts/historical-campaign-planner/report.json
+          jq '{pinned_counts,projected_counts_if_all_waves_merged,selected_count,excluded_pinned_count,wave_files}'             artifacts/historical-campaign-planner/report.json
+
+      - name: Upload candidate inventory and campaign planning evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: historical-campaign-planner-${{ github.run_id }}
+          path: artifacts/historical-campaign-planner/
+          if-no-files-found: warn
