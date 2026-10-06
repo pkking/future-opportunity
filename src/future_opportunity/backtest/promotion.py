@@ -34,6 +34,30 @@ class HistoricalPromotionResult:
             raise ValueError(f"unsupported promotion status: {self.status}")
 
 
+def inspect_historical_compact_fixture(
+    source_root: Path,
+    *,
+    source_workflow_run: str | None = None,
+    expected_parent_artifact_id: str | None = None,
+    expected_parent_artifact_sha256: str | None = None,
+) -> HistoricalCorpusEntry:
+    """Validate a prepared compact fixture without changing the corpus."""
+    if source_root.is_symlink() or not source_root.is_dir():
+        raise ValueError("promotion source must be a real directory")
+    source_root = source_root.resolve()
+    manifest = _load_manifest(source_root)
+    entry = _entry_from_manifest(manifest)
+    _validate_promotion_provenance(
+        manifest,
+        source_workflow_run=source_workflow_run,
+        expected_parent_artifact_id=expected_parent_artifact_id,
+        expected_parent_artifact_sha256=expected_parent_artifact_sha256,
+    )
+    _validate_source_file_set(source_root, manifest)
+    _validate_source_fixture(source_root, entry)
+    return entry
+
+
 def promote_historical_compact_fixture(
     source_root: Path,
     *,
@@ -46,29 +70,23 @@ def promote_historical_compact_fixture(
 ) -> HistoricalPromotionResult:
     """Stage one verified compact fixture into the versioned corpus.
 
-    The operation is idempotent for an already indexed byte-identical fixture.
+    The operation is idempotent for an already indexed identical fixture.
     Any identity/content collision fails closed.
     """
-    source_root = source_root.resolve()
-    fixture_root = fixture_root.resolve()
-    index_path = index_path.resolve()
-
-    if not source_root.is_dir() or source_root.is_symlink():
-        raise ValueError("promotion source must be a real directory")
-    if index_path.parent != fixture_root:
-        raise ValueError("corpus index must live directly below fixture_root")
-
-    manifest = _load_manifest(source_root)
-    entry = _entry_from_manifest(manifest)
-    _validate_promotion_provenance(
-        manifest,
+    entry = inspect_historical_compact_fixture(
+        source_root,
         source_workflow_run=source_workflow_run,
         expected_parent_artifact_id=expected_parent_artifact_id,
         expected_parent_artifact_sha256=expected_parent_artifact_sha256,
     )
-    _validate_source_file_set(source_root, manifest)
-    _validate_source_fixture(source_root, entry)
+    source_root = source_root.resolve()
+    fixture_root = fixture_root.resolve()
+    index_path = index_path.resolve()
 
+    if index_path.parent != fixture_root:
+        raise ValueError("corpus index must live directly below fixture_root")
+
+    manifest = _load_manifest(source_root)
     raw_index = _load_index(index_path)
     if raw_index["entries"]:
         load_historical_corpus(
