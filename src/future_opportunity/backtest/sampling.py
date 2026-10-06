@@ -4,6 +4,7 @@ import hashlib
 import json
 from dataclasses import dataclass
 from datetime import date, timedelta
+from typing import Any
 
 
 _SUPPORTED_STRATEGIES = {"funding-carry", "cash-and-carry"}
@@ -222,6 +223,71 @@ def historical_sampling_json(
         )
         + "\n"
     )
+
+
+def parse_historical_sampling_evidence(
+    raw: Any,
+) -> HistoricalSamplingResult:
+    if not isinstance(raw, dict):
+        raise TypeError("historical sampling evidence must be an object")
+
+    expected_keys = {
+        "schema_version",
+        "evidence_type",
+        "request",
+        "population_size",
+        "selected_count",
+        "selected_dates",
+        "strata",
+        "replacement_policy",
+        "note",
+    }
+    if set(raw) != expected_keys:
+        raise ValueError("historical sampling evidence fields differ from schema")
+
+    request_raw = raw.get("request")
+    if not isinstance(request_raw, dict):
+        raise TypeError("historical sampling request must be an object")
+    request_keys = {
+        "strategy",
+        "start_date",
+        "end_date",
+        "sample_size",
+        "seed",
+        "policy_version",
+    }
+    if set(request_raw) != request_keys:
+        raise ValueError("historical sampling request fields differ from schema")
+
+    request = HistoricalSamplingRequest(
+        strategy=_required_string(request_raw, "strategy"),
+        start_date=_required_string(request_raw, "start_date"),
+        end_date=_required_string(request_raw, "end_date"),
+        sample_size=_required_int(request_raw, "sample_size"),
+        seed=_required_string(request_raw, "seed"),
+        policy_version=_required_string(request_raw, "policy_version"),
+    )
+    expected = sample_historical_market_days(request)
+    expected_payload = historical_sampling_payload(expected)
+    if raw != expected_payload:
+        raise ValueError(
+            "historical sampling evidence does not match deterministic replay"
+        )
+    return expected
+
+
+def _required_string(raw: dict[str, Any], key: str) -> str:
+    value = raw.get(key)
+    if not isinstance(value, str) or not value:
+        raise ValueError(f"historical sampling request requires {key}")
+    return value
+
+
+def _required_int(raw: dict[str, Any], key: str) -> int:
+    value = raw.get(key)
+    if type(value) is not int:
+        raise TypeError(f"historical sampling request {key} must be integer")
+    return value
 
 
 def _parse_window(start_date: str, end_date: str) -> tuple[date, date]:
