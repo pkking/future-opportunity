@@ -22,6 +22,7 @@ jobs:
       funding_count: ${{ steps.resolve.outputs.funding_count }}
       funding_selection_provenance: ${{ steps.resolve.outputs.funding_selection_provenance }}
       cash_cases: ${{ steps.resolve.outputs.cash_cases }}
+      cash_selection_provenance: ${{ steps.resolve.outputs.cash_selection_provenance }}
       cash_count: ${{ steps.resolve.outputs.cash_count }}
       planner_campaign_prefix: ${{ steps.resolve.outputs.planner_campaign_prefix }}
       acquisition_id: ${{ steps.resolve.outputs.acquisition_id }}
@@ -81,6 +82,7 @@ jobs:
       exit_at: ${{ matrix.case.exit_at }}
       future_id: ${{ matrix.case.future_id }}
       expiry_at: ${{ matrix.case.expiry_at }}
+      selection_provenance_json: ${{ needs.resolve.outputs.cash_selection_provenance }}
 
   summary:
     name: Acquisition completion evidence
