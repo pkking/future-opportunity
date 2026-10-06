@@ -65,3 +65,35 @@ jobs:
           name: historical-market-day-sample-${{ github.run_id }}
           path: artifacts/historical-sampling/
           if-no-files-found: warn
+
+
+  cash-selftest:
+    name: Produce Cash sampling self-test evidence
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+
+      - run: uv sync --all-extras --dev
+
+      - name: Generate Cash pre-registered sample evidence
+        run: |
+          mkdir -p artifacts/cash-historical-sampling
+          uv run python scripts/sample_historical_market_days.py \
+            --strategy "cash-and-carry" \
+            --start-date "2026-06-01" \
+            --end-date "2026-06-10" \
+            --sample-size "3" \
+            --seed "cash-stage2-baseline-v1" \
+            --policy-version "systematic-stratified-sha256-v1" \
+            --output artifacts/cash-historical-sampling/sample.json
+          cat artifacts/cash-historical-sampling/sample.json
+
+      - name: Upload Cash sampling self-test evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: cash-historical-market-day-sample-${{ github.run_id }}
+          path: artifacts/cash-historical-sampling/
+          if-no-files-found: error
