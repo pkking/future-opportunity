@@ -1,6 +1,6 @@
 # 2026-10-06-historical-artifact-promotion: Promote prepared historical artifacts into corpus
 
-Status: IMPLEMENTING
+Status: COMPLETED
 Owner: agent
 Started: 2026-10-06
 Last checkpoint: 2026-10-06
@@ -82,7 +82,7 @@ The workflow MUST NOT push directly to main.
   never writes main directly.
 - [x] Promotion PR runs normal CI + Historical Backtest Smoke.
 - [x] Documentation explains prepare -> promote -> review -> merge.
-- [ ] Final CI green.
+- [x] Final CI green.
 
 ## Implementation slices
 
@@ -91,7 +91,7 @@ The workflow MUST NOT push directly to main.
 - [x] 3. Add exact artifact/run provenance verification.
 - [x] 4. Add GitHub Actions promotion workflow with review branch + PR/handoff.
 - [x] 5. Document operator workflow and recovery.
-- [ ] 6. Verify complete CI and archive.
+- [x] 6. Verify complete CI and archive.
 
 ## Verification matrix
 
@@ -164,13 +164,20 @@ A future decision would be required before automatic promotion or automatic merg
 
 ## Resume from here
 
-Wait for the latest documentation/PR-handoff contract commit to pass all CI
-gates. If green, record the final run and archive this plan. PR #2 remains open
-for human review/merge; automatic merge is explicitly outside this plan.
+Completed. PR #2 remains open for human review/merge; automatic merge is
+explicitly outside this plan. Future corpus days use the explicit preparation
+and promotion workflows documented in README.md.
 
 ## Completion
 
 Final implementation commit: 0a7e2afe0ffb9bc32e2ce6e2667099d6d9da4f4b
-CI run: 37433904415 passed
+CI run: 37434113945 passed all four required gates
 Promotion workflow evidence: no-op 37433173833; real 9/3 promotion 37433493554; PR #2 checks 37433749631 / 37433749712 passed
 Remaining unassessed items: PR #2 human review/merge only; intentionally outside automatic promotion
+
+- 2026-10-06: final plan/documentation CI run 37434113945 passed Static,
+  Code-level, API contract, and E2E strategy acceptance gates.
+- 2026-10-06: PR #2 remains intentionally open. Its head commit
+  b89fc99c46b682f3c894e35e745ceb97ee79146e passed PR CI run 37433749631 and
+  Historical Backtest Smoke run 37433749712. Review/merge is a human action
+  outside the promotion automation.
