@@ -22,7 +22,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       CAMPAIGN_JSON: >-
-        ${{ inputs.campaign_json || '{"schema_version":1,"campaign_id":"self-test-pinned-mixed","items":[{"source_workflow_run":"37327493270","compact_artifact_name":"okx-btc-funding-compact-2026-09-02"},{"source_workflow_run":"37327804191","compact_artifact_name":"okx-btc-cash-and-carry-compact-BTC-USDT-260626-37327804191"}]}' }}
+        ${{ inputs.campaign_json || '{"schema_version":1,"campaign_id":"stage1-mixed-2026-09-03-2026-06-03","items":[{"source_workflow_run":"37432822497","compact_artifact_name":"okx-btc-funding-compact-2026-09-03"},{"source_workflow_run":"37435117479","compact_artifact_name":"okx-btc-cash-and-carry-compact-BTC-USDT-260626-37435117479"}]}' }}
     steps:
       - uses: actions/checkout@v4
         with:
