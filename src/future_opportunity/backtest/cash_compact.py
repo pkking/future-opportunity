@@ -161,6 +161,10 @@ def derive_cash_compact_fixture(
         "sources": manifest.get("sources"),
         "normalized": compact_normalized,
     }
+    if "selection_provenance" in manifest:
+        compact_manifest["selection_provenance"] = manifest[
+            "selection_provenance"
+        ]
     path = output_root / "manifest.json"
     path.write_text(
         json.dumps(compact_manifest, indent=2, sort_keys=True) + "\n"
