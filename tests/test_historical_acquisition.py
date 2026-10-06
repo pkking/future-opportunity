@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 from future_opportunity.backtest.acquisition import (
+    acquisition_dispatch_payload,
     acquisition_manifest_payload,
     parse_historical_acquisition_manifest,
     workflow_cash_cases_json,
@@ -35,6 +36,7 @@ def test_acquisition_manifest_resolves_funding_range_and_cash_cases() -> None:
 
     assert manifest.acquisition_id == "wave-01"
     assert manifest.funding is not None
+    assert manifest.funding.source_kind == "range"
     assert manifest.funding.market_dates == (
         "2026-09-04",
         "2026-09-05",
@@ -151,4 +153,81 @@ def test_acquisition_rejects_schema_drift_and_unsafe_ids() -> None:
     raw = valid_manifest()
     raw["acquisition_id"] = "../unsafe"
     with pytest.raises(ValueError, match="safe identifier"):
+        parse_historical_acquisition_manifest(raw)
+
+
+def test_acquisition_accepts_explicit_funding_dates_without_filling_gaps() -> None:
+    raw = valid_manifest()
+    raw["funding"] = {
+        "market_dates": [
+            "2026-01-01",
+            "2026-01-08",
+            "2026-01-13",
+            "2026-01-22",
+            "2026-01-29",
+        ]
+    }
+
+    manifest = parse_historical_acquisition_manifest(raw)
+
+    assert manifest.funding is not None
+    assert manifest.funding.source_kind == "explicit_dates"
+    assert manifest.funding.start_date is None
+    assert manifest.funding.end_date is None
+    assert manifest.funding.market_dates == (
+        "2026-01-01",
+        "2026-01-08",
+        "2026-01-13",
+        "2026-01-22",
+        "2026-01-29",
+    )
+    assert acquisition_dispatch_payload(manifest)["funding"] == {
+        "market_dates": [
+            "2026-01-01",
+            "2026-01-08",
+            "2026-01-13",
+            "2026-01-22",
+            "2026-01-29",
+        ]
+    }
+    assert workflow_funding_dates_json(manifest) == (
+        '["2026-01-01","2026-01-08","2026-01-13","2026-01-22","2026-01-29"]'
+    )
+
+
+def test_explicit_funding_dates_reject_duplicates_order_drift_and_overflow() -> None:
+    duplicate = valid_manifest()
+    duplicate["funding"] = {
+        "market_dates": ["2026-01-01", "2026-01-01"]
+    }
+    with pytest.raises(ValueError, match="duplicate Funding market date"):
+        parse_historical_acquisition_manifest(duplicate)
+
+    unordered = valid_manifest()
+    unordered["funding"] = {
+        "market_dates": ["2026-01-08", "2026-01-01"]
+    }
+    with pytest.raises(ValueError, match="strictly chronological"):
+        parse_historical_acquisition_manifest(unordered)
+
+    too_many = valid_manifest()
+    too_many["funding"] = {
+        "market_dates": ["2026-01-01", "2026-01-08", "2026-01-13"]
+    }
+    with pytest.raises(ValueError, match="maximum is 2"):
+        parse_historical_acquisition_manifest(
+            too_many,
+            max_funding_days=2,
+        )
+
+
+def test_funding_shape_must_be_range_or_explicit_dates_but_not_both() -> None:
+    raw = valid_manifest()
+    raw["funding"] = {
+        "start_date": "2026-01-01",
+        "end_date": "2026-01-31",
+        "market_dates": ["2026-01-08"],
+    }
+
+    with pytest.raises(ValueError, match="fields differ from schema"):
         parse_historical_acquisition_manifest(raw)
