@@ -202,6 +202,26 @@ Idempotent re-promotion is allowed only for the same corpus fact. Manifest JSON
 formatting differences are ignored after structural parsing, while canonical
 evidence files remain byte-sensitive and checksum-gated.
 
+### Campaign promotion contract
+
+Corpus campaigns reuse the single-artifact promotion primitive and add one
+atomic transaction boundary around all items.
+
+Required behavior:
+
+- operator input is an explicit versioned list of exact run/artifact pairs;
+- duplicate source pairs or duplicate compact artifact names fail closed;
+- each compact and parent preparation artifact is verified independently;
+- a campaign contains at most 31 items;
+- already-present identical items may be no-ops;
+- any invalid later item rolls back every fixture newly staged earlier in the
+  same campaign and restores the original corpus index;
+- campaign input order must not affect deterministic corpus ordering;
+- evidence records per-item promotion status plus resulting 30/90 readiness;
+- one changed campaign produces one review branch and one PR or PR handoff;
+- the review branch must pass normal CI and Historical Backtest Smoke before
+  human merge.
+
 ## What an E2E scenario must cover
 
 A strategy E2E scenario should exercise the real application workflow rather
