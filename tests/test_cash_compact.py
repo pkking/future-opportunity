@@ -12,6 +12,15 @@ from future_opportunity.backtest.cash_fixture import (
     load_cash_and_carry_close_fixture,
 )
 from future_opportunity.backtest.model import HistoricalOrderBookObservation
+from future_opportunity.backtest.sampling import (
+    HistoricalSamplingRequest,
+    historical_sampling_payload,
+    sample_historical_market_days,
+)
+from future_opportunity.backtest.selection_provenance import (
+    historical_selection_provenance_payload,
+    selection_provenance_from_sampling_evidence,
+)
 from future_opportunity.domain.market.snapshot import OrderBook, OrderBookLevel
 
 
@@ -53,7 +62,37 @@ def observation(
     )
 
 
-def build_prepared(root: Path) -> None:
+def selection_provenance_for(day: str) -> dict[str, object]:
+    sample = historical_sampling_payload(
+        sample_historical_market_days(
+            HistoricalSamplingRequest(
+                strategy="cash-and-carry",
+                start_date=day,
+                end_date=day,
+                sample_size=1,
+                seed="cash-selection-test",
+            )
+        )
+    )
+    return historical_selection_provenance_payload(
+        selection_provenance_from_sampling_evidence(
+            sample,
+            source_workflow_run="37487331716",
+            artifact_name="cash-historical-market-day-sample-37487331716",
+            artifact_id="11423128537",
+            artifact_digest=(
+                "sha256:72714c034d8bccfe2f5e705b177f0db0"
+                "864251dcf3f8ecdd59d66ab9c90e271e"
+            ),
+        )
+    )
+
+
+def build_prepared(
+    root: Path,
+    *,
+    selection_provenance: dict[str, object] | None = None,
+) -> None:
     source = {
         "entry_spot": observation("BTC-USDT", ENTRY, 10, "100", "101"),
         "entry_future": observation(FUTURE_ID, ENTRY, 20, "103", "104"),
@@ -105,6 +144,8 @@ def build_prepared(root: Path) -> None:
         "sources": {"fixture": True},
         "normalized": normalized,
     }
+    if selection_provenance is not None:
+        manifest["selection_provenance"] = selection_provenance
     (root / "manifest.json").write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n"
     )
@@ -146,3 +187,35 @@ def test_cash_compact_derivation_is_commit_ready_after_finalization(
     assert case.entry.observed_at == ENTRY
     assert case.exit.observed_at == EXIT
     assert case.entry.future_instrument_id == f"okx:{FUTURE_ID}:future"
+
+
+def test_cash_compact_preserves_and_loader_validates_selection_provenance(
+    tmp_path: Path,
+) -> None:
+    prepared = tmp_path / "prepared"
+    compact = tmp_path / "compact"
+    prepared.mkdir()
+    provenance = selection_provenance_for("2026-06-02")
+    build_prepared(prepared, selection_provenance=provenance)
+
+    draft = derive_cash_compact_fixture(prepared, compact)
+    assert draft["selection_provenance"] == provenance
+
+    finalize_cash_compact_fixture(
+        compact,
+        workflow_run="12345",
+        artifact_id="67890",
+        artifact_digest="sha256:" + "b" * 64,
+    )
+    case = load_cash_and_carry_close_fixture(compact)
+    assert case.entry.observed_at == ENTRY
+
+    manifest_path = compact / "manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["selection_provenance"] = selection_provenance_for("2026-06-03")
+    manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+
+    import pytest
+
+    with pytest.raises(ValueError, match="outside selection provenance"):
+        load_cash_and_carry_close_fixture(compact)
