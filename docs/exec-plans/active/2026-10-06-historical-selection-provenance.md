@@ -122,14 +122,14 @@ Legacy/manual acquisition remains valid with selection provenance absent.
 - [x] Funding composer emits verified selection provenance with explicit dates.
 - [x] Acquisition manifest carries optional Funding/Cash selection provenance.
 - [x] Funding preparation/full/compact manifests preserve provenance.
-- [ ] Add sampled Cash discovery workflow from exact sampling artifact.
-- [ ] Cash discovery control carries exact sample provenance.
-- [ ] Cash case planner preserves provenance into its report.
-- [ ] Cash composer/acquisition preserves provenance.
-- [ ] Cash preparation/full/compact manifests preserve provenance.
-- [ ] Fixture loaders/promoters reject provenance/date/strategy drift.
-- [ ] Corpus report classifies pre-registered vs legacy/untracked days.
-- [ ] Reporting adds provenance coverage counts without changing 30/90 readiness.
+- [x] Add sampled Cash discovery workflow from exact sampling artifact.
+- [x] Cash discovery control carries exact sample provenance.
+- [x] Cash case planner preserves provenance into its report.
+- [x] Cash composer/acquisition preserves provenance.
+- [x] Cash preparation/full/compact manifests preserve provenance.
+- [x] Fixture loaders/promoters reject provenance/date/strategy drift.
+- [x] Corpus report classifies pre-registered vs legacy/untracked days.
+- [x] Reporting adds provenance coverage counts without changing 30/90 readiness.
 - [ ] Tests cover legacy compatibility, tampering, wrong strategy/date and exact copying.
 - [ ] README/testing docs explain provenance classification.
 - [ ] Final CI + relevant workflow self-tests green.
@@ -140,9 +140,9 @@ Legacy/manual acquisition remains valid with selection provenance absent.
 - [x] 1. Selection provenance model and canonical sampling-evidence digest.
 - [x] 2. Funding composer/acquisition propagation.
 - [x] 3. Funding preparation/fixture propagation.
-- [ ] 4. Sampled Cash discovery + control evidence.
-- [ ] 5. Cash case-plan/acquisition/preparation propagation.
-- [ ] 6. Corpus validation/report classification.
+- [x] 4. Sampled Cash discovery + control evidence.
+- [x] 5. Cash case-plan/acquisition/preparation propagation.
+- [x] 6. Corpus validation/report classification.
 - [ ] 7. Docs, final verification and archive.
 
 ## Verification matrix
@@ -181,6 +181,23 @@ decision but does not make it.
 - 2026-10-06: sampled composer run 37483512784 verified that exact artifact,
   replayed the draw, and emitted the five explicit Funding dates without gap
   filling.
+- 2026-10-06: sampled Cash discovery run 37488688098 verified Cash sample
+  artifact 11423128537 and ran discovery only for selected dates 2026-06-02,
+  2026-06-04 and 2026-06-08. All three discovered BTC-USDT-260626; no
+  replacement dates were introduced.
+- 2026-10-06: sampled Cash case-plan run 37490008931 consumed exact discovery
+  control provenance, selected all three draw dates with zero exclusions, and
+  uploaded artifact 11425760361 with the same selection provenance.
+- 2026-10-06: Cash preparation/full/compact/loader now preserve and independently
+  validate optional selection provenance against strategy and entry_market_date.
+  Legacy fixtures without selection provenance remain valid.
+- 2026-10-06: corpus distribution report now classifies each pinned fixture as
+  pre_registered_sample or legacy_untracked and reports provenance coverage.
+  ADR-0007 30/90 readiness computation is unchanged. Current committed 2+2
+  corpus remains legacy_untracked because it predates the pre-registered flow.
+- 2026-10-06: report key regression was fixed in commit
+  aa96d8cfa8fc8dabd976097a5b39da509a59396a; CI 37489829881 and Historical
+  Backtest Smoke 37489829905 passed.
 - 2026-10-06: current committed corpus remains 2 Funding + 2 Cash days and does
   not yet encode whether a pinned fixture was pre-registered.
 
@@ -190,11 +207,10 @@ None.
 
 ## Resume from here
 
-Implement Cash sampled discovery from an exact cash-and-carry sampling artifact.
-Discovery must run only selected dates and emit a control record containing the
-exact sampling artifact identity/digest plus canonical selection provenance.
-Then propagate that provenance through Cash case-plan -> acquisition ->
-preparation/full/compact fixture.
+Verify acquisition composer self-test against sampled Cash case-plan run
+37490008931. Then add final workflow-contract/documentation coverage, record
+selection-provenance reporting evidence, run final CI + relevant self-tests and
+archive. Do not change readiness semantics.
 
 ## Completion
 
