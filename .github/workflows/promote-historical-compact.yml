@@ -22,13 +22,13 @@ jobs:
   promote:
     name: Validate artifact and open corpus PR
     runs-on: ubuntu-latest
-    # Push-trigger fallback replays one already-pinned artifact to prove the
-    # download/provenance/idempotency path without mutating the corpus.
+    # Push-trigger fallback uses one newly prepared, unpinned compact artifact
+    # to prove the complete promotion path through reviewable PR creation.
     # Manifest JSON formatting is intentionally non-semantic; canonical evidence
     # files remain byte-sensitive and checksum-gated.
     env:
-      SOURCE_RUN_ID: ${{ inputs.source_run_id || '37327493270' }}
-      COMPACT_ARTIFACT_NAME: ${{ inputs.compact_artifact_name || 'okx-btc-funding-compact-2026-09-02' }}
+      SOURCE_RUN_ID: ${{ inputs.source_run_id || '37432822497' }}
+      COMPACT_ARTIFACT_NAME: ${{ inputs.compact_artifact_name || 'okx-btc-funding-compact-2026-09-03' }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
