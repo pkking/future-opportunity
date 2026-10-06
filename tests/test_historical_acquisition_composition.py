@@ -7,6 +7,7 @@ from future_opportunity.backtest.acquisition import (
 )
 from future_opportunity.backtest.acquisition_composition import (
     acquisition_cash_cases_from_plan,
+    acquisition_cash_selection_from_plan,
     compose_historical_acquisition,
 )
 from future_opportunity.backtest.sampling import (
@@ -81,6 +82,31 @@ def funding_sample(
             )
         )
     )
+
+
+def cash_selection_provenance() -> dict[str, object]:
+    sampling = historical_sampling_payload(
+        sample_historical_market_days(
+            HistoricalSamplingRequest(
+                strategy="cash-and-carry",
+                start_date="2026-06-03",
+                end_date="2026-06-03",
+                sample_size=1,
+                seed="cash-stage2-v1",
+            )
+        )
+    )
+    provenance = selection_provenance_from_sampling_evidence(
+        sampling,
+        source_workflow_run="37487331716",
+        artifact_name="cash-historical-market-day-sample-37487331716",
+        artifact_id="11423128537",
+        artifact_digest=(
+            "sha256:72714c034d8bccfe2f5e705b177f0db0"
+            "864251dcf3f8ecdd59d66ab9c90e271e"
+        ),
+    )
+    return historical_selection_provenance_payload(provenance)
 
 
 def funding_selection_provenance() -> dict[str, object]:
@@ -337,3 +363,43 @@ def test_composer_rejects_provenance_combined_with_other_funding_inputs() -> Non
             funding_sample=funding_sample(),
             funding_selection_provenance=provenance,
         )
+
+
+def test_cash_case_plan_provenance_must_cover_selected_and_excluded_dates() -> None:
+    selected = case_plan()
+    selected["selection_provenance"] = cash_selection_provenance()
+
+    provenance = acquisition_cash_selection_from_plan(selected)
+    assert provenance is not None
+    assert provenance.strategy == "cash-and-carry"
+    assert provenance.selected_market_dates == ("2026-06-03",)
+
+    drift = case_plan()
+    drift["cash_cases"][0]["entry_market_date"] = "2026-06-04"
+    drift["cash_cases"][0]["entry_at"] = "2026-06-04T00:15:00+00:00"
+    drift["selection_provenance"] = cash_selection_provenance()
+    with pytest.raises(ValueError, match="exactly cover"):
+        acquisition_cash_selection_from_plan(drift)
+
+
+def test_composer_preserves_verified_cash_selection_provenance() -> None:
+    plan = case_plan()
+    provenance = cash_selection_provenance()
+    plan["selection_provenance"] = provenance
+
+    manifest = compose_historical_acquisition(
+        acquisition_id="sampled-cash",
+        planner_campaign_prefix="sampled-cash-review",
+        cash_case_plan=plan,
+    )
+
+    assert manifest.funding is None
+    assert manifest.cash_selection_provenance is not None
+    assert historical_selection_provenance_payload(
+        manifest.cash_selection_provenance
+    ) == provenance
+    payload = acquisition_dispatch_payload(manifest)
+    assert payload["selection_provenance"] == {
+        "funding": None,
+        "cash": provenance,
+    }
