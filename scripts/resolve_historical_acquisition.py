@@ -19,7 +19,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path)
     parser.add_argument("--max-funding-days", type=int, default=31)
     parser.add_argument("--max-cash-cases", type=int, default=31)
-    parser.add_argument("--max-total-items", type=int, default=62)
+    parser.add_argument("--max-total-items", type=int, default=31)
     args = parser.parse_args()
 
     manifest = load_historical_acquisition_manifest(
