@@ -1,0 +1,67 @@
+name: Sample Historical Market Days
+
+on:
+  workflow_dispatch:
+    inputs:
+      strategy:
+        description: Historical strategy (funding-carry or cash-and-carry)
+        required: true
+        type: choice
+        options:
+          - funding-carry
+          - cash-and-carry
+      start_date:
+        description: Inclusive UTC calendar start date (YYYY-MM-DD)
+        required: true
+      end_date:
+        description: Inclusive UTC calendar end date (YYYY-MM-DD)
+        required: true
+      sample_size:
+        description: Requested number of market days
+        required: true
+        default: "30"
+      seed:
+        description: Stable pre-registration seed
+        required: true
+      policy_version:
+        description: Sampling policy version
+        required: true
+        default: "systematic-stratified-sha256-v1"
+  push:
+    paths:
+      - ".github/workflows/sample-historical-market-days.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  sample:
+    name: Produce deterministic market-day sample evidence
+    runs-on: ubuntu-latest
+    env:
+      STRATEGY: ${{ inputs.strategy || 'funding-carry' }}
+      START_DATE: ${{ inputs.start_date || '2026-01-01' }}
+      END_DATE: ${{ inputs.end_date || '2026-01-31' }}
+      SAMPLE_SIZE: ${{ inputs.sample_size || '5' }}
+      SAMPLE_SEED: ${{ inputs.seed || 'stage2-baseline-v1' }}
+      POLICY_VERSION: ${{ inputs.policy_version || 'systematic-stratified-sha256-v1' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+
+      - run: uv sync --all-extras --dev
+
+      - name: Generate pre-registered sample evidence
+        run: |
+          mkdir -p artifacts/historical-sampling
+          uv run python scripts/sample_historical_market_days.py             --strategy "${STRATEGY}"             --start-date "${START_DATE}"             --end-date "${END_DATE}"             --sample-size "${SAMPLE_SIZE}"             --seed "${SAMPLE_SEED}"             --policy-version "${POLICY_VERSION}"             --output artifacts/historical-sampling/sample.json
+          cat artifacts/historical-sampling/sample.json
+
+      - name: Upload read-only sampling evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: historical-market-day-sample-${{ github.run_id }}
+          path: artifacts/historical-sampling/
+          if-no-files-found: warn
