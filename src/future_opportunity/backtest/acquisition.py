@@ -51,7 +51,7 @@ def load_historical_acquisition_manifest(
     *,
     max_funding_days: int = 31,
     max_cash_cases: int = 31,
-    max_total_items: int = 62,
+    max_total_items: int = 31,
 ) -> HistoricalAcquisitionManifest:
     raw = json.loads(path.read_text())
     return parse_historical_acquisition_manifest(
@@ -67,7 +67,7 @@ def parse_historical_acquisition_manifest(
     *,
     max_funding_days: int = 31,
     max_cash_cases: int = 31,
-    max_total_items: int = 62,
+    max_total_items: int = 31,
 ) -> HistoricalAcquisitionManifest:
     if not isinstance(raw, dict):
         raise TypeError("historical acquisition manifest must be an object")
