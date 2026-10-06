@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import shutil
 from dataclasses import dataclass
 from datetime import date
@@ -19,6 +20,7 @@ from future_opportunity.backtest.fixture import load_funding_history_fixture
 
 
 SUPPORTED_STRATEGIES = ("funding-carry", "cash-and-carry")
+_SAFE_DATASET_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 
 
 @dataclass(frozen=True, slots=True)
@@ -191,7 +193,7 @@ def _entry_from_manifest(manifest: dict[str, Any]) -> HistoricalCorpusEntry:
     except ValueError as error:
         raise ValueError("historical entry_market_date must use YYYY-MM-DD") from error
 
-    if Path(dataset_id).name != dataset_id or dataset_id in {".", ".."}:
+    if _SAFE_DATASET_ID.fullmatch(dataset_id) is None:
         raise ValueError("historical dataset_id must be a safe directory name")
 
     return HistoricalCorpusEntry(
