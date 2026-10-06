@@ -29,3 +29,12 @@ def test_planner_workflow_remains_read_only_and_only_follows_successful_acquisit
     assert "historical-acquisition-control" in text
     assert "gh pr create" not in text
     assert "git push" not in text
+
+
+def test_acquisition_workflow_propagates_funding_selection_provenance() -> None:
+    text = ACQUIRE.read_text()
+
+    assert "funding_selection_provenance:" in text
+    assert "steps.resolve.outputs.funding_selection_provenance" in text
+    assert "selection_provenance_json:" in text
+    assert "needs.resolve.outputs.funding_selection_provenance" in text
