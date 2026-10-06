@@ -14,6 +14,9 @@ from future_opportunity.backtest.canonical import (
     sha256_file,
 )
 from future_opportunity.domain.market.snapshot import CashAndCarryMarketSnapshot
+from future_opportunity.backtest.selection_provenance import (
+    validate_selection_provenance_for_market_date,
+)
 
 
 def load_cash_and_carry_close_fixture(
@@ -31,6 +34,17 @@ def load_cash_and_carry_close_fixture(
         raise ValueError("fixture is not cash-and-carry")
     if manifest.get("close_mode") != "pre-expiry":
         raise ValueError("cash fixture must use pre-expiry close")
+
+    entry_market_date = manifest.get("entry_market_date")
+    if not isinstance(entry_market_date, str):
+        raise ValueError("cash fixture entry_market_date is invalid")
+    selection_provenance = manifest.get("selection_provenance")
+    if selection_provenance is not None:
+        validate_selection_provenance_for_market_date(
+            selection_provenance,
+            strategy="cash-and-carry",
+            market_date=entry_market_date,
+        )
 
     normalized = manifest.get("normalized")
     if not isinstance(normalized, dict):
