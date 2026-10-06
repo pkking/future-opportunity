@@ -168,3 +168,29 @@ def test_rejects_extra_unmanifested_file(tmp_path: Path) -> None:
             fixture_root=fixture_root,
             index_path=index,
         )
+
+
+def test_repromotion_tolerates_manifest_json_formatting_only(
+    tmp_path: Path,
+) -> None:
+    fixture_root, index = empty_corpus(tmp_path)
+    result = promote_historical_compact_fixture(
+        FUNDING,
+        fixture_root=fixture_root,
+        index_path=index,
+    )
+    destination = fixture_root / result.entry.fixture_path
+    manifest_path = destination / "manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest_path.write_text(
+        json.dumps(manifest, sort_keys=True, separators=(",", ":")) + "\n"
+    )
+
+    repeated = promote_historical_compact_fixture(
+        FUNDING,
+        fixture_root=fixture_root,
+        index_path=index,
+    )
+
+    assert repeated.status == "already_present"
+    assert repeated.changed_paths == ()
