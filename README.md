@@ -435,6 +435,51 @@ before freezing stable thresholds. Activation still requires a separate ADR and
 human approval. Distribution thresholds must not be copied automatically from
 the deterministic reference targets.
 
+### Pre-registering historical market days
+
+Dates intended to support future Stage-2 distribution design should be selected
+**before** looking at strategy outcomes. Use the read-only sampler:
+
+```text
+Actions -> Sample Historical Market Days
+
+strategy       = funding-carry | cash-and-carry
+start_date     = inclusive UTC date
+end_date       = inclusive UTC date
+sample_size    = requested number of days
+seed           = stable pre-registration seed
+policy_version = systematic-stratified-sha256-v1
+```
+
+The v1 policy partitions the complete calendar population into ordered strata
+and selects one day per stratum from a SHA-256-derived offset. The hash domain
+includes policy version, strategy, seed, study-window boundaries and stratum
+index. It never reads prices, funding rates, basis, volatility, qualification
+or returns.
+
+The evidence records the full request, population size, every stratum boundary,
+hash input/digest, offset and selected date. Replaying the same request must
+reproduce the entire artifact exactly.
+
+If a selected date has no usable source data, record it as an explicit
+exclusion. Do **not** replace it with a neighboring or profitable date after
+observing results. Any future replacement policy needs a new version.
+
+Verified golden self-test:
+
+```text
+run:      37482498880
+artifact: historical-market-day-sample-37482498880
+id:       11421537670
+
+Funding Carry / 2026-01-01..2026-01-31 / n=5
+=> 2026-01-01, 2026-01-08, 2026-01-13, 2026-01-22, 2026-01-29
+```
+
+Existing manually selected pinned fixtures remain valid Stage-1 regression
+evidence. They must not be retroactively described as an unbiased market-wide
+sample.
+
 ### Adding historical market days
 
 For a reviewed multi-day preparation set, prefer the acquisition campaign:
@@ -465,9 +510,12 @@ Input is an explicit versioned JSON object:
 }
 ```
 
-The acquisition manifest is bounded to **31 total items**. Funding uses an
-inclusive UTC date range. Cash remains explicit: the acquisition layer never
-infers a holding period or expiry case from discovery output.
+The acquisition manifest is bounded to **31 total items**. Funding accepts
+either an inclusive UTC date range **or** an explicit chronological
+`market_dates` list; the two forms are mutually exclusive. Pre-registered
+samples use the explicit-date form so unsampled days are never filled in.
+Cash remains explicit: the acquisition layer never infers a holding period or
+expiry case from discovery output.
 
 The workflow reuses the existing Funding/Cash preparation workflows. It has
 `contents: read` only and does not change
@@ -548,37 +596,50 @@ Verified example: planner run `37477835622` consumed discovery run
 `37434982233` and produced the explicit 2026-06-03 BTC-USDT-260626 case with
 no exclusions. Evidence artifact: `11420145596`.
 
-To combine a reviewed Cash case plan with an optional Funding date range without
-copying JSON by hand, use the read-only composer:
+To combine reviewed sampling/case-plan evidence without copying JSON by hand,
+use the read-only composer:
 
 ```text
 Actions -> Compose Historical Acquisition Manifest
 
-acquisition_id                 = explicit acquisition identifier
-planner_campaign_prefix        = explicit future planner prefix
-funding_start_date/end_date    = optional explicit inclusive UTC range
-cash_case_plan_run_id          = optional exact successful planner run
-cash_case_plan_artifact_name   = optional exact planner artifact
+acquisition_id                       = explicit acquisition identifier
+planner_campaign_prefix              = explicit future planner prefix
+
+Funding, choose at most one:
+  funding_start_date/end_date        = explicit inclusive UTC range
+  funding_sample_run_id              = exact successful sampling run
+  funding_sample_artifact_name       = exact sampling artifact
+
+Optional Cash:
+  cash_case_plan_run_id              = exact successful planner run
+  cash_case_plan_artifact_name       = exact planner artifact
 ```
 
-The composer verifies the exact Cash case-plan run/artifact, validates its
-schema/evidence type, strips reporting-only fields such as
-`entry_market_date`, combines it with the optional Funding range, and sends
-the result back through the existing acquisition manifest parser. It uploads
-an acquisition-ready JSON artifact only.
+For a Funding sampling artifact, the composer independently verifies the exact
+run/artifact and then **recomputes the deterministic draw from the embedded
+request**. Any changed selected date, hash or stratum evidence fails closed.
+Only a verified `funding-carry` sample is converted to explicit
+`funding.market_dates`; gaps remain gaps.
+
+For Cash, the composer revalidates the case-plan schema/evidence and strips
+reporting-only fields such as `entry_market_date`. The final combined object
+is passed back through the normal acquisition parser, reusing the 31-item and
+UTC/future/expiry contracts.
 
 It does **not** dispatch `Acquire Historical Campaign`. Acquisition remains a
 separate explicit operator action after reviewing the composed manifest.
 
-Verified composer self-test:
+Verified sampled composer self-test:
 
 ```text
-run:      37479406303
-artifact: historical-acquisition-composer-37479406303
-id:       11420626824
+run:      37483512784
+artifact: historical-acquisition-composer-37483512784
+id:       11422581630
 
-Funding: 2026-09-04
-Cash:    2026-06-03 / BTC-USDT-260626
+Funding sampled dates:
+  2026-01-01, 2026-01-08, 2026-01-13, 2026-01-22, 2026-01-29
+Cash:
+  2026-06-03 / BTC-USDT-260626
 ```
 
 A prepared artifact does **not** count toward Stage-2 readiness. A day counts
