@@ -9,6 +9,7 @@ from future_opportunity.backtest.acquisition import (
     acquisition_manifest_payload,
     load_historical_acquisition_manifest,
     workflow_cash_cases_json,
+    workflow_cash_selection_provenance_json,
     workflow_funding_dates_json,
     workflow_funding_selection_provenance_json,
 )
@@ -53,6 +54,11 @@ def main() -> None:
             )
             output.write(
                 f"cash_cases={workflow_cash_cases_json(manifest)}\n"
+            )
+            output.write(
+                "cash_selection_provenance="
+                + workflow_cash_selection_provenance_json(manifest)
+                + "\n"
             )
             output.write(
                 f"funding_count={len(manifest.funding.market_dates) if manifest.funding else 0}\n"
