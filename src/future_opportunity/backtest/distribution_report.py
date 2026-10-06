@@ -188,7 +188,7 @@ def _selection_provenance_view(
 
 
 def _selection_coverage(
-    provenance_by_id: dict[str, dict[str, Any]],
+    selection_by_dataset_id: dict[str, dict[str, Any]],
     *,
     entries_by_strategy: dict[str, tuple[str, ...]],
 ) -> dict[str, Any]:
@@ -200,9 +200,7 @@ def _selection_coverage(
         pre_registered = sum(
             1
             for dataset_id in dataset_ids
-            if provenance_by_id[dataset_id]["selection"][
-                "classification"
-            ]
+            if selection_by_dataset_id[dataset_id]["classification"]
             == "pre_registered_sample"
         )
         legacy = len(dataset_ids) - pre_registered
