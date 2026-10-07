@@ -85,8 +85,8 @@ Cash:
 - [x] Failed sampled dates, if any, remain explicit failures and are not replaced.
 - [x] Acquisition summary proves corpus was not mutated.
 - [x] Workflow/contract tests lock reusable composition and acquisition behavior.
-- [ ] Final CI green.
-- [ ] Document first-wave evidence and next promotion step.
+- [x] Final CI green.
+- [ ] Document final wave evidence, review PR, and next promotion step.
 
 ## Implementation slices
 
@@ -153,18 +153,37 @@ human review/merge of promotion PRs.
 - 2026-10-07: pre-registered wave now fails closed unless the parent run contains
   exactly eight compact artifacts with eight unique names (5 Funding, 3 Cash).
   Workflow-contract tests lock this identity rule.
-- 2026-10-07: exact same pre-registered 5+3 acquisition is being replayed in run
-  37551952412 using the corrected artifact naming. The reviewed date set and
-  selection provenance are unchanged.
+- 2026-10-07: corrected pre-registered 5+3 acquisition run 37551952412
+  completed successfully. All five Funding and all three Cash preparation jobs
+  passed; 8 compact artifacts have distinct names. No failed or substituted
+  sampled date.
+- 2026-10-07: read-only planner run 37553559617 passed using the exact
+  acquisition run. It selected 7 corpus promotion candidates (5 Funding +
+  2 Cash); Cash 2026-06-02 was excluded as already pinned. Projection if
+  reviewed/merged is Funding 7 days and Cash 4 days. The current pinned
+  corpus is unchanged at 2+2 days.
+- 2026-10-07: explicit planned-wave promotion run 37553856198 successfully
+  verified all artifact identities, staged the seven compact fixtures atomically,
+  and passed offline replay. It failed only while pushing the review branch:
+  its triggering commit c49bb74 modified a protected GitHub Actions workflow,
+  and GitHub App credentials lacked workflow-file write permission.
+  The corpus commit object c9b70b8719bd242e9f64d5d9e01fbecdbeca2a34
+  remains readable in GitHub; it changes only the corpus index and seven compact
+  fixture directories. Main subsequently restored the workflow to
+  explicit-dispatch-only, and CI 37553888389 passed.
+
 
 ## Resume from here
 
-Wait for corrected replay run 37551952412 to finish the exact same eight
-pre-registered preparations. Require the new compact-artifact identity guard to
-pass (8 total, 8 unique, 5 Funding, 3 Cash). Then feed that exact successful run
-to the read-only campaign planner, record selected/excluded pinned items and
-projected readiness, and hand the resulting promotion wave to explicit campaign
-promotion. Do not replace any failed sampled day.
+Recover the already-validated seven-item promotion from rejected Git commit
+c9b70b8719bd242e9f64d5d9e01fbecdbeca2a34. Overlay **only**
+`tests/fixtures/historical/` from that commit onto the latest main Git tree,
+creating a new review commit with latest main as its parent. Do not carry the
+triggering workflow diff into the review branch. Before publishing, compare the
+proposed review commit against main and require changes solely under the corpus
+path. Open a review-only PR, verify PR CI and Historical Backtest Smoke, and
+leave the PR unmerged. Record the outcome and complete/archive this plan;
+committed readiness stays 2+2 until human merge. Do not resample/reselect.
 
 ## Completion
 
