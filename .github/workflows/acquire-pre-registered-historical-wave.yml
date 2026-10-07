@@ -59,6 +59,8 @@ jobs:
     needs: [compose, acquire]
     if: always() && needs.compose.result == 'success' && needs.acquire.result == 'success'
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
       - name: Assert exact reviewed 5+3 wave and record evidence
         env:
@@ -98,6 +100,37 @@ jobs:
             }' > artifacts/pre-registered-wave/summary.json
 
           cat artifacts/pre-registered-wave/summary.json
+
+      - name: Assert unique compact artifact identity for exact 5+3 wave
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api             "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts?per_page=100"             > artifacts/pre-registered-wave/run-artifacts.json
+
+          jq -r             '[.artifacts[] | select(.name | contains("-compact-")) | .name] | sort[]'             artifacts/pre-registered-wave/run-artifacts.json             > artifacts/pre-registered-wave/compact-artifact-names.txt
+
+          total="$(wc -l < artifacts/pre-registered-wave/compact-artifact-names.txt | tr -d ' ')"
+          unique="$(sort -u artifacts/pre-registered-wave/compact-artifact-names.txt | wc -l | tr -d ' ')"
+          funding="$(grep -c '^okx-btc-funding-compact-' artifacts/pre-registered-wave/compact-artifact-names.txt || true)"
+          cash="$(grep -c '^okx-btc-cash-and-carry-compact-' artifacts/pre-registered-wave/compact-artifact-names.txt || true)"
+
+          test "${total}" = "8"
+          test "${unique}" = "8"
+          test "${funding}" = "5"
+          test "${cash}" = "3"
+
+          jq -n             --argjson total "${total}"             --argjson unique "${unique}"             --argjson funding "${funding}"             --argjson cash "${cash}"             '{
+              schema_version: 1,
+              compact_artifact_total: $total,
+              compact_artifact_unique_names: $unique,
+              funding_compact_count: $funding,
+              cash_compact_count: $cash,
+              identity_contract_satisfied: (
+                $total == 8 and $unique == 8 and $funding == 5 and $cash == 3
+              )
+            }'             > artifacts/pre-registered-wave/artifact-identity.json
+
+          cat artifacts/pre-registered-wave/artifact-identity.json
 
       - name: Upload pre-registered wave control evidence
         uses: actions/upload-artifact@v4
