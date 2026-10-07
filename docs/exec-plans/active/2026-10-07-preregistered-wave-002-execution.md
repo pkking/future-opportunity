@@ -59,12 +59,12 @@ Maximum requested preparation items if no Cash exclusions: 26.
 ## Acceptance criteria
 
 - [x] Approved parameters are versioned before triggering acquisition.
-- [ ] Funding sample evidence contains exactly 12 deterministic selected dates.
-- [ ] Cash sample evidence contains exactly 14 deterministic selected dates.
-- [ ] Sampled Cash discovery preserves exact sample provenance.
-- [ ] Cash case plan uses BTC-USDT-260925 / approved expiry/exit/entry facts.
-- [ ] Acquisition composition preserves Funding + Cash selection provenance.
-- [ ] Requested acquisition size is <=26 and <=31 cap.
+- [x] Funding sample evidence contains exactly 12 deterministic selected dates.
+- [x] Cash sample evidence contains exactly 14 deterministic selected dates.
+- [x] Sampled Cash discovery preserves exact sample provenance.
+- [x] Cash case plan uses BTC-USDT-260925 / approved expiry/exit/entry facts.
+- [x] Acquisition composition preserves Funding + Cash selection provenance.
+- [x] Requested acquisition size is <=26 and <=31 cap.
 - [ ] All successful compact artifacts have Actions IDs/digests.
 - [ ] Final wave-boundary verification succeeds, or failures/exclusions are recorded without reselection.
 - [ ] Campaign planner reconciles source run against current main corpus.
@@ -75,8 +75,8 @@ Maximum requested preparation items if no Cash exclusions: 26.
 
 - [x] 1. Record operator approval and create Issue #19.
 - [x] 2. Create disposable Wave 002 execution branch and this immutable plan.
-- [ ] 3. Apply exact approved values only to push fallbacks on the execution branch.
-- [ ] 4. Observe deterministic sampling and Cash planning before long-running acquisition completes.
+- [x] 3. Apply exact approved values only to push fallbacks on the execution branch.
+- [x] 4. Observe deterministic sampling and Cash planning before long-running acquisition completes.
 - [ ] 5. Reconcile final acquisition artifacts and automatic campaign planner output.
 - [ ] 6. Record evidence; restore/close disposable execution branch state without merging it.
 - [ ] 7. Decide Wave 003 execution from evidence only, without changing Wave 002 sample.
@@ -86,10 +86,10 @@ Maximum requested preparation items if no Cash exclusions: 26.
 | Gate | Evidence | Status |
 |---|---|---|
 | Approved study identity | Issue #18 Option A + Issue #19 + this plan | passed |
-| Funding sample | Actions artifact | pending |
-| Cash sample | Actions artifact | pending |
-| Cash discovery/case plan | Actions artifacts | pending |
-| Acquisition manifest | historical-acquisition-control | pending |
+| Funding sample | run 37591051064 artifact 11468786836; 12 dates | passed |
+| Cash sample | run 37591051064 artifact 11468706304; 14 dates | passed |
+| Cash discovery/case plan | 14 discovery jobs success; case planner selected=0 excluded=14 | exclusion evidence recorded |
+| Acquisition manifest | run 37591051064 artifact 11468691763; 12 Funding + 0 Cash | passed |
 | Compact preparation | per-case Actions artifacts | pending |
 | Wave boundary | pre-registered-acquisition-wave artifact | pending |
 | Campaign planner | workflow_run planner evidence | pending |
@@ -103,14 +103,19 @@ No further study-design decision is allowed inside Wave 002. Any source-data exc
 - 2026-10-07: operator selected Option A.
 - 2026-10-07: Issue #18 updated with approval; Issue #19 opened for Wave 002 execution.
 - 2026-10-07: execution branch `study/preregistered-wave-002-execution` created from current main.
+- 2026-10-07: exact approved fallback values committed as 1284763cf23c6b8d4676b40f5dc080ae44fc0f5b; canonical source run 37591051064 started.
+- 2026-10-07: Funding deterministic sample selected 12 dates: 2026-02-07, 02-14, 02-16, 02-23, 03-05, 03-10, 03-22, 03-28, 04-03, 04-08, 04-20, 04-27.
+- 2026-10-07: Cash deterministic sample selected 14 dates: 2026-07-02, 07-03, 07-05, 07-07, 07-10, 07-12, 07-15, 07-17, 07-18, 07-21, 07-23, 07-25, 07-27, 07-31.
+- 2026-10-07: all 14 Cash discovery jobs completed successfully as evidence-generation jobs, but each report had candidate_count=0/status=no_unique_future_chain_archive. Case planner retained the approved BTC-USDT-260925 template and excluded all 14 without replacement.
 
 ## Deviations and discoveries
 
-None yet.
+- All 14 approved Cash dates returned discovery status `no_unique_future_chain_archive` with candidate_count=0. The case planner therefore produced selected_count=0 / excluded_count=14. Per pre-registration policy, no dates were replaced and the approved future/exit facts were not changed.
+- Wave 002 acquisition continues with the 12 approved Funding dates only; Cash selection provenance remains embedded in acquisition evidence even though no Cash cases were eligible.
 
 ## Resume from here
 
-Change only the push fallback values in `.github/workflows/prepare-pre-registered-historical-wave.yml` on this execution branch to the exact approved Wave 002 inputs. The resulting push run is the canonical Wave 002 source run. Do not merge the branch.
+Canonical Wave 002 source run is 37591051064. Monitor the 12 Funding preparations to completion; record every compact artifact ID/digest and automatic campaign planner output. Do not alter or rerun the approved sample because Cash produced zero eligible cases.
 
 ## Completion
 
