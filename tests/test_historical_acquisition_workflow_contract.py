@@ -24,7 +24,8 @@ def test_planner_workflow_remains_read_only_and_only_follows_successful_acquisit
     assert "contents: read" in text
     assert "contents: write" not in text
     assert "pull-requests:" not in text
-    assert "workflows: [\"Acquire Historical Campaign\"]" in text
+    assert '- "Acquire Historical Campaign"' in text
+    assert '- "Acquire Pre-registered Historical Wave"' in text
     assert "github.event.workflow_run.conclusion == 'success'" in text
     assert "historical-acquisition-control" in text
     assert "gh pr create" not in text
