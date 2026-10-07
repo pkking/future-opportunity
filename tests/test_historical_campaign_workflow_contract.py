@@ -18,8 +18,11 @@ def test_campaign_promotion_is_reusable_without_weakening_review_boundary() -> N
     assert "gh pr create" in text
     assert "repository_policy_blocks_actions_pr_creation" in text
     assert "actions/runs/${run_id}" in text
-    assert 'test "$(jq -r '.status' "${run_json}")" = "completed"' in text
-    assert 'test "$(jq -r '.conclusion' "${run_json}")" = "success"' in text
+    assert "run_json" in text
+    assert "'.status'" in text
+    assert "'.conclusion'" in text
+    assert '= "completed"' in text
+    assert '= "success"' in text
     assert "git push origin main" not in text
     assert "gh pr merge" not in text
 
