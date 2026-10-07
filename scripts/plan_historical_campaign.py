@@ -7,6 +7,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 from future_opportunity.backtest.campaign_inventory import (
+    selection_provenance_sha256,
     verified_candidates_from_inventory,
 )
 from future_opportunity.backtest.campaign_planning import (
@@ -16,6 +17,49 @@ from future_opportunity.backtest.corpus import load_historical_corpus
 from future_opportunity.backtest.historical_policy import (
     load_historical_acceptance_policy,
 )
+def _excluded_pinned_evidence(
+    candidate,
+    *,
+    corpus,
+    fixture_root: Path,
+    inventory_evidence: list[dict[str, str]],
+) -> dict[str, str]:
+    pinned = next(
+        entry
+        for entry in corpus.entries
+        if entry.strategy == candidate.entry.strategy
+        and entry.entry_market_date == candidate.entry.entry_market_date
+    )
+    candidate_record = next(
+        item
+        for item in inventory_evidence
+        if item["dataset_id"] == candidate.entry.dataset_id
+    )
+    candidate_sha = candidate_record["selection_provenance_sha256"]
+    pinned_sha = selection_provenance_sha256(
+        fixture_root / pinned.fixture_path / "manifest.json"
+    )
+
+    if candidate_sha == "absent":
+        status = "candidate_missing"
+    elif pinned_sha == "absent":
+        status = "pinned_missing"
+    elif candidate_sha == pinned_sha:
+        status = "match"
+    else:
+        status = "different"
+
+    return {
+        "dataset_id": candidate.entry.dataset_id,
+        "strategy": candidate.entry.strategy,
+        "entry_market_date": candidate.entry.entry_market_date,
+        "reason": "pinned_by_identity",
+        "candidate_selection_provenance_sha256": candidate_sha,
+        "pinned_selection_provenance_sha256": pinned_sha,
+        "selection_provenance_status": status,
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("inventory", type=Path)
@@ -86,12 +130,12 @@ def main() -> None:
             for candidate in planned.selected
         ],
         "excluded_pinned": [
-            {
-                "dataset_id": candidate.entry.dataset_id,
-                "strategy": candidate.entry.strategy,
-                "entry_market_date": candidate.entry.entry_market_date,
-                "reason": "pinned_by_identity_content_not_compared",
-            }
+            _excluded_pinned_evidence(
+                candidate,
+                corpus=corpus,
+                fixture_root=args.fixture_root,
+                inventory_evidence=evidence,
+            )
             for candidate in planned.excluded_pinned
         ],
         "verified_source_evidence": evidence,
