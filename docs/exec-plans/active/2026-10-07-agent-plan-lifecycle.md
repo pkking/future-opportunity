@@ -76,6 +76,7 @@ None. This closes an inconsistency in the already accepted GitHub-native agent w
 - 2026-10-07: validator/tests now distinguish active and completed contracts; AGENTS.md/template document completion PR semantics.
 - 2026-10-07: reconciled plans #5/#6/#8 with real merge/CI evidence and moved them to `completed/` on this branch.
 - 2026-10-07: corrected current README corpus facts to Funding=8 / Cash=5.
+- 2026-10-07: PR #10 first CI found a real validator bug: an empty `Resume from here` section was accepted because the regex consumed the following heading. Kept the failing test and changed validation to inspect the section body explicitly.
 
 ## Deviations and discoveries
 
