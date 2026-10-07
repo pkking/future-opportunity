@@ -505,10 +505,12 @@ and Historical Backtest Smoke
 both passed after fixing an old test that incorrectly assumed all indexed
 fixtures were legacy-untracked.
 
-If merged, the proposed historical readiness becomes Funding Carry 7 days and
-Cash-and-Carry 4 days. **Open PRs do not count as pinned days**; until review
-and merge, the committed baseline remains 2+2 days. Neither state enables
-Stage-2 distribution-based return gating.
+PR #4 was later reconciled after PR #3 and merged. The committed corpus now
+contains **8 Funding Carry days and 5 Cash-and-Carry days**. The first
+pre-registered acquisition prepared 5 Funding + 3 Cash cases, but Cash
+2026-06-02 was already pinned before promotion, so only seven of those eight
+prepared facts were new to the corpus. The current 8/5 baseline still does not
+enable Stage-2 distribution-based return gating.
 
 Existing manually selected pinned fixtures remain valid Stage-1 regression
 evidence. They must not be retroactively described as an unbiased market-wide
@@ -554,7 +556,23 @@ the 30/90-day transition rule.
 
 ### Adding historical market days
 
-For a reviewed multi-day preparation set, prefer the acquisition campaign:
+For evidence selected by the pre-registration policy, use:
+
+```text
+Actions -> Acquire Pre-registered Historical Wave
+```
+
+The workflow accepts exact Funding sampling and Cash case-plan run/artifact
+identities. Its first-wave defaults remain a backward-compatible self-test, but
+verification is not tied to 5 Funding + 3 Cash: expected Funding/Cash/total
+counts are derived from the canonical composed `acquisition.json`. The actual
+compact artifact total, unique-name count, and per-strategy counts must match
+that derived boundary exactly. The underlying acquisition manifest remains
+bounded to **31 total items**, and a zero-item strategy side is valid when the
+other side is non-empty.
+
+For a reviewed multi-day preparation set without pre-registration provenance,
+prefer the lower-level acquisition campaign:
 
 ```text
 Actions -> Acquire Historical Campaign
