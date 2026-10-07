@@ -1,7 +1,7 @@
 # 2026-10-07-preregistered-wave-002-execution: Execute approved Stage-2 evidence Wave 002
 
 Issue: #19
-Status: IMPLEMENTING
+Status: COMPLETED
 Owner: agent
 Started: 2026-10-07
 Last checkpoint: 2026-10-07
@@ -66,10 +66,10 @@ Maximum requested preparation items if no Cash exclusions: 26.
 - [x] Acquisition composition preserves Funding + Cash selection provenance.
 - [x] Requested acquisition size is <=26 and <=31 cap.
 - [x] All successful compact artifacts have Actions IDs/digests for baseline attempt.
-- [ ] Final wave-boundary verification succeeds, or failures/exclusions are recorded without reselection.
-- [ ] Campaign planner reconciles source run against current main corpus.
-- [ ] Execution-only branch is not merged to main.
-- [ ] Wave 002 evidence is sufficient to decide whether to proceed unchanged to Wave 003.
+- [x] Final wave-boundary verification succeeds, or failures/exclusions are recorded without reselection.
+- [x] Campaign planner reconciles source run against current main corpus.
+- [x] Execution-only branch is not merged to main.
+- [x] Wave 002 evidence is sufficient to decide whether to proceed unchanged to Wave 003.
 
 ## Implementation slices
 
@@ -77,9 +77,9 @@ Maximum requested preparation items if no Cash exclusions: 26.
 - [x] 2. Create disposable Wave 002 execution branch and this immutable plan.
 - [x] 3. Apply exact approved values only to push fallbacks on the execution branch.
 - [x] 4. Observe deterministic sampling and Cash planning before long-running acquisition completes.
-- [~] 5. Retry exact Funding sample under merged 1024 MiB cap; 11/12 Funding compacts are complete, with only 2026-04-20 still running; then reconcile final artifacts/planner.
-- [ ] 6. Record evidence; restore/close disposable execution branch state without merging it.
-- [ ] 7. Decide Wave 003 execution from evidence only, without changing Wave 002 sample.
+- [x] 5. Retry exact Funding sample under merged 1024 MiB cap; all 12 Funding compacts completed; reconcile final artifacts/planner.
+- [x] 6. Record evidence; keep disposable execution branch unmerged and archive completion evidence through a separate main-based PR.
+- [x] 7. Decide Wave 003 execution from evidence only, without changing Wave 002 sample.
 
 ## Verification matrix
 
@@ -90,9 +90,9 @@ Maximum requested preparation items if no Cash exclusions: 26.
 | Cash sample | run 37591051064 artifact 11468706304; 14 dates | passed |
 | Cash discovery/case plan | 14 discovery jobs success; case planner selected=0 excluded=14 | exclusion evidence recorded |
 | Acquisition manifest | run 37591051064 artifact 11468691763; 12 Funding + 0 Cash | passed |
-| Compact preparation | retry run 37593545181: 11/12 Funding compact artifacts complete with Actions digests; 2026-04-20 still running; no retry failures observed | in progress |
-| Wave boundary | pre-registered-acquisition-wave artifact | pending |
-| Campaign planner | workflow_run planner evidence | pending |
+| Compact preparation | retry run 37593545181: 12/12 Funding compact artifacts complete with Actions IDs/digests; 0 Cash cases by pre-registered exclusion | passed |
+| Wave boundary | run 37593545181 artifact 11470704540 digest sha256:17871ed6e8c7edf96aa7412e6d1dfa8f0c9f91bd5a17ff1152bd8e3b4f6febed | passed |
+| Campaign planner | run 37596889005; artifact 11470314464 digest sha256:8f1189786a43d9bf5ef265d99f0a07544357a6f7ab2c097576329d67246ed187; selected=12, pinned 8/5 -> projected 20/5 | passed |
 
 ## Decision gates
 
@@ -114,15 +114,20 @@ No further study-design decision is allowed inside Wave 002. Any source-data exc
 - Wave 002 acquisition continues with the 12 approved Funding dates only; Cash selection provenance remains embedded in acquisition evidence even though no Cash cases were eligible.
 - Baseline source run 37591051064 completed with conclusion=failure solely because Funding 2026-02-07, 02-23, 03-05 and 03-10 exceeded the old 600 MiB raw cap. The other eight Funding dates succeeded and produced compact artifacts with Actions digests.
 - Read-only catalog diagnostic 37591909278 measured max SWAP 800.48 MB; Issue #20/PR #21 raised the Funding cap to 1024 MiB and merged as d47c83abf48919a95859ae571a05398eee2303ff. Main CI and Funding self-tests passed.
-- 2026-10-07: exact-study retry run 37593545181 started from execution commit c39f2d295c913d8b899904df8c69c39c11e0b0b0 with only the merged 1024 MiB cap change plus the same approved Wave 002 fallbacks. At checkpoint, 11/12 Funding compact artifacts exist with valid Actions digests; the four baseline cap failures now succeed. Only Funding 2026-04-20 remains in progress; no retry job has failed.
+- 2026-10-07: exact-study retry run 37593545181 started from execution commit c39f2d295c913d8b899904df8c69c39c11e0b0b0 with only the merged 1024 MiB cap change plus the same approved Wave 002 fallbacks. All 12 Funding preparation jobs succeeded and produced compact artifacts with Actions IDs/digests; all 14 Cash dates remained explicit exclusions and were not replaced.
+- 2026-10-07: wave-boundary artifact `pre-registered-acquisition-wave-37593545181` is artifact 11470704540 with digest `sha256:17871ed6e8c7edf96aa7412e6d1dfa8f0c9f91bd5a17ff1152bd8e3b4f6febed`; source run conclusion=success.
+- 2026-10-07: automatic read-only planner run 37596889005 succeeded against current main. It resolved `planner_campaign_prefix=preregistered-review-002`, selected 12 Funding compacts, selected 0 Cash compacts, and projected the pinned corpus from Funding=8/Cash=5 to Funding=20/Cash=5 if the generated review wave is later merged. Planner artifact 11470314464 digest is `sha256:8f1189786a43d9bf5ef265d99f0a07544357a6f7ab2c097576329d67246ed187`.
+- 2026-10-07: Wave 002 is reconciled without reselection. Approved Wave 003 parameters remain unchanged. Even if all 14 Wave 003 Cash dates are usable, Cash would project only to 19 pinned days, so at least one later Cash evidence wave will still be required before ADR-0007 Stage-2 minimum readiness.
 
 ## Resume from here
 
-Retry run 37593545181 is in progress with the exact approved sample. 11/12 Funding compact artifacts are complete and all four former 600 MiB cap failures now succeed; only 2026-04-20 remains running and there are no retry failures. Do not touch the workflow file or alter study inputs. Once run 37593545181 completes, verify all 12 compact artifact IDs/digests, the final wave-boundary job/artifact, then locate the automatic `Plan Historical Corpus Campaign` workflow_run execution and reconcile its read-only report against current main.
+Wave 002 is complete and reconciled. Archive this plan through a main-based completion PR without merging the disposable execution branch. After that PR merges and Issue #19 closes, execute the already-approved immutable Wave 003 design from Issue #18; do not modify its pre-registered windows, sample sizes, seeds, future/expiry/exit/entry facts in response to Wave 002 outcomes.
 
 ## Completion
 
-Final commit: pending
-CI run: not applicable to disposable execution branch
-E2E artifact: pending Wave 002 source run and planner run
-Remaining unassessed items: Wave 003 execution and Stage-2 target design
+Final execution commit: c39f2d295c913d8b899904df8c69c39c11e0b0b0
+Source run: 37593545181 (success)
+Wave artifact: 11470704540 / sha256:17871ed6e8c7edf96aa7412e6d1dfa8f0c9f91bd5a17ff1152bd8e3b4f6febed
+Planner run: 37596889005 (success)
+Planner artifact: 11470314464 / sha256:8f1189786a43d9bf5ef265d99f0a07544357a6f7ab2c097576329d67246ed187
+Remaining unassessed items: Wave 003 execution, later Cash evidence needed to reach >=30 pinned days, and Stage-2 target design
