@@ -104,7 +104,7 @@ jobs:
 
   cash-selftest:
     name: Produce Cash sampling self-test evidence
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && inputs.strategy == ''
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
