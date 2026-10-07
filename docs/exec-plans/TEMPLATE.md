@@ -1,5 +1,6 @@
 # <work-id>: <title>
 
+Issue: #N
 Status: PLANNING
 Owner: agent
 Started: YYYY-MM-DD
@@ -86,7 +87,10 @@ Exactly one concrete next action that another agent can execute immediately.
 
 ## Completion
 
-Final commit:
-CI run:
-E2E artifact:
-Remaining unassessed items:
+Final commit: pending
+CI run: pending
+E2E artifact: pending or not applicable
+Remaining unassessed items: pending
+
+
+When finalizing a plan, set `Status: COMPLETED`, check every acceptance criterion and implementation slice, replace pending completion fields with concrete evidence, move the file to `completed/` in a completion PR, and close the GitHub Issue only after that PR merges.
