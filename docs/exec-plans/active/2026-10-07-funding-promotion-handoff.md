@@ -32,22 +32,22 @@ Version and validate the exact planner handoff inputs for the already-approved W
 ## Acceptance criteria
 
 - [x] Issue and governance boundary are versioned before implementation.
-- [ ] Exact Wave 002 planner handoff is versioned.
-- [ ] Exact Wave 003 planner handoff is versioned.
-- [ ] Exact 24 compact refs are versioned without edits.
-- [ ] Offline validation proves 12 + 12 unique Funding dates and no overlap.
-- [ ] Validation checks campaign IDs, planner artifact digests and expected counts.
-- [ ] Every currently referenced compact artifact is rechecked as present, unexpired and sha256-addressed.
-- [ ] Handoff explicitly targets `Promote Planned Historical Wave`.
+- [x] Exact Wave 002 planner handoff is versioned.
+- [x] Exact Wave 003 planner handoff is versioned.
+- [x] Exact 24 compact refs are versioned without edits.
+- [x] Offline validation proves 12 + 12 unique Funding dates and no overlap.
+- [x] Validation checks campaign IDs, planner artifact digests and expected counts.
+- [x] Every currently referenced compact artifact is rechecked as present, unexpired and sha256-addressed.
+- [x] Handoff explicitly targets `Promote Planned Historical Wave`.
 - [ ] Full PR CI and Historical Smoke pass.
-- [ ] No workflow or corpus mutation is introduced.
+- [x] No workflow or corpus mutation is introduced.
 
 ## Implementation slices
 
 - [x] 1. Open Issue #35 and create this branch/plan.
-- [ ] 2. Commit exact planner-wave snapshots and handoff metadata.
-- [ ] 3. Add offline handoff validator/tests.
-- [ ] 4. Record live artifact existence/digest preflight.
+- [x] 2. Commit exact planner-wave snapshots and handoff metadata.
+- [x] 3. Add offline handoff validator/tests.
+- [x] 4. Record live artifact existence/digest preflight.
 - [ ] 5. Run full PR gates.
 - [ ] 6. Archive/merge this handoff task and stop at explicit promotion dispatch boundary.
 
@@ -55,8 +55,8 @@ Version and validate the exact planner handoff inputs for the already-approved W
 
 | Gate | Evidence | Status |
 |---|---|---|
-| Handoff validator | exact two planner waves / 24 refs | pending |
-| Artifact preflight | source/planner Actions metadata | pending |
+| Handoff validator | `tests/test_funding_promotion_handoff.py` | implemented; PR CI pending |
+| Artifact preflight | planner artifacts + 24 compact artifacts checked via GitHub Actions metadata | passed |
 | Static/API/E2E | PR Ruleset | pending |
 | Historical smoke | PR workflow | pending |
 
@@ -70,6 +70,8 @@ The actual promotion `workflow_dispatch` is intentionally outside this task. The
 - 2026-10-07: Wave 003 planner artifact 11472665816 / sha256:8aa8e9b5b3e82a2226b8334f5fdccda870e201ff2b832582a5cc601742645850 is unexpired.
 - 2026-10-07: Wave 002 source run 37593545181 exposes 12 unexpired Funding compact artifacts with sha256 digests.
 - 2026-10-07: Wave 003 source run 37597427096 exposes 12 unexpired Funding compact artifacts with sha256 digests.
+- 2026-10-07: downloaded planner artifacts 11470314464 and 11472665816; verified exact wave files `waves/preregistered-review-002-wave-001.json` and `waves/preregistered-review-003-wave-001.json`, each with 12 planner-produced Funding refs.
+- 2026-10-07: versioned handoff `docs/historical-promotion-handoffs/stage2-funding-waves-002-003.json` preserves planner run/artifact IDs, digests, wave paths, campaign IDs and all 24 refs exactly.
 
 ## Deviations and discoveries
 
@@ -77,7 +79,7 @@ None yet.
 
 ## Resume from here
 
-Commit exact handoff metadata plus the two planner wave snapshots, then add an offline validator that proves counts, dates, provenance and workflow target without dispatching promotion.
+Open the implementation PR and run full Ruleset CI + Historical Smoke. If green, archive this handoff task. Do not dispatch promotion from this branch; actual `workflow_dispatch` remains the explicit execution boundary.
 
 ## Completion
 
