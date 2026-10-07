@@ -90,7 +90,7 @@ def validate_plan(plan_path: str, issue: int, root: Path) -> str:
     if plan.parent == active:
         if not ACTIVE_STATUS.search(content):
             raise IntegrityError("Active plan must declare a recognized active status")
-        if not re.search(r"(?s)## Resume from here\s*\n\s*\n?\S", content):
+        if not _section(content, "## Resume from here").strip():
             raise IntegrityError("Active plan requires a nonempty recovery checkpoint")
         return "active"
 
