@@ -1,0 +1,2 @@
+{"asks":[["67637.1","0.01455"],["67642.3","0.01184179"],["67643","0.0709"]],"bids":[["67637","0.98805945"]],"instrument_id":"BTC-USDT","observed_at":"2026-02-23T00:00:00+00:00","schema_version":1,"source_action":"snapshot","source_line":1}
+{"asks":[["64617.8","0.258293"]],"bids":[["64617.7","1.12772548"]],"instrument_id":"BTC-USDT","observed_at":"2026-02-23T23:44:59.997000+00:00","schema_version":1,"source_action":"update","source_line":5395357}
