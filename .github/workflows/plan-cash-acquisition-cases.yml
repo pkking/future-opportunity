@@ -18,6 +18,23 @@ on:
       entry_time_utc:
         description: Explicit UTC entry clock time HH:MM:SS
         required: true
+  workflow_call:
+    inputs:
+      discovery_run_id:
+        required: true
+        type: string
+      future_id:
+        required: true
+        type: string
+      expiry_at:
+        required: true
+        type: string
+      exit_at:
+        required: true
+        type: string
+      entry_time_utc:
+        required: true
+        type: string
   push:
     paths:
       - ".github/workflows/plan-cash-acquisition-cases.yml"
@@ -55,8 +72,14 @@ jobs:
           mkdir -p "${work}/discovery"
 
           gh api             "repos/${GITHUB_REPOSITORY}/actions/runs/${DISCOVERY_RUN_ID}"             > "${work}/source-run.json"
-          test "$(jq -r '.status' "${work}/source-run.json")" = "completed"
-          test "$(jq -r '.conclusion' "${work}/source-run.json")" = "success"
+          source_status="$(jq -r '.status' "${work}/source-run.json")"
+          source_conclusion="$(jq -r '.conclusion // ""' "${work}/source-run.json")"
+          if [ "${DISCOVERY_RUN_ID}" = "${GITHUB_RUN_ID}" ]; then
+            test "${source_status}" = "in_progress"
+          else
+            test "${source_status}" = "completed"
+            test "${source_conclusion}" = "success"
+          fi
 
           gh api             "repos/${GITHUB_REPOSITORY}/actions/runs/${DISCOVERY_RUN_ID}/artifacts?per_page=100"             > "${work}/source-artifacts.json"
 
@@ -76,7 +99,11 @@ jobs:
           test "${#names[@]}" -le 31
 
           control_count="$(jq             '[.artifacts[] | select(.name == "cash-sampled-discovery-control")] | length'             "${work}/source-artifacts.json")"
-          test "${control_count}" -le 1
+          if [ "${DISCOVERY_RUN_ID}" = "${GITHUB_RUN_ID}" ]; then
+            test "${control_count}" = 1
+          else
+            test "${control_count}" -le 1
+          fi
           selection_path=""
           if [ "${control_count}" = "1" ]; then
             control_id="$(jq -r               '.artifacts[] | select(.name == "cash-sampled-discovery-control") | .id'               "${work}/source-artifacts.json")"
