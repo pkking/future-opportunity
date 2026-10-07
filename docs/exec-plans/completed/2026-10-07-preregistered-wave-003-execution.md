@@ -69,6 +69,19 @@ Maximum requested preparation items if no Cash exclusions: 26.
 - [x] 5. Reconcile all compact artifacts, final wave boundary, and automatic planner output.
 - [x] 6. Archive completed evidence via a main-based completion PR without merging this execution branch.
 
+## Verification matrix
+
+| Gate | Evidence | Status |
+|---|---|---|
+| Approved study identity | Issue #18 Option A + Issue #24 + this plan | passed |
+| Funding sample | run 37597427096; 12 deterministic dates with approved Wave 003 seed/window | passed |
+| Cash sample | run 37597427096; 14 deterministic dates with approved Wave 003 seed/window | passed |
+| Cash discovery/case plan | 14/14 discovery reports candidate_count=0 / no_unique_future_chain_archive; planner selected=0 excluded=14 | exclusion evidence recorded |
+| Acquisition composition | source run 37597427096; 12 Funding + 0 Cash; exact selection provenance retained | passed |
+| Compact preparation | 12/12 Funding compact artifacts with Actions IDs/digests; no failures | passed |
+| Wave boundary | artifact 11472925140 / sha256:4754605e7a8e26328a29a2c7670d436fb7026816199695c434957560ab98cb68 | passed |
+| Campaign planner | run 37600237687; artifact 11472665816 / sha256:8aa8e9b5b3e82a2226b8334f5fdccda870e201ff2b832582a5cc601742645850; selected=12 | passed |
+
 ## Decision gates
 
 No study-design decision remains for Wave 003. Any missing source data is an exclusion, not a prompt to modify or replace the sample.
