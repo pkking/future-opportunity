@@ -48,7 +48,7 @@ Remove the first-wave-only 5 Funding + 3 Cash verification assumption from the r
 - [x] Workflow remains actions:read + contents:read only.
 - [x] Contract tests cover dynamic counts and reject reintroduction of hard-coded assumptions.
 - [x] README/testing guidance describes reusable wave semantics.
-- [ ] Full CI and Ruleset checks pass.
+- [x] Full CI and Ruleset checks pass.
 
 ## Implementation slices
 
@@ -56,18 +56,18 @@ Remove the first-wave-only 5 Funding + 3 Cash verification assumption from the r
 - [x] 2. Generalize wave summary and identity verification.
 - [x] 3. Update workflow contract tests.
 - [x] 4. Update user/agent documentation.
-- [ ] 5. Verify PR CI and merge; complete/close through normal lifecycle.
+- [ ] 5. Merge PR after final evidence checkpoint; complete/close through normal lifecycle.
 
 ## Verification matrix
 
 | Scope | Evidence | Status |
 |---|---|---|
-| Plan integrity | PR required check | pending |
-| Workflow contract | `tests/test_pre_registered_acquisition_wave_workflow.py` | pending |
-| Static | CI | pending |
-| Code | CI | pending |
-| API | CI | pending |
-| E2E | CI | pending |
+| Plan integrity | PR CI 37573750547 | passed |
+| Workflow contract | Code-level tests in PR CI 37573750547 | passed |
+| Static | PR CI 37573750547 | passed |
+| Code | PR CI 37573750547 | passed |
+| API | PR CI 37573750547 | passed |
+| E2E | PR CI 37573750547 | passed |
 
 ## Decision gates
 
@@ -83,10 +83,12 @@ None. This removes an implementation-specific first-wave constraint while preser
 ## Deviations and discoveries
 
 - Current push self-test of the generalized workflow is run 37573580430; it reuses the original 5+3 source artifacts as a regression case while exercising dynamic count derivation.
+- 2026-10-07: PR #13 CI 37573750547 passed Agent Plan Integrity, Static, Code, API and E2E; Historical Backtest Smoke 37573750369 passed.
+- 2026-10-07: real acquisition self-test 37573580430 succeeded end to end. Compose/manifest validation passed, all 5 Funding + 3 Cash preparations succeeded, and final `Verify wave boundary` passed using dynamic expected counts rather than static 5/3/8 assertions.
 
 ## Resume from here
 
-Monitor workflow self-test 37573580430, open the PR, verify contract/full CI, then merge and close through the normal completed-plan lifecycle.
+PR CI and the real 5+3 workflow self-test are green. Re-run required PR checks after this evidence-only checkpoint, then merge PR #13, verify main CI, and finalize/close through the completed-plan lifecycle.
 
 ## Completion
 
