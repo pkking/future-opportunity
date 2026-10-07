@@ -62,30 +62,30 @@ Cash sampling -> sampled discovery -> case plan ┘
 
 ## Acceptance criteria
 
-- [ ] Sampling supports workflow_call and caller-supplied unique artifact names.
-- [ ] Sampled Cash discovery supports workflow_call.
-- [ ] Cash case planning supports workflow_call.
-- [ ] Pre-registered acquisition supports workflow_call.
-- [ ] Same-run source validation is explicit and limited to GITHUB_RUN_ID.
-- [ ] External source runs still require completed/success.
-- [ ] Top-level workflow accepts no intermediate run/artifact ID inputs.
-- [ ] Top-level Funding and Cash sample artifact names are deterministic and distinct.
-- [ ] Cash discovery consumes only the current-run Cash sample artifact.
-- [ ] Cash planner consumes current-run discovery evidence only after discovery succeeds.
-- [ ] Acquisition consumes current-run Funding sample + Cash case-plan evidence only after both succeed.
-- [ ] Campaign planner follows successful top-level orchestration.
-- [ ] Existing standalone dispatch behavior remains compatible.
-- [ ] Workflow permissions remain read-only/preparation-only.
-- [ ] Contract tests cover orchestration, same-run bounds and no-write invariants.
+- [x] Sampling supports workflow_call and caller-supplied unique artifact names.
+- [x] Sampled Cash discovery supports workflow_call.
+- [x] Cash case planning supports workflow_call.
+- [x] Pre-registered acquisition supports workflow_call.
+- [x] Same-run source validation is explicit and limited to GITHUB_RUN_ID.
+- [x] External source runs still require completed/success.
+- [x] Top-level workflow accepts no intermediate run/artifact ID inputs.
+- [x] Top-level Funding and Cash sample artifact names are deterministic and distinct.
+- [x] Cash discovery consumes only the current-run Cash sample artifact.
+- [x] Cash planner consumes current-run discovery evidence only after discovery succeeds.
+- [x] Acquisition consumes current-run Funding sample + Cash case-plan evidence only after both succeed.
+- [x] Campaign planner follows successful top-level orchestration.
+- [x] Existing standalone dispatch behavior remains compatible.
+- [x] Workflow permissions remain read-only/preparation-only.
+- [x] Contract tests cover orchestration, same-run bounds and no-write invariants.
 - [ ] Full CI/Ruleset checks pass.
 
 ## Implementation slices
 
 - [x] 1. Reconcile current workflows and identify same-run completion-state constraint.
-- [ ] 2. Add reusable contracts and same-run bounded source validation.
-- [ ] 3. Add top-level orchestration workflow.
-- [ ] 4. Extend campaign planner trigger and workflow contract tests.
-- [ ] 5. Update README/testing contract.
+- [x] 2. Add reusable contracts and same-run bounded source validation.
+- [x] 3. Add top-level orchestration workflow.
+- [x] 4. Extend campaign planner trigger and workflow contract tests.
+- [x] 5. Update README/testing contract.
 - [ ] 6. Execute push self-test, verify PR/full CI, merge and archive.
 
 ## Verification matrix
@@ -109,14 +109,17 @@ None for orchestration. Cash future/expiry/exit and study design remain explicit
 - 2026-10-07: #12 closed after completion-only PR #14 and main CI 37581731501 succeeded.
 - 2026-10-07: latest planner 37575896276 confirms wave 001 is fully absorbed: Funding=8, Cash=5, selected_count=0.
 - 2026-10-07: code review found current-run orchestration cannot reuse the existing external-run `completed/success` assertion unchanged because reusable jobs share a still-in-progress caller run.
+- 2026-10-07: added reusable contracts to sampling, sampled Cash discovery, Cash case planning and pre-registered acquisition; composer/discovery/planner retain strict external-run completion checks with an exact-current-run in-progress exception.
+- 2026-10-07: added top-level `Prepare Pre-registered Historical Wave`, deterministic per-strategy sample artifact names, planner workflow_run trigger, focused contract tests and README/testing guidance.
 
 ## Deviations and discoveries
 
-None yet.
+- Initial orchestrator push run 37582144426 exposed that reusable workflows inherit the caller event name. Both sampling calls therefore ran the old direct-push Cash self-test and produced duplicate Cash sample artifact names. Sampling self-test is now limited to direct push with empty reusable strategy input.
+- Second orchestrator self-test 37582340866 has successfully completed distinct Funding/Cash sampling, exact same-run Cash sample verification/discovery, and same-run Cash case planning; acquisition composition is in progress.
 
 ## Resume from here
 
-Add workflow_call contracts and a helper shell pattern that accepts current-run in-progress evidence only when source run ID exactly equals GITHUB_RUN_ID, while preserving completed/success requirements for all external runs.
+Monitor orchestrator self-test 37582340866 through acquisition and planner handoff, then open PR #15 work, verify focused/full CI, merge and archive.
 
 ## Completion
 
