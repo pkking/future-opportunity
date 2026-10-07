@@ -1,10 +1,10 @@
 # GitHub-first Agent Plan Integrity: repository administration
 
-The PR validator is only a required merge gate **after a repository administrator enables it**. The available GitHub integration can change contents, Actions and Issues, but cannot create/edit repository Rulesets.
+The repository administrator enabled the `main` Ruleset on 2026-10-07. This document records the expected configuration and verification procedure.
 
-## Ruleset setup (owner/admin action)
+## Active Ruleset
 
-On GitHub: **Settings → Rules → Rulesets → New branch ruleset**.
+Verified Ruleset ID: `24626996`, name: `main`, enforcement: `active`.
 
 - Name: `main-agent-governance`.
 - Enforcement: Active.
@@ -22,7 +22,7 @@ On GitHub: **Settings → Rules → Rulesets → New branch ruleset**.
 
 Existing historical PRs #1-#4 only qualify for the code-level legacy exception when their entire diff remains under `tests/fixtures/historical/`; their existing CI and Historical Backtest Smoke checks are still required for correctness. Do not enable a mandatory per-PR Historical Smoke status check unless that job is guaranteed to run for all relevant PR paths: skipped/missing checks require careful policy design.
 
-## Verify after activation
+## Verification
 
 1. Inspect `GET /repos/pkking/future-opportunity/rulesets`; confirm active enforcement on `main`.
 2. Open an intentional negative PR with no `Issue:` or `Plan:` lines (do not merge it). It must fail `Agent plan integrity`.
