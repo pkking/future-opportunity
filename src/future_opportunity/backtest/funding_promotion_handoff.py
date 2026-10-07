@@ -4,8 +4,6 @@ import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
-
 from future_opportunity.backtest.campaign import (
     HistoricalCampaignManifest,
     parse_historical_campaign_manifest,
