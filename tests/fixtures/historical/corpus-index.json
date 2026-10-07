@@ -2,36 +2,6 @@
   "schema_version": 1,
   "entries": [
     {
-      "dataset_id": "okx-btc-usdt-cash-and-carry-2026-06-v1-target-compact",
-      "strategy": "cash-and-carry",
-      "entry_market_date": "2026-06-01",
-      "fixture_path": "okx-btc-cash-and-carry-2026-06-v1-target-compact"
-    },
-    {
-      "dataset_id": "okx-btc-usdt-cash-and-carry-2026-06-02-BTC-USDT-260626-v1-target-compact",
-      "strategy": "cash-and-carry",
-      "entry_market_date": "2026-06-02",
-      "fixture_path": "okx-btc-usdt-cash-and-carry-2026-06-02-BTC-USDT-260626-v1-target-compact"
-    },
-    {
-      "dataset_id": "okx-btc-usdt-cash-and-carry-2026-06-03-BTC-USDT-260626-v1-target-compact",
-      "strategy": "cash-and-carry",
-      "entry_market_date": "2026-06-03",
-      "fixture_path": "okx-btc-usdt-cash-and-carry-2026-06-03-BTC-USDT-260626-v1-target-compact"
-    },
-    {
-      "dataset_id": "okx-btc-usdt-cash-and-carry-2026-06-04-BTC-USDT-260626-v1-target-compact",
-      "strategy": "cash-and-carry",
-      "entry_market_date": "2026-06-04",
-      "fixture_path": "okx-btc-usdt-cash-and-carry-2026-06-04-BTC-USDT-260626-v1-target-compact"
-    },
-    {
-      "dataset_id": "okx-btc-usdt-cash-and-carry-2026-06-08-BTC-USDT-260626-v1-target-compact",
-      "strategy": "cash-and-carry",
-      "entry_market_date": "2026-06-08",
-      "fixture_path": "okx-btc-usdt-cash-and-carry-2026-06-08-BTC-USDT-260626-v1-target-compact"
-    },
-    {
       "dataset_id": "okx-btc-usdt-funding-carry-2026-01-01-v1-target-compact",
       "strategy": "funding-carry",
       "entry_market_date": "2026-01-01",
@@ -62,6 +32,78 @@
       "fixture_path": "okx-btc-usdt-funding-carry-2026-01-29-v1-target-compact"
     },
     {
+      "dataset_id": "okx-btc-usdt-funding-carry-2026-02-07-v1-target-compact",
+      "strategy": "funding-carry",
+      "entry_market_date": "2026-02-07",
+      "fixture_path": "okx-btc-usdt-funding-carry-2026-02-07-v1-target-compact"
+    },
+    {
+      "dataset_id": "okx-btc-usdt-funding-carry-2026-02-14-v1-target-compact",
+      "strategy": "funding-carry",
+      "entry_market_date": "2026-02-14",
+      "fixture_path": "okx-btc-usdt-funding-carry-2026-02-14-v1-target-compact"
+    },
+    {
+      "dataset_id": "okx-btc-usdt-funding-carry-2026-02-16-v1-target-compact",
+      "strategy": "funding-carry",
+      "entry_market_date": "2026-02-16",
+      "fixture_path": "okx-btc-usdt-funding-carry-2026-02-16-v1-target-compact"
+    },
+    {
+      "dataset_id": "okx-btc-usdt-funding-carry-2026-02-23-v1-target-compact",
+      "strategy": "funding-carry",
+      "entry_market_date": "2026-02-23",
+      "fixture_path": "okx-btc-usdt-funding-carry-2026-02-23-v1-target-compact"
+    },
+    {
+      "dataset_id": "okx-btc-usdt-funding-carry-2026-03-05-v1-target-compact",
+      "strategy": "funding-carry",
+      "entry_market_date": "2026-03-05",
+      "fixture_path": "okx-btc-usdt-funding-carry-2026-03-05-v1-target-compact"
+    },
+    {
+      "dataset_id": "okx-btc-usdt-funding-carry-2026-03-10-v1-target-compact",
+      "strategy": "funding-carry",
+      "entry_market_date": "2026-03-10",
+      "fixture_path": "okx-btc-usdt-funding-carry-2026-03-10-v1-target-compact"
+    },
+    {
+      "dataset_id": "okx-btc-usdt-funding-carry-2026-03-22-v1-target-compact",
+      "strategy": "funding-carry",
+      "entry_market_date": "2026-03-22",
+      "fixture_path": "okx-btc-usdt-funding-carry-2026-03-22-v1-target-compact"
+    },
+    {
+      "dataset_id": "okx-btc-usdt-funding-carry-2026-03-28-v1-target-compact",
+      "strategy": "funding-carry",
+      "entry_market_date": "2026-03-28",
+      "fixture_path": "okx-btc-usdt-funding-carry-2026-03-28-v1-target-compact"
+    },
+    {
+      "dataset_id": "okx-btc-usdt-funding-carry-2026-04-03-v1-target-compact",
+      "strategy": "funding-carry",
+      "entry_market_date": "2026-04-03",
+      "fixture_path": "okx-btc-usdt-funding-carry-2026-04-03-v1-target-compact"
+    },
+    {
+      "dataset_id": "okx-btc-usdt-funding-carry-2026-04-08-v1-target-compact",
+      "strategy": "funding-carry",
+      "entry_market_date": "2026-04-08",
+      "fixture_path": "okx-btc-usdt-funding-carry-2026-04-08-v1-target-compact"
+    },
+    {
+      "dataset_id": "okx-btc-usdt-funding-carry-2026-04-20-v1-target-compact",
+      "strategy": "funding-carry",
+      "entry_market_date": "2026-04-20",
+      "fixture_path": "okx-btc-usdt-funding-carry-2026-04-20-v1-target-compact"
+    },
+    {
+      "dataset_id": "okx-btc-usdt-funding-carry-2026-04-27-v1-target-compact",
+      "strategy": "funding-carry",
+      "entry_market_date": "2026-04-27",
+      "fixture_path": "okx-btc-usdt-funding-carry-2026-04-27-v1-target-compact"
+    },
+    {
       "dataset_id": "okx-btc-usdt-funding-carry-2026-09-01-v1-target-compact",
       "strategy": "funding-carry",
       "entry_market_date": "2026-09-01",
@@ -78,6 +120,36 @@
       "strategy": "funding-carry",
       "entry_market_date": "2026-09-03",
       "fixture_path": "okx-btc-usdt-funding-carry-2026-09-03-v1-target-compact"
+    },
+    {
+      "dataset_id": "okx-btc-usdt-cash-and-carry-2026-06-v1-target-compact",
+      "strategy": "cash-and-carry",
+      "entry_market_date": "2026-06-01",
+      "fixture_path": "okx-btc-cash-and-carry-2026-06-v1-target-compact"
+    },
+    {
+      "dataset_id": "okx-btc-usdt-cash-and-carry-2026-06-02-BTC-USDT-260626-v1-target-compact",
+      "strategy": "cash-and-carry",
+      "entry_market_date": "2026-06-02",
+      "fixture_path": "okx-btc-usdt-cash-and-carry-2026-06-02-BTC-USDT-260626-v1-target-compact"
+    },
+    {
+      "dataset_id": "okx-btc-usdt-cash-and-carry-2026-06-03-BTC-USDT-260626-v1-target-compact",
+      "strategy": "cash-and-carry",
+      "entry_market_date": "2026-06-03",
+      "fixture_path": "okx-btc-usdt-cash-and-carry-2026-06-03-BTC-USDT-260626-v1-target-compact"
+    },
+    {
+      "dataset_id": "okx-btc-usdt-cash-and-carry-2026-06-04-BTC-USDT-260626-v1-target-compact",
+      "strategy": "cash-and-carry",
+      "entry_market_date": "2026-06-04",
+      "fixture_path": "okx-btc-usdt-cash-and-carry-2026-06-04-BTC-USDT-260626-v1-target-compact"
+    },
+    {
+      "dataset_id": "okx-btc-usdt-cash-and-carry-2026-06-08-BTC-USDT-260626-v1-target-compact",
+      "strategy": "cash-and-carry",
+      "entry_market_date": "2026-06-08",
+      "fixture_path": "okx-btc-usdt-cash-and-carry-2026-06-08-BTC-USDT-260626-v1-target-compact"
     }
   ]
 }
