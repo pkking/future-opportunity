@@ -1,6 +1,6 @@
 # 2026-10-06-pre-registered-acquisition-wave: Acquire first pre-registered historical corpus candidates
 
-Status: PLANNING
+Status: IMPLEMENTING
 Owner: agent
 Started: 2026-10-06
 Last checkpoint: 2026-10-06
@@ -81,9 +81,9 @@ Cash:
 - [x] Funding preparation matrix contains exactly the five reviewed dates.
 - [x] Cash preparation matrix contains exactly the three reviewed cases.
 - [x] No unsampled replacement date appears.
-- [ ] Successful full/compact artifacts retain selection provenance.
-- [ ] Failed sampled dates, if any, remain explicit failures and are not replaced.
-- [ ] Acquisition summary proves corpus was not mutated.
+- [x] Successful full/compact artifacts retain selection provenance.
+- [x] Failed sampled dates, if any, remain explicit failures and are not replaced.
+- [x] Acquisition summary proves corpus was not mutated.
 - [x] Workflow/contract tests lock reusable composition and acquisition behavior.
 - [ ] Final CI green.
 - [ ] Document first-wave evidence and next promotion step.
@@ -94,8 +94,8 @@ Cash:
 - [x] 2. Make acquisition campaign reusable with acquisition_json input.
 - [x] 3. Add pre-registered acquisition-wave orchestration.
 - [x] 4. Add workflow-contract tests.
-- [ ] 5. Execute first 5+3 sampled wave and inspect artifacts.
-- [ ] 6. Record failures/exclusions without replacement.
+- [x] 5. Execute first 5+3 sampled wave and inspect artifacts.
+- [x] 6. Record failures/exclusions without replacement.
 - [ ] 7. Document/verify/archive.
 
 ## Verification matrix
@@ -136,13 +136,35 @@ human review/merge of promotion PRs.
 - 2026-10-06: main CI runs 37491396261, 37491402987 and 37491513856 verified
   the reusable workflow changes and orchestration definition before the
   long-running market-data preparation phase.
+- 2026-10-07: first wave run 37491514724 completed successfully with all five
+  Funding and all three Cash preparations green. No sampled date failed, so
+  there was no replacement or post-outcome reselection.
+- 2026-10-07: inspected commit-ready compact artifacts from run 37491514724.
+  Funding 2026-01-01 and all three Cash compact manifests retain the exact
+  pre-registered sampling provenance, including source sampling run/artifact,
+  policy version, seed, population, requested sample size, and the complete
+  originally selected date set.
+- 2026-10-07: the first run exposed one orchestration defect unrelated to market
+  data: all three Cash compact artifacts used the same artifact name because the
+  reusable Cash workflow name omitted entry_market_date. Artifact IDs/digests
+  and manifest dataset IDs were distinct, but run-level name selection was
+  ambiguous. The Cash workflow was fixed to include entry_market_date in full,
+  compact, and actuals artifact names.
+- 2026-10-07: pre-registered wave now fails closed unless the parent run contains
+  exactly eight compact artifacts with eight unique names (5 Funding, 3 Cash).
+  Workflow-contract tests lock this identity rule.
+- 2026-10-07: exact same pre-registered 5+3 acquisition is being replayed in run
+  37551952412 using the corrected artifact naming. The reviewed date set and
+  selection provenance are unchanged.
 
 ## Resume from here
 
-Wait for wave run 37491514724 to finish all eight sampled preparations. Record
-successful compact artifact IDs/digests and any failed sampled dates exactly as
-observed; do not replace failures. Verify compact manifests retain
-selection_provenance, then document the next explicit promotion/planning step.
+Wait for corrected replay run 37551952412 to finish the exact same eight
+pre-registered preparations. Require the new compact-artifact identity guard to
+pass (8 total, 8 unique, 5 Funding, 3 Cash). Then feed that exact successful run
+to the read-only campaign planner, record selected/excluded pinned items and
+projected readiness, and hand the resulting promotion wave to explicit campaign
+promotion. Do not replace any failed sampled day.
 
 ## Completion
 
