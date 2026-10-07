@@ -31,9 +31,10 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
-      # Push runs are read-only self-tests: one pinned and one unpinned Funding day.
-      SOURCE_RUN_IDS: ${{ inputs.source_run_ids || github.event.workflow_run.id || '37327493270,37434976457' }}
-      CAMPAIGN_PREFIX: ${{ inputs.campaign_prefix || 'selftest-review-only' }}
+      # Push runs are read-only replay tests against the completed corrected
+      # pre-registered wave. They never promote or mutate the corpus.
+      SOURCE_RUN_IDS: ${{ inputs.source_run_ids || github.event.workflow_run.id || '37551952412' }}
+      CAMPAIGN_PREFIX: ${{ inputs.campaign_prefix || 'preregistered-review-001' }}
     steps:
       - uses: actions/checkout@v4
 
