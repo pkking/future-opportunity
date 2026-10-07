@@ -13,6 +13,15 @@ from typing import Any
 
 import httpx
 
+from future_opportunity.backtest.cash_source_coverage import (
+    CASH_COVERAGE_MODULES,
+    CASH_POSITIVE_CONTROL_DATES,
+    CASH_WAVE_002_DATES,
+    cash_coverage_status,
+    cash_futures_coverage_dates,
+    summarize_cash_futures_coverage,
+)
+
 
 BASE_URL = "https://www.okx.com"
 CATALOG_PATH = "/api/v5/public/market-data-history"
@@ -27,7 +36,6 @@ OUTPUT = Path(
     )
 )
 CANDIDATES = ("OKB-USDT", "USDC-USDT", "BTC-USDT", "ETH-USDT")
-
 
 def get_json(
     client: httpx.Client,
@@ -378,6 +386,59 @@ def probe_expired_future_metadata() -> dict[str, Any]:
         }
 
 
+def scan_cash_futures_catalog_coverage() -> dict[str, Any]:
+    observations: list[dict[str, Any]] = []
+    with httpx.Client(timeout=30.0, follow_redirects=True) as client:
+        for module in CASH_COVERAGE_MODULES:
+            for market_date in cash_futures_coverage_dates():
+                day = datetime.fromisoformat(market_date).replace(tzinfo=UTC)
+                timestamp_ms = int(day.timestamp() * 1000)
+                params, payload = catalog(
+                    client,
+                    instrument_type="FUTURES",
+                    module=module,
+                    date_aggregation="daily",
+                    timestamp_ms=timestamp_ms,
+                    selectors=("BTC-USDT",),
+                )
+                candidates = archive_candidates(payload)
+                observations.append(
+                    {
+                        "module": module,
+                        "market_date": market_date,
+                        "cohort": (
+                            "positive_control"
+                            if market_date in CASH_POSITIVE_CONTROL_DATES
+                            else "wave_002"
+                            if market_date in CASH_WAVE_002_DATES
+                            else "wave_003"
+                        ),
+                        "query": params,
+                        "candidate_count": len(candidates),
+                        "status": cash_coverage_status(len(candidates)),
+                        "candidates": candidates,
+                    }
+                )
+                time.sleep(0.25)
+
+    return {
+        "schema_version": 1,
+        "evidence_type": "okx_cash_futures_catalog_coverage",
+        "instrument_type": "FUTURES",
+        "instrument_family": "BTC-USDT",
+        "date_aggregation": "daily",
+        "modules": list(CASH_COVERAGE_MODULES),
+        "dates": list(cash_futures_coverage_dates()),
+        "observations": observations,
+        "summary": summarize_cash_futures_coverage(observations),
+        "note": (
+            "Catalog-only source coverage diagnostic. A unique module-6 "
+            "candidate is not automatically accepted as equivalent historical "
+            "evidence to module 4."
+        ),
+    }
+
+
 def scan_futures_catalog_dates() -> dict[str, Any]:
     dates = (
         datetime(2026, 9, 1, tzinfo=UTC),
@@ -545,6 +606,19 @@ def main() -> None:
     summary["results"]["FUTURES_MODULE4_DATE_SCAN"] = futures_scan
     (OUTPUT / "futures-module4-date-scan.json").write_text(
         json.dumps(futures_scan, indent=2, sort_keys=True) + "\n"
+    )
+
+    try:
+        cash_coverage = scan_cash_futures_catalog_coverage()
+    except Exception as error:
+        cash_coverage = {
+            "status": "error",
+            "error_type": type(error).__name__,
+            "error": str(error),
+        }
+    summary["results"]["CASH_FUTURES_CATALOG_COVERAGE"] = cash_coverage
+    (OUTPUT / "cash-futures-catalog-coverage.json").write_text(
+        json.dumps(cash_coverage, indent=2, sort_keys=True) + "\n"
     )
 
     for instrument_type in ("SPOT", "SWAP", "FUTURES"):
