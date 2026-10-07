@@ -22,6 +22,8 @@ from future_opportunity.backtest.cash_alternate_history import (
 BASE_URL = "https://www.okx.com"
 CANDLES_PATH = "/api/v5/market/history-candles"
 TRADES_PATH = "/api/v5/market/history-trades"
+CATALOG_PATH = "/api/v5/public/market-data-history"
+UNMAPPED_CATALOG_MODULES = ("1", "2", "5", "11")
 WINDOW = timedelta(minutes=5)
 EXPIRED_CONTROL_ID = "BTC-USDT-260626"
 EXPIRED_CONTROL_DATE = "2026-06-01"
@@ -173,6 +175,116 @@ def probe_trades(
     }
 
 
+def catalog_candidates(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    candidates: list[dict[str, Any]] = []
+    raw_data = payload.get("data", [])
+    groups = raw_data if isinstance(raw_data, list) else []
+    for group in groups:
+        if not isinstance(group, dict):
+            continue
+        details = group.get("details", [])
+        if not isinstance(details, list):
+            continue
+        for detail in details:
+            if not isinstance(detail, dict):
+                continue
+            files = detail.get("groupDetails", [])
+            if not isinstance(files, list):
+                continue
+            for item in files:
+                if not isinstance(item, dict):
+                    continue
+                candidates.append(
+                    {
+                        "instId": str(detail.get("instId", "")),
+                        "instFamily": str(detail.get("instFamily", "")),
+                        "instType": str(detail.get("instType", "")),
+                        "dateRangeStart": detail.get("dateRangeStart"),
+                        "dateRangeEnd": detail.get("dateRangeEnd"),
+                        "filename": str(item.get("filename", "")),
+                        "sizeMB": item.get("sizeMB"),
+                        "dataTs": item.get("dataTs", item.get("dateTs")),
+                    }
+                )
+    return candidates
+
+
+def probe_bulk_catalog_inventory(
+    client: httpx.Client,
+) -> dict[str, Any]:
+    dates = ("2026-06-01",) + CASH_ALTERNATE_HISTORY_DATES
+    observations: list[dict[str, Any]] = []
+    for module in UNMAPPED_CATALOG_MODULES:
+        for market_date in dates:
+            day = datetime.fromisoformat(market_date).replace(tzinfo=UTC)
+            day_ms = int(day.timestamp() * 1000)
+            params = {
+                "module": module,
+                "instType": "FUTURES",
+                "instFamilyList": "BTC-USDT",
+                "dateAggrType": "daily",
+                "begin": str(day_ms),
+                "end": str(day_ms),
+            }
+            http_status, payload = request_json(client, CATALOG_PATH, params)
+            candidates = catalog_candidates(payload)
+            observations.append(
+                {
+                    "module": module,
+                    "market_date": market_date,
+                    "cohort": (
+                        "positive_control"
+                        if market_date == "2026-06-01"
+                        else "pre_registered"
+                    ),
+                    "endpoint": f"{BASE_URL}{CATALOG_PATH}",
+                    "query": params,
+                    "http_status": http_status,
+                    "okx_code": str(payload.get("code", "")),
+                    "okx_message": str(payload.get("msg", "")),
+                    "candidate_count": len(candidates),
+                    "candidates": candidates,
+                }
+            )
+            time.sleep(0.12)
+
+    summary: dict[str, Any] = {}
+    for module in UNMAPPED_CATALOG_MODULES:
+        selected = [
+            item for item in observations if item["module"] == module
+        ]
+        positive = selected[0]
+        wave = selected[1:]
+        filenames = sorted(
+            {
+                candidate["filename"]
+                for item in selected
+                for candidate in item["candidates"]
+                if candidate["filename"]
+            }
+        )
+        summary[module] = {
+            "positive_control_candidate_count": positive["candidate_count"],
+            "pre_registered_dates_with_candidates": sum(
+                1 for item in wave if item["candidate_count"] > 0
+            ),
+            "pre_registered_date_count": len(wave),
+            "okx_error_dates": sum(
+                1 for item in wave if item["okx_code"] != "0"
+            ),
+            "sample_filenames": filenames[:12],
+        }
+    return {
+        "modules": list(UNMAPPED_CATALOG_MODULES),
+        "note": (
+            "Module semantics are intentionally not assigned here. "
+            "Returned filenames and metadata are captured as discovery evidence."
+        ),
+        "observations": observations,
+        "summary": summary,
+    }
+
+
 def main() -> None:
     args = parse_args()
     started_at = datetime.now(UTC)
@@ -219,6 +331,7 @@ def main() -> None:
                 instrument_role="spot",
             ),
         ]
+        bulk_catalog_inventory = probe_bulk_catalog_inventory(client)
 
     report = {
         "schema_version": 1,
@@ -236,6 +349,7 @@ def main() -> None:
         },
         "observations": observations,
         "positive_controls": controls,
+        "bulk_catalog_inventory": bulk_catalog_inventory,
         "summary": summarize_alternate_history_coverage(observations),
         "note": (
             "Coverage diagnostic only. Target coverage does not authorize "
@@ -252,6 +366,7 @@ def main() -> None:
                 "probe_started_at": report["probe_started_at"],
                 "summary": report["summary"],
                 "positive_controls": controls,
+                "bulk_catalog_summary": bulk_catalog_inventory["summary"],
             },
             indent=2,
             sort_keys=True,
