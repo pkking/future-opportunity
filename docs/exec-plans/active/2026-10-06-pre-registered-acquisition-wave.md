@@ -171,6 +171,19 @@ human review/merge of promotion PRs.
   remains readable in GitHub; it changes only the corpus index and seven compact
   fixture directories. Main subsequently restored the workflow to
   explicit-dispatch-only, and CI 37553888389 passed.
+- 2026-10-07: recovered the verified corpus subtree onto main without carrying
+  the temporary workflow change. Recovered commit
+  f15f3e322f855bb0a324269ccd289eca05d571eb has exactly 36 changed corpus
+  files (35 additions across 7 fixtures plus 1 corpus-index update), zero
+  paths outside tests/fixtures/historical. Opened review-only PR #4:
+  https://github.com/pkking/future-opportunity/pull/4.
+- 2026-10-07: PR #4 Historical Backtest Smoke run 37557962463 passed. Static,
+  API, and E2E gates in PR CI 37557962485 passed, but Code-level failed at
+  tests/test_historical_distribution_report.py:165 because the old baseline
+  asserted zero pre-registered samples; the new pre-registered wave correctly
+  reports seven. The test must derive expected classification/counts from the
+  independently indexed fixture manifests rather than hard-coding legacy
+  corpus size or modifying product reporting semantics.
 
 
 ## Resume from here
@@ -181,9 +194,12 @@ c9b70b8719bd242e9f64d5d9e01fbecdbeca2a34. Overlay **only**
 creating a new review commit with latest main as its parent. Do not carry the
 triggering workflow diff into the review branch. Before publishing, compare the
 proposed review commit against main and require changes solely under the corpus
-path. Open a review-only PR, verify PR CI and Historical Backtest Smoke, and
-leave the PR unmerged. Record the outcome and complete/archive this plan;
-committed readiness stays 2+2 until human merge. Do not resample/reselect.
+path. PR #4 is open and Historical Smoke is green. On the PR branch, repair the
+distribution-report test that assumes every fixture is legacy: independently
+derive expected classification from indexed fixture manifests. Rerun all PR
+CI gates and Historical Backtest Smoke; leave PR #4 unmerged. Record final
+evidence and archive this acquisition plan only when PR checks are green.
+Committed readiness stays 2+2 until human merge. Do not resample/reselect.
 
 ## Completion
 
