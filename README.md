@@ -476,6 +476,38 @@ Funding Carry / 2026-01-01..2026-01-31 / n=5
 => 2026-01-01, 2026-01-08, 2026-01-13, 2026-01-22, 2026-01-29
 ```
 
+### First pre-registered historical acquisition wave (2026-10-07)
+
+The first reviewed wave sampled market days **before** strategy outcomes were
+observed. The corrected acquisition run
+[37551952412](https://github.com/pkking/future-opportunity/actions/runs/37551952412)
+completed five Funding Carry preparations (2026-01-01, 01-08, 01-13, 01-22,
+01-29) and three Cash-and-Carry preparations (2026-06-02, 06-04, 06-08) with
+unique artifact names and unchanged selection provenance.
+
+The read-only planner
+[37553559617](https://github.com/pkking/future-opportunity/actions/runs/37553559617)
+excluded the already pinned Cash 2026-06-02, then proposed seven new compact
+fixtures. The first promotion verification
+[37553856198](https://github.com/pkking/future-opportunity/actions/runs/37553856198)
+validated artifact identities, parent digests, atomic corpus staging and offline
+replay, but its review-branch push was blocked because the temporary triggering
+commit changed a protected GitHub Actions workflow.
+
+[Review PR #4](https://github.com/pkking/future-opportunity/pull/4) recovers
+**only** the already-validated corpus files onto current `main`; no historical
+dates were reselected. PR CI
+[37558106807](https://github.com/pkking/future-opportunity/actions/runs/37558106807)
+and Historical Backtest Smoke
+[37558106798](https://github.com/pkking/future-opportunity/actions/runs/37558106798)
+both passed after fixing an old test that incorrectly assumed all indexed
+fixtures were legacy-untracked.
+
+If merged, the proposed historical readiness becomes Funding Carry 7 days and
+Cash-and-Carry 4 days. **Open PRs do not count as pinned days**; until review
+and merge, the committed baseline remains 2+2 days. Neither state enables
+Stage-2 distribution-based return gating.
+
 Existing manually selected pinned fixtures remain valid Stage-1 regression
 evidence. They must not be retroactively described as an unbiased market-wide
 sample.
