@@ -1,5 +1,6 @@
 # 2026-10-07-pending-corpus-review: Audit pending corpus PR compatibility
 
+Issue: #5
 Status: PLANNING
 Owner: agent
 Started: 2026-10-07
@@ -109,6 +110,8 @@ semantics. Human PR review/merge remains required.
 - 2026-10-07: newest main push CI 37558281980 succeeded.
 
 ## Resume from here
+
+Before resuming implementation, reconcile this stale checkpoint with commits 6a2d1b5, 135af09, b61d834, e320ffd and CI run 37559011055. Do not repeat already merged work or conclude completion from commit subjects alone.
 
 Implement pure reconciliation of versioned corpus index snapshots with strict
 identity validation, then add code tests before any workflow. Keep open PR
