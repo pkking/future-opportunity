@@ -284,6 +284,38 @@ Corpus reporting classifies days as `pre_registered_sample` or
 ADR-0007 readiness continues to count every valid pinned day until a separate
 policy decision changes it.
 
+### Pre-registered evidence orchestration contract
+
+`Prepare Pre-registered Historical Wave` is the preferred top-level path for
+new outcome-independent historical evidence. It reuses the existing sampling,
+sampled Cash discovery, Cash case planning and pre-registered acquisition
+workflows.
+
+Operator inputs are limited to study/business facts: Funding/Cash study windows,
+sample sizes, stable seeds/policy version, plus explicit Cash future/expiry/exit
+and UTC entry time. Intermediate workflow run IDs and artifact names must not be
+operator inputs.
+
+Same-run evidence is allowed only under this bounded rule:
+
+- source run ID must equal the exact current `GITHUB_RUN_ID`;
+- the consuming job must be downstream of the producing reusable workflow
+  through `needs`;
+- the current run may be `in_progress`, because the whole orchestration has
+  not completed yet;
+- exact artifact name must resolve once with numeric ID, SHA-256 Actions digest
+  and `expired=false`;
+- any source run ID other than the current run must still be
+  `completed/success`.
+
+Funding and Cash sampling artifacts must use distinct caller-supplied names in
+the same run. The top-level workflow remains `actions: read` +
+`contents: read` and has no corpus/branch/PR/merge authority.
+
+After the top-level run completes successfully, `Plan Historical Corpus
+Campaign` may consume that completed run through its existing `workflow_run`
+boundary. Planning never counts an in-progress wave as pinned readiness.
+
 ### Pre-registered acquisition wave contract
 
 `Acquire Pre-registered Historical Wave` is reusable orchestration over the
@@ -392,7 +424,9 @@ Required behavior:
 - sampled Funding dates are passed as explicit chronological `market_dates`;
   intermediate unsampled dates are never inserted;
 - at least one effective Funding day or selected Cash case exists;
-- exact Cash case-plan run status is completed/success;
+- external Funding/Cash source runs must be completed/success;
+- a source equal to the exact current GITHUB_RUN_ID may be in_progress only for
+  reusable same-run orchestration after its upstream needs dependency succeeds;
 - exact artifact name resolves once, is unexpired, and exposes an Actions digest;
 - downloaded case-plan schema/evidence type/counts/template are revalidated;
 - reporting-only `entry_market_date` is removed before acquisition;
