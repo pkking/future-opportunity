@@ -49,8 +49,8 @@ Maximum requested preparation items if no Cash exclusions: 26.
 ## Acceptance criteria
 
 - [x] Approved Wave 003 parameters are versioned before acquisition starts.
-- [ ] Funding sample contains exactly 12 deterministic selected dates.
-- [ ] Cash sample contains exactly 14 deterministic selected dates.
+- [x] Funding sample contains exactly 12 deterministic selected dates.
+- [x] Cash sample contains exactly 14 deterministic selected dates.
 - [ ] Cash discovery/case plan preserves approved business facts and records exclusions without replacement.
 - [ ] Acquisition composition preserves Funding and Cash selection provenance.
 - [ ] Requested acquisition size is <=26 and <=31.
@@ -64,8 +64,8 @@ Maximum requested preparation items if no Cash exclusions: 26.
 
 - [x] 1. Close Wave 002 task after completion PR #23.
 - [x] 2. Create Issue #24 and this disposable execution branch/plan.
-- [ ] 3. Apply exact approved Wave 003 values only to push fallbacks in the top-level orchestration workflow.
-- [ ] 4. Observe deterministic samples and Cash exclusions before acquisition completes.
+- [x] 3. Apply exact approved Wave 003 values only to push fallbacks in the top-level orchestration workflow.
+- [~] 4. Observe deterministic samples and Cash exclusions before acquisition completes; both samples are locked and Cash discovery is in progress.
 - [ ] 5. Reconcile all compact artifacts, final wave boundary, and automatic planner output.
 - [ ] 6. Archive completed evidence via a main-based completion PR without merging this execution branch.
 
@@ -78,10 +78,14 @@ No study-design decision remains for Wave 003. Any missing source data is an exc
 - 2026-10-07: Wave 002 reconciliation completed; PR #23 merged and Issue #19 closed.
 - 2026-10-07: Issue #24 opened for the already-approved Wave 003 execution.
 - 2026-10-07: execution branch `study/preregistered-wave-003-execution` created from main cdf030c2efcc599080b8a059a9d034770875308e.
+- 2026-10-07: exact Wave 003 push-fallback trigger committed as 8c2914b42c65d5f8201a02fa0f81b4be47616f49; source run 37597427096 started.
+- 2026-10-07: Funding deterministic sample selected 12 dates: 2026-05-05, 05-16, 05-29, 06-02, 06-15, 06-23, 07-04, 07-12, 07-25, 08-08, 08-19, 08-29.
+- 2026-10-07: Cash deterministic sample selected 14 dates: 2026-08-02, 08-04, 08-10, 08-12, 08-16, 08-21, 08-26, 08-28, 08-31, 09-06, 09-09, 09-14, 09-18, 09-20.
+- Both sampling records explicitly use policy `systematic-stratified-sha256-v1`, the approved Wave 003 seeds/windows, and replacement_policy `none-v1`.
 
 ## Resume from here
 
-Apply only the immutable Wave 003 fallback values to `.github/workflows/prepare-pre-registered-historical-wave.yml` on this disposable branch. That workflow-file commit is the trigger. Then capture the resulting run ID, deterministic sample artifacts, Cash discovery/case evidence, compact artifacts, wave boundary, and automatic planner output. Do not alter the approved study inputs.
+Source run 37597427096 is in progress. The exact 12 Funding and 14 Cash samples are locked above. Continue observing all 14 Cash discovery jobs, then record the case planner selected/excluded counts without replacement. After acquisition completes, verify compact artifact IDs/digests, wave boundary, and automatic planner output. Do not alter the workflow file or any approved study input.
 
 ## Completion
 
