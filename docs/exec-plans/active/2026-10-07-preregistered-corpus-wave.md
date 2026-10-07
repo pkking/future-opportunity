@@ -62,6 +62,7 @@ None. This is a review/promotion of already pre-registered evidence under the ex
 - 2026-10-07: PR #3 merged first, establishing the new corpus baseline.
 - 2026-10-07: reconciled current main with PR #4 proposal; new identities are exactly five Funding and two Cash dates. Existing main identities are preserved.
 - 2026-10-07: branch reconstruction reuses the existing PR #4 blobs for all proposed fixture files and the previously reviewed distribution-report regression test.
+- 2026-10-07: first rebuilt CI used the pre-edit PR event body and failed only the Plan Integrity metadata check; PR body now contains Issue #8 and this plan path, so a fresh synchronize commit is required for a new event snapshot.
 
 ## Resume from here
 
