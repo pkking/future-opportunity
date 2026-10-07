@@ -27,6 +27,46 @@ OUTPUT = Path(
     )
 )
 CANDIDATES = ("OKB-USDT", "USDC-USDT", "BTC-USDT", "ETH-USDT")
+CASH_COVERAGE_MODULES = ("4", "6")
+CASH_POSITIVE_CONTROL_DATES = (
+    "2026-06-01",
+    "2026-06-02",
+    "2026-06-03",
+    "2026-06-04",
+    "2026-06-08",
+)
+CASH_WAVE_002_DATES = (
+    "2026-07-02",
+    "2026-07-03",
+    "2026-07-05",
+    "2026-07-07",
+    "2026-07-10",
+    "2026-07-12",
+    "2026-07-15",
+    "2026-07-17",
+    "2026-07-18",
+    "2026-07-21",
+    "2026-07-23",
+    "2026-07-25",
+    "2026-07-27",
+    "2026-07-31",
+)
+CASH_WAVE_003_DATES = (
+    "2026-08-02",
+    "2026-08-04",
+    "2026-08-10",
+    "2026-08-12",
+    "2026-08-16",
+    "2026-08-21",
+    "2026-08-26",
+    "2026-08-28",
+    "2026-08-31",
+    "2026-09-06",
+    "2026-09-09",
+    "2026-09-14",
+    "2026-09-18",
+    "2026-09-20",
+)
 
 
 def get_json(
@@ -378,6 +418,145 @@ def probe_expired_future_metadata() -> dict[str, Any]:
         }
 
 
+def cash_futures_coverage_dates() -> tuple[str, ...]:
+    return (
+        CASH_POSITIVE_CONTROL_DATES
+        + CASH_WAVE_002_DATES
+        + CASH_WAVE_003_DATES
+    )
+
+
+def cash_coverage_status(candidate_count: int) -> str:
+    if candidate_count < 0:
+        raise ValueError("candidate_count must be non-negative")
+    if candidate_count == 0:
+        return "no_candidate"
+    if candidate_count == 1:
+        return "unique_candidate"
+    return "ambiguous_candidates"
+
+
+def summarize_cash_futures_coverage(
+    observations: list[dict[str, Any]],
+) -> dict[str, Any]:
+    expected_dates = set(cash_futures_coverage_dates())
+    expected_modules = set(CASH_COVERAGE_MODULES)
+    seen: set[tuple[str, str]] = set()
+    by_module: dict[str, dict[str, Any]] = {}
+
+    for observation in observations:
+        module = str(observation["module"])
+        market_date = str(observation["market_date"])
+        candidate_count = int(observation["candidate_count"])
+        if module not in expected_modules:
+            raise ValueError(f"unexpected coverage module: {module}")
+        if market_date not in expected_dates:
+            raise ValueError(f"unexpected coverage date: {market_date}")
+        key = (module, market_date)
+        if key in seen:
+            raise ValueError(f"duplicate coverage observation: {key}")
+        seen.add(key)
+
+        status = cash_coverage_status(candidate_count)
+        module_summary = by_module.setdefault(
+            module,
+            {
+                "total_dates": 0,
+                "no_candidate": 0,
+                "unique_candidate": 0,
+                "ambiguous_candidates": 0,
+                "positive_controls": {
+                    "total": len(CASH_POSITIVE_CONTROL_DATES),
+                    "unique_candidate": 0,
+                },
+                "wave_dates": {
+                    "total": (
+                        len(CASH_WAVE_002_DATES)
+                        + len(CASH_WAVE_003_DATES)
+                    ),
+                    "unique_candidate": 0,
+                },
+            },
+        )
+        module_summary["total_dates"] += 1
+        module_summary[status] += 1
+        if market_date in CASH_POSITIVE_CONTROL_DATES:
+            if status == "unique_candidate":
+                module_summary["positive_controls"][
+                    "unique_candidate"
+                ] += 1
+        elif status == "unique_candidate":
+            module_summary["wave_dates"]["unique_candidate"] += 1
+
+    expected_keys = {
+        (module, market_date)
+        for module in CASH_COVERAGE_MODULES
+        for market_date in cash_futures_coverage_dates()
+    }
+    missing = sorted(expected_keys - seen)
+    if missing:
+        raise ValueError(f"missing coverage observations: {missing}")
+
+    return {
+        "date_count": len(expected_dates),
+        "observation_count": len(observations),
+        "modules": by_module,
+    }
+
+
+def scan_cash_futures_catalog_coverage() -> dict[str, Any]:
+    observations: list[dict[str, Any]] = []
+    with httpx.Client(timeout=30.0, follow_redirects=True) as client:
+        for module in CASH_COVERAGE_MODULES:
+            for market_date in cash_futures_coverage_dates():
+                day = datetime.fromisoformat(market_date).replace(tzinfo=UTC)
+                timestamp_ms = int(day.timestamp() * 1000)
+                params, payload = catalog(
+                    client,
+                    instrument_type="FUTURES",
+                    module=module,
+                    date_aggregation="daily",
+                    timestamp_ms=timestamp_ms,
+                    selectors=("BTC-USDT",),
+                )
+                candidates = archive_candidates(payload)
+                observations.append(
+                    {
+                        "module": module,
+                        "market_date": market_date,
+                        "cohort": (
+                            "positive_control"
+                            if market_date in CASH_POSITIVE_CONTROL_DATES
+                            else "wave_002"
+                            if market_date in CASH_WAVE_002_DATES
+                            else "wave_003"
+                        ),
+                        "query": params,
+                        "candidate_count": len(candidates),
+                        "status": cash_coverage_status(len(candidates)),
+                        "candidates": candidates,
+                    }
+                )
+                time.sleep(0.25)
+
+    return {
+        "schema_version": 1,
+        "evidence_type": "okx_cash_futures_catalog_coverage",
+        "instrument_type": "FUTURES",
+        "instrument_family": "BTC-USDT",
+        "date_aggregation": "daily",
+        "modules": list(CASH_COVERAGE_MODULES),
+        "dates": list(cash_futures_coverage_dates()),
+        "observations": observations,
+        "summary": summarize_cash_futures_coverage(observations),
+        "note": (
+            "Catalog-only source coverage diagnostic. A unique module-6 "
+            "candidate is not automatically accepted as equivalent historical "
+            "evidence to module 4."
+        ),
+    }
+
+
 def scan_futures_catalog_dates() -> dict[str, Any]:
     dates = (
         datetime(2026, 9, 1, tzinfo=UTC),
@@ -545,6 +724,19 @@ def main() -> None:
     summary["results"]["FUTURES_MODULE4_DATE_SCAN"] = futures_scan
     (OUTPUT / "futures-module4-date-scan.json").write_text(
         json.dumps(futures_scan, indent=2, sort_keys=True) + "\n"
+    )
+
+    try:
+        cash_coverage = scan_cash_futures_catalog_coverage()
+    except Exception as error:
+        cash_coverage = {
+            "status": "error",
+            "error_type": type(error).__name__,
+            "error": str(error),
+        }
+    summary["results"]["CASH_FUTURES_CATALOG_COVERAGE"] = cash_coverage
+    (OUTPUT / "cash-futures-catalog-coverage.json").write_text(
+        json.dumps(cash_coverage, indent=2, sort_keys=True) + "\n"
     )
 
     for instrument_type in ("SPOT", "SWAP", "FUTURES"):
