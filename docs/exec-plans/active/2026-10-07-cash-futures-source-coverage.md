@@ -33,11 +33,11 @@ The diagnostic compares the current OKX module-4 daily FUTURES BTC-USDT catalog 
 
 ## Acceptance criteria
 
-- [ ] Coverage input dates are deterministic: 5 pinned controls + 28 Wave 002/003 samples.
-- [ ] Module 4 and module 6 receive identical date/family/aggregation queries.
-- [ ] Evidence records exact query parameters and catalog candidate metadata without downloading full archives.
-- [ ] Summary reports zero/unique/ambiguous counts by module and positive-control pass rate.
-- [ ] Unit tests lock date matrix and summary semantics.
+- [x] Coverage input dates are deterministic: 5 pinned controls + 28 Wave 002/003 samples.
+- [x] Module 4 and module 6 receive identical date/family/aggregation queries.
+- [x] Evidence records exact query parameters and catalog candidate metadata without downloading full archives.
+- [x] Summary reports zero/unique/ambiguous counts by module and positive-control pass rate.
+- [x] Unit tests lock date matrix and summary semantics.
 - [ ] Historical Data Schema Probe uploads the coverage evidence.
 - [ ] Result states whether an evidence-source decision is required.
 
@@ -45,9 +45,9 @@ The diagnostic compares the current OKX module-4 daily FUTURES BTC-USDT catalog 
 
 - [x] 1. Close completed Wave 002/003 decision and open Issue #26.
 - [x] 2. Create this main-based implementation branch and plan.
-- [ ] 3. Extend existing historical probe with deterministic Cash coverage matrix and summary.
-- [ ] 4. Add focused tests.
-- [ ] 5. Trigger Historical Data Schema Probe through the script change and inspect artifact evidence.
+- [x] 3. Extend existing historical probe with deterministic Cash coverage matrix and summary.
+- [x] 4. Add focused tests.
+- [~] 5. Historical Data Schema Probe run 37600956057 triggered by script commit cfd91d6ff3f3addaa3f65e941dce32ccdfdb7f3b; inspect artifact evidence when complete.
 - [ ] 6. Run full PR gates, archive plan, merge if green, and record the evidence-source decision gate.
 
 ## Verification matrix
@@ -66,7 +66,7 @@ No decision is needed to run the diagnostic. Stop for operator review only if th
 
 ## Resume from here
 
-Implement the matrix inside the existing historical probe, keeping the network query/read-only boundary unchanged. Add unit tests for date construction and zero/unique/ambiguous summary classification. Push the script change so the existing probe workflow emits evidence, then inspect module-4 vs module-6 coverage before proposing any fallback.
+Historical Data Schema Probe run 37600956057 is in progress from the matrix implementation commit. Inspect `cash-futures-catalog-coverage.json` and its summary when the artifact is available. In parallel, run the PR CI for commit 527014bbc35dcaeab99c33a5a3d7904f80d0e48d. Do not propose or implement a fallback until the probe evidence is reconciled.
 
 ## Completion
 
