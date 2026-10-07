@@ -1,0 +1,60 @@
+name: Cash Historical Source Readiness
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 3 * * *"
+  push:
+    paths:
+      - "scripts/check_okx_cash_source_readiness.py"
+      - "src/future_opportunity/backtest/cash_source_readiness.py"
+      - ".github/workflows/cash-source-readiness.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  readiness:
+    name: Check exact pre-registered Cash dates
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - name: Probe canonical module-4 source readiness
+        run: >-
+          uv run python scripts/check_okx_cash_source_readiness.py
+          --output artifacts/cash-source-readiness/report.json
+      - name: Publish readiness summary
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          report="artifacts/cash-source-readiness/report.json"
+          if [[ ! -f "${report}" ]]; then
+            echo "## Cash source readiness" >> "${GITHUB_STEP_SUMMARY}"
+            echo "Probe did not produce a report." >> "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
+          {
+            echo "## Cash source readiness"
+            echo
+            echo "| Metric | Value |"
+            echo "|---|---:|"
+            echo "| Required | $(jq -r '.readiness.required_count' "${report}") |"
+            echo "| Ready | $(jq -r '.readiness.ready_count' "${report}") |"
+            echo "| Missing | $(jq -r '.readiness.missing_count' "${report}") |"
+            echo "| Ambiguous | $(jq -r '.readiness.ambiguous_count' "${report}") |"
+            echo "| Query errors | $(jq -r '.readiness.query_error_count' "${report}") |"
+            echo "| All ready | $(jq -r '.readiness.all_ready' "${report}") |"
+            echo
+            echo "This workflow is read-only. It never dispatches acquisition or replaces dates."
+          } >> "${GITHUB_STEP_SUMMARY}"
+      - name: Upload source-readiness evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cash-source-readiness
+          path: artifacts/cash-source-readiness/
+          if-no-files-found: warn
