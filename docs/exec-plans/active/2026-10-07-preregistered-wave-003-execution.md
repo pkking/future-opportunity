@@ -1,7 +1,7 @@
 # 2026-10-07-preregistered-wave-003-execution: Execute approved Stage-2 evidence Wave 003
 
 Issue: #24
-Status: IMPLEMENTING
+Status: COMPLETED
 Owner: agent
 Started: 2026-10-07
 Last checkpoint: 2026-10-07
@@ -52,13 +52,13 @@ Maximum requested preparation items if no Cash exclusions: 26.
 - [x] Funding sample contains exactly 12 deterministic selected dates.
 - [x] Cash sample contains exactly 14 deterministic selected dates.
 - [x] Cash discovery/case plan preserves approved business facts and records exclusions without replacement.
-- [ ] Acquisition composition preserves Funding and Cash selection provenance.
-- [ ] Requested acquisition size is <=26 and <=31.
-- [ ] Successful compact artifacts have Actions IDs/digests.
-- [ ] Final wave-boundary verification succeeds, or failures/exclusions are recorded without reselection.
-- [ ] Automatic campaign planner reconciles the successful source run against current main.
-- [ ] Execution-only branch remains unmerged.
-- [ ] Readiness impact is recorded, including any further Cash evidence required for ADR-0007 >=30-day minimum.
+- [x] Acquisition composition preserves Funding and Cash selection provenance.
+- [x] Requested acquisition size is <=26 and <=31.
+- [x] Successful compact artifacts have Actions IDs/digests.
+- [x] Final wave-boundary verification succeeds, or failures/exclusions are recorded without reselection.
+- [x] Automatic campaign planner reconciles the successful source run against current main.
+- [x] Execution-only branch remains unmerged.
+- [x] Readiness impact is recorded, including any further Cash evidence required for ADR-0007 >=30-day minimum.
 
 ## Implementation slices
 
@@ -66,8 +66,8 @@ Maximum requested preparation items if no Cash exclusions: 26.
 - [x] 2. Create Issue #24 and this disposable execution branch/plan.
 - [x] 3. Apply exact approved Wave 003 values only to push fallbacks in the top-level orchestration workflow.
 - [x] 4. Observe deterministic samples and Cash exclusions before acquisition completes; all 14 Cash dates were explicit source-data exclusions with no replacement.
-- [ ] 5. Reconcile all compact artifacts, final wave boundary, and automatic planner output.
-- [ ] 6. Archive completed evidence via a main-based completion PR without merging this execution branch.
+- [x] 5. Reconcile all compact artifacts, final wave boundary, and automatic planner output.
+- [x] 6. Archive completed evidence via a main-based completion PR without merging this execution branch.
 
 ## Decision gates
 
@@ -84,14 +84,23 @@ No study-design decision remains for Wave 003. Any missing source data is an exc
 - Both sampling records explicitly use policy `systematic-stratified-sha256-v1`, the approved Wave 003 seeds/windows, and replacement_policy `none-v1`.
 - 2026-10-07: all 14 Cash discovery jobs completed successfully as evidence-generation jobs, but every sampled date returned `candidate_count=0` and `status=no_unique_future_chain_archive`.
 - 2026-10-07: Cash case planner preserved the approved `BTC-USDT-260925` / expiry `2026-09-25T08:00:00+00:00` / exit `2026-09-24T00:15:00+00:00` / entry `00:15:00` facts and produced selected_count=0 / excluded_count=14. No date was replaced.
+- 2026-10-07: source run 37597427096 completed successfully. All 12 Funding dates produced compact artifacts with Actions IDs/digests; no preparation job failed.
+- 2026-10-07: wave-boundary artifact `pre-registered-acquisition-wave-37597427096` is artifact 11472925140 with digest `sha256:4754605e7a8e26328a29a2c7670d436fb7026816199695c434957560ab98cb68`.
+- 2026-10-07: automatic planner run 37600237687 completed successfully. It resolved source run 37597427096, Funding expected=12, Cash expected=0, planner prefix `preregistered-review-003`, selected_count=12, excluded_pinned_count=0, and generated `waves/preregistered-review-003-wave-001.json`.
+- 2026-10-07: planner baseline is current main pinned corpus Funding=8/Cash=5 and projects Funding=20/Cash=5 if Wave 003 alone is promoted. Planner artifact 11472665816 digest is `sha256:8aa8e9b5b3e82a2226b8334f5fdccda870e201ff2b832582a5cc601742645850`.
+- 2026-10-07: Wave 002 and Wave 003 Funding windows are non-overlapping and each contains 12 selected Funding days; if both review waves are independently approved/promoted, Funding can reach 32 distinct pinned days from the current 8-day baseline. Cash remains at 5 because both waves produced only source-data exclusions. Cash historical evidence acquisition is therefore the binding readiness problem.
 
 ## Resume from here
 
-Source run 37597427096 is in progress. Sampling and Cash exclusion evidence are complete: 12 Funding dates proceed to acquisition; all 14 Cash dates are retained as exclusions with selected_count=0. Continue observing Funding compact preparation. After acquisition completes, verify all compact artifact IDs/digests, wave boundary, and automatic planner output. Do not alter the workflow file or any approved study input.
+Wave 003 is complete and reconciled. Archive this completed plan through a main-based completion PR without merging the disposable execution branch. Then close Issue #24. Next work should treat the repeated Cash `no_unique_future_chain_archive` result as a historical-data acquisition/source-coverage problem, not as permission to change sampling or strategy targets.
 
 ## Completion
 
-Final commit: pending
-CI run: pending
-E2E artifact: pending
-Remaining unassessed items: Wave 003 evidence and Stage-2 readiness
+Final commit: 8c2914b42c65d5f8201a02fa0f81b4be47616f49
+CI run: https://github.com/pkking/future-opportunity/actions/runs/37597427096
+E2E artifact: Wave boundary artifact 11472925140 and planner artifact 11472665816
+Source run: 37597427096 (success)
+Wave artifact: 11472925140 / sha256:4754605e7a8e26328a29a2c7670d436fb7026816199695c434957560ab98cb68
+Planner run: 37600237687 (success)
+Planner artifact: 11472665816 / sha256:8aa8e9b5b3e82a2226b8334f5fdccda870e201ff2b832582a5cc601742645850
+Remaining unassessed items: review/promotion of Wave 002 and Wave 003 Funding evidence; Cash historical source coverage needed to reach >=30 pinned Cash days; Stage-2 target design
