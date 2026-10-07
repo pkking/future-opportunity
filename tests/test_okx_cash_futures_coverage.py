@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from scripts.probe_okx_historical_archive import (
+from future_opportunity.backtest.cash_source_coverage import (
     CASH_COVERAGE_MODULES,
     CASH_POSITIVE_CONTROL_DATES,
     CASH_WAVE_002_DATES,
