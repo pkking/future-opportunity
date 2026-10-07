@@ -160,11 +160,33 @@ async def test_report_replays_all_versioned_corpus_days_offline(
     assert report["reference_targets_used_as_thresholds"] is False
     assert report["capital_usdt"] == Decimal("10000")
 
+    # Independently read indexed manifests rather than assuming the corpus
+    # contains only legacy fixtures. The report must track provenance growth
+    # without converting it into a historical economics pass/fail target.
+    expected_classification = {
+        entry["dataset_id"]: (
+            "pre_registered_sample"
+            if json.loads(
+                (FIXTURES / entry["fixture_path"] / "manifest.json").read_text()
+            ).get("selection_provenance") is not None
+            else "legacy_untracked"
+        )
+        for entry in entries
+    }
+    pre_registered = sum(
+        status == "pre_registered_sample"
+        for status in expected_classification.values()
+    )
+
     coverage = report["selection_provenance_coverage"]
     assert coverage["total_pinned_day_count"] == len(entries)
-    assert coverage["pre_registered_sample_day_count"] == 0
-    assert coverage["legacy_untracked_day_count"] == len(entries)
-    assert coverage["pre_registered_coverage_ratio"] == Decimal(0)
+    assert coverage["pre_registered_sample_day_count"] == pre_registered
+    assert coverage["legacy_untracked_day_count"] == (
+        len(entries) - pre_registered
+    )
+    assert coverage["pre_registered_coverage_ratio"] == (
+        Decimal(pre_registered) / Decimal(len(entries))
+    )
     assert "readiness still counts all validated" in coverage[
         "readiness_semantics"
     ]
@@ -183,11 +205,31 @@ async def test_report_replays_all_versioned_corpus_days_offline(
         assert summary["market_wide_opportunity_arrival_rate"] is None
         assert summary["economics_gate"] == "reporting_only"
         assert all(item["actual"]["evidence_ids"] for item in cases)
-        assert all(
-            item["provenance"]["selection"]["classification"]
-            == "legacy_untracked"
-            for item in cases
+
+        selected_count = sum(
+            expected_classification[dataset_id] == "pre_registered_sample"
+            for dataset_id in pinned
         )
+        strategy_coverage = coverage["by_strategy"][strategy]
+        assert strategy_coverage["pinned_day_count"] == len(pinned)
+        assert strategy_coverage["pre_registered_sample_day_count"] == (
+            selected_count
+        )
+        assert strategy_coverage["legacy_untracked_day_count"] == (
+            len(pinned) - selected_count
+        )
+        assert strategy_coverage["pre_registered_coverage_ratio"] == (
+            Decimal(selected_count) / Decimal(len(pinned))
+        )
+
+        for item in cases:
+            dataset_id = item["provenance"]["dataset_id"]
+            selection = item["provenance"]["selection"]
+            expected = expected_classification[dataset_id]
+            assert selection["classification"] == expected
+            assert (selection["source"] is not None) == (
+                expected == "pre_registered_sample"
+            )
 
     destination = tmp_path / "distribution.json"
     write_backtest_evidence(report, destination)
