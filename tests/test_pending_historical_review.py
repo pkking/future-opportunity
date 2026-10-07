@@ -150,7 +150,7 @@ def test_pending_pr_cannot_omit_or_rewrite_current_baseline() -> None:
 def test_proposal_cannot_reuse_another_pinned_dataset_identity() -> None:
     colliding = row("funding-carry", "2026-09-03")
     colliding["dataset_id"] = BASELINE[0]["dataset_id"]
-    with pytest.raises(ValueError, match="reuses pinned"):
+    with pytest.raises(ValueError, match="duplicate corpus dataset_id"):
         analyze_pending_corpus_prs(
             snapshot(BASELINE), (proposal(3, [colliding]),), policy=POLICY
         )
