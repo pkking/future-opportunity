@@ -1,0 +1,129 @@
+{
+  "schema_version": 1,
+  "handoff_id": "stage2-funding-waves-002-003",
+  "target_workflow": ".github/workflows/promote-planned-historical-wave.yml",
+  "waves": [
+    {
+      "planner_run_id": "37596889005",
+      "planner_artifact_name": "historical-campaign-planner-37596889005",
+      "planner_artifact_id": 11470314464,
+      "planner_artifact_digest": "sha256:8f1189786a43d9bf5ef265d99f0a07544357a6f7ab2c097576329d67246ed187",
+      "wave_file": "waves/preregistered-review-002-wave-001.json",
+      "campaign": {
+        "schema_version": 1,
+        "campaign_id": "preregistered-review-002-wave-001",
+        "items": [
+          {
+            "source_workflow_run": "37593545181",
+            "compact_artifact_name": "okx-btc-funding-compact-2026-02-07"
+          },
+          {
+            "source_workflow_run": "37593545181",
+            "compact_artifact_name": "okx-btc-funding-compact-2026-02-14"
+          },
+          {
+            "source_workflow_run": "37593545181",
+            "compact_artifact_name": "okx-btc-funding-compact-2026-02-16"
+          },
+          {
+            "source_workflow_run": "37593545181",
+            "compact_artifact_name": "okx-btc-funding-compact-2026-02-23"
+          },
+          {
+            "source_workflow_run": "37593545181",
+            "compact_artifact_name": "okx-btc-funding-compact-2026-03-05"
+          },
+          {
+            "source_workflow_run": "37593545181",
+            "compact_artifact_name": "okx-btc-funding-compact-2026-03-10"
+          },
+          {
+            "source_workflow_run": "37593545181",
+            "compact_artifact_name": "okx-btc-funding-compact-2026-03-22"
+          },
+          {
+            "source_workflow_run": "37593545181",
+            "compact_artifact_name": "okx-btc-funding-compact-2026-03-28"
+          },
+          {
+            "source_workflow_run": "37593545181",
+            "compact_artifact_name": "okx-btc-funding-compact-2026-04-03"
+          },
+          {
+            "source_workflow_run": "37593545181",
+            "compact_artifact_name": "okx-btc-funding-compact-2026-04-08"
+          },
+          {
+            "source_workflow_run": "37593545181",
+            "compact_artifact_name": "okx-btc-funding-compact-2026-04-20"
+          },
+          {
+            "source_workflow_run": "37593545181",
+            "compact_artifact_name": "okx-btc-funding-compact-2026-04-27"
+          }
+        ]
+      }
+    },
+    {
+      "planner_run_id": "37600237687",
+      "planner_artifact_name": "historical-campaign-planner-37600237687",
+      "planner_artifact_id": 11472665816,
+      "planner_artifact_digest": "sha256:8aa8e9b5b3e82a2226b8334f5fdccda870e201ff2b832582a5cc601742645850",
+      "wave_file": "waves/preregistered-review-003-wave-001.json",
+      "campaign": {
+        "schema_version": 1,
+        "campaign_id": "preregistered-review-003-wave-001",
+        "items": [
+          {
+            "source_workflow_run": "37597427096",
+            "compact_artifact_name": "okx-btc-funding-compact-2026-05-05"
+          },
+          {
+            "source_workflow_run": "37597427096",
+            "compact_artifact_name": "okx-btc-funding-compact-2026-05-16"
+          },
+          {
+            "source_workflow_run": "37597427096",
+            "compact_artifact_name": "okx-btc-funding-compact-2026-05-29"
+          },
+          {
+            "source_workflow_run": "37597427096",
+            "compact_artifact_name": "okx-btc-funding-compact-2026-06-02"
+          },
+          {
+            "source_workflow_run": "37597427096",
+            "compact_artifact_name": "okx-btc-funding-compact-2026-06-15"
+          },
+          {
+            "source_workflow_run": "37597427096",
+            "compact_artifact_name": "okx-btc-funding-compact-2026-06-23"
+          },
+          {
+            "source_workflow_run": "37597427096",
+            "compact_artifact_name": "okx-btc-funding-compact-2026-07-04"
+          },
+          {
+            "source_workflow_run": "37597427096",
+            "compact_artifact_name": "okx-btc-funding-compact-2026-07-12"
+          },
+          {
+            "source_workflow_run": "37597427096",
+            "compact_artifact_name": "okx-btc-funding-compact-2026-07-25"
+          },
+          {
+            "source_workflow_run": "37597427096",
+            "compact_artifact_name": "okx-btc-funding-compact-2026-08-08"
+          },
+          {
+            "source_workflow_run": "37597427096",
+            "compact_artifact_name": "okx-btc-funding-compact-2026-08-19"
+          },
+          {
+            "source_workflow_run": "37597427096",
+            "compact_artifact_name": "okx-btc-funding-compact-2026-08-29"
+          }
+        ]
+      }
+    }
+  ]
+}
