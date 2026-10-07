@@ -1,0 +1,33 @@
+name: Probe OKX History Publication Frontier
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "scripts/probe_okx_history_publication_frontier.py"
+      - "src/future_opportunity/backtest/history_publication_frontier.py"
+      - ".github/workflows/probe-okx-history-publication-frontier.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    name: Measure official OKX archive frontier
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - name: Scan bounded historical catalog ranges
+        run: >-
+          uv run python scripts/probe_okx_history_publication_frontier.py
+          --output artifacts/history-publication-frontier/report.json
+      - name: Upload publication-frontier evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: okx-history-publication-frontier
+          path: artifacts/history-publication-frontier/
+          if-no-files-found: warn
