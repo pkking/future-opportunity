@@ -27,6 +27,34 @@ on:
         description: Sampling policy version
         required: true
         default: "systematic-stratified-sha256-v1"
+      artifact_name:
+        description: Optional unique artifact name for composed workflows
+        required: false
+        default: ""
+  workflow_call:
+    inputs:
+      strategy:
+        required: true
+        type: string
+      start_date:
+        required: true
+        type: string
+      end_date:
+        required: true
+        type: string
+      sample_size:
+        required: true
+        type: string
+      seed:
+        required: true
+        type: string
+      policy_version:
+        required: true
+        type: string
+      artifact_name:
+        required: false
+        type: string
+        default: ""
   push:
     paths:
       - ".github/workflows/sample-historical-market-days.yml"
@@ -45,6 +73,7 @@ jobs:
       SAMPLE_SIZE: ${{ inputs.sample_size || '5' }}
       SAMPLE_SEED: ${{ inputs.seed || 'stage2-baseline-v1' }}
       POLICY_VERSION: ${{ inputs.policy_version || 'systematic-stratified-sha256-v1' }}
+      SAMPLE_ARTIFACT_NAME: ${{ inputs.artifact_name || format('historical-market-day-sample-{0}', github.run_id) }}
     steps:
       - uses: actions/checkout@v4
 
@@ -55,17 +84,23 @@ jobs:
       - name: Generate pre-registered sample evidence
         run: |
           mkdir -p artifacts/historical-sampling
-          uv run python scripts/sample_historical_market_days.py             --strategy "${STRATEGY}"             --start-date "${START_DATE}"             --end-date "${END_DATE}"             --sample-size "${SAMPLE_SIZE}"             --seed "${SAMPLE_SEED}"             --policy-version "${POLICY_VERSION}"             --output artifacts/historical-sampling/sample.json
+          uv run python scripts/sample_historical_market_days.py \
+            --strategy "${STRATEGY}" \
+            --start-date "${START_DATE}" \
+            --end-date "${END_DATE}" \
+            --sample-size "${SAMPLE_SIZE}" \
+            --seed "${SAMPLE_SEED}" \
+            --policy-version "${POLICY_VERSION}" \
+            --output artifacts/historical-sampling/sample.json
           cat artifacts/historical-sampling/sample.json
 
       - name: Upload read-only sampling evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: historical-market-day-sample-${{ github.run_id }}
+          name: ${{ env.SAMPLE_ARTIFACT_NAME }}
           path: artifacts/historical-sampling/
           if-no-files-found: warn
-
 
   cash-selftest:
     name: Produce Cash sampling self-test evidence
