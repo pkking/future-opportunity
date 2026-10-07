@@ -61,6 +61,26 @@ def test_push_selftest_defaults_do_not_leak_into_manual_dispatch_inputs() -> Non
         "github.event_name == 'push' && '37490008931'"
         in text
     )
+    assert "inputs.acquisition_id || 'selftest-sampled-acquisition'" in text
+    assert (
+        "inputs.planner_campaign_prefix || 'selftest-sampled-review'"
+        in text
+    )
+    assert (
+        "inputs.funding_sample_run_id || "
+        "(github.event_name == 'push' && '37482498880')"
+        in text
+    )
+    assert (
+        "inputs.cash_case_plan_run_id || "
+        "(github.event_name == 'push' && '37490008931')"
+        in text
+    )
+    assert (
+        "github.event_name == 'push' && 'selftest-sampled-acquisition' "
+        "|| inputs.acquisition_id"
+        not in text
+    )
 
 
 def test_acquisition_composer_builds_and_consumes_selection_provenance() -> None:
