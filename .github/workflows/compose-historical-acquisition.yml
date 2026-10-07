@@ -122,8 +122,14 @@ jobs:
           gh api \
             "repos/${GITHUB_REPOSITORY}/actions/runs/${FUNDING_SAMPLE_RUN_ID}" \
             > "${work}/funding-source-run.json"
-          test "$(jq -r '.status' "${work}/funding-source-run.json")" = "completed"
-          test "$(jq -r '.conclusion' "${work}/funding-source-run.json")" = "success"
+          source_status="$(jq -r '.status' "${work}/funding-source-run.json")"
+          source_conclusion="$(jq -r '.conclusion // ""' "${work}/funding-source-run.json")"
+          if [ "${FUNDING_SAMPLE_RUN_ID}" = "${GITHUB_RUN_ID}" ]; then
+            test "${source_status}" = "in_progress"
+          else
+            test "${source_status}" = "completed"
+            test "${source_conclusion}" = "success"
+          fi
 
           gh api \
             "repos/${GITHUB_REPOSITORY}/actions/runs/${FUNDING_SAMPLE_RUN_ID}/artifacts?per_page=100" \
@@ -211,8 +217,14 @@ jobs:
           gh api \
             "repos/${GITHUB_REPOSITORY}/actions/runs/${CASH_PLAN_RUN_ID}" \
             > "${work}/cash-source-run.json"
-          test "$(jq -r '.status' "${work}/cash-source-run.json")" = "completed"
-          test "$(jq -r '.conclusion' "${work}/cash-source-run.json")" = "success"
+          source_status="$(jq -r '.status' "${work}/cash-source-run.json")"
+          source_conclusion="$(jq -r '.conclusion // ""' "${work}/cash-source-run.json")"
+          if [ "${CASH_PLAN_RUN_ID}" = "${GITHUB_RUN_ID}" ]; then
+            test "${source_status}" = "in_progress"
+          else
+            test "${source_status}" = "completed"
+            test "${source_conclusion}" = "success"
+          fi
 
           gh api \
             "repos/${GITHUB_REPOSITORY}/actions/runs/${CASH_PLAN_RUN_ID}/artifacts?per_page=100" \
