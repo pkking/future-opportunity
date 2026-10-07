@@ -190,3 +190,13 @@ A task is done only when:
 - the execution plan records the final evidence and is moved to `completed/`.
 
 If any item is missing, report the work as partial, blocked, or unassessed.
+
+## 11. GitHub task identity and PR integrity
+
+- GitHub Issues are canonical for task identity; a non-trivial active plan must include a top-level `Issue: #N` pointing to an open, real GitHub Issue.
+- Each new non-trivial PR body must include exactly one `Issue: #N` and one `Plan: docs/exec-plans/active/<work-id>.md` line, both referring to the same tracked task.
+- Do not treat an Issue status, a commit subject, or an old CI run as evidence of product acceptance. PR checks prove only the tested revision; merge and acceptance remain separate gates.
+- `Agent plan integrity` CI checks task traceability. It must not replace static, code, API, E2E, historical replay, or human review requirements.
+- Only previously existing PRs #1-#4 that change exclusively committed historical fixture files may use a legacy transition exception. Any new code or workflow modifications require the full contract.
+- Before resuming from `Resume from here`, reconcile the plan with the current Git head, PR status, and the CI runs that actually tested it. Resolve any drift before marking steps complete.
+- Changes to this governance contract and its validator require careful human review; normal contributor approval is not a substitute for branch Ruleset enforcement.
