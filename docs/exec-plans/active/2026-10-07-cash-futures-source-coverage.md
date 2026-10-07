@@ -38,8 +38,8 @@ The diagnostic compares the current OKX module-4 daily FUTURES BTC-USDT catalog 
 - [x] Evidence records exact query parameters and catalog candidate metadata without downloading full archives.
 - [x] Summary reports zero/unique/ambiguous counts by module and positive-control pass rate.
 - [x] Unit tests lock date matrix and summary semantics.
-- [ ] Historical Data Schema Probe uploads the coverage evidence.
-- [ ] Result states whether an evidence-source decision is required.
+- [x] Historical Data Schema Probe uploads the coverage evidence.
+- [x] Result states whether an evidence-source decision is required.
 
 ## Implementation slices
 
@@ -47,26 +47,28 @@ The diagnostic compares the current OKX module-4 daily FUTURES BTC-USDT catalog 
 - [x] 2. Create this main-based implementation branch and plan.
 - [x] 3. Extend existing historical probe with deterministic Cash coverage matrix and summary.
 - [x] 4. Add focused tests.
-- [~] 5. Historical Data Schema Probe run 37600956057 triggered by script commit cfd91d6ff3f3addaa3f65e941dce32ccdfdb7f3b; inspect artifact evidence when complete.
-- [ ] 6. Run full PR gates, archive plan, merge if green, and record the evidence-source decision gate.
+- [x] 5. Historical Data Schema Probe run 37600956057 uploaded artifact 11473295390; module 4 and module 6 both show 5/5 positive controls with unique candidates and 0/28 Wave 002/003 dates with candidates.
+- [~] 6. Run full PR gates, archive plan, merge if green, and record the evidence-source decision gate. Initial CI exposed a test-import packaging bug; helper logic is being moved into the package.
 
 ## Verification matrix
 
 | Gate | Evidence | Status |
 |---|---|---|
-| Unit | focused coverage helper tests | pending |
-| Static | ruff + architecture contract | pending |
-| Probe | Historical Data Schema Probe artifact | pending |
-| CI | repository CI | pending |
-| Historical smoke | pinned historical replay | pending |
+| Unit | focused coverage helper tests; initial PR CI failed only because tests imported `scripts/...`; refactored helpers into package | rerun pending |
+| Static | PR run 37601046367 | passed |
+| Probe | run 37600956057 artifact 11473295390 / sha256:c6326d60867d0814087f90eec9596da7ec195cd3fa3094dc95d341a698b98249 | passed for coverage evidence |
+| CI | run 37601046367: all required jobs passed except Code-level tests import collection error; fix committed | rerun pending |
+| Historical smoke | run 37601046360 | passed |
 
 ## Decision gates
 
-No decision is needed to run the diagnostic. Stop for operator review only if the evidence shows a viable alternate official source/module whose fidelity differs from the current module-4 400-level evidence, because accepting that source would change historical evidence semantics.
+No evidence-source decision is required from this diagnostic. The positive controls prove both module 4 and module 6 queries are functioning, while all 28 Wave 002/003 dates have zero candidates in both modules. Therefore switching from module 4 to module 6 would not recover the missing Cash evidence and would only change fidelity semantics without benefit.
+
+The next decision should concern **how to obtain dated-futures historical evidence outside these two OKX catalog modules**, not whether to use module 6 as a fallback.
 
 ## Resume from here
 
-Historical Data Schema Probe run 37600956057 is in progress from the matrix implementation commit. Inspect `cash-futures-catalog-coverage.json` and its summary when the artifact is available. In parallel, run the PR CI for commit 527014bbc35dcaeab99c33a5a3d7904f80d0e48d. Do not propose or implement a fallback until the probe evidence is reconciled.
+Coverage evidence is reconciled: module 4 and module 6 each have unique candidates for all 5 positive-control pinned dates and no candidates for all 28 Wave 002/003 dates. Do not implement a module fallback. Complete the package-helper refactor, rerun PR CI, archive this plan, and merge #27 if green. After #27, open the next issue to evaluate alternate official historical evidence paths for dated futures while preserving the pre-registered dates and evidence-quality contract.
 
 ## Completion
 
