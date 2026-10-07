@@ -126,6 +126,8 @@ Wave 002 is complete and reconciled. Archive this plan through a main-based comp
 ## Completion
 
 Final commit: c39f2d295c913d8b899904df8c69c39c11e0b0b0
+CI run: https://github.com/pkking/future-opportunity/actions/runs/37593545181
+E2E artifact: Wave boundary artifact 11470704540 and planner artifact 11470314464
 Source run: 37593545181 (success)
 Wave artifact: 11470704540 / sha256:17871ed6e8c7edf96aa7412e6d1dfa8f0c9f91bd5a17ff1152bd8e3b4f6febed
 Planner run: 37596889005 (success)
