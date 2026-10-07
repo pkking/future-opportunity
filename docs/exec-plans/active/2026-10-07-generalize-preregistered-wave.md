@@ -37,25 +37,25 @@ Remove the first-wave-only 5 Funding + 3 Cash verification assumption from the r
 
 ## Acceptance criteria
 
-- [ ] Wave summary derives expected Funding/Cash counts from composed acquisition JSON.
-- [ ] No reusable verification logic hard-codes 5/3/8.
-- [ ] Compact total equals expected Funding + expected Cash.
-- [ ] Unique compact name count equals compact total.
-- [ ] Per-strategy artifact counts exactly equal derived expected counts.
-- [ ] Zero-item Funding or Cash side is handled safely.
-- [ ] Selection provenance remains required for every non-empty strategy side.
-- [ ] Existing first-wave default inputs remain unchanged.
-- [ ] Workflow remains actions:read + contents:read only.
-- [ ] Contract tests cover dynamic counts and reject reintroduction of hard-coded assumptions.
-- [ ] README/testing guidance describes reusable wave semantics.
+- [x] Wave summary derives expected Funding/Cash counts from composed acquisition JSON.
+- [x] No reusable verification logic hard-codes 5/3/8.
+- [x] Compact total equals expected Funding + expected Cash.
+- [x] Unique compact name count equals compact total.
+- [x] Per-strategy artifact counts exactly equal derived expected counts.
+- [x] Zero-item Funding or Cash side is handled safely.
+- [x] Selection provenance remains required for every non-empty strategy side.
+- [x] Existing first-wave default inputs remain unchanged.
+- [x] Workflow remains actions:read + contents:read only.
+- [x] Contract tests cover dynamic counts and reject reintroduction of hard-coded assumptions.
+- [x] README/testing guidance describes reusable wave semantics.
 - [ ] Full CI and Ruleset checks pass.
 
 ## Implementation slices
 
 - [x] 1. Inspect current workflow/tests and identify hard-coded count boundary.
-- [ ] 2. Generalize wave summary and identity verification.
-- [ ] 3. Update workflow contract tests.
-- [ ] 4. Update user/agent documentation.
+- [x] 2. Generalize wave summary and identity verification.
+- [x] 3. Update workflow contract tests.
+- [x] 4. Update user/agent documentation.
 - [ ] 5. Verify PR CI and merge; complete/close through normal lifecycle.
 
 ## Verification matrix
@@ -77,14 +77,16 @@ None. This removes an implementation-specific first-wave constraint while preser
 
 - 2026-10-07: current workflow inputs are reusable, but summary asserts expected_funding_count=5, expected_cash_count=3 and total/unique/funding/cash artifact counts 8/8/5/3.
 - 2026-10-07: latest read-only planner run 37572071278 reports pinned Funding=8 / Cash=5 and no remaining candidates from preregistered-wave-001, so the next acquisition must be a new pre-registered wave rather than replaying wave 001.
+- 2026-10-07: generalized summary derives Funding/Cash/total counts from acquisition.json; artifact identity compares actual totals/unique/per-strategy counts against those derived values.
+- 2026-10-07: focused workflow tests now explicitly reject reintroduction of static 5/3/8 verification assumptions; README/testing contract documents dynamic wave semantics.
 
 ## Deviations and discoveries
 
-None yet.
+- Current push self-test of the generalized workflow is run 37573580430; it reuses the original 5+3 source artifacts as a regression case while exercising dynamic count derivation.
 
 ## Resume from here
 
-Edit `.github/workflows/acquire-pre-registered-historical-wave.yml` so expected counts are derived from the composed acquisition JSON and used by both summary evidence and artifact identity validation; then update focused tests before documentation.
+Monitor workflow self-test 37573580430, open the PR, verify contract/full CI, then merge and close through the normal completed-plan lifecycle.
 
 ## Completion
 
