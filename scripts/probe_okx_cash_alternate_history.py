@@ -45,10 +45,20 @@ def request_json(
         if response.status_code == 429:
             time.sleep(0.5 * (attempt + 1))
             continue
-        response.raise_for_status()
-        payload = response.json()
+        try:
+            payload = response.json()
+        except ValueError:
+            payload = {
+                "code": f"http_{response.status_code}",
+                "msg": response.text[:500],
+                "data": [],
+            }
         if not isinstance(payload, dict):
-            raise TypeError("unexpected OKX response payload")
+            payload = {
+                "code": f"http_{response.status_code}",
+                "msg": "unexpected non-object OKX response payload",
+                "data": [],
+            }
         return response.status_code, payload
     raise RuntimeError("OKX rate limit persisted after retries")
 
@@ -246,7 +256,7 @@ def probe_bulk_catalog_inventory(
                     "candidates": candidates,
                 }
             )
-            time.sleep(0.12)
+            time.sleep(0.45)
 
     summary: dict[str, Any] = {}
     for module in UNMAPPED_CATALOG_MODULES:
