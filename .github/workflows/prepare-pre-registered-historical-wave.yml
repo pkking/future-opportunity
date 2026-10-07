@@ -54,6 +54,7 @@ on:
         description: Explicit UTC entry clock time HH:MM:SS
         required: true
         default: "00:15:00"
+  # Push is a bounded 1 Funding + 1 Cash end-to-end self-test.
   push:
     paths:
       - ".github/workflows/prepare-pre-registered-historical-wave.yml"
