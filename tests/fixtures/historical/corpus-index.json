@@ -20,6 +20,48 @@
       "fixture_path": "okx-btc-usdt-cash-and-carry-2026-06-03-BTC-USDT-260626-v1-target-compact"
     },
     {
+      "dataset_id": "okx-btc-usdt-cash-and-carry-2026-06-04-BTC-USDT-260626-v1-target-compact",
+      "strategy": "cash-and-carry",
+      "entry_market_date": "2026-06-04",
+      "fixture_path": "okx-btc-usdt-cash-and-carry-2026-06-04-BTC-USDT-260626-v1-target-compact"
+    },
+    {
+      "dataset_id": "okx-btc-usdt-cash-and-carry-2026-06-08-BTC-USDT-260626-v1-target-compact",
+      "strategy": "cash-and-carry",
+      "entry_market_date": "2026-06-08",
+      "fixture_path": "okx-btc-usdt-cash-and-carry-2026-06-08-BTC-USDT-260626-v1-target-compact"
+    },
+    {
+      "dataset_id": "okx-btc-usdt-funding-carry-2026-01-01-v1-target-compact",
+      "strategy": "funding-carry",
+      "entry_market_date": "2026-01-01",
+      "fixture_path": "okx-btc-usdt-funding-carry-2026-01-01-v1-target-compact"
+    },
+    {
+      "dataset_id": "okx-btc-usdt-funding-carry-2026-01-08-v1-target-compact",
+      "strategy": "funding-carry",
+      "entry_market_date": "2026-01-08",
+      "fixture_path": "okx-btc-usdt-funding-carry-2026-01-08-v1-target-compact"
+    },
+    {
+      "dataset_id": "okx-btc-usdt-funding-carry-2026-01-13-v1-target-compact",
+      "strategy": "funding-carry",
+      "entry_market_date": "2026-01-13",
+      "fixture_path": "okx-btc-usdt-funding-carry-2026-01-13-v1-target-compact"
+    },
+    {
+      "dataset_id": "okx-btc-usdt-funding-carry-2026-01-22-v1-target-compact",
+      "strategy": "funding-carry",
+      "entry_market_date": "2026-01-22",
+      "fixture_path": "okx-btc-usdt-funding-carry-2026-01-22-v1-target-compact"
+    },
+    {
+      "dataset_id": "okx-btc-usdt-funding-carry-2026-01-29-v1-target-compact",
+      "strategy": "funding-carry",
+      "entry_market_date": "2026-01-29",
+      "fixture_path": "okx-btc-usdt-funding-carry-2026-01-29-v1-target-compact"
+    },
+    {
       "dataset_id": "okx-btc-usdt-funding-carry-2026-09-01-v1-target-compact",
       "strategy": "funding-carry",
       "entry_market_date": "2026-09-01",

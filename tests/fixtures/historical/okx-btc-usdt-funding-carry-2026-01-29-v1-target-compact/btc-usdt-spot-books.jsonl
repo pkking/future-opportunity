@@ -1,0 +1,2 @@
+{"asks":[["89095.1","0.59881502"]],"bids":[["89095","0.53116251"]],"instrument_id":"BTC-USDT","observed_at":"2026-01-29T00:14:59.956000+00:00","schema_version":1,"source_action":"update","source_line":54524}
+{"asks":[["84690.1","1.38960911"]],"bids":[["84690","0.05516332"],["84689","0.0539"]],"instrument_id":"BTC-USDT","observed_at":"2026-01-29T23:44:59.961000+00:00","schema_version":1,"source_action":"update","source_line":5551351}

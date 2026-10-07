@@ -1,0 +1,311 @@
+{
+  "alignment": {
+    "coverage_ratio": "0.02083333333333333333333333333",
+    "emitted_samples": 2,
+    "missing_hedge_samples": 1,
+    "missing_spot_samples": 1,
+    "requested_samples": 96,
+    "stale_hedge_samples": 93,
+    "stale_spot_samples": 93
+  },
+  "base": "BTC",
+  "cadence_seconds": 900,
+  "dataset_id": "okx-btc-usdt-funding-carry-2026-01-08-v1-target-compact",
+  "derived_from_artifact": {
+    "artifact_id": "11453044128",
+    "artifact_zip_sha256": "da50a9349a4b9fe2a9f52878a78ac6e84845ccd5e206660fd545297fef01f5a2",
+    "workflow_run": "37551952412"
+  },
+  "entry_market_date": "2026-01-08",
+  "evidence_limits": {
+    "funding_mark_price": "interval_bound",
+    "reason": "official funding archive has no settlement mark; confirmed 1m mark-price low/high bounds the funding settlement minute"
+  },
+  "fixture_scope": {
+    "capital": "10000",
+    "entry_sample": "2026-01-08T00:15:00+00:00",
+    "exit_sample": "2026-01-08T23:45:00+00:00",
+    "futures_leverage": "1",
+    "preserve_base_quantity": "0.05919624651947995001205849466",
+    "purpose": "offline deterministic replay of the frozen reference-capital one-day case; not full-day market-capacity reconstruction",
+    "quantity_margin": "1.20",
+    "reserve_ratio": "0.10",
+    "target_base_quantity": "0.04933020543289995834338207888"
+  },
+  "history_date_utc": "2026-01-08",
+  "instrument_metadata": {
+    "contract_multiplier": "1",
+    "contract_value": "0.01",
+    "contract_value_currency": "BTC",
+    "expiry_time": null,
+    "instrument_family": "BTC-USDT",
+    "instrument_id": "BTC-USDT-SWAP",
+    "instrument_type": "SWAP",
+    "list_time": "2019-11-12T11:16:48+00:00",
+    "settlement_currency": "USDT"
+  },
+  "max_staleness_seconds": 5,
+  "normalized": {
+    "funding": {
+      "observed_end": "2026-01-08T16:00:00+00:00",
+      "observed_start": "2026-01-08T00:00:00+00:00",
+      "path": "btc-usdt-swap-funding.jsonl",
+      "sample_count": 3,
+      "sha256": "9b1d4b44d9c13829ebbaec3b9f7d5f79d3d1c35fb2d4b118e9e78d82862320aa"
+    },
+    "mark_price": {
+      "observed_end": "2026-01-08T16:00:00+00:00",
+      "observed_start": "2026-01-08T00:00:00+00:00",
+      "path": "btc-usdt-swap-mark-price.jsonl",
+      "sample_count": 3,
+      "sha256": "97456992d406ed76a577a47d003fd75fee7b8dc76bd6bab881a7457b6e762163"
+    },
+    "spot_books": {
+      "derivation": {
+        "frozen_capital": "10000",
+        "observations": {
+          "entry": {
+            "compact_levels": {
+              "asks": 1,
+              "bids": 1
+            },
+            "retained": {
+              "asks": "0.52905509",
+              "bids": "1.02194501"
+            },
+            "source_levels": {
+              "asks": 400,
+              "bids": 400
+            },
+            "source_line": 50291
+          },
+          "exit": {
+            "compact_levels": {
+              "asks": 1,
+              "bids": 1
+            },
+            "retained": {
+              "asks": "0.38083912",
+              "bids": "1.70313851"
+            },
+            "source_levels": {
+              "asks": 400,
+              "bids": 400
+            },
+            "source_line": 5380832
+          }
+        },
+        "parent_canonical_sha256": "ea754b536c2abab7d8d881ab62c674d149f2e2e7864736a9d68342056fbe4a28",
+        "preserve_base_quantity": "0.05919624651947995001205849466",
+        "quantity_margin": "1.20",
+        "rule": "retain entry/exit observations only and minimum best-price-outward levels on both sides covering the declared preserved base quantity"
+      },
+      "observed_end": "2026-01-08T23:44:59.968000+00:00",
+      "observed_start": "2026-01-08T00:14:59.943000+00:00",
+      "path": "btc-usdt-spot-books.jsonl",
+      "sample_count": 2,
+      "sha256": "6f0cd712e8ca4a7073c74fecaeef54372cb695688ca7f1f783504337ac4ea156"
+    },
+    "swap_books": {
+      "derivation": {
+        "frozen_capital": "10000",
+        "observations": {
+          "entry": {
+            "compact_levels": {
+              "asks": 1,
+              "bids": 1
+            },
+            "retained": {
+              "asks": "6.2249",
+              "bids": "1.5091"
+            },
+            "source_levels": {
+              "asks": 400,
+              "bids": 400
+            },
+            "source_line": 64423
+          },
+          "exit": {
+            "compact_levels": {
+              "asks": 1,
+              "bids": 1
+            },
+            "retained": {
+              "asks": "4.6209",
+              "bids": "9.0159"
+            },
+            "source_levels": {
+              "asks": 400,
+              "bids": 400
+            },
+            "source_line": 6818610
+          }
+        },
+        "parent_canonical_sha256": "ab0c68e29fd0de3f76844fdc92138f947fb082c7e6bfe6e2d00b29c74b0fa40a",
+        "preserve_base_quantity": "0.05919624651947995001205849466",
+        "quantity_margin": "1.20",
+        "rule": "retain entry/exit observations only and minimum best-price-outward levels on both sides covering the declared preserved base quantity"
+      },
+      "observed_end": "2026-01-08T23:44:59.978000+00:00",
+      "observed_start": "2026-01-08T00:14:59.993000+00:00",
+      "path": "btc-usdt-swap-books.jsonl",
+      "sample_count": 2,
+      "sha256": "d1a569681987dd369b3c478ef9fedc05d4a779e7c630d138810173da4ff02af6"
+    }
+  },
+  "parent_alignment": {
+    "coverage_ratio": "0.9895833333333333333333333333",
+    "emitted_samples": 95,
+    "missing_hedge_samples": 1,
+    "missing_spot_samples": 1,
+    "requested_samples": 96,
+    "stale_hedge_samples": 0,
+    "stale_spot_samples": 0
+  },
+  "parent_dataset": {
+    "dataset_id": "okx-btc-usdt-funding-carry-2026-01-08-v1",
+    "manifest_sha256": "c32ae767fc5519ec0abc0f66dfd8f3d1f221bffdf1dc5412b61b2eb273f7eeb9"
+  },
+  "pinning_status": "commit_ready",
+  "quote": "USDT",
+  "schema_version": 1,
+  "selection_provenance": {
+    "sampling": {
+      "end_date": "2026-01-31",
+      "evidence_sha256": "a9d2d33544b42029564d89c00196e4ef3625122d5830a32f50d7724eac06eebd",
+      "policy_version": "systematic-stratified-sha256-v1",
+      "population_size": 31,
+      "requested_sample_size": 5,
+      "seed": "stage2-baseline-v1",
+      "selected_market_dates": [
+        "2026-01-01",
+        "2026-01-08",
+        "2026-01-13",
+        "2026-01-22",
+        "2026-01-29"
+      ],
+      "start_date": "2026-01-01"
+    },
+    "schema_version": 1,
+    "selection_kind": "pre_registered_sample",
+    "source": {
+      "artifact_digest": "sha256:bdaab43d0be70a2fc8b43059d39f5341a2405bf9a0aff00306b90e92e24b8fa2",
+      "artifact_id": "11421537670",
+      "artifact_name": "historical-market-day-sample-37482498880",
+      "workflow_run": "37482498880"
+    },
+    "strategy": "funding-carry"
+  },
+  "sources": {
+    "funding": {
+      "file": {
+        "data_date": "2026-01-01T00:00:00+08:00",
+        "date_aggregation": "monthly",
+        "date_range_end": "2026-01-01T00:00:00+08:00",
+        "date_range_start": "2026-01-01T00:00:00+08:00",
+        "declared_size_mb": "0",
+        "downloaded_bytes": 1337,
+        "filename": "BTC-USDT-SWAP-fundingrates-2026-01.zip",
+        "instrument_family": "BTC-USDT",
+        "instrument_id": "",
+        "instrument_type": "SWAP",
+        "module": "3",
+        "raw_sha256": "950c317f3bcc039d9619e7ce8bcd3ecd9ab98e9225f6d2399834863b8d33acd3",
+        "source_timezone": "UTC+08:00",
+        "url": "https://static.okx.com/cdn/okex/traderecords/swaprates/monthly/202601/BTC-USDT-SWAP-fundingrates-2026-01.zip?v=1000"
+      },
+      "query": {
+        "begin": "1767225600000",
+        "dateAggrType": "monthly",
+        "end": "1767225600000",
+        "instFamilyList": "BTC-USDT",
+        "instType": "SWAP",
+        "module": "3"
+      }
+    },
+    "mark_price": {
+      "bar": "1m",
+      "endpoint": "https://www.okx.com/api/v5/market/history-mark-price-candles",
+      "responses": {
+        "2026-01-08T00:00:00+00:00": {
+          "requests": [
+            {
+              "query": "{\"after\": \"1767830460000\", \"bar\": \"1m\", \"instId\": \"BTC-USDT-SWAP\", \"limit\": \"5\"}",
+              "response_sha256": "132ca33d61907dd1aaf5ea83b4e43d39e865672937d0949a23600bd559918a63"
+            }
+          ]
+        },
+        "2026-01-08T08:00:00+00:00": {
+          "requests": [
+            {
+              "query": "{\"after\": \"1767859260000\", \"bar\": \"1m\", \"instId\": \"BTC-USDT-SWAP\", \"limit\": \"5\"}",
+              "response_sha256": "da0878b29235824d6ad029615dc570f4c3c8921129aa13a0808a0e411aaccec1"
+            }
+          ]
+        },
+        "2026-01-08T16:00:00+00:00": {
+          "requests": [
+            {
+              "query": "{\"after\": \"1767888060000\", \"bar\": \"1m\", \"instId\": \"BTC-USDT-SWAP\", \"limit\": \"5\"}",
+              "response_sha256": "6ac1ca6268ef1c3de61a261862e1a585065ecbc9cc277a56abc097c8fdfeaf63"
+            }
+          ]
+        }
+      }
+    },
+    "spot_l2": {
+      "file": {
+        "data_date": "2026-01-08T00:00:00+00:00",
+        "date_aggregation": "daily",
+        "date_range_end": "2026-01-08T00:00:00+00:00",
+        "date_range_start": "2026-01-08T00:00:00+00:00",
+        "declared_size_mb": "229.02",
+        "downloaded_bytes": 240146521,
+        "filename": "BTC-USDT-L2orderbook-400lv-2026-01-08.tar.gz",
+        "instrument_family": "",
+        "instrument_id": "BTC-USDT",
+        "instrument_type": "SPOT",
+        "module": "4",
+        "raw_sha256": "f24e00d158ec1f0ab1e10e9f2e1abf438dd03362b31c0c496f5c5cb90c89f259",
+        "source_timezone": "UTC",
+        "url": "https://static.okx.com/cdn/okx/match/orderbook/L2/400lv/daily/20260108/BTC-USDT-L2orderbook-400lv-2026-01-08.tar.gz"
+      },
+      "query": {
+        "begin": "1767830400000",
+        "dateAggrType": "daily",
+        "end": "1767830400000",
+        "instIdList": "BTC-USDT",
+        "instType": "SPOT",
+        "module": "4"
+      }
+    },
+    "swap_l2": {
+      "file": {
+        "data_date": "2026-01-08T00:00:00+00:00",
+        "date_aggregation": "daily",
+        "date_range_end": "2026-01-08T00:00:00+00:00",
+        "date_range_start": "2026-01-08T00:00:00+00:00",
+        "declared_size_mb": "491.86",
+        "downloaded_bytes": 515754417,
+        "filename": "BTC-USDT-SWAP-L2orderbook-400lv-2026-01-08.tar.gz",
+        "instrument_family": "BTC-USDT",
+        "instrument_id": "",
+        "instrument_type": "SWAP",
+        "module": "4",
+        "raw_sha256": "6027748789af63b2cc7abcd618b606aef9328bd9974bd78815698a07a11d8d67",
+        "source_timezone": "UTC",
+        "url": "https://static.okx.com/cdn/okx/match/orderbook/L2/400lv/daily/20260108/BTC-USDT-SWAP-L2orderbook-400lv-2026-01-08.tar.gz"
+      },
+      "query": {
+        "begin": "1767830400000",
+        "dateAggrType": "daily",
+        "end": "1767830400000",
+        "instFamilyList": "BTC-USDT",
+        "instType": "SWAP",
+        "module": "4"
+      }
+    }
+  },
+  "strategy": "funding-carry",
+  "venue": "okx"
+}
