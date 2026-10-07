@@ -1,0 +1,68 @@
+name: Diagnose Wave 002 OKX Archive Sizes
+
+on:
+  push:
+    paths:
+      - ".github/workflows/diagnose-wave-002-archive-sizes.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - name: Inspect official catalog declared sizes
+        shell: bash
+        run: |
+          uv run python - <<'PY'
+          import time
+          import httpx
+          from datetime import UTC, datetime
+          from future_opportunity.adapters.historical.okx_catalog import (
+              OKX_HISTORY_ENDPOINT,
+              OkxHistoricalCatalogQuery,
+              parse_okx_history_catalog,
+          )
+
+          dates = [
+              "2026-02-07","2026-02-14","2026-02-16","2026-02-23",
+              "2026-03-05","2026-03-10","2026-03-22","2026-03-28",
+              "2026-04-03","2026-04-08","2026-04-20","2026-04-27",
+          ]
+          rows = []
+          with httpx.Client(timeout=30.0) as client:
+              for market_date in dates:
+                  ms = int(datetime.fromisoformat(market_date).replace(tzinfo=UTC).timestamp() * 1000)
+                  sizes = {}
+                  for inst_type, kwargs in (
+                      ("SPOT", {"instrument_ids": ("BTC-USDT",)}),
+                      ("SWAP", {"instrument_families": ("BTC-USDT",)}),
+                  ):
+                      q = OkxHistoricalCatalogQuery(
+                          module="4",
+                          instrument_type=inst_type,
+                          date_aggregation="daily",
+                          begin_ms=ms,
+                          end_ms=ms,
+                          **kwargs,
+                      )
+                      response = client.get("https://www.okx.com" + OKX_HISTORY_ENDPOINT, params=q.params())
+                      response.raise_for_status()
+                      files = parse_okx_history_catalog(response.json(), q)
+                      if len(files) != 1:
+                          raise RuntimeError(f"{market_date} {inst_type}: expected 1 file, got {len(files)}")
+                      sizes[inst_type.lower()] = str(files[0].declared_size_mb)
+                      time.sleep(0.25)
+                  rows.append((market_date, sizes["spot"], sizes["swap"]))
+          print("market_date,spot_size_mb,swap_size_mb")
+          for row in rows:
+              print(",".join(row))
+          max_swap = max(float(row[2]) for row in rows)
+          max_spot = max(float(row[1]) for row in rows)
+          print(f"MAX_SPOT_MB={max_spot}")
+          print(f"MAX_SWAP_MB={max_swap}")
+          PY
