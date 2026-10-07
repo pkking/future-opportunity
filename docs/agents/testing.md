@@ -284,6 +284,29 @@ Corpus reporting classifies days as `pre_registered_sample` or
 ADR-0007 readiness continues to count every valid pinned day until a separate
 policy decision changes it.
 
+### Pre-registered acquisition wave contract
+
+`Acquire Pre-registered Historical Wave` is reusable orchestration over the
+canonical acquisition composer and read-only preparation campaign.
+
+Required behavior:
+
+- exact Funding sampling and Cash case-plan source identities are verified by
+  the composer before preparation;
+- expected Funding, Cash and total item counts are derived from the composed
+  `acquisition.json`, never duplicated as workflow constants;
+- total items remain bounded by the acquisition manifest maximum of 31;
+- each non-empty strategy side must carry matching selection provenance;
+- after preparation, compact artifact total, unique artifact-name count and
+  per-strategy compact counts must exactly match the derived expected counts;
+- zero Funding or zero Cash is valid when the other strategy side is non-empty;
+- duplicate or unexpected compact artifact identity fails closed;
+- the workflow remains `actions: read` + `contents: read` and must not
+  mutate the corpus, push review branches or create PRs.
+
+The first 5 Funding + 3 Cash inputs remain workflow defaults for regression
+self-testing only. They are not a reusable wave-size contract.
+
 ### Cash acquisition case planning
 
 Cash case planning is a read-only bridge between historical FUTURES discovery
