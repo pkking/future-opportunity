@@ -77,7 +77,7 @@ Cash sampling -> sampled discovery -> case plan ┘
 - [x] Existing standalone dispatch behavior remains compatible.
 - [x] Workflow permissions remain read-only/preparation-only.
 - [x] Contract tests cover orchestration, same-run bounds and no-write invariants.
-- [ ] Full CI/Ruleset checks pass.
+- [x] Full CI/Ruleset checks pass.
 
 ## Implementation slices
 
@@ -86,19 +86,19 @@ Cash sampling -> sampled discovery -> case plan ┘
 - [x] 3. Add top-level orchestration workflow.
 - [x] 4. Extend campaign planner trigger and workflow contract tests.
 - [x] 5. Update README/testing contract.
-- [ ] 6. Execute push self-test, verify PR/full CI, merge and archive.
+- [ ] 6. Final PR recheck after evidence checkpoint, merge, main orchestration/planner verification and archive.
 
 ## Verification matrix
 
 | Scope | Evidence | Status |
 |---|---|---|
-| Plan integrity | PR required check | pending |
-| Workflow contracts | focused tests | pending |
-| Orchestrator self-test | push Actions run | pending |
-| Static | CI | pending |
-| Code | CI | pending |
-| API | CI | pending |
-| E2E | CI | pending |
+| Plan integrity | PR CI 37582499077 | passed |
+| Workflow contracts | Code-level tests in 37582499077 | passed |
+| Orchestrator self-test | 37582340866 | passed |
+| Static | PR CI 37582499077 | passed |
+| Code | PR CI 37582499077 | passed |
+| API | PR CI 37582499077 | passed |
+| E2E | PR CI 37582499077 | passed |
 
 ## Decision gates
 
@@ -115,11 +115,13 @@ None for orchestration. Cash future/expiry/exit and study design remain explicit
 ## Deviations and discoveries
 
 - Initial orchestrator push run 37582144426 exposed that reusable workflows inherit the caller event name. Both sampling calls therefore ran the old direct-push Cash self-test and produced duplicate Cash sample artifact names. Sampling self-test is now limited to direct push with empty reusable strategy input.
-- Second orchestrator self-test 37582340866 has successfully completed distinct Funding/Cash sampling, exact same-run Cash sample verification/discovery, and same-run Cash case planning; acquisition composition is in progress.
+- Second orchestrator self-test 37582340866 completed successfully end to end: distinct Funding/Cash sampling, exact same-run Cash sample verification/discovery, same-run Cash case planning, acquisition composition, 1 Funding + 1 Cash preparation, and dynamic wave-boundary verification all passed.
+- Self-test evidence includes Funding compact artifact 11465715181 (sha256:926873a791dd8d523af394e142242497186e2b8fa2dd5aaeb882af59fc03255d), Cash compact artifact 11465730068 (sha256:a66a93bd2a8a50a3d2af9b3ecf4a656e435f5986e3d177efdef0ed611f95771b), and wave control artifact 11465680286 (sha256:10e36ac9d2a1f06c7a21d84953876d87279152ccfd7d277129abc269b66a70cb).
+- PR #16 CI 37582499077 and Historical Backtest Smoke 37582499116 passed.
 
 ## Resume from here
 
-Monitor orchestrator self-test 37582340866 through acquisition and planner handoff, then open PR #15 work, verify focused/full CI, merge and archive.
+Orchestrator self-test and PR CI are green. Re-run required PR checks after this evidence checkpoint, merge PR #16, then verify main CI, main orchestrator push self-test and automatic Plan Historical Corpus Campaign workflow_run handoff before archiving.
 
 ## Completion
 
