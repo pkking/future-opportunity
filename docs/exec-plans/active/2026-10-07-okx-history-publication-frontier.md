@@ -33,7 +33,7 @@ Measure the latest currently available OKX BTC-USDT FUTURES-chain bulk historica
 ## Acceptance criteria
 
 - [x] Fixed scan interval and module set are versioned before probe.
-- [ ] Deterministic <=10-day range chunking is offline-tested.
+- [x] Deterministic <=10-day range chunking is offline-tested.
 - [ ] Full range inventory is captured as machine-readable Actions evidence.
 - [ ] Each module summary reports first/latest available date and lag from probe date.
 - [ ] Internal gaps inside first..latest coverage are explicitly reported.
@@ -45,10 +45,10 @@ Measure the latest currently available OKX BTC-USDT FUTURES-chain bulk historica
 ## Implementation slices
 
 - [x] 1. Open Issue #31 and create this branch/plan.
-- [ ] 2. Add pure frontier/chunk/summary helpers.
-- [ ] 3. Add bounded non-gating network probe/workflow.
-- [ ] 4. Add focused offline tests.
-- [ ] 5. Run probe and reconcile publication-frontier evidence.
+- [x] 2. Add pure frontier/chunk/summary helpers.
+- [x] 3. Add bounded non-gating network probe/workflow.
+- [x] 4. Add focused offline tests.
+- [~] 5. Probe run 37604606262 is scanning the fixed 2026-06-01..2026-10-06 range across modules 1/2/4/5/6.
 - [ ] 6. Archive/merge if no implementation decision remains; stop only if source coverage is irregular enough that a lag rule would be unsafe.
 
 ## Verification matrix
@@ -70,6 +70,8 @@ A study-design decision becomes necessary only after evidence establishes a safe
 
 - 2026-10-07: Issue #31 opened after #29/PR #30 established zero alternate-source coverage for all 28 Wave dates.
 - 2026-10-07: branch `agent/measure-okx-history-frontier` created from main 598a2d84873a0629a2940f5f37b2fea16c756d5a.
+- 2026-10-07: pure 10-day chunk/frontier helpers and offline tests added.
+- 2026-10-07: non-gating probe run 37604606262 started from workflow commit 42e7ed3f35d4cd1c38f5394222f9c1a01d03983e.
 
 ## Deviations and discoveries
 
@@ -77,7 +79,7 @@ None yet.
 
 ## Resume from here
 
-Implement deterministic 10-day chunking and pure frontier summarization, then wire a non-gating catalog probe over 2026-06-01..2026-10-06 for modules 1/2/4/5/6.
+Probe run 37604606262 is in progress. Inspect its artifact/module summaries when complete, reconcile frontier agreement and internal gaps, and in parallel run the PR Ruleset. Do not derive a future sampling window until source evidence is reconciled.
 
 ## Completion
 
