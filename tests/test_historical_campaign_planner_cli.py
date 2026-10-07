@@ -82,6 +82,7 @@ def test_inventory_inspection_rejects_parent_source_mismatch(
     candidates, evidence = verified_candidates_from_inventory(path)
     assert candidates[0].entry.strategy == "funding-carry"
     assert evidence[0]["entry_market_date"] == "2026-09-02"
+    assert evidence[0]["selection_provenance_sha256"] == "absent"
 
     invalid = funding_inventory()
     invalid["parent_artifact_sha256"] = "sha256:" + "0" * 64
@@ -169,3 +170,103 @@ def test_inventory_schema_rejects_missing_digest(tmp_path: Path) -> None:
     path.write_text(json.dumps({"schema_version": 1, "items": [incoming]}))
     with pytest.raises(ValueError, match="fields differ from schema"):
         verified_candidates_from_inventory(path)
+
+
+def test_planner_reports_pre_registered_candidate_over_legacy_pinned_day(
+    tmp_path: Path,
+) -> None:
+    fixture_root = tmp_path / "historical"
+    fixture_root.mkdir()
+    shutil.copytree(CASH, fixture_root / CASH.name)
+    (fixture_root / "corpus-index.json").write_text(
+        json.dumps({
+            "schema_version": 1,
+            "entries": [{
+                "dataset_id": CASH.name,
+                "strategy": "cash-and-carry",
+                "entry_market_date": "2026-06-02",
+                "fixture_path": CASH.name,
+            }],
+        }, indent=2)
+        + "\n"
+    )
+
+    candidate_root = tmp_path / "pre-registered-cash"
+    shutil.copytree(CASH, candidate_root)
+    manifest_path = candidate_root / "manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["selection_provenance"] = {
+        "schema_version": 1,
+        "selection_kind": "pre_registered_sample",
+        "strategy": "cash-and-carry",
+        "source": {
+            "workflow_run": "1",
+            "artifact_id": "2",
+            "artifact_name": "sample",
+            "artifact_digest": "sha256:" + "1" * 64,
+        },
+        "sampling": {
+            "policy_version": "test-v1",
+            "seed": "fixed",
+            "start_date": "2026-06-01",
+            "end_date": "2026-06-10",
+            "population_size": 10,
+            "requested_sample_size": 3,
+            "selected_market_dates": [
+                "2026-06-02",
+                "2026-06-04",
+                "2026-06-08",
+            ],
+            "evidence_sha256": "2" * 64,
+        },
+    }
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
+
+    inventory_path = tmp_path / "inventory.json"
+    inventory_path.write_text(
+        json.dumps({
+            "schema_version": 1,
+            "items": [
+                inventory_item(
+                    candidate_root,
+                    run="37327804191",
+                    name="pre-registered-cash-2026-06-02",
+                    compact_id="11398999999",
+                    parent_id="11353125961",
+                    parent_digest=(
+                        "1d1ca77522befbc4fa2eb27c57fa15c15eb4915db50cf1fc08beb0c6f8fcfa31"
+                    ),
+                )
+            ],
+        })
+    )
+    output_dir = tmp_path / "planner-report"
+
+    subprocess.run(
+        [
+            sys.executable,
+            "scripts/plan_historical_campaign.py",
+            str(inventory_path),
+            "--campaign-prefix",
+            "pre-registered-test",
+            "--fixture-root",
+            str(fixture_root),
+            "--output-dir",
+            str(output_dir),
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    report = json.loads((output_dir / "report.json").read_text())
+    assert report["selected_count"] == 0
+    assert report["excluded_pinned_count"] == 1
+    excluded = report["excluded_pinned"][0]
+    assert excluded["entry_market_date"] == "2026-06-02"
+    assert excluded["selection_provenance_status"] == "pinned_missing"
+    assert excluded["candidate_selection_provenance_sha256"].startswith(
+        "sha256:"
+    )
+    assert excluded["pinned_selection_provenance_sha256"] == "absent"
