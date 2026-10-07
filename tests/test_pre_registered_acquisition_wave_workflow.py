@@ -54,3 +54,15 @@ def test_pre_registered_wave_has_no_corpus_or_review_write_authority() -> None:
     assert "git push" not in text
     assert "gh pr create" not in text
     assert "tests/fixtures/historical" not in text
+
+
+def test_pre_registered_wave_requires_unique_compact_artifact_names() -> None:
+    text = WAVE.read_text()
+
+    assert "actions/runs/${GITHUB_RUN_ID}/artifacts?per_page=100" in text
+    assert "compact-artifact-names.txt" in text
+    assert 'test "${total}" = "8"' in text
+    assert 'test "${unique}" = "8"' in text
+    assert 'test "${funding}" = "5"' in text
+    assert 'test "${cash}" = "3"' in text
+    assert "identity_contract_satisfied" in text
