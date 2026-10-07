@@ -556,20 +556,42 @@ the 30/90-day transition rule.
 
 ### Adding historical market days
 
-For evidence selected by the pre-registration policy, use:
+For a new pre-registered evidence wave, prefer the end-to-end orchestration:
+
+```text
+Actions -> Prepare Pre-registered Historical Wave
+```
+
+The operator supplies only study/business facts:
+
+- Funding study window, requested sample size and stable seed;
+- Cash study window, requested sample size and stable seed;
+- shared sampling-policy version;
+- explicit Cash `future_id`, `expiry_at`, `exit_at` and UTC entry clock time.
+
+The workflow then chains deterministic Funding/Cash sampling, sampled Cash
+discovery, explicit Cash case planning, canonical acquisition composition and
+preparation. Intermediate workflow run IDs and artifact names are generated
+from the same Actions run and are not user inputs.
+
+Within that one run, a downstream stage may consume evidence only from the
+exact current `GITHUB_RUN_ID` after its upstream `needs` dependency has
+completed. Exact artifact name/id/digest/not-expired checks still apply. Any
+external source run keeps the stricter `completed/success` requirement.
+
+For advanced replay/review of already-produced pre-registration evidence, the
+lower-level workflow remains available:
 
 ```text
 Actions -> Acquire Pre-registered Historical Wave
 ```
 
-The workflow accepts exact Funding sampling and Cash case-plan run/artifact
-identities. Its first-wave defaults remain a backward-compatible self-test, but
-verification is not tied to 5 Funding + 3 Cash: expected Funding/Cash/total
-counts are derived from the canonical composed `acquisition.json`. The actual
-compact artifact total, unique-name count, and per-strategy counts must match
-that derived boundary exactly. The underlying acquisition manifest remains
-bounded to **31 total items**, and a zero-item strategy side is valid when the
-other side is non-empty.
+It accepts exact Funding sampling and Cash case-plan run/artifact identities.
+Its first-wave defaults remain a backward-compatible self-test, but verification
+is not tied to 5 Funding + 3 Cash: expected Funding/Cash/total counts are
+derived from canonical `acquisition.json`. Actual compact artifact total,
+unique-name count and per-strategy counts must match that boundary exactly. The
+underlying acquisition manifest remains bounded to **31 total items**.
 
 For a reviewed multi-day preparation set without pre-registration provenance,
 prefer the lower-level acquisition campaign:
