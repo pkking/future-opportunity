@@ -39,7 +39,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    policy = load_historical_acceptance_policy(args.policy)
+    policy, _ = load_historical_acceptance_policy(args.policy)
 
     baseline = parse_corpus_index_snapshot(
         json.loads(args.base_index.read_text()),
