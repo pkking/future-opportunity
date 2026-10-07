@@ -9,6 +9,14 @@ on:
       sampling_artifact_name:
         description: Exact cash-and-carry sampling artifact name
         required: true
+  workflow_call:
+    inputs:
+      sampling_run_id:
+        required: true
+        type: string
+      sampling_artifact_name:
+        required: true
+        type: string
   push:
     paths:
       - ".github/workflows/discover-sampled-cash-corpus.yml"
@@ -44,8 +52,14 @@ jobs:
           mkdir -p "${incoming}"
 
           gh api             "repos/${GITHUB_REPOSITORY}/actions/runs/${SAMPLING_RUN_ID}"             > "${work}/source-run.json"
-          test "$(jq -r '.status' "${work}/source-run.json")" = "completed"
-          test "$(jq -r '.conclusion' "${work}/source-run.json")" = "success"
+          source_status="$(jq -r '.status' "${work}/source-run.json")"
+          source_conclusion="$(jq -r '.conclusion // ""' "${work}/source-run.json")"
+          if [ "${SAMPLING_RUN_ID}" = "${GITHUB_RUN_ID}" ]; then
+            test "${source_status}" = "in_progress"
+          else
+            test "${source_status}" = "completed"
+            test "${source_conclusion}" = "success"
+          fi
 
           gh api             "repos/${GITHUB_REPOSITORY}/actions/runs/${SAMPLING_RUN_ID}/artifacts?per_page=100"             > "${work}/source-artifacts.json"
 

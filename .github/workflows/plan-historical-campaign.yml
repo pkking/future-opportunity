@@ -16,6 +16,7 @@ on:
     workflows:
       - "Acquire Historical Campaign"
       - "Acquire Pre-registered Historical Wave"
+      - "Prepare Pre-registered Historical Wave"
     types: [completed]
 
 permissions:

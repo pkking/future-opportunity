@@ -1,0 +1,120 @@
+name: Prepare Pre-registered Historical Wave
+
+on:
+  workflow_dispatch:
+    inputs:
+      acquisition_id:
+        description: Safe acquisition identifier
+        required: true
+        default: "preregistered-wave-002"
+      planner_campaign_prefix:
+        description: Future read-only planner prefix
+        required: true
+        default: "preregistered-review-002"
+      funding_start_date:
+        description: Funding inclusive UTC study-window start
+        required: true
+      funding_end_date:
+        description: Funding inclusive UTC study-window end
+        required: true
+      funding_sample_size:
+        description: Funding requested sampled market days
+        required: true
+        default: "15"
+      funding_seed:
+        description: Funding stable pre-registration seed
+        required: true
+      cash_start_date:
+        description: Cash inclusive UTC study-window start
+        required: true
+      cash_end_date:
+        description: Cash inclusive UTC study-window end
+        required: true
+      cash_sample_size:
+        description: Cash requested sampled market days
+        required: true
+        default: "15"
+      cash_seed:
+        description: Cash stable pre-registration seed
+        required: true
+      policy_version:
+        description: Sampling policy version for both strategies
+        required: true
+        default: "systematic-stratified-sha256-v1"
+      cash_future_id:
+        description: Explicit BTC-USDT expiry future ID
+        required: true
+      cash_expiry_at:
+        description: Explicit future expiry timestamp in UTC
+        required: true
+      cash_exit_at:
+        description: Explicit strategy exit timestamp in UTC
+        required: true
+      cash_entry_time_utc:
+        description: Explicit UTC entry clock time HH:MM:SS
+        required: true
+        default: "00:15:00"
+  # Push is a bounded 1 Funding + 1 Cash end-to-end self-test.
+  push:
+    paths:
+      - ".github/workflows/prepare-pre-registered-historical-wave.yml"
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  funding-sample:
+    name: Pre-register Funding market days
+    uses: ./.github/workflows/sample-historical-market-days.yml
+    with:
+      strategy: funding-carry
+      start_date: ${{ inputs.funding_start_date || '2026-01-01' }}
+      end_date: ${{ inputs.funding_end_date || '2026-01-01' }}
+      sample_size: ${{ inputs.funding_sample_size || '1' }}
+      seed: ${{ inputs.funding_seed || 'orchestrator-selftest-funding-v1' }}
+      policy_version: ${{ inputs.policy_version || 'systematic-stratified-sha256-v1' }}
+      artifact_name: ${{ format('funding-historical-market-day-sample-{0}', github.run_id) }}
+
+  cash-sample:
+    name: Pre-register Cash market days
+    uses: ./.github/workflows/sample-historical-market-days.yml
+    with:
+      strategy: cash-and-carry
+      start_date: ${{ inputs.cash_start_date || '2026-06-03' }}
+      end_date: ${{ inputs.cash_end_date || '2026-06-03' }}
+      sample_size: ${{ inputs.cash_sample_size || '1' }}
+      seed: ${{ inputs.cash_seed || 'orchestrator-selftest-cash-v1' }}
+      policy_version: ${{ inputs.policy_version || 'systematic-stratified-sha256-v1' }}
+      artifact_name: ${{ format('cash-historical-market-day-sample-{0}', github.run_id) }}
+
+  cash-discovery:
+    name: Discover sampled Cash historical evidence
+    needs: cash-sample
+    uses: ./.github/workflows/discover-sampled-cash-corpus.yml
+    with:
+      sampling_run_id: ${{ github.run_id }}
+      sampling_artifact_name: ${{ format('cash-historical-market-day-sample-{0}', github.run_id) }}
+
+  cash-plan:
+    name: Plan explicit sampled Cash cases
+    needs: cash-discovery
+    uses: ./.github/workflows/plan-cash-acquisition-cases.yml
+    with:
+      discovery_run_id: ${{ github.run_id }}
+      future_id: ${{ inputs.cash_future_id || 'BTC-USDT-260626' }}
+      expiry_at: ${{ inputs.cash_expiry_at || '2026-06-26T08:00:00+00:00' }}
+      exit_at: ${{ inputs.cash_exit_at || '2026-06-25T00:15:00+00:00' }}
+      entry_time_utc: ${{ inputs.cash_entry_time_utc || '00:15:00' }}
+
+  acquire:
+    name: Prepare pre-registered compact evidence
+    needs: [funding-sample, cash-plan]
+    uses: ./.github/workflows/acquire-pre-registered-historical-wave.yml
+    with:
+      acquisition_id: ${{ inputs.acquisition_id || 'orchestrator-selftest-wave' }}
+      planner_campaign_prefix: ${{ inputs.planner_campaign_prefix || 'orchestrator-selftest-review' }}
+      funding_sample_run_id: ${{ github.run_id }}
+      funding_sample_artifact_name: ${{ format('funding-historical-market-day-sample-{0}', github.run_id) }}
+      cash_case_plan_run_id: ${{ github.run_id }}
+      cash_case_plan_artifact_name: ${{ format('cash-acquisition-case-plan-{0}', github.run_id) }}
