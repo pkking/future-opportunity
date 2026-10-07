@@ -40,7 +40,7 @@ Review and merge the exact Funding historical corpus campaign `preregistered-rev
 
 ## Resume from here
 
-PR #37 is open from branch `historical-corpus-campaign/preregistered-review-002-wave-001-37615149834-1`. Re-run/observe CI after this plan metadata commit. Do not merge until every required check and Historical Backtest Smoke is green on the final head. Then merge, verify Funding pinned count is 20 on main, archive this plan as completed, and close Issue #38.
+PR #37 is open from branch `historical-corpus-campaign/preregistered-review-002-wave-001-37615149834-1`. The PR body now contains the canonical Issue and Plan lines. Observe the CI triggered by this checkpoint commit; do not merge until every required check and Historical Backtest Smoke is green on the final head. Then merge, verify Funding pinned count is 20 on main, archive this plan as completed, and close Issue #38.
 
 ## Completion
 
