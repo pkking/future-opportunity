@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from pathlib import Path
@@ -30,6 +31,24 @@ def _required_string(raw: dict[str, Any], key: str) -> str:
     if not isinstance(value, str) or not value:
         raise ValueError(f"planner inventory requires {key}")
     return value
+
+
+def selection_provenance_sha256(manifest_path: Path) -> str:
+    raw = json.loads(manifest_path.read_text())
+    if not isinstance(raw, dict):
+        raise TypeError("historical compact manifest must be an object")
+    selection = raw.get("selection_provenance")
+    if selection is None:
+        return "absent"
+    if not isinstance(selection, dict):
+        raise TypeError("selection_provenance must be an object")
+    encoded = json.dumps(
+        selection,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+    ).encode("utf-8")
+    return "sha256:" + hashlib.sha256(encoded).hexdigest()
 
 
 def verified_candidates_from_inventory(
@@ -87,5 +106,8 @@ def verified_candidates_from_inventory(
             "dataset_id": entry.dataset_id,
             "strategy": entry.strategy,
             "entry_market_date": entry.entry_market_date,
+            "selection_provenance_sha256": selection_provenance_sha256(
+                Path(fields["source_root"]) / "manifest.json"
+            ),
         })
     return tuple(candidates), evidence
