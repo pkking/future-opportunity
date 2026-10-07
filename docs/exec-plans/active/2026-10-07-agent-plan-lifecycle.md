@@ -35,23 +35,23 @@ Make plan completion a valid, enforceable GitHub lifecycle transition so finishe
 
 ## Acceptance criteria
 
-- [ ] PR metadata accepts exactly one canonical active or completed execution-plan path.
-- [ ] Active plans retain current active-state and recovery-checkpoint validation.
-- [ ] Completed plans require `Status: COMPLETED`.
-- [ ] Completed plans reject unchecked acceptance criteria or implementation slices.
-- [ ] Completed plans require concrete final commit, CI run, and remaining-unassessed values.
-- [ ] Issue validation still requires the referenced Issue to be open during the PR.
-- [ ] Tests cover valid active/completed paths, incomplete completion, mismatched Issue, and traversal.
-- [ ] AGENTS.md and execution-plan template document the completion transition.
-- [ ] Finished plans for Issues #5, #6 and #8 are reconciled and moved to `completed/`.
+- [x] PR metadata accepts exactly one canonical active or completed execution-plan path.
+- [x] Active plans retain current active-state and recovery-checkpoint validation.
+- [x] Completed plans require `Status: COMPLETED`.
+- [x] Completed plans reject unchecked acceptance criteria or implementation slices.
+- [x] Completed plans require concrete final commit, CI run, and remaining-unassessed values.
+- [x] Issue validation still requires the referenced Issue to be open during the PR.
+- [x] Tests cover valid active/completed paths, incomplete completion, mismatched Issue, and traversal.
+- [x] AGENTS.md and execution-plan template document the completion transition.
+- [x] Finished plans for Issues #5, #6 and #8 are reconciled and moved to `completed/`.
 - [ ] Full CI and Ruleset checks pass.
 
 ## Implementation slices
 
 - [x] 1. Reconcile main, Issues and active plans; identify lifecycle gap.
-- [ ] 2. Extend validator and focused tests.
-- [ ] 3. Update repository contract/template.
-- [ ] 4. Reconcile/archive completed #5/#6/#8 plans.
+- [x] 2. Extend validator and focused tests.
+- [x] 3. Update repository contract/template.
+- [x] 4. Reconcile/archive completed #5/#6/#8 plans.
 - [ ] 5. Run final CI, merge, close #5/#6, then finalize this plan in a completion-only PR.
 
 ## Verification matrix
@@ -73,14 +73,17 @@ None. This closes an inconsistency in the already accepted GitHub-native agent w
 
 - 2026-10-07: startup reconciliation found Issues #5/#6 still open and plans #5/#6/#8 still under `active/` after their implementation/PRs were merged.
 - 2026-10-07: identified validator restriction to `active/` as a direct obstacle to self-archival through the required PR gate.
+- 2026-10-07: validator/tests now distinguish active and completed contracts; AGENTS.md/template document completion PR semantics.
+- 2026-10-07: reconciled plans #5/#6/#8 with real merge/CI evidence and moved them to `completed/` on this branch.
+- 2026-10-07: corrected current README corpus facts to Funding=8 / Cash=5.
 
 ## Deviations and discoveries
 
-None yet.
+- README historical corpus counts were stale at 2+2 after PR #3/#4; updated current documentation to the committed 8 Funding / 5 Cash baseline while preserving historical plan snapshots.
 
 ## Resume from here
 
-Extend `scripts/validate_agent_plan.py` to distinguish active and completed plan contracts, add focused tests, then archive the three stale finished plans in the same PR.
+Open the implementation PR for Issue #9, verify all required checks, merge it, close Issues #5/#6, then exercise the new completed-plan path in a completion-only PR for Issue #9.
 
 ## Completion
 
