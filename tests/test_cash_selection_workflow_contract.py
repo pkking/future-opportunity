@@ -53,7 +53,19 @@ def test_cash_preparation_artifact_names_are_unique_per_entry_market_day() -> No
     assert 'entry_market_date="${CASH_ENTRY_AT%%T*}"' in text
     assert "steps.identity.outputs.entry_market_date" in text
     assert (
+        "okx-btc-cash-and-carry-"
+        "${{ steps.identity.outputs.entry_market_date }}-"
+        "${{ env.CASH_FUTURE_ID }}-${{ github.run_id }}"
+        in text
+    )
+    assert (
         "okx-btc-cash-and-carry-compact-"
+        "${{ steps.identity.outputs.entry_market_date }}-"
+        "${{ env.CASH_FUTURE_ID }}-${{ github.run_id }}"
+        in text
+    )
+    assert (
+        "okx-btc-cash-and-carry-actuals-"
         "${{ steps.identity.outputs.entry_market_date }}-"
         "${{ env.CASH_FUTURE_ID }}-${{ github.run_id }}"
         in text
