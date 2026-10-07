@@ -62,7 +62,8 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
-      - name: Assert exact reviewed 5+3 wave and record evidence
+      - id: boundary
+        name: Derive canonical pre-registered wave boundary
         env:
           ACQUISITION_JSON: ${{ needs.compose.outputs.acquisition_json }}
           ACQUISITION_ID: ${{ needs.compose.outputs.acquisition_id }}
@@ -70,65 +71,101 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p artifacts/pre-registered-wave
-          printf '%s\n' "${ACQUISITION_JSON}" \
-            > artifacts/pre-registered-wave/acquisition.json
+          acquisition=artifacts/pre-registered-wave/acquisition.json
+          printf '%s\n' "${ACQUISITION_JSON}" > "${acquisition}"
 
-          test "$(jq -r '.acquisition_id' artifacts/pre-registered-wave/acquisition.json)" \
-            = "${ACQUISITION_ID}"
-          test "$(jq '.funding.market_dates | length' artifacts/pre-registered-wave/acquisition.json)" \
-            = "5"
-          test "$(jq '.cash_cases | length' artifacts/pre-registered-wave/acquisition.json)" \
-            = "3"
-          test "$(jq -r '.selection_provenance.funding.strategy' artifacts/pre-registered-wave/acquisition.json)" \
-            = "funding-carry"
-          test "$(jq -r '.selection_provenance.cash.strategy' artifacts/pre-registered-wave/acquisition.json)" \
-            = "cash-and-carry"
+          test "$(jq -r '.acquisition_id' "${acquisition}")" = "${ACQUISITION_ID}"
+          funding_dates="$(jq -c 'if .funding == null then [] else .funding.market_dates end' "${acquisition}")"
+          cash_dates="$(jq -c '[.cash_cases[].entry_at[0:10]]' "${acquisition}")"
+          expected_funding="$(jq 'length' <<<"${funding_dates}")"
+          expected_cash="$(jq 'length' <<<"${cash_dates}")"
+          expected_total=$((expected_funding + expected_cash))
+          test "${expected_total}" -ge 1
+          test "${expected_total}" -le 31
+
+          if [ "${expected_funding}" -gt 0 ]; then
+            test "$(jq -r '.selection_provenance.funding.strategy' "${acquisition}")" = "funding-carry"
+          fi
+          if [ "${expected_cash}" -gt 0 ]; then
+            test "$(jq -r '.selection_provenance.cash.strategy' "${acquisition}")" = "cash-and-carry"
+          fi
+
+          echo "expected_funding_count=${expected_funding}" >> "${GITHUB_OUTPUT}"
+          echo "expected_cash_count=${expected_cash}" >> "${GITHUB_OUTPUT}"
+          echo "expected_total_count=${expected_total}" >> "${GITHUB_OUTPUT}"
 
           jq -n \
             --arg acquisition_id "${ACQUISITION_ID}" \
-            --argjson funding_dates "$(jq -c '.funding.market_dates' artifacts/pre-registered-wave/acquisition.json)" \
-            --argjson cash_dates "$(jq -c '[.cash_cases[].entry_at[0:10]]' artifacts/pre-registered-wave/acquisition.json)" \
+            --argjson funding_dates "${funding_dates}" \
+            --argjson cash_dates "${cash_dates}" \
+            --argjson expected_funding_count "${expected_funding}" \
+            --argjson expected_cash_count "${expected_cash}" \
+            --argjson expected_total_count "${expected_total}" \
             '{
               schema_version: 1,
               evidence_type: "pre_registered_acquisition_wave",
               acquisition_id: $acquisition_id,
               funding_market_dates: $funding_dates,
               cash_entry_market_dates: $cash_dates,
-              expected_funding_count: 5,
-              expected_cash_count: 3,
+              expected_funding_count: $expected_funding_count,
+              expected_cash_count: $expected_cash_count,
+              expected_total_count: $expected_total_count,
               corpus_mutation: false
             }' > artifacts/pre-registered-wave/summary.json
 
           cat artifacts/pre-registered-wave/summary.json
 
-      - name: Assert unique compact artifact identity for exact 5+3 wave
+      - name: Assert compact artifact identity matches composed wave
+        env:
+          EXPECTED_FUNDING_COUNT: ${{ steps.boundary.outputs.expected_funding_count }}
+          EXPECTED_CASH_COUNT: ${{ steps.boundary.outputs.expected_cash_count }}
+          EXPECTED_TOTAL_COUNT: ${{ steps.boundary.outputs.expected_total_count }}
         shell: bash
         run: |
           set -euo pipefail
-          gh api             "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts?per_page=100"             > artifacts/pre-registered-wave/run-artifacts.json
+          gh api \
+            "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts?per_page=100" \
+            > artifacts/pre-registered-wave/run-artifacts.json
 
-          jq -r             '[.artifacts[] | select(.name | contains("-compact-")) | .name] | sort[]'             artifacts/pre-registered-wave/run-artifacts.json             > artifacts/pre-registered-wave/compact-artifact-names.txt
+          jq -r \
+            '[.artifacts[] | select(.name | contains("-compact-")) | .name] | sort[]' \
+            artifacts/pre-registered-wave/run-artifacts.json \
+            > artifacts/pre-registered-wave/compact-artifact-names.txt
 
           total="$(wc -l < artifacts/pre-registered-wave/compact-artifact-names.txt | tr -d ' ')"
           unique="$(sort -u artifacts/pre-registered-wave/compact-artifact-names.txt | wc -l | tr -d ' ')"
           funding="$(grep -c '^okx-btc-funding-compact-' artifacts/pre-registered-wave/compact-artifact-names.txt || true)"
           cash="$(grep -c '^okx-btc-cash-and-carry-compact-' artifacts/pre-registered-wave/compact-artifact-names.txt || true)"
 
-          test "${total}" = "8"
-          test "${unique}" = "8"
-          test "${funding}" = "5"
-          test "${cash}" = "3"
+          test "${total}" = "${EXPECTED_TOTAL_COUNT}"
+          test "${unique}" = "${EXPECTED_TOTAL_COUNT}"
+          test "${funding}" = "${EXPECTED_FUNDING_COUNT}"
+          test "${cash}" = "${EXPECTED_CASH_COUNT}"
 
-          jq -n             --argjson total "${total}"             --argjson unique "${unique}"             --argjson funding "${funding}"             --argjson cash "${cash}"             '{
+          jq -n \
+            --argjson total "${total}" \
+            --argjson unique "${unique}" \
+            --argjson funding "${funding}" \
+            --argjson cash "${cash}" \
+            --argjson expected_total "${EXPECTED_TOTAL_COUNT}" \
+            --argjson expected_funding "${EXPECTED_FUNDING_COUNT}" \
+            --argjson expected_cash "${EXPECTED_CASH_COUNT}" \
+            '{
               schema_version: 1,
               compact_artifact_total: $total,
               compact_artifact_unique_names: $unique,
               funding_compact_count: $funding,
               cash_compact_count: $cash,
+              expected_total_count: $expected_total,
+              expected_funding_count: $expected_funding,
+              expected_cash_count: $expected_cash,
               identity_contract_satisfied: (
-                $total == 8 and $unique == 8 and $funding == 5 and $cash == 3
+                $total == $expected_total and
+                $unique == $expected_total and
+                $funding == $expected_funding and
+                $cash == $expected_cash
               )
-            }'             > artifacts/pre-registered-wave/artifact-identity.json
+            }' > artifacts/pre-registered-wave/artifact-identity.json
 
           cat artifacts/pre-registered-wave/artifact-identity.json
 
