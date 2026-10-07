@@ -1,9 +1,9 @@
 # 2026-10-06-pre-registered-acquisition-wave: Acquire first pre-registered historical corpus candidates
 
-Status: IMPLEMENTING
+Status: COMPLETED
 Owner: agent
 Started: 2026-10-06
-Last checkpoint: 2026-10-06
+Last checkpoint: 2026-10-07
 
 ## Objective
 
@@ -86,7 +86,7 @@ Cash:
 - [x] Acquisition summary proves corpus was not mutated.
 - [x] Workflow/contract tests lock reusable composition and acquisition behavior.
 - [x] Final CI green.
-- [ ] Document final wave evidence, review PR, and next promotion step.
+- [x] Document final wave evidence, review PR, and next promotion step.
 
 ## Implementation slices
 
@@ -96,18 +96,19 @@ Cash:
 - [x] 4. Add workflow-contract tests.
 - [x] 5. Execute first 5+3 sampled wave and inspect artifacts.
 - [x] 6. Record failures/exclusions without replacement.
-- [ ] 7. Document/verify/archive.
+- [x] 7. Document/verify/archive.
 
 ## Verification matrix
 
 | Scope | Expected evidence | Status |
 |---|---|---|
-| Static | workflow/architecture safety | pending |
-| Code | composer/acquisition contract tests | pending |
-| API | no regression | pending |
-| Reference E2E | unchanged | pending |
-| Historical smoke | committed legacy corpus unchanged | pending |
-| Wave | exact 5 Funding + 3 Cash sampled preparations | pending |
+| Static | workflow/architecture safety | PR #4 CI 37558106807 passed |
+| Code | composer/acquisition/distribution tests | PR #4 CI 37558106807 passed (after mixed-provenance assertion correction) |
+| API | no regression | PR #4 CI 37558106807 passed |
+| Reference E2E | unchanged business targets | PR #4 CI 37558106807 passed |
+| Historical smoke | indexed corpus provenance and replay | PR #4 run 37558106798 passed |
+| Wave | exact 5 Funding + 3 Cash sampled preparations | acquisition 37551952412 passed (8 of 8, no replacements) |
+| Main documentation | full CI after README update | run 37558182454 passed |
 
 ## Decision gates
 
@@ -178,34 +179,42 @@ human review/merge of promotion PRs.
   paths outside tests/fixtures/historical. Opened review-only PR #4:
   https://github.com/pkking/future-opportunity/pull/4.
 - 2026-10-07: PR #4 Historical Backtest Smoke run 37557962463 passed. Static,
-  API, and E2E gates in PR CI 37557962485 passed, but Code-level failed at
-  tests/test_historical_distribution_report.py:165 because the old baseline
-  asserted zero pre-registered samples; the new pre-registered wave correctly
-  reports seven. The test must derive expected classification/counts from the
-  independently indexed fixture manifests rather than hard-coding legacy
-  corpus size or modifying product reporting semantics.
+  API, and E2E gates in initial PR CI 37557962485 passed, but Code-level failed
+  at tests/test_historical_distribution_report.py:165 because the old baseline
+  asserted zero pre-registered samples; the new wave correctly reports seven.
+- 2026-10-07: updated the PR-only test to derive expected classification,
+  aggregate coverage, per-strategy counts, and source-presence semantics from
+  independently indexed fixture manifests, without altering strategy logic or
+  return thresholds. PR #4 head 729b24ba90195a3c5b3e84e5abe051509ca715df
+  passed all four CI gates in 37558106807 and Historical Smoke in 37558106798.
+- 2026-10-07: README now records the immutable first-wave selected dates,
+  acquisition and planner source IDs, the seven candidate promotion proposal,
+  and the Stage-1 reporting-only boundary. Main documentation CI 37558182454
+  passed all gates. GitHub PR #4 remained open and clean; no merge was performed.
 
 
 ## Resume from here
 
-Recover the already-validated seven-item promotion from rejected Git commit
-c9b70b8719bd242e9f64d5d9e01fbecdbeca2a34. Overlay **only**
-`tests/fixtures/historical/` from that commit onto the latest main Git tree,
-creating a new review commit with latest main as its parent. Do not carry the
-triggering workflow diff into the review branch. Before publishing, compare the
-proposed review commit against main and require changes solely under the corpus
-path. PR #4 is open and Historical Smoke is green. On the PR branch, repair the
-distribution-report test that assumes every fixture is legacy: independently
-derive expected classification from indexed fixture manifests. Rerun all PR
-CI gates and Historical Backtest Smoke; leave PR #4 unmerged. Record final
-evidence and archive this acquisition plan only when PR checks are green.
-Committed readiness stays 2+2 until human merge. Do not resample/reselect.
+Completed and archived. Review-only PR #4 proposes seven pre-registered compact
+fixtures. It has clean mergeability and passing CI/Historical Smoke but remains
+unmerged pending human review. Once merged, validated corpus readiness increases
+from Funding 2 / Cash 2 to Funding 7 / Cash 4. Do not treat this projection as
+already pinned. ADR-0007 Stage 2 remains disabled and requires a separately
+approved decision.
 
 ## Completion
 
-Final implementation commit:
-Final CI:
-Wave run:
-Successful sampled artifacts:
-Failed/unavailable sampled dates:
-Remaining unassessed items:
+Final acquisition run: https://github.com/pkking/future-opportunity/actions/runs/37551952412
+Planner run: https://github.com/pkking/future-opportunity/actions/runs/37553559617
+Original promotion verification: https://github.com/pkking/future-opportunity/actions/runs/37553856198
+Review PR: https://github.com/pkking/future-opportunity/pull/4
+PR head: 729b24ba90195a3c5b3e84e5abe051509ca715df
+PR CI: https://github.com/pkking/future-opportunity/actions/runs/37558106807 (passed)
+PR Historical Smoke: https://github.com/pkking/future-opportunity/actions/runs/37558106798 (passed)
+Main README CI: https://github.com/pkking/future-opportunity/actions/runs/37558182454 (passed)
+Successful sampled artifacts: 5 Funding + 3 Cash, eight unique compact artifacts
+Candidate promotion: 5 Funding + 2 Cash; Cash 2026-06-02 excluded because already pinned
+Failed/unavailable sampled dates: none
+Current pinned days (no merge yet): Funding 2 / Cash 2
+Projected after human-approved PR merge: Funding 7 / Cash 4
+Remaining unassessed items: Stage-2 distribution return thresholds; human PR review/merge intentionally outside this plan.
