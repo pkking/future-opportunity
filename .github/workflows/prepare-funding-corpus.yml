@@ -36,7 +36,7 @@ jobs:
           HISTORICAL_FIXTURE_DIR: artifacts/historical-fixture
           HISTORY_CADENCE_SECONDS: "900"
           HISTORY_MAX_STALENESS_SECONDS: "5"
-          HISTORY_MAX_RAW_MB: "600"
+          HISTORY_MAX_RAW_MB: "1024"
         run: uv run python scripts/prepare_okx_funding_history_fixture.py
 
       - name: Upload full preparation evidence
