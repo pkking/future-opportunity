@@ -31,33 +31,33 @@ Add a read-only GitHub-native monitor for the exact 28 Wave 002/003 Cash dates s
 ## Acceptance criteria
 
 - [x] Issue and immutable readiness contract are versioned before implementation.
-- [ ] Exact 28 canonical dates are reused without replacement.
-- [ ] Pure readiness summary handles none/partial/all-ready cases.
-- [ ] Catalog query chunking is bounded to <=10 days.
-- [ ] Scheduled + manual non-gating workflow emits machine-readable evidence.
-- [ ] Workflow permissions are read-only.
-- [ ] Job summary reports required/ready/missing/all_ready.
-- [ ] Offline tests cover summary and date contract.
+- [x] Exact 28 canonical dates are reused without replacement.
+- [x] Pure readiness summary handles none/partial/all-ready cases.
+- [x] Catalog query chunking is bounded to <=10 days.
+- [x] Scheduled + manual non-gating workflow emits machine-readable evidence.
+- [x] Workflow permissions are read-only.
+- [x] Job summary reports required/ready/missing/all_ready.
+- [x] Offline tests cover summary and date contract.
 - [ ] Full PR CI and Historical Smoke pass.
-- [ ] No automatic acquisition or study-design mutation exists.
+- [x] No automatic acquisition or study-design mutation exists.
 
 ## Implementation slices
 
 - [x] 1. Open Issue #33 and create this branch/plan.
-- [ ] 2. Add pure readiness model and tests.
-- [ ] 3. Add catalog probe script using exact canonical dates.
-- [ ] 4. Add scheduled/manual read-only workflow.
-- [ ] 5. Run one baseline probe and record current readiness.
+- [x] 2. Add pure readiness model and tests.
+- [x] 3. Add catalog probe script using exact canonical dates.
+- [x] 4. Add scheduled/manual read-only workflow.
+- [x] 5. Baseline run 37605404316 succeeded: ready=0, missing=28, ambiguous=0, query_error=0, all_ready=false.
 - [ ] 6. Archive/merge implementation; stop at execution decision if/when all_ready becomes true.
 
 ## Verification matrix
 
 | Gate | Evidence | Status |
 |---|---|---|
-| Unit | readiness helper tests | pending |
+| Unit | `tests/test_cash_source_readiness.py` | implemented; PR CI pending |
 | Static/API/E2E | PR Ruleset | pending |
 | Historical smoke | PR workflow | pending |
-| Baseline readiness | non-gating Actions artifact | pending |
+| Baseline readiness | run 37605404316 artifact 11474303342 / sha256:c042c3783902bfa37dd17d9332df2e15530452aa210aac57b1bace097b025920 | passed |
 
 ## Decision gates
 
@@ -69,6 +69,8 @@ A separate explicit execution decision is required if/when `all_ready=true`: pre
 
 - 2026-10-07: Issue #33 opened after Issue #31 measured module-4 publication frontier at 2026-06-26.
 - 2026-10-07: branch `agent/cash-source-readiness-monitor` created from main 1208f1a39e9e8a9564aa731c043e3c7df5458752.
+- 2026-10-07: baseline readiness run 37605404316 succeeded with `required_count=28`, `ready_count=0`, `missing_count=28`, `ambiguous_count=0`, `query_error_count=0`, `all_ready=false`.
+- 2026-10-07: artifact 11474303342 digest `sha256:c042c3783902bfa37dd17d9332df2e15530452aa210aac57b1bace097b025920`.
 
 ## Deviations and discoveries
 
@@ -76,7 +78,7 @@ None yet.
 
 ## Resume from here
 
-Implement a pure readiness summary over the canonical 28 dates, then a module-4 catalog probe and daily scheduled workflow with read-only permissions.
+Baseline monitor evidence is reconciled. Open the implementation PR, run full Ruleset CI + Historical Smoke, then archive/merge if green. Do not dispatch acquisition while all_ready=false.
 
 ## Completion
 
