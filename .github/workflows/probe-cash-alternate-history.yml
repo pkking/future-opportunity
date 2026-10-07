@@ -1,0 +1,33 @@
+name: Probe Cash Alternate Historical Evidence
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "scripts/probe_okx_cash_alternate_history.py"
+      - "src/future_opportunity/backtest/cash_alternate_history.py"
+      - ".github/workflows/probe-cash-alternate-history.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    name: Probe official OKX candle and trade coverage
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - name: Probe fixed pre-registered Cash dates
+        run: >-
+          uv run python scripts/probe_okx_cash_alternate_history.py
+          --output artifacts/cash-alternate-history/report.json
+      - name: Upload read-only coverage evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cash-alternate-history-coverage
+          path: artifacts/cash-alternate-history/
+          if-no-files-found: warn
