@@ -54,7 +54,7 @@ on:
         description: Explicit UTC entry clock time HH:MM:SS
         required: true
         default: "00:15:00"
-  # EXECUTION BRANCH ONLY: push executes operator-approved preregistered-wave-002. Never merge these fallback overrides to main.
+  # EXECUTION BRANCH ONLY: Wave 002 retry #2 after merged 1024 MiB Funding cap; approved study inputs unchanged. Never merge these fallback overrides to main.
   push:
     paths:
       - ".github/workflows/prepare-pre-registered-historical-wave.yml"
