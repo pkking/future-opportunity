@@ -6,6 +6,12 @@ on:
       campaign_json:
         description: Versioned campaign JSON with exact run/artifact pairs
         required: true
+  workflow_call:
+    inputs:
+      campaign_json:
+        description: Versioned campaign JSON with exact run/artifact pairs
+        required: true
+        type: string
   push:
     paths:
       - ".github/workflows/promote-historical-campaign.yml"
