@@ -200,14 +200,19 @@ def test_planner_reports_pre_registered_candidate_over_legacy_pinned_day(
         "selection_kind": "pre_registered_sample",
         "strategy": "cash-and-carry",
         "source": {
-            "workflow_run": "1",
-            "artifact_id": "2",
-            "artifact_name": "sample",
-            "artifact_digest": "sha256:" + "1" * 64,
+            "workflow_run": "37487331716",
+            "artifact_id": "11423128537",
+            "artifact_name": (
+                "cash-historical-market-day-sample-37487331716"
+            ),
+            "artifact_digest": (
+                "sha256:"
+                "72714c034d8bccfe2f5e705b177f0db0864251dcf3f8ecdd59d66ab9c90e271e"
+            ),
         },
         "sampling": {
-            "policy_version": "test-v1",
-            "seed": "fixed",
+            "policy_version": "systematic-stratified-sha256-v1",
+            "seed": "cash-stage2-baseline-v1",
             "start_date": "2026-06-01",
             "end_date": "2026-06-10",
             "population_size": 10,
@@ -217,7 +222,9 @@ def test_planner_reports_pre_registered_candidate_over_legacy_pinned_day(
                 "2026-06-04",
                 "2026-06-08",
             ],
-            "evidence_sha256": "2" * 64,
+            "evidence_sha256": (
+                "8a85c5d87b026128da449f4999c0d77d2809472a573b53f5e327cec6998c6549"
+            ),
         },
     }
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
