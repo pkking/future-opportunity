@@ -51,7 +51,7 @@ Maximum requested preparation items if no Cash exclusions: 26.
 - [x] Approved Wave 003 parameters are versioned before acquisition starts.
 - [x] Funding sample contains exactly 12 deterministic selected dates.
 - [x] Cash sample contains exactly 14 deterministic selected dates.
-- [ ] Cash discovery/case plan preserves approved business facts and records exclusions without replacement.
+- [x] Cash discovery/case plan preserves approved business facts and records exclusions without replacement.
 - [ ] Acquisition composition preserves Funding and Cash selection provenance.
 - [ ] Requested acquisition size is <=26 and <=31.
 - [ ] Successful compact artifacts have Actions IDs/digests.
@@ -65,7 +65,7 @@ Maximum requested preparation items if no Cash exclusions: 26.
 - [x] 1. Close Wave 002 task after completion PR #23.
 - [x] 2. Create Issue #24 and this disposable execution branch/plan.
 - [x] 3. Apply exact approved Wave 003 values only to push fallbacks in the top-level orchestration workflow.
-- [~] 4. Observe deterministic samples and Cash exclusions before acquisition completes; both samples are locked and Cash discovery is in progress.
+- [x] 4. Observe deterministic samples and Cash exclusions before acquisition completes; all 14 Cash dates were explicit source-data exclusions with no replacement.
 - [ ] 5. Reconcile all compact artifacts, final wave boundary, and automatic planner output.
 - [ ] 6. Archive completed evidence via a main-based completion PR without merging this execution branch.
 
@@ -82,10 +82,12 @@ No study-design decision remains for Wave 003. Any missing source data is an exc
 - 2026-10-07: Funding deterministic sample selected 12 dates: 2026-05-05, 05-16, 05-29, 06-02, 06-15, 06-23, 07-04, 07-12, 07-25, 08-08, 08-19, 08-29.
 - 2026-10-07: Cash deterministic sample selected 14 dates: 2026-08-02, 08-04, 08-10, 08-12, 08-16, 08-21, 08-26, 08-28, 08-31, 09-06, 09-09, 09-14, 09-18, 09-20.
 - Both sampling records explicitly use policy `systematic-stratified-sha256-v1`, the approved Wave 003 seeds/windows, and replacement_policy `none-v1`.
+- 2026-10-07: all 14 Cash discovery jobs completed successfully as evidence-generation jobs, but every sampled date returned `candidate_count=0` and `status=no_unique_future_chain_archive`.
+- 2026-10-07: Cash case planner preserved the approved `BTC-USDT-260925` / expiry `2026-09-25T08:00:00+00:00` / exit `2026-09-24T00:15:00+00:00` / entry `00:15:00` facts and produced selected_count=0 / excluded_count=14. No date was replaced.
 
 ## Resume from here
 
-Source run 37597427096 is in progress. The exact 12 Funding and 14 Cash samples are locked above. Continue observing all 14 Cash discovery jobs, then record the case planner selected/excluded counts without replacement. After acquisition completes, verify compact artifact IDs/digests, wave boundary, and automatic planner output. Do not alter the workflow file or any approved study input.
+Source run 37597427096 is in progress. Sampling and Cash exclusion evidence are complete: 12 Funding dates proceed to acquisition; all 14 Cash dates are retained as exclusions with selected_count=0. Continue observing Funding compact preparation. After acquisition completes, verify all compact artifact IDs/digests, wave boundary, and automatic planner output. Do not alter the workflow file or any approved study input.
 
 ## Completion
 
