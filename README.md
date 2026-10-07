@@ -389,16 +389,18 @@ base quantity on both sides. They are therefore suitable for deterministic
 replay of that frozen scenario, but are **not** presented as full-book
 market-capacity datasets.
 
-Current pinned real-market evidence includes:
+Current pinned real-market evidence contains **8 Funding Carry days** and
+**5 Cash-and-Carry days**:
 
-- OKX BTC-USDT Funding Carry: 2026-09-01 and 2026-09-02;
-- OKX BTC-USDT / BTC-USDT-260626 Cash-and-Carry: 2026-06-01 and
-  2026-06-02.
+- Funding Carry: 2026-01-01, 2026-01-08, 2026-01-13, 2026-01-22,
+  2026-01-29, 2026-09-01, 2026-09-02, 2026-09-03;
+- Cash-and-Carry: 2026-06-01, 2026-06-02, 2026-06-03, 2026-06-04,
+  2026-06-08.
 
-Both current historical cases are legitimate negative examples under the
-existing default cost assumptions: the product workflow rejects them because
-expected net return is not positive. This is evidence that qualification works;
-it is not a reason to lower the deterministic reference targets.
+The corpus may contain both qualified and rejected real-market cases. Under the
+current Stage-1 policy, historical CI validates provenance, deterministic replay
+and the production qualification semantics for each pinned case; realized or
+expected return magnitude is reporting evidence rather than a pass/fail target.
 
 Run the offline historical smoke directly:
 
