@@ -13,7 +13,9 @@ on:
     paths:
       - ".github/workflows/plan-historical-campaign.yml"
   workflow_run:
-    workflows: ["Acquire Historical Campaign"]
+    workflows:
+      - "Acquire Historical Campaign"
+      - "Acquire Pre-registered Historical Wave"
     types: [completed]
 
 permissions:
