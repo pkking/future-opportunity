@@ -27,6 +27,26 @@ on:
         description: Exact sampled Cash case-plan artifact
         required: false
         default: "cash-acquisition-case-plan-37490008931"
+  workflow_call:
+    inputs:
+      acquisition_id:
+        required: true
+        type: string
+      planner_campaign_prefix:
+        required: true
+        type: string
+      funding_sample_run_id:
+        required: true
+        type: string
+      funding_sample_artifact_name:
+        required: true
+        type: string
+      cash_case_plan_run_id:
+        required: true
+        type: string
+      cash_case_plan_artifact_name:
+        required: true
+        type: string
   push:
     paths:
       - ".github/workflows/acquire-pre-registered-historical-wave.yml"
