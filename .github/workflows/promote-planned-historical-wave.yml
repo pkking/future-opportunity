@@ -1,0 +1,110 @@
+name: Promote Planned Historical Wave
+
+on:
+  workflow_dispatch:
+    inputs:
+      planner_run_id:
+        description: Exact successful Plan Historical Corpus Campaign run ID
+        required: true
+      planner_artifact_name:
+        description: Exact planner evidence artifact name
+        required: true
+      wave_file:
+        description: Exact relative wave JSON path inside planner artifact
+        required: true
+
+permissions:
+  actions: read
+  contents: write
+  pull-requests: write
+
+jobs:
+  resolve:
+    name: Resolve exact planned wave
+    runs-on: ubuntu-latest
+    outputs:
+      campaign_json: ${{ steps.wave.outputs.campaign_json }}
+      campaign_id: ${{ steps.wave.outputs.campaign_id }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PLANNER_RUN_ID: ${{ inputs.planner_run_id }}
+      PLANNER_ARTIFACT_NAME: ${{ inputs.planner_artifact_name }}
+      WAVE_FILE: ${{ inputs.wave_file }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: wave
+        name: Verify planner run/artifact and exact wave file
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "${PLANNER_RUN_ID}" =~ ^[0-9]+$ ]]
+          [[ "${PLANNER_ARTIFACT_NAME}" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]]
+          [[ "${WAVE_FILE}" =~ ^waves/[A-Za-z0-9][A-Za-z0-9._-]*\.json$ ]]
+
+          work="artifacts/planned-wave"
+          mkdir -p "${work}/planner"
+
+          run_json="${work}/run.json"
+          gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${PLANNER_RUN_ID}"             > "${run_json}"
+          test "$(jq -r '.name' "${run_json}")" = "Plan Historical Corpus Campaign"
+          test "$(jq -r '.status' "${run_json}")" = "completed"
+          test "$(jq -r '.conclusion' "${run_json}")" = "success"
+
+          artifacts_json="${work}/artifacts.json"
+          gh api             "repos/${GITHUB_REPOSITORY}/actions/runs/${PLANNER_RUN_ID}/artifacts?per_page=100"             > "${artifacts_json}"
+
+          count="$(jq --arg name "${PLANNER_ARTIFACT_NAME}"             '[.artifacts[] | select(.name == $name)] | length'             "${artifacts_json}")"
+          test "${count}" = "1"
+          expired="$(jq -r --arg name "${PLANNER_ARTIFACT_NAME}"             '.artifacts[] | select(.name == $name) | .expired'             "${artifacts_json}")"
+          digest="$(jq -r --arg name "${PLANNER_ARTIFACT_NAME}"             '.artifacts[] | select(.name == $name) | .digest'             "${artifacts_json}")"
+          test "${expired}" = "false"
+          [[ "${digest}" =~ ^sha256:[0-9a-fA-F]{64}$ ]]
+
+          gh run download "${PLANNER_RUN_ID}"             --repo "${GITHUB_REPOSITORY}"             --name "${PLANNER_ARTIFACT_NAME}"             --dir "${work}/planner"
+
+          wave="${work}/planner/${WAVE_FILE}"
+          test -f "${wave}"
+          test ! -L "${wave}"
+
+          campaign_json="$(jq -c . "${wave}")"
+          schema_version="$(jq -r '.schema_version' "${wave}")"
+          campaign_id="$(jq -r '.campaign_id' "${wave}")"
+          item_count="$(jq '.items | length' "${wave}")"
+
+          test "${schema_version}" = "1"
+          [[ "${campaign_id}" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]]
+          test "${item_count}" -ge 1
+          test "${item_count}" -le 31
+
+          report="${work}/planner/report.json"
+          test -f "${report}"
+          jq -e --arg file "${WAVE_FILE}"             '.wave_files | index($file) != null' "${report}" >/dev/null
+
+          echo "campaign_json=${campaign_json}" >> "${GITHUB_OUTPUT}"
+          echo "campaign_id=${campaign_id}" >> "${GITHUB_OUTPUT}"
+
+          jq -n             --arg planner_run_id "${PLANNER_RUN_ID}"             --arg planner_artifact_name "${PLANNER_ARTIFACT_NAME}"             --arg planner_artifact_digest "${digest}"             --arg wave_file "${WAVE_FILE}"             --arg campaign_id "${campaign_id}"             --argjson item_count "${item_count}"             '{
+              schema_version: 1,
+              evidence_type: "planned_wave_handoff",
+              planner_run_id: $planner_run_id,
+              planner_artifact_name: $planner_artifact_name,
+              planner_artifact_digest: $planner_artifact_digest,
+              wave_file: $wave_file,
+              campaign_id: $campaign_id,
+              item_count: $item_count
+            }' > "${work}/handoff.json"
+
+      - name: Upload planned-wave handoff evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: planned-wave-handoff-${{ github.run_id }}
+          path: artifacts/planned-wave/
+          if-no-files-found: error
+
+  promote:
+    name: Promote exact planned wave
+    needs: resolve
+    uses: ./.github/workflows/promote-historical-campaign.yml
+    with:
+      campaign_json: ${{ needs.resolve.outputs.campaign_json }}
