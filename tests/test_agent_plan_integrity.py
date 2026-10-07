@@ -3,7 +3,12 @@ from pathlib import Path
 
 import pytest
 
-from scripts.validate_agent_plan import IntegrityError, parse_metadata, validate
+import runpy
+
+_contract = runpy.run_path(str(Path(__file__).resolve().parents[1] / "scripts" / "validate_agent_plan.py"))
+IntegrityError = _contract["IntegrityError"]
+parse_metadata = _contract["parse_metadata"]
+validate = _contract["validate"]
 
 
 def make_repo(tmp_path: Path, issue: int = 6):
