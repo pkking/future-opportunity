@@ -59,10 +59,10 @@ Wave 003:
 ## Implementation slices
 
 - [x] 1. Open Issue #29 and create this main-based branch/plan.
-- [ ] 2. Add package-level deterministic input/coverage summary helpers.
-- [ ] 3. Add a read-only OKX alternate-history network probe and dedicated non-gating workflow.
-- [ ] 4. Add focused offline tests.
-- [ ] 5. Run probe and reconcile candlestick/trade coverage.
+- [x] 2. Add package-level deterministic input/coverage summary helpers.
+- [x] 3. Add a read-only OKX alternate-history network probe and dedicated non-gating workflow.
+- [x] 4. Add focused offline tests.
+- [~] 5. Probe run 37603034103 is executing the fixed 28-date matrix; reconcile its artifact when complete.
 - [ ] 6. If lower-fidelity coverage is material, stop at operator decision; otherwise archive and close without changing evidence semantics.
 
 ## Decision gate
@@ -73,7 +73,7 @@ A material operator decision is required only if official trade/candlestick evid
 
 ## Resume from here
 
-Implement package-level coverage semantics first, then a dedicated network probe/workflow. Preserve exact dates and query only official public endpoints. Do not modify any Cash preparation/importer path.
+Probe run 37603034103 is in progress from commit 9384cbbbc9de7ac271fc09be75ddd0dc641652a5. Inspect its machine-readable report before any evidence-source decision. In parallel, open the implementation PR and run full repository gates. Do not modify any Cash preparation/importer path.
 
 ## Completion
 
