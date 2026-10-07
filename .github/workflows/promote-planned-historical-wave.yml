@@ -12,9 +12,6 @@ on:
       wave_file:
         description: Exact relative wave JSON path inside planner artifact
         required: true
-  push:
-    paths:
-      - ".github/workflows/promote-planned-historical-wave.yml"
 
 permissions:
   actions: read
@@ -30,11 +27,9 @@ jobs:
       campaign_id: ${{ steps.wave.outputs.campaign_id }}
     env:
       GH_TOKEN: ${{ github.token }}
-      # Push fallback is a one-shot exact promotion trigger for the reviewed
-      # preregistered-review-001 wave. It will be removed after the run starts.
-      PLANNER_RUN_ID: ${{ inputs.planner_run_id || '37553559617' }}
-      PLANNER_ARTIFACT_NAME: ${{ inputs.planner_artifact_name || 'historical-campaign-planner-37553559617' }}
-      WAVE_FILE: ${{ inputs.wave_file || 'waves/preregistered-review-001-wave-001.json' }}
+      PLANNER_RUN_ID: ${{ inputs.planner_run_id }}
+      PLANNER_ARTIFACT_NAME: ${{ inputs.planner_artifact_name }}
+      WAVE_FILE: ${{ inputs.wave_file }}
     steps:
       - uses: actions/checkout@v4
 
