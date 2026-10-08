@@ -180,7 +180,10 @@ def test_cash_stage2_remains_not_ready_below_minimum() -> None:
     assert readiness.enabled is True
     assert readiness.approval_adr == "ADR-0009"
     assert readiness.decision_quality_ready is False
-    assert readiness.reasons == ("minimum_pinned_days_not_met",)
+    assert readiness.reasons == (
+        "minimum_pinned_days_not_met",
+        "minimum_pre_registered_coverage_not_met",
+    )
 
 
 def test_cash_stage2_approved_and_evidence_ready_without_economics_gate() -> None:
