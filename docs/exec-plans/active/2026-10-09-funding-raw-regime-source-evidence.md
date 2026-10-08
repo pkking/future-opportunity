@@ -69,7 +69,7 @@ Provide a reproducible, read-only bridge from bounded official OKX funding settl
 | Stage-2 economics gate | disabled |
 | CI / Smoke | pending PR validation |
 
-## Live evidence and resume
+## Resume from here
 
 Initial source probe run 37808540222 downloaded 305 Funding and 100 SPOT daily rows but failed to reconstruct 7-day features because the local daily-candle open anchor incorrectly used 00:15. The corrected, same-date, outcome-blind run 37808770909 succeeded with 7/7 feature rows and no missing days. Its artifact ID is 11564166495 (sha256:41c75db5daefb07f9eea49033193f5cffb41483ccca47b34513ce62b46dcecf3); raw captured response canonical SHA 9a05ef96c8a0e780a2f8316d463612fc5b11e235958d4951b5ba85676fdbfda3. All seven rows are nonnegative/high-volatility; 2 selected, three regime cells retain explicit zero capacity and quota shortfalls. Acquisition and promotion remain disallowed. See docs/research/funding-raw-regime-source-lineage-7-days.md.
 
