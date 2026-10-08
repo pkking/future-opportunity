@@ -52,6 +52,8 @@ class Stage2DecisionQualityReadiness:
     qualified_case_count: int
     realized_return_assessed_count: int
     decision_quality_ready: bool
+    evidence_requirements_met: bool
+    evidence_reasons: tuple[str, ...]
     economics_gate: str
     realized_return_gate_available: bool
     market_wide_opportunity_arrival_rate: None
@@ -251,20 +253,23 @@ def stage2_decision_quality_readiness(
     enabled = strategy in policy.enabled_strategies
     coverage = Decimal(pre_registered_day_count) / Decimal(pinned_day_count)
     expected_complete = expected_net_return_assessed_count == pinned_day_count
-    reasons: list[str] = []
-    if not enabled:
-        reasons.append("strategy_not_stage2_enabled")
+    evidence_reasons: list[str] = []
     if pinned_day_count < policy.minimum_distinct_market_days:
-        reasons.append("minimum_pinned_days_not_met")
+        evidence_reasons.append("minimum_pinned_days_not_met")
     if coverage < policy.minimum_pre_registered_coverage_ratio:
-        reasons.append("minimum_pre_registered_coverage_not_met")
+        evidence_reasons.append("minimum_pre_registered_coverage_not_met")
     if (
         policy.require_complete_expected_net_return_assessment
         and not expected_complete
     ):
-        reasons.append("expected_net_return_assessment_incomplete")
+        evidence_reasons.append("expected_net_return_assessment_incomplete")
 
-    ready = not reasons
+    evidence_ready = not evidence_reasons
+    reasons = (
+        ([] if enabled else ["strategy_not_stage2_enabled"])
+        + evidence_reasons
+    )
+    ready = enabled and evidence_ready
     realized_available = qualified_case_count > 0 and (
         realized_return_assessed_count == qualified_case_count
     )
@@ -283,6 +288,8 @@ def stage2_decision_quality_readiness(
         qualified_case_count=qualified_case_count,
         realized_return_assessed_count=realized_return_assessed_count,
         decision_quality_ready=ready,
+        evidence_requirements_met=evidence_ready,
+        evidence_reasons=tuple(evidence_reasons),
         economics_gate=policy.economics_gate,
         realized_return_gate_available=realized_available,
         market_wide_opportunity_arrival_rate=None,
