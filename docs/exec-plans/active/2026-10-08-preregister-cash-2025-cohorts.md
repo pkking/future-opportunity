@@ -1,7 +1,7 @@
 # 2026-10-08-preregister-cash-2025-cohorts
 
 Issue: #61
-Status: IMPLEMENTING
+Status: READY_FOR_REVIEW
 Owner: agent
 Started: 2026-10-08
 Last checkpoint: 2026-10-08
@@ -32,20 +32,20 @@ Pre-register 12 entry-market dates in each newly verified 2025 Cash quarterly ex
 
 ## Acceptance criteria
 
-- [ ] Two deterministic, immutable quarter-specific selections use official pre-outcome source coverage.
-- [ ] Exactly 12/12 unique dates per quarter, 24 total distinct, no 2026 pinned overlap.
-- [ ] Full replay matches versioned dates and recorded selection evidence hashes.
-- [ ] Q3/Q4 contract and pre-expiry exit match prior human-approved quarter-aligned rule.
-- [ ] Read-only workflow publishes exact selection control artifact and no acquisition side effects.
-- [ ] Unit tests cover replay, boundary dates, drift and disjointness.
+- [x] Two deterministic, immutable quarter-specific selections use official pre-outcome source coverage.
+- [x] Exactly 12/12 unique dates per quarter, 24 total distinct, no 2026 pinned overlap.
+- [x] Full replay matches versioned dates and recorded selection evidence hashes.
+- [x] Q3/Q4 contract and pre-expiry exit match prior human-approved quarter-aligned rule.
+- [x] Read-only workflow publishes exact selection control artifact and no acquisition side effects.
+- [x] Unit tests cover replay, boundary dates, drift and disjointness.
 - [ ] All 5 required CI and Historical Smoke pass at PR review/final heads.
 - [ ] Completed plan, squash merge, main verification and issue closure.
 
 ## Implementation slices
 
 - [x] 1. Create issue, branch and plan anchored to official 2025 source evidence.
-- [ ] 2. Freeze versioned pre-selection JSON with exact quarter windows and selected days.
-- [ ] 3. Validate deterministic replay and add automated immutable selection artifact workflow.
+- [x] 2. Freeze versioned pre-selection JSON with exact quarter windows and selected days.
+- [x] 3. Validate deterministic replay and add automated immutable selection artifact workflow.
 - [ ] 4. Run CI/Smoke, archive, verify final head, merge and verify main.
 
 ## Verification matrix
@@ -62,11 +62,11 @@ Pre-register 12 entry-market dates in each newly verified 2025 Cash quarterly ex
 | Acquisition / promotion | false |
 | Existing main pinned counts | Cash 30 / Funding 32 |
 | Economics gate | disabled |
-| CI & Smoke | pending |
+| CI & Smoke | pending PR review head |
 
 ## Resume from here
 
-Commit immutable 12+12 market days and exact source evidence under historical-acquisition-plans, then validate/replay in tests. Publish selection control from a new read-only GitHub workflow and record artifact digest; only then construct explicit source-verified fixture preparation plans. Do not replace selected dates in reaction to realized-return outcomes.
+Selection control artifact from run 37755705789, ID 11539833591, digest sha256:f67f1db18609c87e2cea363abf33eff7dc4592d4ab8680019ff6e1a63b206c74; Q3 replay SHA 3449f56506669a382dbc6c7290d762a00d518a84bebc9530eb904c03e3ab70cd; Q4 SHA 97c3b6c4f296e5819055eace56b5c396c317e285051ea142be2dcb8799073f8b. Exact 12+12 dates and source are committed. Open governed PR and verify final-head CI/Smoke before merge. Once merged, separate reviewed acquisition preparation must validate 00:15 source data for all 24 dates; do not replace failed/rejected outcomes.
 
 ## Completion
 
