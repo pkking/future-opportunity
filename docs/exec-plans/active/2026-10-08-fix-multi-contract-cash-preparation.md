@@ -1,7 +1,7 @@
 # 2026-10-08-fix-multi-contract-cash-preparation
 
 Issue: #49
-Status: IMPLEMENTING
+Status: READY_FOR_REVIEW
 Owner: agent
 Started: 2026-10-08
 Last checkpoint: 2026-10-08
@@ -29,20 +29,20 @@ Make Cash historical fixture preparation support OKX module-4 FUTURES chain arch
 
 ## Acceptance criteria
 
-- [ ] Shared OKX L2 adapter can select one exact archive member from a multi-member archive.
-- [ ] Multi-member FUTURES archive selects BTC-USDT-260327 when requested.
-- [ ] A missing expected instrument fails closed.
-- [ ] Duplicate members for the same expected instrument fail closed.
-- [ ] Legacy single-member archive behavior remains valid.
-- [ ] Cash fixture provenance records the exact selected archive member.
+- [x] Shared OKX L2 adapter can select one exact archive member from a multi-member archive.
+- [x] Multi-member FUTURES archive selects BTC-USDT-260327 when requested.
+- [x] A missing expected instrument fails closed.
+- [x] Duplicate members for the same expected instrument fail closed.
+- [x] Legacy single-member archive behavior remains valid.
+- [x] Cash fixture provenance records the exact selected archive member.
 - [ ] Full CI and Historical Smoke pass.
 
 ## Implementation slices
 
 - [x] 1. Reproduce and diagnose Q1 preparation failure from workflow logs.
-- [ ] 2. Implement exact archive-member selection in shared OKX L2 adapter.
-- [ ] 3. Update Cash preparation provenance to use the same exact selector.
-- [ ] 4. Add focused unit tests.
+- [x] 2. Implement exact archive-member selection in shared OKX L2 adapter.
+- [x] 3. Update Cash preparation provenance to use the same exact selector.
+- [x] 4. Add focused unit tests.
 - [ ] 5. Run CI/Smoke, archive and merge.
 - [ ] 6. Re-run Q1/Q2 preparation on the fixed main revision.
 
