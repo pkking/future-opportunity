@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict, dataclass
+from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
 from typing import Any, Iterable
@@ -237,6 +238,88 @@ def _selection_coverage(
     }
 
 
+def cash_expiry_horizon_cohorts(
+    cases: tuple[CashAndCarryBacktestCaseResult, ...],
+    *,
+    pre_registered_case_ids: frozenset[str],
+) -> dict[str, Any]:
+    """Reporting-only expiry cohorts. Case outcomes are never used to select days."""
+    if not cases:
+        raise ValueError("cash cohort evidence requires pinned cases")
+
+    grouped: dict[str, list[CashAndCarryBacktestCaseResult]] = {}
+    horizons: dict[str, dict[str, Decimal]] = {}
+    for case in cases:
+        expiry = datetime.fromisoformat(case.expiry)
+        entry = datetime.fromisoformat(case.observed_at)
+        if case.exit_at is None:
+            raise ValueError("Cash horizon evidence requires an explicit exit")
+        exit_at = datetime.fromisoformat(case.exit_at)
+        if entry.tzinfo is None or exit_at.tzinfo is None or expiry.tzinfo is None:
+            raise ValueError("Cash horizon timestamps must be timezone aware")
+        if not entry < exit_at < expiry:
+            raise ValueError("Cash horizon must finish before contract expiry")
+        duration = exit_at - entry
+        days = (
+            Decimal(duration.days)
+            + Decimal(duration.seconds) / Decimal(86400)
+            + Decimal(duration.microseconds) / Decimal(86400000000)
+        )
+        grouped.setdefault(case.expiry, []).append(case)
+        per_expiry = horizons.setdefault(case.expiry, {})
+        if case.case_id in per_expiry:
+            raise ValueError("duplicate Cash case ID in expiry cohort")
+        per_expiry[case.case_id] = days
+
+    cohorts: list[dict[str, Any]] = []
+    for expiry_at, group in sorted(grouped.items()):
+        cohort = tuple(group)
+        summary = _summary(cohort, strategy="cash-and-carry")
+        durations = horizons[expiry_at]
+        selected_count = sum(
+            case.case_id in pre_registered_case_ids for case in cohort
+        )
+        cohorts.append(
+            {
+                "contract_expiry_at": expiry_at,
+                "close_modes": sorted({case.close_mode for case in cohort}),
+                "case_count": len(cohort),
+                "pre_registered_case_count": selected_count,
+                "pre_registered_coverage_ratio": (
+                    Decimal(selected_count) / Decimal(len(cohort))
+                ),
+                "holding_days_all_cases": asdict(
+                    decimal_distribution(durations.values())
+                ),
+                "holding_days_qualified_cases": asdict(
+                    decimal_distribution(
+                        durations[case.case_id]
+                        for case in cohort
+                        if case.qualified
+                    )
+                ),
+                "summary": summary,
+            }
+        )
+
+    return {
+        "sample_unit": "one_frozen_case_per_pinned_entry_market_day",
+        "cohort_key": "historical_contract_expiry_at",
+        "cohort_count": len(cohorts),
+        "shared_expiry_cases_are_independent_trials": False,
+        "holding_days_are_realized_entry_to_exit_calendar_days": True,
+        "return_horizon": "per_case_not_annualized",
+        "market_wide_opportunity_arrival_rate": None,
+        "economics_gate": "reporting_only",
+        "note": (
+            "Cases sharing a future contract expiry can overlap in holding "
+            "period and market exposure. Qualified realized-return distributions "
+            "are conditional, not annualized or independent investment trials."
+        ),
+        "cohorts": cohorts,
+    }
+
+
 async def build_historical_corpus_distribution(
     *,
     fixture_root: Path,
@@ -372,6 +455,15 @@ async def build_historical_corpus_distribution(
                 ],
             )
         )
+    cash_cohorts = cash_expiry_horizon_cohorts(
+        tuple(cash_report.cases),
+        pre_registered_case_ids=frozenset(
+            case.case_id
+            for case in cash_report.cases
+            if provenance_by_id[case.case_id]["selection"]["classification"]
+            == "pre_registered_sample"
+        ),
+    )
     cases = {
         strategy: [
             {
@@ -407,5 +499,6 @@ async def build_historical_corpus_distribution(
             "strategies": stage2,
         },
         "strategies": summaries,
+        "cash_stage2_expiry_horizon_evidence": cash_cohorts,
         "cases": cases,
     }
