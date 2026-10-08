@@ -12,7 +12,9 @@ import pytest
 from future_opportunity.adapters.historical.okx_l2 import (
     iter_okx_l2_archive,
     iter_okx_l2_jsonl,
+    iter_okx_l2_sampled_archive,
     iter_okx_l2_sampled_jsonl,
+    okx_l2_archive_member_name,
 )
 from future_opportunity.backtest.model import HistoricalInstrumentMetadata
 
@@ -256,13 +258,111 @@ def test_tar_gz_archive_rejects_ambiguous_multiple_data_members(
             info.size = len(payload)
             archive.addfile(info, io.BytesIO(payload))
 
-    with pytest.raises(ValueError, match="exactly one .data member"):
+    with pytest.raises(ValueError, match="exactly one .data member for BTC-USDT"):
         list(
             iter_okx_l2_archive(
                 archive_path,
                 instrument_type="SPOT",
                 expected_instrument_id="BTC-USDT",
             )
+        )
+
+
+def test_multi_contract_archive_selects_exact_expected_future(
+    tmp_path: Path,
+) -> None:
+    archive_path = tmp_path / "future-chain.tar.gz"
+    start = datetime(2026, 1, 11, 0, 15, tzinfo=UTC)
+    ts = str(int(start.timestamp() * 1000))
+
+    with tarfile.open(archive_path, "w:gz") as archive:
+        for future_id in ("BTC-USDT-260327", "BTC-USDT-260626"):
+            payload = (
+                line(
+                    instrument_id=future_id,
+                    action="snapshot",
+                    ts=ts,
+                    bids=[["100000", "50", "2"]],
+                    asks=[["100001", "25", "1"]],
+                )
+                + "\n"
+            ).encode()
+            info = tarfile.TarInfo(
+                f"{future_id}-L2orderbook-400lv-2026-01-11.data"
+            )
+            info.size = len(payload)
+            archive.addfile(info, io.BytesIO(payload))
+
+    assert okx_l2_archive_member_name(
+        archive_path,
+        expected_instrument_id="BTC-USDT-260327",
+    ) == "BTC-USDT-260327-L2orderbook-400lv-2026-01-11.data"
+
+    metadata = HistoricalInstrumentMetadata(
+        instrument_id="BTC-USDT-260327",
+        instrument_family="BTC-USDT",
+        instrument_type="FUTURES",
+        contract_value=Decimal("0.01"),
+        contract_multiplier=Decimal(1),
+        contract_value_currency="BTC",
+        settlement_currency="USDT",
+        list_time=None,
+        expiry_time=datetime(2026, 3, 27, 8, tzinfo=UTC),
+    )
+    observations = tuple(
+        iter_okx_l2_sampled_archive(
+            archive_path,
+            instrument_type="FUTURES",
+            expected_instrument_id="BTC-USDT-260327",
+            start=start,
+            end=start,
+            cadence=timedelta(minutes=15),
+            metadata=metadata,
+        )
+    )
+    assert len(observations) == 1
+    assert observations[0].instrument_id == "BTC-USDT-260327"
+    assert observations[0].book.bids[0].quantity == Decimal("0.50")
+
+
+def test_multi_contract_archive_fails_closed_when_target_missing(
+    tmp_path: Path,
+) -> None:
+    archive_path = tmp_path / "missing.tar.gz"
+    payload = b"{}\n"
+    with tarfile.open(archive_path, "w:gz") as archive:
+        for future_id in ("BTC-USDT-260327", "BTC-USDT-260626"):
+            info = tarfile.TarInfo(
+                f"{future_id}-L2orderbook-400lv-2026-01-11.data"
+            )
+            info.size = len(payload)
+            archive.addfile(info, io.BytesIO(payload))
+
+    with pytest.raises(ValueError, match="found 0 among 2 data members"):
+        okx_l2_archive_member_name(
+            archive_path,
+            expected_instrument_id="BTC-USDT-260130",
+        )
+
+
+def test_multi_contract_archive_fails_closed_on_duplicate_target(
+    tmp_path: Path,
+) -> None:
+    archive_path = tmp_path / "duplicate.tar.gz"
+    payload = b"{}\n"
+    with tarfile.open(archive_path, "w:gz") as archive:
+        for name in (
+            "BTC-USDT-260327-L2orderbook-400lv-2026-01-11.data",
+            "nested/BTC-USDT-260327-L2orderbook-400lv-2026-01-11.data",
+        ):
+            info = tarfile.TarInfo(name)
+            info.size = len(payload)
+            archive.addfile(info, io.BytesIO(payload))
+
+    with pytest.raises(ValueError, match="found 2 among 2 data members"):
+        okx_l2_archive_member_name(
+            archive_path,
+            expected_instrument_id="BTC-USDT-260327",
         )
 
 

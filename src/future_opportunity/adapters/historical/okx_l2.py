@@ -36,17 +36,11 @@ def iter_okx_l2_archive(
         raise ValueError(f"unsupported OKX L2 archive: {path}") from error
 
     with archive:
-        members = [
-            item
-            for item in archive.getmembers()
-            if item.isfile() and item.name.endswith(".data")
-        ]
-        if len(members) != 1:
-            raise ValueError(
-                "OKX L2 archive must contain exactly one .data member"
-            )
-
-        source = archive.extractfile(members[0])
+        member = _select_archive_member(
+            archive,
+            expected_instrument_id=expected_instrument_id,
+        )
+        source = archive.extractfile(member)
         if source is None:
             raise ValueError("unable to open OKX L2 archive member")
 
@@ -58,6 +52,58 @@ def iter_okx_l2_archive(
                 metadata=metadata,
             )
 
+
+
+def okx_l2_archive_member_name(
+    path: Path,
+    *,
+    expected_instrument_id: str,
+) -> str:
+    """Return the exact .data member used for an instrument replay."""
+    if not path.is_file():
+        raise FileNotFoundError(path)
+    try:
+        archive = tarfile.open(path, mode="r:gz")
+    except tarfile.TarError as error:
+        raise ValueError(f"unsupported OKX L2 archive: {path}") from error
+    with archive:
+        return _select_archive_member(
+            archive,
+            expected_instrument_id=expected_instrument_id,
+        ).name
+
+
+def _select_archive_member(
+    archive: tarfile.TarFile,
+    *,
+    expected_instrument_id: str,
+) -> tarfile.TarInfo:
+    if not expected_instrument_id:
+        raise ValueError("expected_instrument_id is required")
+
+    members = [
+        item
+        for item in archive.getmembers()
+        if item.isfile() and item.name.endswith(".data")
+    ]
+    if not members:
+        raise ValueError("OKX L2 archive contains no .data member")
+    if len(members) == 1:
+        return members[0]
+
+    prefix = f"{expected_instrument_id}-L2orderbook-"
+    matches = [
+        item
+        for item in members
+        if Path(item.name).name.startswith(prefix)
+    ]
+    if len(matches) != 1:
+        raise ValueError(
+            "OKX L2 archive must contain exactly one .data member for "
+            f"{expected_instrument_id}; found {len(matches)} among "
+            f"{len(members)} data members"
+        )
+    return matches[0]
 
 def iter_okx_l2_jsonl(
     lines: Iterable[str],
@@ -364,16 +410,11 @@ def iter_okx_l2_sampled_archive(
         raise ValueError(f"unsupported OKX L2 archive: {path}") from error
 
     with archive:
-        members = [
-            item
-            for item in archive.getmembers()
-            if item.isfile() and item.name.endswith(".data")
-        ]
-        if len(members) != 1:
-            raise ValueError(
-                "OKX L2 archive must contain exactly one .data member"
-            )
-        source = archive.extractfile(members[0])
+        member = _select_archive_member(
+            archive,
+            expected_instrument_id=expected_instrument_id,
+        )
+        source = archive.extractfile(member)
         if source is None:
             raise ValueError("unable to open OKX L2 archive member")
         with source, io.TextIOWrapper(source, encoding="utf-8-sig") as text:

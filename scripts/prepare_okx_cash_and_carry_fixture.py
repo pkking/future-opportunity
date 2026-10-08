@@ -3,7 +3,6 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import tarfile
 import tempfile
 import time
 from dataclasses import asdict
@@ -21,6 +20,7 @@ from future_opportunity.adapters.historical.okx_catalog import (
 )
 from future_opportunity.adapters.historical.okx_l2 import (
     iter_okx_l2_sampled_archive,
+    okx_l2_archive_member_name,
 )
 from future_opportunity.backtest.canonical import write_canonical_order_books
 from future_opportunity.backtest.cash_compact import derive_cash_compact_fixture
@@ -141,20 +141,6 @@ def download(
     return digest.hexdigest(), total
 
 
-def archive_member(path: Path) -> str:
-    with tarfile.open(path, "r:gz") as archive:
-        members = [
-            item.name
-            for item in archive.getmembers()
-            if item.isfile() and item.name.endswith(".data")
-        ]
-    if len(members) != 1:
-        raise RuntimeError(
-            "historical L2 archive must contain exactly one .data member"
-        )
-    return members[0]
-
-
 def source_view(
     source,
     *,
@@ -238,11 +224,10 @@ def prepare_component(
 
     raw_path = temporary / source.filename
     raw_sha, raw_bytes = download(client, source.url, raw_path)
-    member = archive_member(raw_path)
-    if instrument_type == "FUTURES" and RAW_FUTURE_ID not in member:
-        raise RuntimeError(
-            f"future chain member does not contain {RAW_FUTURE_ID}: {member}"
-        )
+    member = okx_l2_archive_member_name(
+        raw_path,
+        expected_instrument_id=expected_id,
+    )
 
     output_path = OUTPUT / f"{name}.jsonl"
     summary = write_canonical_order_books(
