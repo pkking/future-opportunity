@@ -25,6 +25,8 @@ from future_opportunity.backtest.fixture import (
 from future_opportunity.backtest.historical_policy import (
     distribution_transition_readiness,
     load_historical_acceptance_policy,
+    load_stage2_decision_quality_policy,
+    stage2_decision_quality_readiness,
 )
 from future_opportunity.backtest.selection_provenance import (
     historical_selection_provenance_payload,
@@ -246,7 +248,7 @@ async def build_historical_corpus_distribution(
     if capital != Decimal("10000"):
         raise ValueError("pinned historical fixtures are frozen to 10000 USDT")
 
-    policy, _ = load_historical_acceptance_policy(policy_path)
+    policy, raw_policy = load_historical_acceptance_policy(policy_path)
     corpus = load_historical_corpus(
         index_path=index_path,
         fixture_root=fixture_root,
@@ -348,6 +350,28 @@ async def build_historical_corpus_distribution(
         strategy: _summary(results_by_strategy[strategy], strategy=strategy)
         for strategy in policy.required_strategies
     }
+    stage2_policy = load_stage2_decision_quality_policy(raw_policy)
+    stage2 = {}
+    for strategy in policy.required_strategies:
+        summary = summaries[strategy]
+        coverage = selection_coverage["by_strategy"][strategy]
+        stage2[strategy] = asdict(
+            stage2_decision_quality_readiness(
+                stage2_policy,
+                strategy=strategy,
+                pinned_day_count=summary["pinned_entry_market_day_count"],
+                pre_registered_day_count=coverage[
+                    "pre_registered_sample_day_count"
+                ],
+                expected_net_return_assessed_count=summary[
+                    "expected_net_return_all_cases"
+                ]["assessed_count"],
+                qualified_case_count=summary["qualified_case_count"],
+                realized_return_assessed_count=summary[
+                    "qualified_cases_with_assessed_realized_return"
+                ],
+            )
+        )
     cases = {
         strategy: [
             {
@@ -372,6 +396,16 @@ async def build_historical_corpus_distribution(
         "capital_usdt": capital,
         "readiness": asdict(readiness),
         "selection_provenance_coverage": selection_coverage,
+        "stage2_decision_quality": {
+            "adr": stage2_policy.adr,
+            "status": stage2_policy.status,
+            "approved_at": stage2_policy.approved_at,
+            "economics_gate": stage2_policy.economics_gate,
+            "preferred_threshold_freeze_days": (
+                stage2_policy.preferred_threshold_freeze_days
+            ),
+            "strategies": stage2,
+        },
         "strategies": summaries,
         "cases": cases,
     }
