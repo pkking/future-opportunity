@@ -1,7 +1,7 @@
 # 2026-10-09-funding-raw-regime-source-evidence
 
 Issue: #67
-Status: IMPLEMENTING
+Status: READY_FOR_REVIEW
 Owner: agent
 Started: 2026-10-09
 Last checkpoint: 2026-10-09
@@ -32,13 +32,13 @@ Provide a reproducible, read-only bridge from bounded official OKX funding settl
 
 ## Acceptance criteria
 
-- [ ] Deterministic pure transform validates funding and spot API payload schemas and produces reproducible feature rows and explicit missing dates.
-- [ ] Source digest and per-day hashes bind raw input and derived features.
-- [ ] Lag and 7-day completed spot-candle window are enforced.
-- [ ] Duplicate/conflicting source records, bad decimals, stale funding and incomplete candles are rejected or missing, never silently substituted.
-- [ ] Research output remains source-authentication-pending and acquisition/promotion disabled.
-- [ ] Read-only GitHub Action captures a fixed recent study window and uploads raw+features+research evidence.
-- [ ] Tests cover successful reconstruction, no-lookahead, missingness, duplicates and digest changes.
+- [x] Deterministic pure transform validates funding and spot API payload schemas and produces reproducible feature rows and explicit missing dates.
+- [x] Source digest and per-day hashes bind raw input and derived features.
+- [x] Lag and 7-day completed spot-candle window are enforced.
+- [x] Duplicate/conflicting source records, bad decimals, stale funding and incomplete candles are rejected or missing, never silently substituted.
+- [x] Research output remains source-authentication-pending and acquisition/promotion disabled.
+- [x] Read-only GitHub Action captures a fixed recent study window and uploads raw+features+research evidence.
+- [x] Tests cover successful reconstruction, no-lookahead, missingness, duplicates and digest changes.
 - [ ] Required CI 5/5 and Historical Smoke green on review head.
 - [ ] Archive execution plan, update PR body, and verify final-head required CI and Smoke before merge.
 - [ ] Merge and verify main; close issue only after success.
@@ -47,9 +47,9 @@ Provide a reproducible, read-only bridge from bounded official OKX funding settl
 
 - [x] 1. Inspect current 2x2 research, official API semantics and current repo work.
 - [x] 2. Create Issue #67, branch, active plan.
-- [ ] 3. Implement deterministic raw-input feature reconstruction with explicit limitations.
-- [ ] 4. Implement bounded official API capture with immutable evidence and research-only workflow.
-- [ ] 5. Add tests and technical handoff documentation.
+- [x] 3. Implement deterministic raw-input feature reconstruction with explicit limitations.
+- [x] 4. Implement bounded official API capture with immutable evidence and research-only workflow.
+- [x] 5. Add tests and technical handoff documentation.
 - [ ] 6. PR CI/Smoke, archival head verification, merge, main validation and issue closure.
 
 ## Verification matrix
@@ -67,11 +67,13 @@ Provide a reproducible, read-only bridge from bounded official OKX funding settl
 | Acquisition/promotion approval | false |
 | Existing pinned corpora | Funding 32 / Cash 30 unchanged |
 | Stage-2 economics gate | disabled |
-| CI / Smoke | pending |
+| CI / Smoke | pending PR validation |
 
-## Resume from here
+## Live evidence and resume
 
-Implement pure reconstruct-and-audit from archived OKX API response bodies (never trust client-provided derived features), then add a read-only capture workflow and synthetic tests. Keep explicit retrospective/source-authentication limitations. Open a governed PR, merge only when the final head has 5/5 required checks and Historical Smoke; verify main and close issue.
+Initial source probe run 37808540222 downloaded 305 Funding and 100 SPOT daily rows but failed to reconstruct 7-day features because the local daily-candle open anchor incorrectly used 00:15. The corrected, same-date, outcome-blind run 37808770909 succeeded with 7/7 feature rows and no missing days. Its artifact ID is 11564166495 (sha256:41c75db5daefb07f9eea49033193f5cffb41483ccca47b34513ce62b46dcecf3); raw captured response canonical SHA 9a05ef96c8a0e780a2f8316d463612fc5b11e235958d4951b5ba85676fdbfda3. All seven rows are nonnegative/high-volatility; 2 selected, three regime cells retain explicit zero capacity and quota shortfalls. Acquisition and promotion remain disallowed. See docs/research/funding-raw-regime-source-lineage-7-days.md.
+
+Open a governed PR and require 5/5 required CI plus Historical Smoke on review and final archived heads. Merge and verify unchanged pinned corpora/disabled economics before closing Issue #67.
 
 ## Completion
 
