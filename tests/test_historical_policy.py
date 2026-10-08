@@ -8,6 +8,8 @@ from future_opportunity.backtest.historical_policy import (
     distribution_transition_readiness,
     evaluate_historical_gate,
     load_historical_acceptance_policy,
+    load_stage2_decision_quality_policy,
+    stage2_decision_quality_readiness,
 )
 
 
@@ -117,3 +119,59 @@ def test_policy_rejects_automatic_distribution_transition(
 
     with pytest.raises(ValueError, match="human approval"):
         load_historical_acceptance_policy(path)
+
+
+def test_accepted_stage2_decision_quality_policy_is_explicit() -> None:
+    _, raw = load_historical_acceptance_policy(POLICY)
+    stage2 = load_stage2_decision_quality_policy(raw)
+
+    assert stage2.adr == "ADR-0008"
+    assert stage2.status == "accepted"
+    assert stage2.enabled_strategies == ("funding-carry",)
+    assert stage2.economics_gate == "disabled"
+    assert stage2.minimum_distinct_market_days == 30
+    assert stage2.preferred_threshold_freeze_days == 90
+    assert str(stage2.minimum_pre_registered_coverage_ratio) == "0.80"
+    assert stage2.realized_return_gate_requires_future_human_approval is True
+
+
+def test_funding_stage2_decision_quality_can_be_ready_with_zero_qualified() -> None:
+    _, raw = load_historical_acceptance_policy(POLICY)
+    stage2 = load_stage2_decision_quality_policy(raw)
+
+    readiness = stage2_decision_quality_readiness(
+        stage2,
+        strategy="funding-carry",
+        pinned_day_count=32,
+        pre_registered_day_count=29,
+        expected_net_return_assessed_count=32,
+        qualified_case_count=0,
+        realized_return_assessed_count=0,
+    )
+
+    assert readiness.enabled is True
+    assert readiness.decision_quality_ready is True
+    assert readiness.reasons == ()
+    assert readiness.economics_gate == "disabled"
+    assert readiness.realized_return_gate_available is False
+    assert readiness.market_wide_opportunity_arrival_rate is None
+
+
+def test_cash_stage2_remains_disabled_below_minimum() -> None:
+    _, raw = load_historical_acceptance_policy(POLICY)
+    stage2 = load_stage2_decision_quality_policy(raw)
+
+    readiness = stage2_decision_quality_readiness(
+        stage2,
+        strategy="cash-and-carry",
+        pinned_day_count=5,
+        pre_registered_day_count=3,
+        expected_net_return_assessed_count=5,
+        qualified_case_count=0,
+        realized_return_assessed_count=0,
+    )
+
+    assert readiness.enabled is False
+    assert readiness.decision_quality_ready is False
+    assert "strategy_not_stage2_enabled" in readiness.reasons
+    assert "minimum_pinned_days_not_met" in readiness.reasons
