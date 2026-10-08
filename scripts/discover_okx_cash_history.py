@@ -34,7 +34,14 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("market_date")
     parser.add_argument("--output", type=Path, required=True)
-    return parser.parse_args()
+    parser.add_argument(
+        "--max-raw-mb", type=int, default=MAX_RAW_MB,
+        help="Bounded read-only raw archive download cap in MiB",
+    )
+    args = parser.parse_args()
+    if not 1 <= args.max_raw_mb <= 512:
+        parser.error("--max-raw-mb must be between 1 and 512")
+    return args
 
 
 def get_json(
@@ -61,10 +68,12 @@ def download(
     client: httpx.Client,
     url: str,
     path: Path,
+    *,
+    max_raw_mb: int = MAX_RAW_MB,
 ) -> tuple[str, int]:
     digest = hashlib.sha256()
     total = 0
-    limit = MAX_RAW_MB * 1024 * 1024
+    limit = max_raw_mb * 1024 * 1024
     with client.stream("GET", url) as response:
         response.raise_for_status()
         with path.open("wb") as output:
@@ -72,7 +81,7 @@ def download(
                 total += len(chunk)
                 if total > limit:
                     raise RuntimeError(
-                        f"future archive exceeded {MAX_RAW_MB} MiB"
+                        f"future archive exceeded {max_raw_mb} MiB"
                     )
                 digest.update(chunk)
                 output.write(chunk)
@@ -172,7 +181,10 @@ def main() -> None:
         source = candidates[0]
         with tempfile.TemporaryDirectory() as temporary:
             raw_path = Path(temporary) / source.filename
-            raw_sha, raw_bytes = download(client, source.url, raw_path)
+            raw_sha, raw_bytes = download(
+                client, source.url, raw_path,
+                max_raw_mb=args.max_raw_mb,
+            )
             with tarfile.open(raw_path, "r:gz") as archive:
                 members = tuple(
                     sorted(
