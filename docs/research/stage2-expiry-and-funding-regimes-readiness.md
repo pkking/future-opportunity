@@ -19,7 +19,21 @@ The official OKX canonical module-4 BTC-USDT FUTURES chain source is probed on f
 
 These dates are **source availability diagnostics only**, NOT automatically selected strategy-evaluation dates. The report requires the exact unique member within the observed archive, a SHA-256 identity, and logs missing/error evidence explicitly. The report deliberately always sets `acquisition_ready=false` even if all four archives are found.
 
-Live results come from `.github/workflows/probe-cash-prior-expiries.yml` and its `cash-prior-expiry-source-readiness` artifact. Until that artifact is inspected, it is incorrect to claim these 2025 archives are available.
+### Verified live source observations — 2026-10-08
+
+The source probe was dispatched by branch push and observed through official OKX archive discovery, **before any outcome-based historical selection**.
+
+- Initial run [37753082901](https://github.com/pkking/future-opportunity/actions/runs/37753082901): 2/4 fixed targets had verified matching archive identities. The other two failed only because the existing discovery download cap was 128 MiB.
+- Re-probe of the **same four dates**, with bounded 512 MiB stream downloads: [37753604956](https://github.com/pkking/future-opportunity/actions/runs/37753604956), successfully completed.
+- Immutable evidence artifact: `cash-prior-expiry-source-readiness`, ID `11538678600`, digest `sha256:85083f599a9e85caaf2fbc22e67962c88f1b811bbe34327aed828e01a5dca1d4`.
+- `2025-09-12` (`BTC-USDT-250926`): exact archive member verified; raw archive SHA `35edda3f63428fac038d70de18ceef5891563bf94b604c0bbdf08aacf410e58f`.
+- `2025-09-19` (`BTC-USDT-250926`): exact archive member verified; raw archive SHA `3171afa68837ae1fcec31001795edb5b24f6298237b3d87c9b8997a4a6de64ce`.
+- `2025-12-12` (`BTC-USDT-251226`): exact archive member verified; raw archive SHA `f37e3e12e22ae60feb1a3279b6bfb903e0d80c5845e1db6f74bace5c6c8bc8d8`.
+- `2025-12-19` (`BTC-USDT-251226`): exact archive member verified; raw archive SHA `f85d658ab4561c597d755a7eeb836e5216ac70def2c044f1a9b20e94b9b78cbd`.
+
+Result: `archive_identity_verified_count=4/4`, `target_coverage_complete=true`; **`acquisition_ready=false`** by design. The above only validates a future chain-member identity on representative dates, **not** completeness of SPOT and FUTURES entry/exit data, contract settlement evidence, or performance of the strategy. Neither re-running the same probe after raising the download cap nor verifying an archive constitutes a new independent realized-return trial.
+
+Further live results are available through `.github/workflows/probe-cash-prior-expiries.yml` and the immutable source-readiness artifact.
 
 Before any new historical acquisition, separately verify:
 - actual L2 SPOT/FUTURES entry and pre-expiry exit data (and any applicable settlement/contract metadata requirements);
