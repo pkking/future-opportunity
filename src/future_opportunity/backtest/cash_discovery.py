@@ -37,6 +37,28 @@ def future_id_from_archive_member(
     return match.group("instrument")
 
 
+
+def future_ids_from_archive_members(
+    members: tuple[str, ...] | list[str],
+    *,
+    expected_market_date: str,
+) -> tuple[str, ...]:
+    future_ids = tuple(
+        sorted(
+            {
+                future_id_from_archive_member(
+                    member,
+                    expected_market_date=expected_market_date,
+                )
+                for member in members
+            }
+        )
+    )
+    if not future_ids:
+        raise ValueError("future chain archive has no BTC-USDT data members")
+    return future_ids
+
+
 def find_delivery_evidence(
     payload: dict[str, Any],
     *,
