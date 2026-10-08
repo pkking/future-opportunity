@@ -29,7 +29,7 @@ jobs:
         shell: bash
         run: |
           if [[ -f artifacts/cash-2025-quarter-selection/control.json ]]; then
-            jq -r '.quarters[] | [.quarter, .population_size, .selected_market_dates | length, .selection_evidence_sha256] | @tsv' artifacts/cash-2025-quarter-selection/control.json >> "$GITHUB_STEP_SUMMARY"
+            jq -r '.quarters[] | [.quarter, .population_size, (.selected_market_dates | length), .selection_evidence_sha256] | @tsv' artifacts/cash-2025-quarter-selection/control.json >> "$GITHUB_STEP_SUMMARY"
             echo "Selection control only; no fixture acquisition, PnL, or corpus mutation." >> "$GITHUB_STEP_SUMMARY"
           else
             echo "Selection replay failed; no frozen control evidence." >> "$GITHUB_STEP_SUMMARY"
