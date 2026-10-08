@@ -1,7 +1,7 @@
 # 2026-10-08-multi-expiry-regime-evidence
 
 Issue: #65
-Status: IMPLEMENTING
+Status: READY_FOR_REVIEW
 Owner: agent
 Started: 2026-10-08
 Last checkpoint: 2026-10-08
@@ -30,12 +30,12 @@ Define reproducible, outcome-blind historical expansion planning for Cash additi
 
 ## Acceptance criteria
 
-- [ ] Document source feasibility gaps for non-March/June Cash expiries and a verification protocol.
-- [ ] Implement deterministic pure cohort/date selection with no replacement and explicit unavailable outcomes.
-- [ ] Implement deterministic pure ex-ante regime-balanced date selection with predefined regime labels and no economic outcomes.
-- [ ] Reject duplicate dates, unknown regimes, bad availability and insufficient capacity safely.
-- [ ] Test reproducibility, no-replacement, missing-data denominators and cohort constraints.
-- [ ] Provide executable next-stage handoff with source verification and publication frontier prerequisites.
+- [x] Document source feasibility gaps for non-March/June Cash expiries and a verification protocol.
+- [x] Implement deterministic pure cohort/date selection with no replacement and explicit unavailable outcomes.
+- [x] Implement deterministic pure ex-ante regime-balanced date selection with predefined regime labels and no economic outcomes.
+- [x] Reject duplicate dates, unknown regimes, bad availability and insufficient capacity safely.
+- [x] Test reproducibility, no-replacement, missing-data denominators and cohort constraints.
+- [x] Provide executable next-stage handoff with source verification and publication frontier prerequisites.
 - [ ] PR linked to Issue #65, review-head 5/5 required CI and Historical Smoke.
 - [ ] Archive plan; final-head CI and Historical Smoke verified; squash merge, close issue.
 
@@ -43,8 +43,8 @@ Define reproducible, outcome-blind historical expansion planning for Cash additi
 
 - [x] 1. Read baseline sampling, Cash quarter policy and governance.
 - [x] 2. Create Issue #65 and governed branch/plan.
-- [ ] 3. Implement pure cohort/regime selection and tests.
-- [ ] 4. Document source evidence and dispatch/approval boundaries.
+- [x] 3. Implement pure cohort/regime selection and tests.
+- [x] 4. Document source evidence and dispatch/approval boundaries.
 - [ ] 5. Verify, archive and merge.
 
 ## Verification matrix
