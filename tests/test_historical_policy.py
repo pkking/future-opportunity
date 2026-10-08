@@ -1,4 +1,5 @@
 import json
+from decimal import Decimal
 from pathlib import Path
 
 import pytest
@@ -175,3 +176,55 @@ def test_cash_stage2_remains_disabled_below_minimum() -> None:
     assert readiness.decision_quality_ready is False
     assert "strategy_not_stage2_enabled" in readiness.reasons
     assert "minimum_pinned_days_not_met" in readiness.reasons
+
+
+def test_cash_stage2_evidence_can_meet_conditions_without_approval() -> None:
+    _, raw = load_historical_acceptance_policy(POLICY)
+    policy = load_stage2_decision_quality_policy(raw)
+
+    readiness = stage2_decision_quality_readiness(
+        policy,
+        strategy="cash-and-carry",
+        pinned_day_count=30,
+        pre_registered_day_count=27,
+        expected_net_return_assessed_count=30,
+        qualified_case_count=8,
+        realized_return_assessed_count=8,
+    )
+
+    assert readiness.evidence_requirements_met is True
+    assert readiness.evidence_reasons == ()
+    assert readiness.pre_registered_coverage_ratio == Decimal("0.9")
+    assert readiness.realized_return_gate_available is True
+    assert readiness.enabled is False
+    assert readiness.decision_quality_ready is False
+    assert readiness.economics_gate == "disabled"
+    assert readiness.reasons == ("strategy_not_stage2_enabled",)
+
+
+def test_cash_stage2_insufficient_evidence_reports_independent_failures() -> None:
+    _, raw = load_historical_acceptance_policy(POLICY)
+    policy = load_stage2_decision_quality_policy(raw)
+
+    readiness = stage2_decision_quality_readiness(
+        policy,
+        strategy="cash-and-carry",
+        pinned_day_count=29,
+        pre_registered_day_count=20,
+        expected_net_return_assessed_count=28,
+        qualified_case_count=2,
+        realized_return_assessed_count=0,
+    )
+
+    assert readiness.evidence_requirements_met is False
+    assert readiness.evidence_reasons == (
+        "minimum_pinned_days_not_met",
+        "minimum_pre_registered_coverage_not_met",
+        "expected_net_return_assessment_incomplete",
+    )
+    assert readiness.reasons == (
+        "strategy_not_stage2_enabled",
+        *readiness.evidence_reasons,
+    )
+    assert readiness.decision_quality_ready is False
+    assert readiness.realized_return_gate_available is False

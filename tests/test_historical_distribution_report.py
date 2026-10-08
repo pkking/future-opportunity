@@ -16,6 +16,7 @@ from future_opportunity.backtest.distribution_report import (
     _selection_provenance_view,
     _summary,
     build_historical_corpus_distribution,
+    cash_expiry_horizon_cohorts,
     decimal_distribution,
 )
 from future_opportunity.backtest.evidence import write_backtest_evidence
@@ -172,8 +173,45 @@ async def test_report_replays_all_versioned_corpus_days_offline(
     assert funding_stage2["market_wide_opportunity_arrival_rate"] is None
     cash_stage2 = stage2["strategies"]["cash-and-carry"]
     assert cash_stage2["enabled"] is False
+    assert cash_stage2["evidence_requirements_met"] is True
+    assert cash_stage2["evidence_reasons"] == ()
+    assert cash_stage2["pre_registered_day_count"] == 27
+    assert cash_stage2["qualified_case_count"] == 8
+    assert cash_stage2["realized_return_assessed_count"] == 8
     assert cash_stage2["decision_quality_ready"] is False
     assert "strategy_not_stage2_enabled" in cash_stage2["reasons"]
+
+    cohorts = report["cash_stage2_expiry_horizon_evidence"]
+    assert cohorts["economics_gate"] == "reporting_only"
+    assert cohorts["market_wide_opportunity_arrival_rate"] is None
+    assert cohorts["shared_expiry_cases_are_independent_trials"] is False
+    assert cohorts["return_horizon"] == "per_case_not_annualized"
+    assert cohorts["cohort_count"] == 2
+    q1, q2 = cohorts["cohorts"]
+    assert q1["contract_expiry_at"].startswith("2026-03-27")
+    assert q1["case_count"] == 12
+    assert q1["pre_registered_case_count"] == 12
+    assert q1["summary"]["qualified_case_count"] == 5
+    assert q1["summary"]["rejected_case_count"] == 7
+    assert q1["holding_days_all_cases"]["minimum"] == Decimal(5)
+    assert q1["holding_days_all_cases"]["maximum"] == Decimal(81)
+    assert q1["summary"]["realized_return"][
+        "realized_net_return_with_complete_evidence"
+    ]["assessed_count"] == 5
+    assert q2["contract_expiry_at"].startswith("2026-06-26")
+    assert q2["case_count"] == 18
+    assert q2["pre_registered_case_count"] == 15
+    assert q2["summary"]["qualified_case_count"] == 3
+    assert q2["summary"]["rejected_case_count"] == 15
+    assert q2["holding_days_all_cases"]["minimum"] == Decimal(2)
+    assert q2["holding_days_all_cases"]["maximum"] == Decimal(89)
+    assert q2["summary"]["realized_return"][
+        "realized_net_return_with_complete_evidence"
+    ]["assessed_count"] == 3
+    assert q2["summary"]["qualification_reason_case_counts"] == {
+        "expected_net_return_not_positive": 15,
+        "future_not_in_contango": 1,
+    }
 
     # Independently read indexed manifests rather than assuming the corpus
     # contains only legacy fixtures. The report must track provenance growth
@@ -294,3 +332,79 @@ def test_selection_provenance_reporting_distinguishes_preregistered_from_legacy(
     assert tracked["classification"] == "pre_registered_sample"
     assert tracked["selection_kind"] == "pre_registered_sample"
     assert tracked["source"]["workflow_run"] == "123"
+
+
+
+def test_cash_cohorts_do_not_impute_rejected_realized_return_zero() -> None:
+    common = {
+        "observed_at": "2026-01-11T00:15:00+00:00",
+        "expiry": "2026-03-27T08:00:00+00:00",
+        "exit_at": "2026-03-26T00:15:00+00:00",
+        "close_mode": "pre-expiry",
+        "initial_delta_pct": None,
+        "return_complete": None,
+        "basis_convergence": None,
+        "residual_directional_pnl": None,
+        "deployment_policy": "strict",
+        "partial_deployment": False,
+        "risk_states": (),
+        "evidence_ids": ("source",),
+    }
+    rejected = CashAndCarryBacktestCaseResult(
+        case_id="rejected",
+        qualified=False,
+        qualification_reasons=(
+            "future_not_in_contango",
+            "expected_net_return_not_positive",
+        ),
+        expected_net_return=Decimal("-0.002"),
+        realized_net_return=None,
+        **common,
+    )
+    cohorts = cash_expiry_horizon_cohorts(
+        (rejected,),
+        pre_registered_case_ids=frozenset({"rejected"}),
+    )
+    group = cohorts["cohorts"][0]
+    assert group["case_count"] == 1
+    assert group["pre_registered_case_count"] == 1
+    assert group["summary"]["qualified_case_count"] == 0
+    assert group["summary"]["rejected_case_count"] == 1
+    assert group["summary"]["qualification_reason_case_counts"] == {
+        "expected_net_return_not_positive": 1,
+        "future_not_in_contango": 1,
+    }
+    assert group["holding_days_qualified_cases"]["assessed_count"] == 0
+    assert group["holding_days_qualified_cases"]["median"] is None
+    realized = group["summary"]["realized_return"][
+        "realized_net_return_with_complete_evidence"
+    ]
+    assert realized["assessed_count"] == 0
+    assert realized["median"] is None
+
+
+def test_cash_cohort_rejects_missing_exit_time() -> None:
+    case = CashAndCarryBacktestCaseResult(
+        case_id="missing-exit",
+        observed_at="2026-01-04T00:15:00+00:00",
+        expiry="2026-03-27T08:00:00+00:00",
+        exit_at=None,
+        close_mode="pre-expiry",
+        qualified=False,
+        qualification_reasons=("expected_net_return_not_positive",),
+        expected_net_return=Decimal("-0.01"),
+        realized_net_return=None,
+        initial_delta_pct=None,
+        return_complete=None,
+        basis_convergence=None,
+        residual_directional_pnl=None,
+        deployment_policy="strict",
+        partial_deployment=False,
+        risk_states=(),
+        evidence_ids=("source",),
+    )
+    with pytest.raises(ValueError, match="explicit exit"):
+        cash_expiry_horizon_cohorts(
+            (case,),
+            pre_registered_case_ids=frozenset(),
+        )
