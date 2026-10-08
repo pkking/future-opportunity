@@ -94,14 +94,14 @@ def test_missing_spot_candle_remains_explicit_missing() -> None:
     raw = make_capture()
     raw["spot_response"]["data"] = [
         item for item in raw["spot_response"]["data"]
-        if item[0] != _ms(datetime(2026, 9, 14, tzinfo=UTC))
+        if item[0] != _ms(datetime(2026, 9, 7, tzinfo=UTC))
     ]
     result = reconstruct_funding_regime_features(raw)
     assert "2026-09-15" in result["planner_input"]["missing_market_dates"]
     assert "missing_or_unconfirmed_8_daily_spot_candles" in (
         result["missing_days"][0]["reasons"]
     )
-    assert len(result["planner_input"]["observations"]) == 1
+    assert len(result["planner_input"]["observations"]) == 2
 
 
 def test_unconfirmed_spot_candle_is_not_used() -> None:
