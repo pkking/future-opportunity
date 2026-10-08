@@ -1,0 +1,91 @@
+name: Discover Cash Stage-2 Selected Dates
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "docs/historical-acquisition-plans/cash-stage2-30day-wave-001.json"
+      - ".github/workflows/discover-cash-stage2-selection.yml"
+      - "scripts/discover_okx_cash_history.py"
+
+permissions:
+  contents: read
+
+jobs:
+  resolve:
+    name: Verify frozen Cash Stage-2 selection
+    runs-on: ubuntu-latest
+    outputs:
+      dates: ${{ steps.selection.outputs.dates }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: selection
+        shell: bash
+        run: |
+          set -euo pipefail
+          path="docs/historical-acquisition-plans/cash-stage2-30day-wave-001.json"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path("docs/historical-acquisition-plans/cash-stage2-30day-wave-001.json")
+          raw = json.loads(path.read_text())
+          dates = raw["selected_market_dates"]
+          pinned = set(raw["pinned_cash_dates_at_selection"])
+          if raw["strategy"] != "cash-and-carry":
+              raise SystemExit("selection strategy must be cash-and-carry")
+          if raw["required_new_day_count"] != 25:
+              raise SystemExit("selection must freeze exactly 25 new days")
+          if len(dates) != 25 or len(set(dates)) != 25:
+              raise SystemExit("selection dates must be 25 distinct days")
+          if dates != sorted(dates):
+              raise SystemExit("selection dates must be sorted")
+          if set(dates) & pinned:
+              raise SystemExit("selection overlaps already-pinned Cash days")
+          if raw["invariants"]["inspect_economics_before_selection"] is not False:
+              raise SystemExit("selection must be frozen without economics inspection")
+          print(json.dumps(dates, separators=(",", ":")))
+          PY
+          dates="$(python - <<'PY'
+          import json
+          from pathlib import Path
+          raw=json.loads(Path("docs/historical-acquisition-plans/cash-stage2-30day-wave-001.json").read_text())
+          print(json.dumps(raw["selected_market_dates"], separators=(",", ":")))
+          PY
+          )"
+          echo "dates=${dates}" >> "${GITHUB_OUTPUT}"
+      - name: Upload immutable selection control
+        uses: actions/upload-artifact@v4
+        with:
+          name: cash-stage2-selection-control
+          path: docs/historical-acquisition-plans/cash-stage2-30day-wave-001.json
+          if-no-files-found: error
+
+  discover:
+    name: Discover Cash Stage-2 ${{ matrix.market_date }}
+    needs: resolve
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        market_date: ${{ fromJSON(needs.resolve.outputs.dates) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - name: Discover official historical future evidence
+        run: |
+          mkdir -p "artifacts/cash-stage2-discovery/${{ matrix.market_date }}"
+          uv run python scripts/discover_okx_cash_history.py \
+            "${{ matrix.market_date }}" \
+            --output "artifacts/cash-stage2-discovery/${{ matrix.market_date }}/report.json"
+          cat "artifacts/cash-stage2-discovery/${{ matrix.market_date }}/report.json"
+      - name: Upload discovery evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cash-stage2-discovery-${{ matrix.market_date }}
+          path: artifacts/cash-stage2-discovery/${{ matrix.market_date }}/
+          if-no-files-found: warn
