@@ -1,6 +1,6 @@
 # ADR-0008: Funding Stage-2 Historical Distribution Gate
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-10-08
 - Supersedes: none
 - Extends: ADR-0007
@@ -25,9 +25,11 @@ The 32-day evidence is therefore sufficient to design Stage-2 semantics, but it 
 
 ## Decision status
 
-This ADR is a proposal only. No Stage-2 threshold or policy becomes active until this ADR is explicitly approved and the repository policy is changed in a separate implementation step.
+Accepted by explicit human approval on 2026-10-08.
 
-## Proposed decision
+Acceptance is limited to the recommended decision-quality posture in this ADR: Stage 2 may make evidence completeness and historical decision semantics machine-verifiable for Funding Carry, while numerical economics gating remains disabled. No realized-return, expected-return, or minimum qualification-rate threshold is approved by this acceptance.
+
+## Decision
 
 ### 1. Aggregation unit and window
 
@@ -81,9 +83,9 @@ Current Funding evidence:
 
 Therefore this proposal does **not** recommend activating a realized-return gate now.
 
-## Product choices requiring approval
+## Deferred product choices
 
-The following remain unresolved and require human approval:
+The following are deliberately deferred and require a future explicit human approval before any numerical economics gate is activated:
 
 1. **Gate purpose**
    - A. Implementation/decision-quality gate: historical CI primarily verifies correct qualification/rejection semantics.
@@ -108,7 +110,7 @@ The following remain unresolved and require human approval:
 
 ## Recommended approval posture
 
-For the current corpus, prefer:
+For the current corpus, the approved posture is:
 
 - gate purpose A: implementation/decision-quality;
 - option D for the first economics gate: do not activate a numerical economics threshold yet;
@@ -119,7 +121,7 @@ This recommendation avoids converting a correctly negative 32-day historical sam
 
 ## Consequences
 
-- Stage 1 remains active unless this ADR is later accepted and implemented.
+- The existing provenance-and-semantics historical gate remains active; Stage-2 decision-quality readiness is additive observability and does not replace it.
 - Historical negative markets remain first-class evidence.
 - Zero qualified cases are represented explicitly rather than as zero realized returns.
 - The repository can accumulate decision-ready distribution evidence without silently redefining product success.
@@ -134,3 +136,10 @@ Primary final smoke evidence:
 - workflow run `37710601449`;
 - artifact `11521697208`;
 - digest `sha256:7cbdc484176ae0c167b6c0d8124d107c46a4b89a6d0072e03331bacb31237c5c`.
+
+## Approval record
+
+- Approved: 2026-10-08
+- Approved direction: implementation/decision-quality Stage 2 for Funding Carry; no numerical economics gate yet.
+- Stable economic threshold preference: continue collecting qualified-case evidence and prefer at least 90 pinned days before freezing thresholds.
+- Explicitly not approved: positive qualification-rate thresholds, expected-return thresholds, realized-return thresholds, or market-wide opportunity-arrival claims.

@@ -160,6 +160,21 @@ async def test_report_replays_all_versioned_corpus_days_offline(
     assert report["reference_targets_used_as_thresholds"] is False
     assert report["capital_usdt"] == Decimal("10000")
 
+    stage2 = report["stage2_decision_quality"]
+    assert stage2["adr"] == "ADR-0008"
+    assert stage2["status"] == "accepted"
+    assert stage2["economics_gate"] == "disabled"
+    funding_stage2 = stage2["strategies"]["funding-carry"]
+    assert funding_stage2["enabled"] is True
+    assert funding_stage2["decision_quality_ready"] is True
+    assert funding_stage2["qualified_case_count"] == 0
+    assert funding_stage2["realized_return_gate_available"] is False
+    assert funding_stage2["market_wide_opportunity_arrival_rate"] is None
+    cash_stage2 = stage2["strategies"]["cash-and-carry"]
+    assert cash_stage2["enabled"] is False
+    assert cash_stage2["decision_quality_ready"] is False
+    assert "strategy_not_stage2_enabled" in cash_stage2["reasons"]
+
     # Independently read indexed manifests rather than assuming the corpus
     # contains only legacy fixtures. The report must track provenance growth
     # without converting it into a historical economics pass/fail target.
