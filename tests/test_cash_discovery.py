@@ -6,6 +6,7 @@ import pytest
 from future_opportunity.backtest.cash_discovery import (
     find_delivery_evidence,
     future_id_from_archive_member,
+    future_ids_from_archive_members,
 )
 
 
@@ -63,3 +64,19 @@ def test_missing_delivery_history_remains_none() -> None:
         {"code": "0", "data": []},
         future_id="BTC-USDT-260626",
     ) is None
+
+
+def test_future_chain_can_enumerate_multiple_expiry_contracts() -> None:
+    members = [
+        "BTC-USDT-260327-L2orderbook-400lv-2026-01-11.data",
+        "BTC-USDT-260626-L2orderbook-400lv-2026-01-11.data",
+        "BTC-USDT-260327-L2orderbook-400lv-2026-01-11.data",
+    ]
+
+    assert future_ids_from_archive_members(
+        members,
+        expected_market_date="2026-01-11",
+    ) == (
+        "BTC-USDT-260327",
+        "BTC-USDT-260626",
+    )
