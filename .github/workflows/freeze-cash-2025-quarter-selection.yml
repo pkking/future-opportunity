@@ -1,0 +1,43 @@
+name: Freeze Cash 2025 Quarter Selection
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "docs/historical-acquisition-plans/cash-2025-q3q4-24day-preregistration-v1.json"
+      - "src/future_opportunity/backtest/cash_prior_quarter_selection.py"
+      - "scripts/freeze_cash_2025_quarter_selection.py"
+      - ".github/workflows/freeze-cash-2025-quarter-selection.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  freeze:
+    name: Verify frozen 24-day Cash selection control
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - name: Replay Q3 and Q4 deterministic selection
+        run: |
+          uv run python scripts/freeze_cash_2025_quarter_selection.py \
+            --output artifacts/cash-2025-quarter-selection/control.json
+      - name: Add evidence summary
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f artifacts/cash-2025-quarter-selection/control.json ]]; then
+            jq -r '.quarters[] | [.quarter, .population_size, (.selected_market_dates | length), .selection_evidence_sha256] | @tsv' artifacts/cash-2025-quarter-selection/control.json >> "$GITHUB_STEP_SUMMARY"
+            echo "Selection control only; no fixture acquisition, PnL, or corpus mutation." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Selection replay failed; no frozen control evidence." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload immutable pre-registration evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cash-2025-quarter-selection-control
+          path: artifacts/cash-2025-quarter-selection/
+          if-no-files-found: error
