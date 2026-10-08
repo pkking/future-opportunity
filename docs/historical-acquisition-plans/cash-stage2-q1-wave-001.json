@@ -1,0 +1,136 @@
+{
+  "schema_version": 1,
+  "acquisition_id": "cash-stage2-q1-wave-001",
+  "planner_campaign_prefix": "cash-stage2-q1-review-001",
+  "funding": null,
+  "cash_cases": [
+    {
+      "entry_at": "2026-01-04T00:15:00+00:00",
+      "exit_at": "2026-03-26T00:15:00+00:00",
+      "future_id": "BTC-USDT-260327",
+      "expiry_at": "2026-03-27T08:00:00+00:00"
+    },
+    {
+      "entry_at": "2026-01-11T00:15:00+00:00",
+      "exit_at": "2026-03-26T00:15:00+00:00",
+      "future_id": "BTC-USDT-260327",
+      "expiry_at": "2026-03-27T08:00:00+00:00"
+    },
+    {
+      "entry_at": "2026-01-18T00:15:00+00:00",
+      "exit_at": "2026-03-26T00:15:00+00:00",
+      "future_id": "BTC-USDT-260327",
+      "expiry_at": "2026-03-27T08:00:00+00:00"
+    },
+    {
+      "entry_at": "2026-01-25T00:15:00+00:00",
+      "exit_at": "2026-03-26T00:15:00+00:00",
+      "future_id": "BTC-USDT-260327",
+      "expiry_at": "2026-03-27T08:00:00+00:00"
+    },
+    {
+      "entry_at": "2026-01-31T00:15:00+00:00",
+      "exit_at": "2026-03-26T00:15:00+00:00",
+      "future_id": "BTC-USDT-260327",
+      "expiry_at": "2026-03-27T08:00:00+00:00"
+    },
+    {
+      "entry_at": "2026-02-07T00:15:00+00:00",
+      "exit_at": "2026-03-26T00:15:00+00:00",
+      "future_id": "BTC-USDT-260327",
+      "expiry_at": "2026-03-27T08:00:00+00:00"
+    },
+    {
+      "entry_at": "2026-02-14T00:15:00+00:00",
+      "exit_at": "2026-03-26T00:15:00+00:00",
+      "future_id": "BTC-USDT-260327",
+      "expiry_at": "2026-03-27T08:00:00+00:00"
+    },
+    {
+      "entry_at": "2026-02-21T00:15:00+00:00",
+      "exit_at": "2026-03-26T00:15:00+00:00",
+      "future_id": "BTC-USDT-260327",
+      "expiry_at": "2026-03-27T08:00:00+00:00"
+    },
+    {
+      "entry_at": "2026-02-28T00:15:00+00:00",
+      "exit_at": "2026-03-26T00:15:00+00:00",
+      "future_id": "BTC-USDT-260327",
+      "expiry_at": "2026-03-27T08:00:00+00:00"
+    },
+    {
+      "entry_at": "2026-03-07T00:15:00+00:00",
+      "exit_at": "2026-03-26T00:15:00+00:00",
+      "future_id": "BTC-USDT-260327",
+      "expiry_at": "2026-03-27T08:00:00+00:00"
+    },
+    {
+      "entry_at": "2026-03-14T00:15:00+00:00",
+      "exit_at": "2026-03-26T00:15:00+00:00",
+      "future_id": "BTC-USDT-260327",
+      "expiry_at": "2026-03-27T08:00:00+00:00"
+    },
+    {
+      "entry_at": "2026-03-21T00:15:00+00:00",
+      "exit_at": "2026-03-26T00:15:00+00:00",
+      "future_id": "BTC-USDT-260327",
+      "expiry_at": "2026-03-27T08:00:00+00:00"
+    }
+  ],
+  "selection_provenance": {
+    "funding": null,
+    "cash": {
+      "schema_version": 1,
+      "selection_kind": "pre_registered_availability_sample",
+      "strategy": "cash-and-carry",
+      "source": {
+        "workflow_run": "37714773301",
+        "artifact_name": "cash-stage2-selection-control",
+        "artifact_id": "11523362784",
+        "artifact_digest": "sha256:d8118eae5d41eebe7b9f5c44c35acca402043eb17682bd57acd7a9b613545f10"
+      },
+      "sampling": {
+        "policy_version": "availability-even-rank-v1",
+        "start_date": "2026-01-01",
+        "end_date": "2026-06-26",
+        "requested_sample_size": 25,
+        "population_size": 172,
+        "excluded_market_dates": [
+          "2026-06-01",
+          "2026-06-02",
+          "2026-06-03",
+          "2026-06-04",
+          "2026-06-08"
+        ],
+        "selected_market_dates": [
+          "2026-01-04",
+          "2026-01-11",
+          "2026-01-18",
+          "2026-01-25",
+          "2026-01-31",
+          "2026-02-07",
+          "2026-02-14",
+          "2026-02-21",
+          "2026-02-28",
+          "2026-03-07",
+          "2026-03-14",
+          "2026-03-21",
+          "2026-03-28",
+          "2026-04-03",
+          "2026-04-10",
+          "2026-04-17",
+          "2026-04-24",
+          "2026-05-01",
+          "2026-05-08",
+          "2026-05-15",
+          "2026-05-22",
+          "2026-05-28",
+          "2026-06-09",
+          "2026-06-16",
+          "2026-06-23"
+        ],
+        "evidence_sha256": "21a48dee14e352c5fbb2488661f45c6fe3e82e74a4759d9eba1347b0bbe6b4b7"
+      }
+    }
+  }
+}
