@@ -94,7 +94,11 @@ def _volatility_window(
     spot: dict[datetime, list[Any]], entry: datetime
 ) -> tuple[Decimal, list[list[Any]]] | None:
     # Seven fully closed UTC daily log returns require eight completed candles.
-    opens = [entry - timedelta(days=i) for i in range(8, 0, -1)]
+    candle_window_end = entry - timedelta(minutes=15)
+    opens = [
+        candle_window_end - timedelta(days=i)
+        for i in range(8, 0, -1)
+    ]
     candles: list[list[Any]] = []
     for opened_at in opens:
         row = spot.get(opened_at)
