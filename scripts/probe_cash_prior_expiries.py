@@ -30,6 +30,8 @@ def main() -> None:
                 market_date,
                 "--output",
                 str(dest),
+                "--max-raw-mb",
+                "512",
             ],
             capture_output=True,
             text=True,
