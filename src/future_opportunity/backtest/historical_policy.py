@@ -27,6 +27,7 @@ class Stage2DecisionQualityPolicy:
     status: str
     approved_at: str
     enabled_strategies: tuple[str, ...]
+    strategy_approval_adrs: tuple[tuple[str, str], ...]
     economics_gate: str
     minimum_distinct_market_days: int
     preferred_threshold_freeze_days: int
@@ -42,6 +43,7 @@ class Stage2DecisionQualityPolicy:
 class Stage2DecisionQualityReadiness:
     strategy: str
     enabled: bool
+    approval_adr: str | None
     pinned_day_count: int
     minimum_day_count: int
     pre_registered_day_count: int
@@ -185,6 +187,26 @@ def load_stage2_decision_quality_policy(
         or not all(isinstance(item, str) and item for item in enabled)
     ):
         raise ValueError("stage2 decision-quality policy requires enabled strategies")
+    if len(set(enabled)) != len(enabled):
+        raise ValueError("stage2 enabled strategies must be unique")
+    # Explicitly validate the human approval scope per strategy; the
+    # framework's original ADR-0008 must not authorize Cash implicitly.
+    approvals = raw.get("strategy_approval_adrs")
+    if not isinstance(approvals, dict):
+        raise ValueError("stage2 strategy_approval_adrs must be an object")
+    expected = {
+        "funding-carry": "ADR-0008",
+        "cash-and-carry": "ADR-0009",
+    }
+    if set(approvals) != set(enabled):
+        raise ValueError(
+            "stage2 strategy approvals must match enabled strategies"
+        )
+    for strategy, adr in approvals.items():
+        if strategy not in expected or adr != expected[strategy]:
+            raise ValueError(
+                f"stage2 strategy approval ADR mismatch: {strategy}"
+            )
     if raw.get("status") != "accepted":
         raise ValueError("stage2 decision-quality policy must be accepted")
     if raw.get("economics_gate") != "disabled":
@@ -213,6 +235,9 @@ def load_stage2_decision_quality_policy(
         status="accepted",
         approved_at=_required_string(raw, "approved_at"),
         enabled_strategies=tuple(enabled),
+        strategy_approval_adrs=tuple(
+            (strategy, approvals[strategy]) for strategy in enabled
+        ),
         economics_gate="disabled",
         minimum_distinct_market_days=_positive_int(
             raw, "minimum_distinct_market_days"
@@ -251,6 +276,9 @@ def stage2_decision_quality_readiness(
         raise ValueError("invalid realized-return assessed count")
 
     enabled = strategy in policy.enabled_strategies
+    approval_adr = dict(policy.strategy_approval_adrs).get(strategy)
+    if enabled and approval_adr is None:
+        raise ValueError("enabled Stage-2 strategy missing approval ADR")
     coverage = Decimal(pre_registered_day_count) / Decimal(pinned_day_count)
     expected_complete = expected_net_return_assessed_count == pinned_day_count
     evidence_reasons: list[str] = []
@@ -276,6 +304,7 @@ def stage2_decision_quality_readiness(
     return Stage2DecisionQualityReadiness(
         strategy=strategy,
         enabled=enabled,
+        approval_adr=approval_adr,
         pinned_day_count=pinned_day_count,
         minimum_day_count=policy.minimum_distinct_market_days,
         pre_registered_day_count=pre_registered_day_count,

@@ -165,21 +165,32 @@ async def test_report_replays_all_versioned_corpus_days_offline(
     assert stage2["adr"] == "ADR-0008"
     assert stage2["status"] == "accepted"
     assert stage2["economics_gate"] == "disabled"
+    assert stage2["strategy_approval_adrs"] == {
+        "funding-carry": "ADR-0008",
+        "cash-and-carry": "ADR-0009",
+    }
+    assert report["active_historical_gate"] == "provenance_and_semantics"
+    assert report["reference_targets_used_as_thresholds"] is False
     funding_stage2 = stage2["strategies"]["funding-carry"]
     assert funding_stage2["enabled"] is True
+    assert funding_stage2["approval_adr"] == "ADR-0008"
     assert funding_stage2["decision_quality_ready"] is True
     assert funding_stage2["qualified_case_count"] == 0
     assert funding_stage2["realized_return_gate_available"] is False
     assert funding_stage2["market_wide_opportunity_arrival_rate"] is None
     cash_stage2 = stage2["strategies"]["cash-and-carry"]
-    assert cash_stage2["enabled"] is False
+    assert cash_stage2["enabled"] is True
+    assert cash_stage2["approval_adr"] == "ADR-0009"
     assert cash_stage2["evidence_requirements_met"] is True
     assert cash_stage2["evidence_reasons"] == ()
     assert cash_stage2["pre_registered_day_count"] == 27
     assert cash_stage2["qualified_case_count"] == 8
     assert cash_stage2["realized_return_assessed_count"] == 8
-    assert cash_stage2["decision_quality_ready"] is False
-    assert "strategy_not_stage2_enabled" in cash_stage2["reasons"]
+    assert cash_stage2["decision_quality_ready"] is True
+    assert cash_stage2["reasons"] == ()
+    assert cash_stage2["realized_return_gate_available"] is True
+    assert cash_stage2["economics_gate"] == "disabled"
+    assert cash_stage2["market_wide_opportunity_arrival_rate"] is None
 
     cohorts = report["cash_stage2_expiry_horizon_evidence"]
     assert cohorts["economics_gate"] == "reporting_only"

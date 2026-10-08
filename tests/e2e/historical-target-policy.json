@@ -42,7 +42,8 @@
     "status": "accepted",
     "approved_at": "2026-10-08",
     "enabled_strategies": [
-      "funding-carry"
+      "funding-carry",
+      "cash-and-carry"
     ],
     "economics_gate": "disabled",
     "minimum_distinct_market_days": 30,
@@ -52,6 +53,10 @@
     "rejected_cases_remain_in_qualification_denominator": true,
     "rejected_cases_are_not_realized_return_zero": true,
     "market_wide_opportunity_arrival_rate_must_remain_unassessed": true,
-    "realized_return_gate_requires_future_human_approval": true
+    "realized_return_gate_requires_future_human_approval": true,
+    "strategy_approval_adrs": {
+      "funding-carry": "ADR-0008",
+      "cash-and-carry": "ADR-0009"
+    }
   }
 }
