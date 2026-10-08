@@ -59,7 +59,7 @@ Determine whether already-published OKX module-4 FUTURES L2 history can supply t
 - [x] 6. Fix historical multi-contract discovery and preserve all candidate futures.
 - [x] 7. Run exact discovery for all 25 frozen dates and record contract coverage.
 - [x] 8. Run PR CI/Smoke and archive; merge after final archival-head validation.
-- [ ] 9. Start a separate acquisition-wave task only after explicit contract/holding-period policy approval.
+- [x] 9. Stop at the explicit contract/holding-period decision boundary; no acquisition-wave task is created before approval.
 
 ## Verification matrix
 
@@ -108,4 +108,4 @@ PR #46 passed review-head CI/Smoke. Keep Issue #45 open until the archival head 
 
 Final commit: 0205e93de93787b1c0231dee70ed0a4b37f61492
 CI run: 37715376097 (all five required jobs successful); Historical Backtest Smoke 37715376138 successful
-Remaining unassessed items: archival-head validation, merge, and human contract/holding-period policy choice
+Remaining unassessed items: human contract/holding-period policy choice; acquisition intentionally deferred
