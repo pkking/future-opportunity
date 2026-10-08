@@ -1,0 +1,106 @@
+name: Prepare Cash 2025 Quarter Wave
+
+on:
+  workflow_dispatch:
+    inputs:
+      wave:
+        description: Frozen Cash 2025 expiry-quarter preparation wave
+        required: true
+        type: choice
+        options:
+          - q3
+          - q4
+
+permissions:
+  contents: read
+
+jobs:
+  resolve:
+    name: Resolve frozen Cash 2025 quarter wave
+    runs-on: ubuntu-latest
+    outputs:
+      acquisition_json: ${{ steps.resolve.outputs.acquisition_json }}
+      acquisition_id: ${{ steps.resolve.outputs.acquisition_id }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - id: resolve
+        name: Verify source-bound 12-day quarter manifest
+        env:
+          WAVE: ${{ inputs.wave }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "${WAVE}" in
+            q3) manifest="docs/historical-acquisition-plans/cash-2025-q3-12day-wave-001.json" ;;
+            q4) manifest="docs/historical-acquisition-plans/cash-2025-q4-12day-wave-001.json" ;;
+            *) echo "unsupported wave" >&2; exit 1 ;;
+          esac
+          mkdir -p artifacts/cash-2025-quarter-wave
+          uv run python scripts/resolve_historical_acquisition.py \
+            "${manifest}" \
+            --output artifacts/cash-2025-quarter-wave/resolved.json \
+            --max-funding-days 1 --max-cash-cases 12 --max-total-items 12
+          test "$(jq -r '.funding == null' artifacts/cash-2025-quarter-wave/resolved.json)" = "true"
+          test "$(jq -r '.cash_cases | length' artifacts/cash-2025-quarter-wave/resolved.json)" = "12"
+          test "$(jq -r '.selection_provenance.cash.selection_kind' artifacts/cash-2025-quarter-wave/resolved.json)" = "pre_registered_availability_sample"
+          test "$(jq -r '.selection_provenance.cash.source.artifact_id' artifacts/cash-2025-quarter-wave/resolved.json)" = "11539833591"
+          test "$(jq -r '.selection_provenance.cash.source.artifact_digest' artifacts/cash-2025-quarter-wave/resolved.json)" = "sha256:f67f1db18609c87e2cea363abf33eff7dc4592d4ab8680019ff6e1a63b206c74"
+          cp "${manifest}" artifacts/cash-2025-quarter-wave/operator.json
+          compact="$(jq -c . "${manifest}")"
+          echo "acquisition_json=${compact}" >> "${GITHUB_OUTPUT}"
+          echo "acquisition_id=$(jq -r '.acquisition_id' "${manifest}")" >> "${GITHUB_OUTPUT}"
+
+      - name: Upload immutable control evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: cash-2025-quarter-control-${{ inputs.wave }}
+          path: artifacts/cash-2025-quarter-wave/
+          if-no-files-found: error
+
+  acquire:
+    name: Prepare frozen Cash 2025 quarter cases
+    needs: resolve
+    uses: ./.github/workflows/acquire-historical-campaign.yml
+    with:
+      acquisition_json: ${{ needs.resolve.outputs.acquisition_json }}
+
+  summary:
+    name: Verify exactly 12 prepared compact artifacts
+    needs: [resolve, acquire]
+    if: always() && needs.resolve.result == 'success' && needs.acquire.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      ACQUISITION_ID: ${{ needs.resolve.outputs.acquisition_id }}
+    steps:
+      - name: Record explicit preparation completeness
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts?per_page=100" > artifacts.json
+          count="$(jq '[.artifacts[] | select(.name | startswith("okx-btc-cash-and-carry-compact-"))] | length' artifacts.json)"
+          test "${count}" = "12"
+          jq -n --arg id "${ACQUISITION_ID}" --argjson count "${count}" \
+            '{
+              schema_version: 1,
+              evidence_type: "cash_2025_quarter_preparation_boundary",
+              acquisition_id: $id,
+              expected_cash_count: 12,
+              compact_artifact_count: $count,
+              corpus_mutation: false,
+              promotion_dispatched: false
+            }' > summary.json
+          cat summary.json
+      - name: Upload preparation-boundary evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: cash-2025-quarter-summary-${{ inputs.wave }}
+          path: |
+            artifacts.json
+            summary.json
+          if-no-files-found: error
