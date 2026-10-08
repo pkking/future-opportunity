@@ -1,7 +1,7 @@
 # 2026-10-08-cash-stage2-decision-evidence
 
 Issue: #53
-Status: IMPLEMENTING
+Status: READY_FOR_REVIEW
 Owner: agent
 Started: 2026-10-08
 Last checkpoint: 2026-10-08
@@ -32,14 +32,14 @@ Analyze the 30 pinned Cash-and-Carry days for Stage-2 decision-quality using the
 
 ## Acceptance criteria
 
-- [ ] Readiness exposes evidence conditions separately from Stage-2 enablement for any strategy.
-- [ ] Cash per-expiry report contains count, qualification, reasons and expected/conditional realized-return distributions.
-- [ ] Holding horizon is computed from real entry and exit timestamps, with all and qualified cohorts separately assessed.
-- [ ] Empty-qualified and incomplete-realized return cases remain explicit without fabricated zeros.
-- [ ] Cash stays not Stage-2 enabled; numerical economics gate remains disabled.
-- [ ] Report explicitly states non-independence, non-annualization and non-market-wide scope.
-- [ ] Tests cover new readiness and report invariants.
-- [ ] Version evidence research with exact main smoke artifact attribution and next approval boundary.
+- [x] Readiness exposes evidence conditions separately from Stage-2 enablement for any strategy.
+- [x] Cash per-expiry report contains count, qualification, reasons and expected/conditional realized-return distributions.
+- [x] Holding horizon is computed from real entry and exit timestamps, with all and qualified cohorts separately assessed.
+- [x] Empty-qualified and incomplete-realized return cases remain explicit without fabricated zeros.
+- [x] Cash stays not Stage-2 enabled; numerical economics gate remains disabled.
+- [x] Report explicitly states non-independence, non-annualization and non-market-wide scope.
+- [x] Tests cover new readiness and report invariants.
+- [x] Version evidence research with exact main smoke artifact attribution and next approval boundary.
 - [ ] Full five required CI checks and Historical Backtest Smoke pass on review and final heads.
 - [ ] Execution plan archived and PR merged; Issue closed only after main confirmation.
 
@@ -47,8 +47,8 @@ Analyze the 30 pinned Cash-and-Carry days for Stage-2 decision-quality using the
 
 - [x] 1. Inspect source artifacts and record actual Cash distributions and horizon/expiry cohorts.
 - [x] 2. Create governed Issue #53 and implementation branch.
-- [ ] 3. Add separate evidence-eligible status and expiry/holding-period cohort report.
-- [ ] 4. Add reproducible tests, document limitations and recommendations.
+- [x] 3. Add separate evidence-eligible status and expiry/holding-period cohort report.
+- [x] 4. Add reproducible tests, document limitations and recommendations.
 - [ ] 5. Open governed PR with Issue/Plan references and verify first-head checks.
 - [ ] 6. Archive plan, recheck final head, squash merge and verify main.
 
