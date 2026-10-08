@@ -492,6 +492,7 @@ async def build_historical_corpus_distribution(
             "adr": stage2_policy.adr,
             "status": stage2_policy.status,
             "approved_at": stage2_policy.approved_at,
+            "strategy_approval_adrs": dict(stage2_policy.strategy_approval_adrs),
             "economics_gate": stage2_policy.economics_gate,
             "preferred_threshold_freeze_days": (
                 stage2_policy.preferred_threshold_freeze_days
