@@ -21,7 +21,7 @@ from future_opportunity.adapters.historical.okx_catalog import (
 )
 from future_opportunity.backtest.cash_discovery import (
     find_delivery_evidence,
-    future_id_from_archive_member,
+    future_ids_from_archive_members,
 )
 
 
@@ -89,6 +89,44 @@ def source_view(source) -> dict[str, Any]:
     return result
 
 
+def delivery_view(
+    payload: dict[str, Any],
+    *,
+    future_id: str,
+) -> dict[str, Any]:
+    delivery = find_delivery_evidence(payload, future_id=future_id)
+    if delivery is None:
+        return {
+            "status": "unassessed",
+            "endpoint": f"{BASE_URL}{DELIVERY_PATH}",
+            "reason": (
+                "public delivery history response did not contain "
+                "the discovered historical future"
+            ),
+        }
+    return {
+        "status": "verified",
+        "endpoint": f"{BASE_URL}{DELIVERY_PATH}",
+        "delivered_at": delivery.delivered_at.isoformat(),
+        "settlement_price": str(delivery.settlement_price),
+    }
+
+
+def product_spec_provenance() -> dict[str, str]:
+    return {
+        "status": "verified_product_rule",
+        "official_doc": "https://www.okx.com/help/expiry-futures",
+        "contract_value": "0.01",
+        "contract_multiplier": "1",
+        "contract_value_currency": "BTC",
+        "settlement_currency": "USDT",
+        "note": (
+            "product-level BTCUSDT expiry-futures specification; "
+            "not a reconstructed historical instrument row"
+        ),
+    }
+
+
 def main() -> None:
     args = parse_args()
     day = datetime.fromisoformat(args.market_date).replace(tzinfo=UTC)
@@ -136,18 +174,15 @@ def main() -> None:
             raw_path = Path(temporary) / source.filename
             raw_sha, raw_bytes = download(client, source.url, raw_path)
             with tarfile.open(raw_path, "r:gz") as archive:
-                members = [
-                    item.name
-                    for item in archive.getmembers()
-                    if item.isfile() and item.name.endswith(".data")
-                ]
-            if len(members) != 1:
-                raise RuntimeError(
-                    "future chain archive must contain exactly one .data member"
+                members = tuple(
+                    sorted(
+                        item.name
+                        for item in archive.getmembers()
+                        if item.isfile() and item.name.endswith(".data")
+                    )
                 )
-            member = members[0]
-            future_id = future_id_from_archive_member(
-                member,
+            future_ids = future_ids_from_archive_members(
+                members,
                 expected_market_date=canonical_date,
             )
 
@@ -159,56 +194,59 @@ def main() -> None:
                 "instFamily": "BTC-USDT",
             },
         )
-        delivery = find_delivery_evidence(
-            delivery_payload,
-            future_id=future_id,
-        )
 
-    report = {
-        "schema_version": 1,
-        "market_date": canonical_date,
-        "status": "future_discovered",
-        "catalog": {
-            "endpoint": f"{BASE_URL}{OKX_HISTORY_ENDPOINT}",
-            "query": query.params(),
-            "source": source_view(source),
-            "raw_sha256": raw_sha,
-            "downloaded_bytes": raw_bytes,
-            "archive_member": member,
-        },
-        "future": {
-            "instrument_id": future_id,
-            "delivery_evidence": (
-                {
-                    "status": "verified",
-                    "endpoint": f"{BASE_URL}{DELIVERY_PATH}",
-                    "delivered_at": delivery.delivered_at.isoformat(),
-                    "settlement_price": str(delivery.settlement_price),
-                }
-                if delivery is not None
-                else {
-                    "status": "unassessed",
-                    "endpoint": f"{BASE_URL}{DELIVERY_PATH}",
-                    "reason": (
-                        "public delivery history response did not contain "
-                        "the discovered historical future"
-                    ),
-                }
-            ),
-            "product_spec_provenance": {
-                "status": "verified_product_rule",
-                "official_doc": "https://www.okx.com/help/expiry-futures",
-                "contract_value": "0.01",
-                "contract_multiplier": "1",
-                "contract_value_currency": "BTC",
-                "settlement_currency": "USDT",
-                "note": (
-                    "product-level BTCUSDT expiry-futures specification; "
-                    "not a reconstructed historical instrument row"
-                ),
-            },
-        },
+    catalog = {
+        "endpoint": f"{BASE_URL}{OKX_HISTORY_ENDPOINT}",
+        "query": query.params(),
+        "source": source_view(source),
+        "raw_sha256": raw_sha,
+        "downloaded_bytes": raw_bytes,
+        "archive_members": list(members),
     }
+
+    if len(future_ids) > 1:
+        report = {
+            "schema_version": 1,
+            "market_date": canonical_date,
+            "status": "multiple_future_contracts",
+            "catalog": catalog,
+            "future_candidates": [
+                {
+                    "instrument_id": future_id,
+                    "delivery_evidence": delivery_view(
+                        delivery_payload,
+                        future_id=future_id,
+                    ),
+                    "product_spec_provenance": product_spec_provenance(),
+                }
+                for future_id in future_ids
+            ],
+            "note": (
+                "The historical future-chain archive contains multiple expiry "
+                "contracts. Discovery intentionally does not choose a contract "
+                "or holding period."
+            ),
+        }
+    else:
+        future_id = future_ids[0]
+        report = {
+            "schema_version": 1,
+            "market_date": canonical_date,
+            "status": "future_discovered",
+            "catalog": {
+                **catalog,
+                "archive_member": members[0],
+            },
+            "future": {
+                "instrument_id": future_id,
+                "delivery_evidence": delivery_view(
+                    delivery_payload,
+                    future_id=future_id,
+                ),
+                "product_spec_provenance": product_spec_provenance(),
+            },
+        }
+
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
         json.dumps(report, indent=2, sort_keys=True) + "\n"

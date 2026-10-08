@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "evidence_type": "cash_stage2_capacity_preregistered_selection",
+  "strategy": "cash-and-carry",
+  "target_pinned_day_count": 30,
+  "current_pinned_day_count": 5,
+  "required_new_day_count": 25,
+  "source_capacity_evidence": {
+    "workflow_run": "37714282539",
+    "artifact_name": "cash-stage2-source-capacity",
+    "artifact_id": "11522419694",
+    "artifact_digest": "sha256:48c202548ebeb98a4531c6a11cdd4ced61305f32754ba689fb45225a6a4a2da1",
+    "scan_start": "2026-01-01",
+    "scan_end": "2026-06-26",
+    "scan_date_count": 177,
+    "unique_ready_count": 177,
+    "unique_ready_unpinned_count": 172
+  },
+  "source_semantics": {
+    "module": "4",
+    "instrument_type": "FUTURES",
+    "instrument_family": "BTC-USDT",
+    "date_aggregation": "daily"
+  },
+  "selection_semantics": "deterministic_even_rank_buckets_over_unique_ready_unpinned_dates; availability_only_no_economics",
+  "pinned_cash_dates_at_selection": [
+    "2026-06-01",
+    "2026-06-02",
+    "2026-06-03",
+    "2026-06-04",
+    "2026-06-08"
+  ],
+  "selected_market_dates": [
+    "2026-01-04",
+    "2026-01-11",
+    "2026-01-18",
+    "2026-01-25",
+    "2026-01-31",
+    "2026-02-07",
+    "2026-02-14",
+    "2026-02-21",
+    "2026-02-28",
+    "2026-03-07",
+    "2026-03-14",
+    "2026-03-21",
+    "2026-03-28",
+    "2026-04-03",
+    "2026-04-10",
+    "2026-04-17",
+    "2026-04-24",
+    "2026-05-01",
+    "2026-05-08",
+    "2026-05-15",
+    "2026-05-22",
+    "2026-05-28",
+    "2026-06-09",
+    "2026-06-16",
+    "2026-06-23"
+  ],
+  "invariants": {
+    "inspect_economics_before_selection": false,
+    "automatic_acquisition": false,
+    "automatic_promotion": false,
+    "replace_dates_after_outcome_observation": false
+  }
+}
