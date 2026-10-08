@@ -1,7 +1,7 @@
 # 2026-10-08-cash-2025-quarter-preparation-handoff
 
 Issue: #63
-Status: IMPLEMENTING
+Status: READY_FOR_REVIEW
 Owner: agent
 Started: 2026-10-08
 Last checkpoint: 2026-10-08
@@ -36,20 +36,20 @@ Convert the immutable 2025 Cash Q3/Q4 12+12 outcome-blind selection into exact, 
 
 ## Acceptance criteria
 
-- [ ] Q3 and Q4 exact manifests each contain 12 pinned-control dates and approved 2025 quarter future/exit.
-- [ ] Selection provenance is valid and deterministically replayable against artifact 11539833591.
-- [ ] Q3+Q4 are disjoint and equal exact frozen 24-day selection, no prior pinned overlap.
-- [ ] Workflow_dispatch permits exactly q3/q4 and uses existing read-only acquisition framework.
-- [ ] Tests enforce source identities, dates, no economics or promotion side effects.
+- [x] Q3 and Q4 exact manifests each contain 12 pinned-control dates and approved 2025 quarter future/exit.
+- [x] Selection provenance is valid and deterministically replayable against artifact 11539833591.
+- [x] Q3+Q4 are disjoint and equal exact frozen 24-day selection, no prior pinned overlap.
+- [x] Workflow_dispatch permits exactly q3/q4 and uses existing read-only acquisition framework.
+- [x] Tests enforce source identities, dates, no economics or promotion side effects.
 - [ ] Required 5/5 CI and Historical Smoke success at review/final heads.
 - [ ] Plan archived, squash merge, main counts unchanged, Issue closed after verification.
 
 ## Implementation slices
 
 - [x] 1. Read prior acquisition schema and frozen quarter control, create Issue #63/branch/plan.
-- [ ] 2. Add Q3/Q4 exact acquisition manifests with approval provenance.
-- [ ] 3. Add dispatch-only workflow and test matrix.
-- [ ] 4. Document source preflight gate and manual workflow handoff.
+- [x] 2. Add Q3/Q4 exact acquisition manifests with approval provenance.
+- [x] 3. Add dispatch-only workflow and test matrix.
+- [x] 4. Document source preflight gate and manual workflow handoff.
 - [ ] 5. PR review, CI/Smoke, archive, final CI/Smoke, merge and verify main.
 
 ## Verification matrix
@@ -68,7 +68,7 @@ Convert the immutable 2025 Cash Q3/Q4 12+12 outcome-blind selection into exact, 
 
 ## Resume from here
 
-Commit two replay-validated manifests and a dispatch-only workflow. Do not dispatch or promote expensive historical preparation on a repository push. When the PR merges, the operator may run q3 and q4 separately; review complete raw source and actuals evidence for every selected date before any campaign planning.
+Q3/Q4 manifests and dispatch-only workflow are versioned and bound to immutable selection control artifact 11539833591. Open governed PR; 5/5 CI and Historical Smoke must pass on review and final archived heads before merge. This work creates no fixtures or PnL. After merge, the operator may explicitly dispatch q3/q4 preparation waves; every missing or incomplete case is a real evidence failure, never a substitute-date trigger.
 
 ## Completion
 
