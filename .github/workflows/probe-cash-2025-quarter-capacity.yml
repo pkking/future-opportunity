@@ -1,0 +1,50 @@
+name: Probe Cash 2025 Quarter Capacity
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "scripts/probe_cash_2025_quarter_capacity.py"
+      - "src/future_opportunity/backtest/cash_prior_quarter_readiness.py"
+      - ".github/workflows/probe-cash-2025-quarter-capacity.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  catalog:
+    name: Verify Q3/Q4 2025 entry and exit sources
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - name: Collect official FUTURES daily catalog coverage
+        run: |
+          uv run python scripts/plan_okx_cash_stage2_capacity.py \
+            --scan-start 2025-07-01 \
+            --scan-end 2025-12-25 \
+            --output artifacts/cash-2025-quarter/capacity.json
+      - name: Check fixed SPOT entry/exit and exact expiry FUTURES exit identity
+        run: |
+          uv run python scripts/probe_cash_2025_quarter_capacity.py \
+            --capacity-report artifacts/cash-2025-quarter/capacity.json \
+            --output artifacts/cash-2025-quarter/readiness.json
+      - name: Write source-status summary
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f artifacts/cash-2025-quarter/readiness.json ]]; then
+            jq -r '.quarters | to_entries[] | [.key,.value.scanned_date_count,.value.unique_archive_day_count,.value.source_calendar_complete] | @tsv' artifacts/cash-2025-quarter/readiness.json >> "$GITHUB_STEP_SUMMARY"
+            echo "Archive/catalog checks do not guarantee full L2 entry-exit replay or economic performance." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Source readiness remains unassessed: no valid report was produced." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload read-only source evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cash-2025-q3-q4-source-capacity
+          path: artifacts/cash-2025-quarter/
+          if-no-files-found: warn
