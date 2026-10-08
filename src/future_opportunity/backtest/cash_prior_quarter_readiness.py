@@ -92,10 +92,15 @@ def paired_source_readiness(
     quarter_counts = quarter_capacity_report(candidate_counts)
     spot_ready = all(
         item.get("status") == "unique_catalog_source"
+        and isinstance(item.get("filename"), str)
+        and bool(item["filename"])
         for item in spot_catalog.values()
     )
     exits_ready = all(
         item.get("status") == "identity_verified"
+        and isinstance(item.get("raw_sha256"), str)
+        and len(item["raw_sha256"]) == 64
+        and all(char in "0123456789abcdefABCDEF" for char in item["raw_sha256"])
         for item in futures_exit.values()
     )
     return {
