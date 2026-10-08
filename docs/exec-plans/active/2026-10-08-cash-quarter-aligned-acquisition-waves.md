@@ -61,16 +61,34 @@ Turn the approved quarter-aligned Cash policy into two immutable, replayable acq
 - [ ] 6. Run CI/Smoke, archive and merge.
 - [ ] 7. Dispatch Q1 and Q2 preparation runs; review prepared evidence before promotion.
 
+## Verification matrix
+
+| Gate | Expected |
+|---|---|
+| Frozen Cash selection | 25 exact dates |
+| Availability-selection population | 172 eligible days |
+| Availability-selection evidence SHA | 21a48dee14e352c5fbb2488661f45c6fe3e82e74a4759d9eba1347b0bbe6b4b7 |
+| Q1 manifest | 12 dates / BTC-USDT-260327 |
+| Q2 manifest | 13 dates / BTC-USDT-260626 |
+| Q1 + Q2 union | exact frozen 25-day selection |
+| Legacy pre_registered_sample | backward compatible |
+| New selection classification | pre-registered, explicit availability kind |
+| Preparation workflow | workflow_dispatch only |
+| Corpus mutation | none |
+| Promotion | absent from workflow |
+| Required CI | pending |
+| Historical Smoke | pending |
+
 ## Decision gates
 
 No further product decision is required for contract or holding-period semantics. Manual workflow dispatch may still be required because the connected GitHub toolset cannot start workflow_dispatch runs.
 
 ## Resume from here
 
-Implement replayable availability-selection provenance first, then generate exact Q1/Q2 acquisition manifests and workflow handoff. Merge only after final-head CI/Smoke. After merge, trigger both preparation waves and review all 25 compact fixtures before any promotion.
+Continue from PR #48. Fix only verification defects; do not change the approved 25 dates or quarter-aligned contract policy. After review-head CI/Smoke is green, archive this plan, validate the final head, merge, then trigger Q1 and Q2 preparation runs and review all 25 compact fixtures before any promotion.
 
 ## Completion
 
 Final commit: pending
 CI run: pending
-Remaining unassessed items: implementation, preparation runs, and prepared-fixture review
+Remaining unassessed items: PR verification, preparation runs, and prepared-fixture review
