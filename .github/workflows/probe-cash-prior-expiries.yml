@@ -1,0 +1,41 @@
+name: Probe Prior Cash Expiry Cohorts
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "src/future_opportunity/backtest/cash_expiry_probe.py"
+      - "scripts/probe_cash_prior_expiries.py"
+      - ".github/workflows/probe-cash-prior-expiries.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    name: Read-only fixed 2025 expiry probe
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - name: Run fixed Q3/Q4 canonical history identity probes
+        run: uv run python scripts/probe_cash_prior_expiries.py
+      - name: Show explicit readiness findings
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f artifacts/cash-expiry-2025-probe/summary.json ]]; then
+            jq -r '.observations[] | [.market_date,.expected_future_id,.status,.reason] | @tsv' \
+              artifacts/cash-expiry-2025-probe/summary.json >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No valid probe report was produced; source readiness unassessed." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload immutable source-evidence artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cash-prior-expiry-source-readiness
+          path: artifacts/cash-expiry-2025-probe/
+          if-no-files-found: error
