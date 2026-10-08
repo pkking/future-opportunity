@@ -1,7 +1,7 @@
 # 2026-10-08-funding-stage2-design-evidence: Prepare Stage-2 decision evidence
 
 Issue: #41
-Status: IMPLEMENTING
+Status: READY_FOR_REVIEW
 Owner: agent
 Started: 2026-10-08
 Last checkpoint: 2026-10-08
@@ -33,24 +33,24 @@ Prepare a decision-ready Stage-2 distribution-gate proposal for Funding Carry no
 
 ## Acceptance criteria
 
-- [ ] Version a concise 32-day Funding evidence summary with provenance.
-- [ ] Separate facts from product choices requiring approval.
-- [ ] Propose candidate aggregation-window semantics.
-- [ ] Propose qualification-rate semantics that do not claim market-wide opportunity frequency.
-- [ ] Propose which return statistic can be gated and explain why realized-return statistics are currently unavailable.
-- [ ] Define zero-opportunity treatment options.
-- [ ] Define sample-size / pre-registration / evidence-completeness options.
-- [ ] Draft a Proposed Stage-2 ADR without activating it.
-- [ ] Reduce the remaining human decision to a small explicit option set.
+- [x] Version a concise 32-day Funding evidence summary with provenance.
+- [x] Separate facts from product choices requiring approval.
+- [x] Propose candidate aggregation-window semantics.
+- [x] Propose qualification-rate semantics that do not claim market-wide opportunity frequency.
+- [x] Propose which return statistic can be gated and explain why realized-return statistics are currently unavailable.
+- [x] Define zero-opportunity treatment options.
+- [x] Define sample-size / pre-registration / evidence-completeness options.
+- [x] Draft a Proposed Stage-2 ADR without activating it.
+- [x] Reduce the remaining human decision to a small explicit option set.
 - [ ] Full PR CI and Historical Backtest Smoke pass.
 
 ## Implementation slices
 
 - [x] 1. Confirm Wave 003 merged main state and Stage-2 eligibility.
 - [x] 2. Extract final 32-day distribution evidence from Historical Smoke artifact.
-- [ ] 3. Version evidence analysis.
-- [ ] 4. Draft Proposed ADR with explicit decision alternatives.
-- [ ] 5. Review for accidental policy activation.
+- [x] 3. Version evidence analysis.
+- [x] 4. Draft Proposed ADR with explicit decision alternatives.
+- [x] 5. Review for accidental policy activation.
 - [ ] 6. Run repository CI/Smoke and archive at the human-approval boundary.
 
 ## Verification matrix
@@ -61,13 +61,15 @@ Prepare a decision-ready Stage-2 distribution-gate proposal for Funding Carry no
 | Stage-2 eligibility rule | ADR-0007 | Funding meets >=30 |
 | Final historical evidence | Smoke run 37710601449 artifact 11521697208 | extracted |
 | Active historical gate unchanged | report field `active_historical_gate=provenance_and_semantics` | verified |
-| Reference targets not reused | report field `reference_targets_used_as_thresholds` | verify in proposal |
+| Reference targets not reused | report field `reference_targets_used_as_thresholds=false` | verified |
+| Evidence note | `docs/research/funding-stage2-design-evidence-32-days.md` | complete |
+| Proposed ADR | `docs/adr/0008-funding-stage2-historical-distribution-gate.md` | Proposed only |
 | Static/API/E2E | PR CI | pending |
 | Historical Smoke | PR workflow | pending |
 
 ## Decision gates
 
-Human approval is required before accepting the Stage-2 ADR or changing any active historical threshold. This task may recommend options but must stop before approval/activation.
+Human approval is required before accepting ADR-0008 or changing any active historical threshold. This task recommends keeping the current Stage-1 gate active and delaying numerical economics-gate activation until qualified-case realized-return evidence exists, preferably with >=90 pinned days before freezing stable thresholds.
 
 ## Evidence log
 
@@ -76,6 +78,7 @@ Human approval is required before accepting the Stage-2 ADR or changing any acti
 - 2026-10-08: Historical Smoke run 37710601449 artifact 11521697208 digest sha256:7cbdc484176ae0c167b6c0d8124d107c46a4b89a6d0072e03331bacb31237c5c.
 - 2026-10-08: Funding report: 32 evaluated, 0 qualified, pinned qualification rate=0, 32/32 expected-net-return assessed, 0 realized-return assessed.
 - 2026-10-08: Funding selection provenance: 29 pre-registered, 3 legacy; pre-registered coverage ratio=0.90625.
+- 2026-10-08: evidence note and Proposed ADR-0008 drafted; active policy remains unchanged.
 
 ## Deviations and discoveries
 
@@ -83,10 +86,10 @@ The 30-day threshold is sufficient to propose Stage-2 design but not sufficient 
 
 ## Resume from here
 
-Create a versioned evidence note and a Proposed Stage-2 ADR. The ADR must leave activation and exact thresholds pending human approval. Then open a PR linked to Issue #41, run all gates, and stop at the approval decision.
+Open a PR linked to Issue #41, run all gates, archive this plan after successful review-head CI, and stop at the human approval boundary. Do not accept ADR-0008 or activate Stage 2 without explicit approval.
 
 ## Completion
 
 Final commit: pending
 CI run: pending
-Remaining unassessed items: candidate statistical semantics, exact product thresholds, and human approval
+Remaining unassessed items: PR verification and human approval of Stage-2 product choices
