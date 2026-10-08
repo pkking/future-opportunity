@@ -1,0 +1,47 @@
+name: Probe Funding Raw Regime Source
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "src/future_opportunity/backtest/funding_raw_feature_lineage.py"
+      - "scripts/probe_funding_raw_regime_source.py"
+      - ".github/workflows/probe-funding-raw-regime-source.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    name: Read-only official Funding features probe
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - name: Capture fixed recent source and reconstruct research features
+        run: |
+          uv run python scripts/probe_funding_raw_regime_source.py \
+            --start-date 2026-09-15 \
+            --end-date 2026-09-21 \
+            --output-dir artifacts/funding-raw-regime-source
+      - name: Publish source and research coverage summary
+        if: always()
+        shell: bash
+        run: |
+          echo "## Funding raw regime-source research" >> "$GITHUB_STEP_SUMMARY"
+          if [[ -f artifacts/funding-raw-regime-source/reconstructed-features.json ]]; then
+            jq -r '"Reconstructed days: \(.feature_rows_reconstructed); missing: \(.missing_days | length)."' \
+              artifacts/funding-raw-regime-source/reconstructed-features.json >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Source unavailable or incomplete; inspect error artifact. No acquisition permitted." >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "Captured retrospectively. Historical publication time NOT verified. Economics gate remains disabled." >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload read-only source and research artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: funding-raw-regime-source-research
+          path: artifacts/funding-raw-regime-source/
+          if-no-files-found: warn
