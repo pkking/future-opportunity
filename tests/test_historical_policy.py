@@ -1,4 +1,5 @@
 import json
+from decimal import Decimal
 from pathlib import Path
 
 import pytest
@@ -193,7 +194,7 @@ def test_cash_stage2_evidence_can_meet_conditions_without_approval() -> None:
 
     assert readiness.evidence_requirements_met is True
     assert readiness.evidence_reasons == ()
-    assert readiness.pre_registered_coverage_ratio == 0.9
+    assert readiness.pre_registered_coverage_ratio == Decimal("0.9")
     assert readiness.realized_return_gate_available is True
     assert readiness.enabled is False
     assert readiness.decision_quality_ready is False
