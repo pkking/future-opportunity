@@ -1,7 +1,7 @@
 # 2026-10-08-accept-cash-stage2-decision-quality
 
 Issue: #55
-Status: IMPLEMENTING
+Status: READY_FOR_REVIEW
 Owner: agent
 Started: 2026-10-08
 Last checkpoint: 2026-10-08
@@ -32,15 +32,15 @@ Accept the explicitly human-approved ADR-0009 and include Cash-and-Carry in Stag
 
 ## Acceptance criteria
 
-- [ ] ADR-0009 is Accepted and records human approval 2026-10-08.
-- [ ] Enabled strategies include exactly funding-carry and cash-and-carry.
-- [ ] Policy enforces explicit, distinct per-strategy approval ADR provenance and rejects missing/mismatched approval.
-- [ ] Reports expose strategy-specific approval records without rewriting Funding ADR-0008.
-- [ ] Cash Stage-2 enabled and decision_quality_ready are both true on the pinned 30-day corpus.
-- [ ] Funding remains decision_quality_ready and its zero-qualified realized return remains unavailable.
-- [ ] Cash conditional realized evidence remains 8/8, not an active economics gate.
-- [ ] Gate remains provenance_and_semantics and economics_gate remains disabled.
-- [ ] Focused tests cover two strategy approvals, malformed provenance and unchanged safeguards.
+- [x] ADR-0009 is Accepted and records human approval 2026-10-08.
+- [x] Enabled strategies include exactly funding-carry and cash-and-carry.
+- [x] Policy enforces explicit, distinct per-strategy approval ADR provenance and rejects missing/mismatched approval.
+- [x] Reports expose strategy-specific approval records without rewriting Funding ADR-0008.
+- [x] Cash Stage-2 enabled and decision_quality_ready are both true on the pinned 30-day corpus.
+- [x] Funding remains decision_quality_ready and its zero-qualified realized return remains unavailable.
+- [x] Cash conditional realized evidence remains 8/8, not an active economics gate.
+- [x] Gate remains provenance_and_semantics and economics_gate remains disabled.
+- [x] Focused tests cover two strategy approvals, malformed provenance and unchanged safeguards.
 - [ ] First review-head CI 5/5 and Historical Backtest Smoke succeed.
 - [ ] Archive plan, update PR body, remove active plan; final-head CI 5/5 and Smoke succeed.
 - [ ] Squash merge and verify main report/config/ADR; close Issue only after verification.
@@ -49,8 +49,8 @@ Accept the explicitly human-approved ADR-0009 and include Cash-and-Carry in Stag
 
 - [x] 1. Read baseline policy, ADR, report/tests; establish approval constraints.
 - [x] 2. Create Issue #55, governed branch, active plan.
-- [ ] 3. Update ADR-0009 and policy with strategy-specific approvals.
-- [ ] 4. Extend reporting and tests for both enabled strategies.
+- [x] 3. Update ADR-0009 and policy with strategy-specific approvals.
+- [x] 4. Extend reporting and tests for both enabled strategies.
 - [ ] 5. Open governed PR and validate review head.
 - [ ] 6. Archive, validate final head, merge and verify main.
 
