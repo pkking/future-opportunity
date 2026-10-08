@@ -8,6 +8,9 @@ from future_opportunity.backtest.availability_selection import (
     AvailabilitySelectionRequest,
     replay_availability_selection,
 )
+from future_opportunity.backtest.distribution_report import (
+    _selection_provenance_view,
+)
 from future_opportunity.backtest.selection_provenance import (
     historical_selection_provenance_payload,
     parse_historical_selection_provenance,
@@ -116,3 +119,17 @@ def test_availability_selection_provenance_fails_closed_on_drift() -> None:
     hash_drift["sampling"]["evidence_sha256"] = "0" * 64
     with pytest.raises(ValueError, match="evidence_sha256"):
         parse_historical_selection_provenance(hash_drift)
+
+
+def test_availability_selection_counts_as_preregistered_reporting() -> None:
+    view = _selection_provenance_view(
+        {"selection_provenance": provenance_payload()},
+        strategy="cash-and-carry",
+        market_date="2026-03-28",
+    )
+
+    assert view["classification"] == "pre_registered_sample"
+    assert (
+        view["selection_kind"]
+        == "pre_registered_availability_sample"
+    )
