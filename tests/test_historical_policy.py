@@ -128,7 +128,11 @@ def test_accepted_stage2_decision_quality_policy_is_explicit() -> None:
 
     assert stage2.adr == "ADR-0008"
     assert stage2.status == "accepted"
-    assert stage2.enabled_strategies == ("funding-carry",)
+    assert stage2.enabled_strategies == ("funding-carry", "cash-and-carry")
+    assert dict(stage2.strategy_approval_adrs) == {
+        "funding-carry": "ADR-0008",
+        "cash-and-carry": "ADR-0009",
+    }
     assert stage2.economics_gate == "disabled"
     assert stage2.minimum_distinct_market_days == 30
     assert stage2.preferred_threshold_freeze_days == 90
@@ -151,6 +155,7 @@ def test_funding_stage2_decision_quality_can_be_ready_with_zero_qualified() -> N
     )
 
     assert readiness.enabled is True
+    assert readiness.approval_adr == "ADR-0008"
     assert readiness.decision_quality_ready is True
     assert readiness.reasons == ()
     assert readiness.economics_gate == "disabled"
@@ -158,7 +163,7 @@ def test_funding_stage2_decision_quality_can_be_ready_with_zero_qualified() -> N
     assert readiness.market_wide_opportunity_arrival_rate is None
 
 
-def test_cash_stage2_remains_disabled_below_minimum() -> None:
+def test_cash_stage2_remains_not_ready_below_minimum() -> None:
     _, raw = load_historical_acceptance_policy(POLICY)
     stage2 = load_stage2_decision_quality_policy(raw)
 
@@ -172,13 +177,13 @@ def test_cash_stage2_remains_disabled_below_minimum() -> None:
         realized_return_assessed_count=0,
     )
 
-    assert readiness.enabled is False
+    assert readiness.enabled is True
+    assert readiness.approval_adr == "ADR-0009"
     assert readiness.decision_quality_ready is False
-    assert "strategy_not_stage2_enabled" in readiness.reasons
-    assert "minimum_pinned_days_not_met" in readiness.reasons
+    assert readiness.reasons == ("minimum_pinned_days_not_met",)
 
 
-def test_cash_stage2_evidence_can_meet_conditions_without_approval() -> None:
+def test_cash_stage2_approved_and_evidence_ready_without_economics_gate() -> None:
     _, raw = load_historical_acceptance_policy(POLICY)
     policy = load_stage2_decision_quality_policy(raw)
 
@@ -196,10 +201,11 @@ def test_cash_stage2_evidence_can_meet_conditions_without_approval() -> None:
     assert readiness.evidence_reasons == ()
     assert readiness.pre_registered_coverage_ratio == Decimal("0.9")
     assert readiness.realized_return_gate_available is True
-    assert readiness.enabled is False
-    assert readiness.decision_quality_ready is False
+    assert readiness.enabled is True
+    assert readiness.approval_adr == "ADR-0009"
+    assert readiness.decision_quality_ready is True
     assert readiness.economics_gate == "disabled"
-    assert readiness.reasons == ("strategy_not_stage2_enabled",)
+    assert readiness.reasons == ()
 
 
 def test_cash_stage2_insufficient_evidence_reports_independent_failures() -> None:
@@ -222,9 +228,41 @@ def test_cash_stage2_insufficient_evidence_reports_independent_failures() -> Non
         "minimum_pre_registered_coverage_not_met",
         "expected_net_return_assessment_incomplete",
     )
-    assert readiness.reasons == (
-        "strategy_not_stage2_enabled",
-        *readiness.evidence_reasons,
-    )
+    assert readiness.reasons == readiness.evidence_reasons
     assert readiness.decision_quality_ready is False
     assert readiness.realized_return_gate_available is False
+
+
+@pytest.mark.parametrize(
+    "approvals",
+    [
+        None,
+        {"funding-carry": "ADR-0008"},
+        {"funding-carry": "ADR-0009", "cash-and-carry": "ADR-0008"},
+        {"funding-carry": "ADR-0008", "cash-and-carry": "ADR-0008"},
+        {
+            "funding-carry": "ADR-0008",
+            "cash-and-carry": "ADR-0009",
+            "unknown": "ADR-0010",
+        },
+    ],
+)
+def test_stage2_rejects_missing_or_misassigned_approval_adrs(approvals) -> None:
+    _, raw = load_historical_acceptance_policy(POLICY)
+    raw["stage2_decision_quality"]["strategy_approval_adrs"] = approvals
+    with pytest.raises(ValueError, match="strategy.*approval"):
+        load_stage2_decision_quality_policy(raw)
+
+
+def test_stage2_rejects_duplicate_enabled_strategy() -> None:
+    _, raw = load_historical_acceptance_policy(POLICY)
+    raw["stage2_decision_quality"]["enabled_strategies"].append("cash-and-carry")
+    with pytest.raises(ValueError, match="must be unique"):
+        load_stage2_decision_quality_policy(raw)
+
+
+def test_stage2_economics_gate_remains_fail_closed() -> None:
+    _, raw = load_historical_acceptance_policy(POLICY)
+    raw["stage2_decision_quality"]["economics_gate"] = "enabled"
+    with pytest.raises(ValueError, match="must remain disabled"):
+        load_stage2_decision_quality_policy(raw)
