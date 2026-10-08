@@ -5,6 +5,10 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
+from future_opportunity.backtest.availability_selection import (
+    AvailabilitySelectionRequest,
+    replay_availability_selection,
+)
 from future_opportunity.backtest.sampling import (
     HistoricalSamplingRequest,
     historical_sampling_json,
@@ -15,6 +19,10 @@ from future_opportunity.backtest.sampling import (
 
 _SAFE_ARTIFACT_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 _SUPPORTED_STRATEGIES = {"funding-carry", "cash-and-carry"}
+_SUPPORTED_SELECTION_KINDS = {
+    "pre_registered_sample",
+    "pre_registered_availability_sample",
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -41,18 +49,19 @@ class HistoricalSelectionProvenance:
     strategy: str
     source: HistoricalSelectionSource
     policy_version: str
-    seed: str
+    seed: str | None
     start_date: str
     end_date: str
     requested_sample_size: int
     population_size: int
     selected_market_dates: tuple[str, ...]
     sampling_evidence_sha256: str
+    excluded_market_dates: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if self.schema_version != 1:
             raise ValueError("unsupported historical selection provenance schema")
-        if self.selection_kind != "pre_registered_sample":
+        if self.selection_kind not in _SUPPORTED_SELECTION_KINDS:
             raise ValueError(
                 "unsupported historical selection_kind: "
                 f"{self.selection_kind}"
@@ -63,6 +72,18 @@ class HistoricalSelectionProvenance:
             )
         _validate_sha256(self.sampling_evidence_sha256)
 
+        if self.selection_kind == "pre_registered_sample":
+            self._validate_seeded_sample()
+        else:
+            self._validate_availability_sample()
+
+    def _validate_seeded_sample(self) -> None:
+        if not isinstance(self.seed, str) or not self.seed:
+            raise ValueError("seeded historical selection requires seed")
+        if self.excluded_market_dates:
+            raise ValueError(
+                "seeded historical selection must not carry exclusions"
+            )
         request = HistoricalSamplingRequest(
             strategy=self.strategy,
             start_date=self.start_date,
@@ -82,6 +103,33 @@ class HistoricalSelectionProvenance:
             )
         expected_sha = _sampling_evidence_sha256(replay)
         if expected_sha != self.sampling_evidence_sha256:
+            raise ValueError(
+                "selection sampling_evidence_sha256 does not match replay"
+            )
+
+    def _validate_availability_sample(self) -> None:
+        if self.seed is not None:
+            raise ValueError(
+                "availability historical selection must not carry seed"
+            )
+        request = AvailabilitySelectionRequest(
+            strategy=self.strategy,
+            start_date=self.start_date,
+            end_date=self.end_date,
+            excluded_market_dates=self.excluded_market_dates,
+            sample_size=self.requested_sample_size,
+            policy_version=self.policy_version,
+        )
+        replay = replay_availability_selection(request)
+        if replay.population_size != self.population_size:
+            raise ValueError(
+                "selection population_size does not match deterministic replay"
+            )
+        if replay.selected_market_dates != self.selected_market_dates:
+            raise ValueError(
+                "selection market dates do not match deterministic replay"
+            )
+        if replay.evidence_sha256 != self.sampling_evidence_sha256:
             raise ValueError(
                 "selection sampling_evidence_sha256 does not match replay"
             )
@@ -120,6 +168,37 @@ def selection_provenance_from_sampling_evidence(
     )
 
 
+def selection_provenance_from_availability_selection(
+    request: AvailabilitySelectionRequest,
+    *,
+    source_workflow_run: str,
+    artifact_name: str,
+    artifact_id: str,
+    artifact_digest: str,
+) -> HistoricalSelectionProvenance:
+    replay = replay_availability_selection(request)
+    return HistoricalSelectionProvenance(
+        schema_version=1,
+        selection_kind="pre_registered_availability_sample",
+        strategy=request.strategy,
+        source=HistoricalSelectionSource(
+            workflow_run=source_workflow_run,
+            artifact_name=artifact_name,
+            artifact_id=artifact_id,
+            artifact_digest=_normalize_actions_digest(artifact_digest),
+        ),
+        policy_version=request.policy_version,
+        seed=None,
+        start_date=request.start_date,
+        end_date=request.end_date,
+        requested_sample_size=request.sample_size,
+        population_size=replay.population_size,
+        selected_market_dates=replay.selected_market_dates,
+        sampling_evidence_sha256=replay.evidence_sha256,
+        excluded_market_dates=request.excluded_market_dates,
+    )
+
+
 def parse_historical_selection_provenance(
     raw: Any,
 ) -> HistoricalSelectionProvenance:
@@ -149,20 +228,8 @@ def parse_historical_selection_provenance(
         "artifact_digest",
     }:
         raise ValueError("historical selection source fields differ from schema")
-    if set(sampling_raw) != {
-        "policy_version",
-        "seed",
-        "start_date",
-        "end_date",
-        "requested_sample_size",
-        "population_size",
-        "selected_market_dates",
-        "evidence_sha256",
-    }:
-        raise ValueError(
-            "historical selection sampling fields differ from schema"
-        )
 
+    selection_kind = _required_string(raw, "selection_kind")
     selected = sampling_raw.get("selected_market_dates")
     if not isinstance(selected, list) or not all(
         isinstance(item, str) for item in selected
@@ -183,9 +250,55 @@ def parse_historical_selection_provenance(
     if type(population) is not int:
         raise TypeError("historical selection population_size must be integer")
 
+    if selection_kind == "pre_registered_sample":
+        expected_sampling = {
+            "policy_version",
+            "seed",
+            "start_date",
+            "end_date",
+            "requested_sample_size",
+            "population_size",
+            "selected_market_dates",
+            "evidence_sha256",
+        }
+        if set(sampling_raw) != expected_sampling:
+            raise ValueError(
+                "historical selection sampling fields differ from schema"
+            )
+        seed: str | None = _required_string(sampling_raw, "seed")
+        excluded: tuple[str, ...] = ()
+    elif selection_kind == "pre_registered_availability_sample":
+        expected_sampling = {
+            "policy_version",
+            "start_date",
+            "end_date",
+            "requested_sample_size",
+            "population_size",
+            "excluded_market_dates",
+            "selected_market_dates",
+            "evidence_sha256",
+        }
+        if set(sampling_raw) != expected_sampling:
+            raise ValueError(
+                "historical selection sampling fields differ from schema"
+            )
+        raw_excluded = sampling_raw.get("excluded_market_dates")
+        if not isinstance(raw_excluded, list) or not all(
+            isinstance(item, str) for item in raw_excluded
+        ):
+            raise TypeError(
+                "historical selection excluded_market_dates must be strings"
+            )
+        seed = None
+        excluded = tuple(raw_excluded)
+    else:
+        raise ValueError(
+            f"unsupported historical selection_kind: {selection_kind}"
+        )
+
     return HistoricalSelectionProvenance(
         schema_version=schema_version,
-        selection_kind=_required_string(raw, "selection_kind"),
+        selection_kind=selection_kind,
         strategy=_required_string(raw, "strategy"),
         source=HistoricalSelectionSource(
             workflow_run=_required_string(source_raw, "workflow_run"),
@@ -194,7 +307,7 @@ def parse_historical_selection_provenance(
             artifact_digest=_required_string(source_raw, "artifact_digest"),
         ),
         policy_version=_required_string(sampling_raw, "policy_version"),
-        seed=_required_string(sampling_raw, "seed"),
+        seed=seed,
         start_date=_required_string(sampling_raw, "start_date"),
         end_date=_required_string(sampling_raw, "end_date"),
         requested_sample_size=requested,
@@ -204,6 +317,7 @@ def parse_historical_selection_provenance(
             sampling_raw,
             "evidence_sha256",
         ),
+        excluded_market_dates=excluded,
     )
 
 
@@ -230,6 +344,24 @@ def validate_selection_provenance_for_market_date(
 def historical_selection_provenance_payload(
     provenance: HistoricalSelectionProvenance,
 ) -> dict[str, object]:
+    sampling: dict[str, object] = {
+        "policy_version": provenance.policy_version,
+        "start_date": provenance.start_date,
+        "end_date": provenance.end_date,
+        "requested_sample_size": provenance.requested_sample_size,
+        "population_size": provenance.population_size,
+        "selected_market_dates": list(provenance.selected_market_dates),
+        "evidence_sha256": provenance.sampling_evidence_sha256,
+    }
+    if provenance.selection_kind == "pre_registered_sample":
+        if provenance.seed is None:
+            raise RuntimeError("seeded selection lost seed")
+        sampling["seed"] = provenance.seed
+    else:
+        sampling["excluded_market_dates"] = list(
+            provenance.excluded_market_dates
+        )
+
     return {
         "schema_version": provenance.schema_version,
         "selection_kind": provenance.selection_kind,
@@ -240,16 +372,7 @@ def historical_selection_provenance_payload(
             "artifact_id": provenance.source.artifact_id,
             "artifact_digest": provenance.source.artifact_digest,
         },
-        "sampling": {
-            "policy_version": provenance.policy_version,
-            "seed": provenance.seed,
-            "start_date": provenance.start_date,
-            "end_date": provenance.end_date,
-            "requested_sample_size": provenance.requested_sample_size,
-            "population_size": provenance.population_size,
-            "selected_market_dates": list(provenance.selected_market_dates),
-            "evidence_sha256": provenance.sampling_evidence_sha256,
-        },
+        "sampling": sampling,
     }
 
 
