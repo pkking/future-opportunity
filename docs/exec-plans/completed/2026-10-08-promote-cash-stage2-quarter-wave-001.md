@@ -71,7 +71,7 @@ PR #52 has passed review-head CI and Historical Backtest Smoke. Update PR Plan t
 
 ## Completion
 
-Implementation/review head: 69073ee21fce2b174520775a2755f3844033f1bc
+Final commit: 69073ee21fce2b174520775a2755f3844033f1bc
 CI run: 37746849098 (all five required checks successful)
 Historical Smoke: 37746849107 successful
 Remaining unassessed items: final archival-head checks, merge, post-merge verification and issue closure
