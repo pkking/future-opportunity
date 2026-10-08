@@ -1,0 +1,58 @@
+name: Cash Stage-2 Source Capacity
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "scripts/plan_okx_cash_stage2_capacity.py"
+      - "src/future_opportunity/backtest/cash_stage2_capacity.py"
+      - "tests/test_cash_stage2_capacity.py"
+      - ".github/workflows/cash-stage2-source-capacity.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  capacity:
+    name: Discover already-published Cash capacity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - name: Probe canonical module-4 historical capacity
+        run: >-
+          uv run python scripts/plan_okx_cash_stage2_capacity.py
+          --output artifacts/cash-stage2-capacity/report.json
+      - name: Publish capacity summary
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          report="artifacts/cash-stage2-capacity/report.json"
+          if [[ ! -f "${report}" ]]; then
+            echo "## Cash Stage-2 source capacity" >> "${GITHUB_STEP_SUMMARY}"
+            echo "Probe did not produce a report." >> "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
+          {
+            echo "## Cash Stage-2 source capacity"
+            echo
+            echo "| Metric | Value |"
+            echo "|---|---:|"
+            echo "| Current pinned | $(jq -r '.capacity.current_pinned_day_count' "${report}") |"
+            echo "| Target | $(jq -r '.capacity.target_pinned_day_count' "${report}") |"
+            echo "| Remaining | $(jq -r '.capacity.remaining_day_count' "${report}") |"
+            echo "| Unique ready unpinned | $(jq -r '.capacity.unique_ready_unpinned_count' "${report}") |"
+            echo "| Capacity sufficient | $(jq -r '.capacity.capacity_sufficient' "${report}") |"
+            echo "| Selected candidates | $(jq -r '.capacity.selected_candidate_count' "${report}") |"
+            echo
+            echo "Selection is availability-only and read-only; no acquisition or promotion occurs."
+          } >> "${GITHUB_STEP_SUMMARY}"
+      - name: Upload capacity evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cash-stage2-source-capacity
+          path: artifacts/cash-stage2-capacity/
+          if-no-files-found: warn
