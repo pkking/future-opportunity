@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "policy_id": "cash-quarter-aligned-expiry-v1",
+  "status": "approved",
+  "approved_at": "2026-10-08",
+  "strategy": "cash-and-carry",
+  "entry_time_utc": "00:15:00",
+  "contract_rule": "entry_current_quarter_btc_usdt_expiry_future",
+  "exit_rule": "00:15:00 UTC on calendar day before contract expiry",
+  "waves": [
+    {
+      "wave": "q1",
+      "future_id": "BTC-USDT-260327",
+      "entry_dates": [
+        "2026-01-04",
+        "2026-01-11",
+        "2026-01-18",
+        "2026-01-25",
+        "2026-01-31",
+        "2026-02-07",
+        "2026-02-14",
+        "2026-02-21",
+        "2026-02-28",
+        "2026-03-07",
+        "2026-03-14",
+        "2026-03-21"
+      ],
+      "exit_at": "2026-03-26T00:15:00+00:00",
+      "expiry_at": "2026-03-27T08:00:00+00:00"
+    },
+    {
+      "wave": "q2",
+      "future_id": "BTC-USDT-260626",
+      "entry_dates": [
+        "2026-03-28",
+        "2026-04-03",
+        "2026-04-10",
+        "2026-04-17",
+        "2026-04-24",
+        "2026-05-01",
+        "2026-05-08",
+        "2026-05-15",
+        "2026-05-22",
+        "2026-05-28",
+        "2026-06-09",
+        "2026-06-16",
+        "2026-06-23"
+      ],
+      "exit_at": "2026-06-25T00:15:00+00:00",
+      "expiry_at": "2026-06-26T08:00:00+00:00"
+    }
+  ],
+  "invariants": {
+    "frozen_selection_date_count": 25,
+    "no_replacement_after_outcome_observation": true,
+    "acquisition_does_not_mutate_corpus": true,
+    "promotion_requires_separate_review": true
+  }
+}
