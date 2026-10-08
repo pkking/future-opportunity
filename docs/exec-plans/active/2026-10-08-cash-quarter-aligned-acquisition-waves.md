@@ -1,7 +1,7 @@
 # 2026-10-08-cash-quarter-aligned-acquisition-waves
 
 Issue: #47
-Status: IMPLEMENTING
+Status: READY_FOR_REVIEW
 Owner: agent
 Started: 2026-10-08
 Last checkpoint: 2026-10-08
@@ -40,24 +40,24 @@ Turn the approved quarter-aligned Cash policy into two immutable, replayable acq
 
 ## Acceptance criteria
 
-- [ ] Repository can validate an explicit availability-only pre-registration provenance kind.
-- [ ] Existing pre_registered_sample provenance remains fully backward-compatible.
-- [ ] Distribution reporting counts the new provenance kind as pre-registered rather than legacy.
-- [ ] Q1 manifest contains exactly 12 frozen dates and the approved 260327 contract/exit semantics.
-- [ ] Q2 manifest contains exactly 13 frozen dates and the approved 260626 contract/exit semantics.
-- [ ] Q1 + Q2 dates equal the frozen 25-day selection exactly, with no overlap or omission.
-- [ ] Both manifests carry the same replayable selection provenance source.
-- [ ] A workflow_dispatch handoff prepares exactly one named approved wave and no other dates.
-- [ ] Tests cover provenance replay/drift, manifest semantics, and workflow no-promotion boundary.
+- [x] Repository can validate an explicit availability-only pre-registration provenance kind.
+- [x] Existing pre_registered_sample provenance remains fully backward-compatible.
+- [x] Distribution reporting counts the new provenance kind as pre-registered rather than legacy.
+- [x] Q1 manifest contains exactly 12 frozen dates and the approved 260327 contract/exit semantics.
+- [x] Q2 manifest contains exactly 13 frozen dates and the approved 260626 contract/exit semantics.
+- [x] Q1 + Q2 dates equal the frozen 25-day selection exactly, with no overlap or omission.
+- [x] Both manifests carry the same replayable selection provenance source.
+- [x] A workflow_dispatch handoff prepares exactly one named approved wave and no other dates.
+- [x] Tests cover provenance replay/drift, manifest semantics, and workflow no-promotion boundary.
 - [ ] Full CI and Historical Smoke pass.
 
 ## Implementation slices
 
 - [x] 1. Create governed Issue/branch/plan and inspect acquisition/provenance contracts.
-- [ ] 2. Generalize selection provenance for availability-only deterministic selection.
-- [ ] 3. Version approved quarter-aligned policy and Q1/Q2 manifests.
-- [ ] 4. Add exact wave preparation workflow.
-- [ ] 5. Add unit/workflow-contract tests.
+- [x] 2. Generalize selection provenance for availability-only deterministic selection.
+- [x] 3. Version approved quarter-aligned policy and Q1/Q2 manifests.
+- [x] 4. Add exact wave preparation workflow.
+- [x] 5. Add unit/workflow-contract tests.
 - [ ] 6. Run CI/Smoke, archive and merge.
 - [ ] 7. Dispatch Q1 and Q2 preparation runs; review prepared evidence before promotion.
 
