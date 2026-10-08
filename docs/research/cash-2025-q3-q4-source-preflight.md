@@ -18,6 +18,22 @@ This follow-up verifies availability dimensions that were **not** validated by t
 
 The quarterly exit timestamp convention, from the existing approved policy, is **00:15 UTC on the previous calendar day** before actual expiry. These probes verify catalog and member identity, **not** the existence of suitable 00:15 bid/ask snapshots or the economics of an actual close.
 
+## Verified official source results — 2026-10-08
+
+Live workflow [37754484440](https://github.com/pkking/future-opportunity/actions/runs/37754484440) completed successfully. Artifact `cash-2025-q3-q4-source-capacity`, ID `11539801691`, SHA256 digest `d1f34518fc4821d4183eb4d009722d6ec7264cc02ac4e5f12172fa16e3ae2da6`.
+
+| Evidence dimension | Observed result |
+|---|---|
+| Q3 canonical FUTURES daily archives, 2025-07-01..09-25 | 87/87 unique; 0 missing, 0 ambiguous, 0 query errors |
+| Q4 canonical FUTURES daily archives, 2025-09-27..12-25 | 90/90 unique; 0 missing, 0 ambiguous, 0 query errors |
+| SPOT BTC-USDT daily catalog identity | 6/6 fixed entry/exit dates unique |
+| Q3 FUTURES exit 2025-09-25, `BTC-USDT-250926` | Exact member identity verified; raw SHA `ea975e9d01e117dd71d2311f34228f1304015278fed6b4562b239319453ab913` |
+| Q4 FUTURES exit 2025-12-25, `BTC-USDT-251226` | Exact member identity verified; raw SHA `36879a47ebed1a6c8c89b3344c175ee24dd363d3a2ea4c2914145c7741f71b1` |
+| Actual 00:15 SPOT/FUTURES snapshot/return evidence | **Not yet assessed** |
+| Acquisition readiness | **False**, by design |
+
+These are **catalog and archive-member source checks**, not proof of every selected day's exact future-member identity nor executable pre-expiry cash close snapshots. Future sample selection must be frozen without examining profits, then all selected cases independently validated before any promotion.
+
 ## Replay
 
 The workflow `.github/workflows/probe-cash-2025-quarter-capacity.yml` runs on code change and supports explicit manual dispatch. It calls the existing historical catalog scanner for the exact six-month range, then the read-only paired-source verifier:
