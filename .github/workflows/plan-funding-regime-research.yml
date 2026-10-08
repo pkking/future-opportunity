@@ -1,0 +1,62 @@
+name: Plan Funding Regime Research
+
+on:
+  workflow_dispatch:
+    inputs:
+      feature_evidence_path:
+        description: Committed historical pre-entry feature evidence JSON path
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  research:
+    name: Read-only lagged Funding market-regime selection
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - name: Validate committed feature evidence path
+        env:
+          EVIDENCE_PATH: ${{ inputs.feature_evidence_path }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          prefix = Path("docs/historical-acquisition-plans").resolve()
+          selected = Path(os.environ["EVIDENCE_PATH"]).resolve()
+          if not selected.is_relative_to(prefix) or selected.suffix != ".json":
+              raise SystemExit("feature evidence must be committed JSON under historical-acquisition-plans")
+          if not selected.is_file():
+              raise SystemExit("feature evidence file missing")
+          PY
+      - name: Produce reproducible research-only selection
+        env:
+          EVIDENCE_PATH: ${{ inputs.feature_evidence_path }}
+        run: |
+          uv run python scripts/plan_funding_regime_research.py \
+            --input "${EVIDENCE_PATH}" \
+            --output artifacts/funding-regime-research/report.json
+      - name: Summarize research-only status
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f artifacts/funding-regime-research/report.json ]]; then
+            jq -r '.regimes[] | [.name, .eligible_count, .selected_count, .quota_shortfall] | @tsv' \
+              artifacts/funding-regime-research/report.json >> "$GITHUB_STEP_SUMMARY"
+            echo "Not approved for acquisition or promotion; source authentication pending." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No valid research selection report produced." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload read-only research evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: funding-regime-research-selection
+          path: artifacts/funding-regime-research/
+          if-no-files-found: warn
