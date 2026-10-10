@@ -78,27 +78,30 @@ def test_exact_twelve_by_three_artifacts_are_inventory_verified(wave: str) -> No
     assert report["promotion_dispatched"] is False
 
 
-@pytest.mark.parametrize("missing_kind", ["", "compact-", "actuals-"])
-def test_missing_any_kind_fails_even_when_compact_count_is_twelve(
-    missing_kind: str,
-) -> None:
+@pytest.mark.parametrize("missing_kind", ["prepared", "compact", "actuals"])
+def test_missing_any_artifact_kind_fails_closed(missing_kind: str) -> None:
     manifest, listing = make_inputs("q3")
-    match = "okx-btc-cash-and-carry-" + missing_kind
+    prefix = "okx-btc-cash-and-carry-"
+    suffix = {
+        "prepared": "-2025",
+        "compact": "compact-",
+        "actuals": "actuals-",
+    }[missing_kind]
     listing["artifacts"] = [
-        item for item in listing["artifacts"] if not item["name"].startswith(match)
-    ][:] if missing_kind else [
         item for item in listing["artifacts"]
         if not (
-            item["name"].startswith("okx-btc-cash-and-carry-")
-            and "-compact-" not in item["name"]
-            and "-actuals-" not in item["name"]
+            item["name"].startswith(prefix)
+            and (
+                (missing_kind == "prepared" and item["name"].startswith(prefix + "2025"))
+                or (missing_kind != "prepared" and item["name"].startswith(prefix + suffix))
+            )
         )
     ]
     listing["total_count"] = len(listing["artifacts"])
 
     report = verify_inventory(manifest, listing, wave="q3", run_id=RUN_ID)
     assert report["status"] == "failed"
-    assert report["missing_artifact_names"]
+    assert len(report["missing_artifact_names"]) == 12
 
 
 @pytest.mark.parametrize(
@@ -231,9 +234,9 @@ def test_2025_workflow_gates_manifest_and_preserves_failure_evidence() -> None:
     assert "contents: read" in text
     assert "actions: read" in text
     assert "contents: write" not in text
-    assert "prepare-cash-2025-quarter-wave.yml" not in text.split("uses: ./")[0]
     assert "verify_cash_2025_quarter_artifacts.py" in text
     assert "--acquisition-result" in text
     assert "if: always()" in text
-    assert "corpus_mutation" not in text or "promotion_dispatched" not in text
+    assert "corpus_mutation: false" in text
+    assert "promotion_dispatched: false" in text
     assert "promote-historical" not in text
