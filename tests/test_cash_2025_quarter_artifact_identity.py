@@ -157,6 +157,36 @@ def test_wrong_future_or_run_id_is_unexpected_and_missing() -> None:
     assert len(report["missing_artifact_names"]) == 1
 
 
+
+def test_funding_artifact_in_cash_only_wave_fails_closed() -> None:
+    manifest, listing = make_inputs("q3")
+    listing["artifacts"].append(
+        {
+            "id": 9999999,
+            "name": f"okx-btc-funding-compact-2025-07-04-{RUN_ID}",
+            "size_in_bytes": 2048,
+            "digest": "sha256:" + ("a" * 64),
+            "expired": False,
+            "workflow_run": {"id": int(RUN_ID)},
+        }
+    )
+    listing["total_count"] += 1
+    report = verify_inventory(manifest, listing, wave="q3", run_id=RUN_ID)
+    assert report["status"] == "failed"
+    assert any("non-Cash" in e for e in report["errors"])
+
+
+def test_wrong_run_id_in_artifact_name_fails_closed() -> None:
+    manifest, listing = make_inputs("q3")
+    listing["artifacts"][0]["name"] = listing["artifacts"][0]["name"].replace(
+        RUN_ID, "38000000999"
+    )
+    report = verify_inventory(manifest, listing, wave="q3", run_id=RUN_ID)
+    assert report["status"] == "failed"
+    assert len(report["missing_artifact_names"]) == 1
+    assert len(report["unexpected_artifact_names"]) == 1
+
+
 def test_incomplete_pagination_fails_closed() -> None:
     manifest, listing = make_inputs("q3")
     listing["total_count"] += 1
