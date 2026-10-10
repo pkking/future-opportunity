@@ -67,40 +67,51 @@ jobs:
       acquisition_json: ${{ needs.resolve.outputs.acquisition_json }}
 
   summary:
-    name: Verify exactly 12 prepared compact artifacts
+    name: Audit 12 prepared, 12 compact and 12 actuals artifacts
     needs: [resolve, acquire]
-    if: always() && needs.resolve.result == 'success' && needs.acquire.result == 'success'
+    # Keep the evidence job alive on partial/failed source preparations.
+    if: always() && needs.resolve.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       actions: read
       contents: read
     env:
       GH_TOKEN: ${{ github.token }}
-      ACQUISITION_ID: ${{ needs.resolve.outputs.acquisition_id }}
+      WAVE: ${{ inputs.wave }}
+      ACQUISITION_RESULT: ${{ needs.acquire.result }}
     steps:
-      - name: Record explicit preparation completeness
+      - uses: actions/checkout@v4
+
+      - name: Retrieve exact Actions artifact inventory
         shell: bash
         run: |
           set -euo pipefail
-          gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts?per_page=100" > artifacts.json
-          count="$(jq '[.artifacts[] | select(.name | startswith("okx-btc-cash-and-carry-compact-"))] | length' artifacts.json)"
-          test "${count}" = "12"
-          jq -n --arg id "${ACQUISITION_ID}" --argjson count "${count}" \
-            '{
-              schema_version: 1,
-              evidence_type: "cash_2025_quarter_preparation_boundary",
-              acquisition_id: $id,
-              expected_cash_count: 12,
-              compact_artifact_count: $count,
-              corpus_mutation: false,
-              promotion_dispatched: false
-            }' > summary.json
-          cat summary.json
-      - name: Upload preparation-boundary evidence
+          mkdir -p artifacts/cash-2025-quarter-audit
+          gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts?per_page=100" \
+            > artifacts/cash-2025-quarter-audit/artifacts.json
+
+      - name: Verify frozen Cash artifact identity and metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "${WAVE}" in
+            q3) manifest="docs/historical-acquisition-plans/cash-2025-q3-12day-wave-001.json" ;;
+            q4) manifest="docs/historical-acquisition-plans/cash-2025-q4-12day-wave-001.json" ;;
+            *) echo "unsupported frozen wave: ${WAVE}" >&2; exit 1 ;;
+          esac
+          python3 scripts/verify_cash_2025_quarter_artifacts.py \
+            --manifest "${manifest}" \
+            --artifacts artifacts/cash-2025-quarter-audit/artifacts.json \
+            --wave "${WAVE}" --run-id "${GITHUB_RUN_ID}" \
+            --acquisition-result "${ACQUISITION_RESULT}" \
+            --output artifacts/cash-2025-quarter-audit/summary.json
+          # The inventory audit is not a promotion gate:
+          # corpus_mutation: false; promotion_dispatched: false
+
+      - name: Upload artifact-inventory evidence (including failures)
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: cash-2025-quarter-summary-${{ inputs.wave }}
-          path: |
-            artifacts.json
-            summary.json
+          path: artifacts/cash-2025-quarter-audit/
           if-no-files-found: error
