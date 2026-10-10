@@ -1,7 +1,7 @@
 # Cash 2025 quarter preparation artifact identity gate
 
 Issue: #69
-Status: IMPLEMENTING
+Status: VERIFYING
 Owner: agent
 Started: 2026-10-10
 Last checkpoint: 2026-10-10
@@ -78,11 +78,12 @@ unassessed L2/replay/return semantics.
 
 ## Implementation slices
 
-- [ ] 1. Add deterministic offline artifact-inventory checker with
-      fail-closed structured report and CLI.
-- [ ] 2. Add comprehensive unit tests and workflow invariants.
-- [ ] 3. Wire Q3/Q4 summary job to verify inventory and always upload the
-      evidence (including failures).
+- [x] 1. Add deterministic offline artifact-inventory checker with
+      fail-closed structured report and CLI (`72bd980`, `12766e1`).
+- [x] 2. Add comprehensive unit tests and workflow invariants
+      (`8546f57`, `4b3c7dc`, `80b3665`, `f5d3fcd`).
+- [x] 3. Wire Q3/Q4 summary job to verify inventory and always upload the
+      evidence (including failures) (`0400357`).
 - [ ] 4. Run tests and inspect final GitHub checks; checkpoint with evidence.
 
 ## Verification matrix
@@ -111,12 +112,21 @@ separate. Do not bypass explicit operator control.
 
 ## Deviations and discoveries
 
-None yet.
+- Original PR head `4b3c7dc` CI `38047526617` failed Code-level tests
+  at collection: `ModuleNotFoundError: No module named 'scripts'`.
+  The standalone verifier is not a package; tests now load it with Python
+  `runpy.run_path` (`f5d3fcd`). The same head's static, API, E2E and
+  Historical Smoke checks passed, but **this is not final-head evidence**.
+- Repository checkout is not available in the local tool runtime; validation
+  is performed by actual GitHub Actions on review heads.
+- Reviewer must not interpret Actions SHA-256 metadata format validation as
+  downloaded ZIP/content verification.
 
 ## Resume from here
 
-Implement the pure artifact-inventory verifier; then add its tests and
-wire it into the dispatch-only wave summary.
+Inspect CI + Historical Smoke on final PR #70 head; fix causal failures,
+then record final-head results before squash merge. Keep Issue #69 open because
+operator-dispatched 2025 Q3/Q4 source acquisition and governed promotion remain.
 
 ## Completion
 
