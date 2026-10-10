@@ -172,6 +172,9 @@ def verify_inventory(
         else:
             ids.add(aid)
         if not name.startswith(CASH_PREFIX):
+            if name.startswith("okx-btc-"):
+                report["unexpected_artifact_names"].append(name)
+                errors.append(f"unexpected non-Cash preparation artifact: {name}")
             continue  # Control/summary artifacts are not Cash case evidence.
         if name not in expected:
             report["unexpected_artifact_names"].append(name)
