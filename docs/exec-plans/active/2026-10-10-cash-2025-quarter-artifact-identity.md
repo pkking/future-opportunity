@@ -1,7 +1,7 @@
 # Cash 2025 quarter preparation artifact identity gate
 
 Issue: #69
-Status: VERIFYING
+Status: BLOCKED_EVIDENCE
 Owner: agent
 Started: 2026-10-10
 Last checkpoint: 2026-10-10
@@ -66,15 +66,15 @@ unassessed L2/replay/return semantics.
 
 ## Acceptance criteria
 
-- [ ] Offline tests reject missing/extra/duplicate/mismatched artifacts,
+- [x] Offline tests reject missing/extra/duplicate/mismatched artifacts,
       incorrect source run/contract/date, expired/missing digest/empty artifact,
       malformed manifests/API shape; accept exact 12x3 case inventory.
-- [ ] Q3/Q4 workflow gates artifact inventory using committed manifest and
+- [x] Q3/Q4 workflow gates artifact inventory using committed manifest and
       emits status/error evidence even if verification fails.
-- [ ] Workflow remains dispatch-only, read-only, no corpus or promotion writes.
-- [ ] Targeted tests and static check pass.
-- [ ] Full final-head CI, API, E2E and historical smoke pass.
-- [ ] Issue #69 stays open pending actual operator dispatch and evidence.
+- [x] Workflow remains dispatch-only, read-only, no corpus or promotion writes.
+- [x] Targeted tests and static check pass.
+- [x] Full final-head CI, API, E2E and historical smoke pass.
+- [x] Issue #69 stays open pending actual operator dispatch and evidence.
 
 ## Implementation slices
 
@@ -84,18 +84,20 @@ unassessed L2/replay/return semantics.
       (`8546f57`, `4b3c7dc`, `80b3665`, `f5d3fcd`).
 - [x] 3. Wire Q3/Q4 summary job to verify inventory and always upload the
       evidence (including failures) (`0400357`).
-- [ ] 4. Run tests and inspect final GitHub checks; checkpoint with evidence.
+- [x] 4. Run tests and inspect final GitHub checks; checkpoint with evidence.
+      Final reviewed head `f5d7b99`; CI 38047639238 and Historical Smoke
+      38047639302 successful. Squash merged as `695938f` via PR #70.
 
 ## Verification matrix
 
 | Scope | Command / CI gate | Expected evidence | Status |
 |---|---|---|---|
-| Targeted | `uv run pytest tests/test_cash_2025_quarter_artifact_identity.py tests/test_cash_2025_quarter_acquisition_handoff.py -v` | deterministic pass | pending |
-| Static | `uv run ruff check .` | zero violations | pending |
-| Code | `uv run pytest tests --ignore=tests/test_api_smoke.py --ignore=tests/e2e` | CI code-tests | pending |
-| API | `uv run pytest tests/test_api_smoke.py` | CI api-tests | pending |
-| E2E | `uv run pytest tests/e2e -v` | strategy-e2e-evidence artifact | pending |
-| Historical | Historical Backtest Smoke workflow | verified pinned corpus | pending |
+| Targeted | `uv run pytest tests/test_cash_2025_quarter_artifact_identity.py tests/test_cash_2025_quarter_acquisition_handoff.py -v` | code-tests in CI 38047639238 passed | verified |
+| Static | `uv run ruff check .` | static in CI 38047639238 passed | verified |
+| Code | `uv run pytest tests --ignore=tests/test_api_smoke.py --ignore=tests/e2e` | CI 38047639238 passed | verified |
+| API | `uv run pytest tests/test_api_smoke.py` | CI 38047639238 passed | verified |
+| E2E | `uv run pytest tests/e2e -v` | CI 38047639238 E2E success | verified |
+| Historical | Historical Backtest Smoke workflow | 38047639302 success | verified |
 
 ## Decision gates
 
@@ -109,6 +111,9 @@ separate. Do not bypass explicit operator control.
   issue, no open PR, 37809568438 CI and 37809568399 Historical Smoke success.
 - 2026-10-10: Existing summary checks compact *count* only;
   reusable Cash workflow produces prepared/compact/actuals names.
+- 2026-10-10: PR #70 head `f5d7b99`: CI 38047639238 success,
+  Historical Smoke 38047639302 success. Squash merged `695938f`.
+  No Q3/Q4 preparation dispatched; main pinned corpus unchanged.
 
 ## Deviations and discoveries
 
@@ -124,14 +129,27 @@ separate. Do not bypass explicit operator control.
 
 ## Resume from here
 
-Inspect CI + Historical Smoke on final PR #70 head; fix causal failures,
-then record final-head results before squash merge. Keep Issue #69 open because
-operator-dispatched 2025 Q3/Q4 source acquisition and governed promotion remain.
+**Operator boundary (Issue #69, not an agent auto-dispatch):** explicitly run
+`gh workflow run prepare-cash-2025-quarter-wave.yml -R pkking/future-opportunity -f wave=q3`
+against current `main`. Audit the job result, per-date structured
+`cash-2025-quarter-summary-q3` artifact inventory, and actual preparation
+evidence; preserve exact failed/missing dates. Only after Q3 review, explicitly
+dispatch `wave=q4` with the same workflow and verify its 12 cases.
+
+If both complete successfully, independently run the read-only historical
+campaign planner with their **exact successful source run IDs**. Check all 24
+parent SHA-256 digests, frozen dates, normalized L2, execution actuals and
+exclusions. Governed promotion is a separate operator workflow and PR.
+Do not count any cases as pinned before successful review and corpus CI.
 
 ## Completion
 
-Final commit: pending
-CI run: pending
-E2E artifact: pending
-Remaining unassessed items: real Q3/Q4 archives, L2 content, completed
-operator-dispatched runs, planner and promotion evidence.
+Final reviewed head: `f5d7b993ba32df53a731f053a0b8f6dd80f54b21`
+Squash merge: `695938fda2094b63b941b93ce7e0926bb815cd17` (PR #70)
+CI run: https://github.com/pkking/future-opportunity/actions/runs/38047639238 (success)
+Historical Smoke: https://github.com/pkking/future-opportunity/actions/runs/38047639302 (success)
+E2E: strategy-e2e-evidence uploaded by 38047639238 (strategy acceptance success)
+Remaining unassessed items: actual Q3/Q4 source ZIP contents, exact L2 snapshots,
+operator-dispatched wave run IDs, planner evidence and governed promotion.
+Issue #69 is deliberately OPEN. The task is blocked on operator source evidence,
+not completed. Plan stays active.
