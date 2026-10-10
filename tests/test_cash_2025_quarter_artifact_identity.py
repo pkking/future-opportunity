@@ -4,13 +4,12 @@ from __future__ import annotations
 
 import copy
 import json
+import runpy
 import subprocess
 import sys
 from pathlib import Path
 
 import pytest
-
-from scripts.verify_cash_2025_quarter_artifacts import verify_inventory
 
 
 ROOT = Path(__file__).parents[1]
@@ -18,6 +17,7 @@ PLANS = ROOT / "docs/historical-acquisition-plans"
 WORKFLOW = ROOT / ".github/workflows/prepare-cash-2025-quarter-wave.yml"
 SCRIPT = ROOT / "scripts/verify_cash_2025_quarter_artifacts.py"
 RUN_ID = "38000000123"
+verify_inventory = runpy.run_path(str(SCRIPT))["verify_inventory"]
 
 
 def make_inputs(wave: str) -> tuple[dict, dict]:
