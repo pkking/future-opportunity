@@ -61,14 +61,14 @@ read-only diagnostic aid and does not make any new samples commit-ready.
       beyond the first 3 is found, and verifies correct reported side/size,
       counts, bounds, and continued fail-closed replay.
 - [x] Final-head static, code, API, E2E and historical CI gates pass.
-- [ ] Merge and post-merge main CI evidence recorded.
+- [x] Merge and post-merge main CI evidence recorded.
 
 ## Implementation slices
 
 - [x] 1. Extend diagnostic extractor to inspect the full first event and
       produce bounded per-side anomaly evidence.
 - [x] 2. Add synthetic deeper-price and malformed-level regression tests.
-- [ ] 3. Verify CI, record exact head/results, merge on approved clean PR,
+- [x] 3. Verify CI, record exact head/results, merge on approved clean PR,
       verify main; leave Issue #69 open pending new operator source evidence.
 
 ## Verification matrix
@@ -92,7 +92,12 @@ levels, format documentation, a new regression contract, and review.
 
 - 2026-10-15: downloaded and read ZIP artifact 11959004684. `entry_future`
   failed; first three prices are nonzero; observed 400 bid and ask levels.
-- No exact offending `[price,size,orderCount]` tuple is yet available.
+- No exact offending `[price,size,orderCount]` tuple is yet available;
+  a **new** operator-run artifact is required. PR #74 completion is an
+  implementation milestone, not successful market-data preparation.
+- 2026-10-15: PR #74 final head `14e19a6` passed CI 38710879648 and
+  Historical Smoke 38710879663; squash merged `bc27e44`, post-merge
+  CI 38710975850 passed.
 - First code implementation includes full 400-level index traversal with a cap
   of 8 representative anomalies per book side; the replay gate is unchanged.
   PR #74 head `566f7a0aab0323c50899cb3d7b69096de9744439` CI
@@ -102,14 +107,33 @@ levels, format documentation, a new regression contract, and review.
 
 ## Resume from here
 
-Add capped anomaly evidence to `okx_l2_diagnostics.py` with tests. Ship through
-PR linked to Issue #69. When on main, operator may re-dispatch the **same
-one-case diagnostic only** to obtain level indices and raw values. Do not
-re-run the frozen 12-date Q3 wave until reviewed normalization/source resolution.
+**Blocked on exchange source evidence, not code.** The deep-level diagnostic
+is merged on main at `bc27e44`. Operator should re-dispatch only the exact
+single-case *diagnostic* (not the frozen Q3 wave):
+```bash
+gh workflow run prepare-cash-historical-fixture.yml -R pkking/future-opportunity --ref main \
+  -f entry_at=2025-07-04T00:15:00+00:00 \
+  -f exit_at=2025-09-25T00:15:00+00:00 \
+  -f future_id=BTC-USDT-250926 \
+  -f expiry_at=2025-09-26T08:00:00+00:00
+```
+After this diagnostic-only run, inspect the new ZIP artifact
+`cash-l2-diagnostics-2025-07-04-*` / `entry_future.json` for
+`levels.bids.first_price_anomalies`, `levels.asks.first_price_anomalies`
+and `price_anomaly_counts`, checking exact index and source size. This
+single-case run omits frozen selection provenance and **is not promotable**.
+Determine documented OKX semantics for invalid/zero prices and decide the
+minimal independently reviewed parser contract change or explicit source
+rejection. Only once Q3 genuinely prepares and audits all 12 frozen cases
+may the operator trigger Q4. Keep Issue #69 open until source validation.
 
 ## Completion
 
 Initial fully green review head: `566f7a0aab0323c50899cb3d7b69096de9744439` (PR #74).
 CI 38710698213 success; Historical Smoke 38710698154 success.
-Merge and post-merge main CI: pending.
+Final head: `14e19a6d53ba5dadf8cca15f4ff511f9b82d295f`.
+Final-head CI: https://github.com/pkking/future-opportunity/actions/runs/38710879648 (success).
+Final-head Historical Smoke: https://github.com/pkking/future-opportunity/actions/runs/38710879663 (success).
+PR #74 squash merged: `bc27e44bc8b10e2b41ab87723ddd5beae83f8566`.
+Post-merge main CI: https://github.com/pkking/future-opportunity/actions/runs/38710975850 (success).
 Issue #69 stays open. No 2025 Q3 source case promoted.
