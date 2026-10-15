@@ -121,6 +121,14 @@ jobs:
           path: artifacts/cash-historical-fixture/compact/
           if-no-files-found: error
 
+      - name: Upload bounded L2 normalization diagnostics on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cash-l2-diagnostics-${{ steps.identity.outputs.entry_market_date }}-${{ env.CASH_FUTURE_ID }}-${{ github.run_id }}
+          path: artifacts/cash-historical-fixture/diagnostics/*.json
+          if-no-files-found: ignore
+
       - name: Upload actuals
         if: always()
         uses: actions/upload-artifact@v4
