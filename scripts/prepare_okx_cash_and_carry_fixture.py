@@ -18,6 +18,9 @@ from future_opportunity.adapters.historical.okx_catalog import (
     OkxHistoricalCatalogQuery,
     parse_okx_history_catalog,
 )
+from future_opportunity.adapters.historical.okx_l2_diagnostics import (
+    inspect_first_l2_record,
+)
 from future_opportunity.adapters.historical.okx_l2 import (
     iter_okx_l2_sampled_archive,
     okx_l2_archive_member_name,
@@ -230,18 +233,59 @@ def prepare_component(
     )
 
     output_path = OUTPUT / f"{name}.jsonl"
-    summary = write_canonical_order_books(
-        iter_okx_l2_sampled_archive(
-            raw_path,
-            instrument_type=instrument_type,
-            expected_instrument_id=expected_id,
-            start=sample_at,
-            end=sample_at,
-            cadence=timedelta(minutes=15),
-            metadata=metadata,
-        ),
-        output_path,
-    )
+    try:
+        summary = write_canonical_order_books(
+            iter_okx_l2_sampled_archive(
+                raw_path,
+                instrument_type=instrument_type,
+                expected_instrument_id=expected_id,
+                start=sample_at,
+                end=sample_at,
+                cadence=timedelta(minutes=15),
+                metadata=metadata,
+            ),
+            output_path,
+        )
+    except Exception as error:
+        # Preserve the original normalization failure. Metadata alone does
+        # not establish that a zero price is an OKX-approved sentinel.
+        diagnostic: dict[str, Any]
+        try:
+            diagnostic = inspect_first_l2_record(
+                raw_path,
+                member_name=member,
+                expected_instrument_id=expected_id,
+                component=name,
+                sample_at=sample_at.isoformat(),
+                raw_sha256=raw_sha,
+                downloaded_bytes=raw_bytes,
+            )
+        except Exception as probe_error:
+            diagnostic = {
+                "schema_version": 1,
+                "evidence_type": "okx_l2_first_record_diagnostic",
+                "component": name,
+                "expected_instrument_id": expected_id,
+                "sample_at": sample_at.isoformat(),
+                "archive_filename": raw_path.name,
+                "archive_member": member,
+                "raw_sha256": raw_sha,
+                "downloaded_bytes": raw_bytes,
+                "diagnostic_only": True,
+                "normalization_succeeded": False,
+                "probe_error": str(probe_error),
+            }
+        diagnostic["normalization_error"] = {
+            "type": type(error).__name__,
+            "message": str(error),
+        }
+        diagnostic_dir = OUTPUT / "diagnostics"
+        diagnostic_dir.mkdir(parents=True, exist_ok=True)
+        (diagnostic_dir / f"{name}.json").write_text(
+            json.dumps(diagnostic, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        raise
     if summary.sample_count != 1:
         raise RuntimeError(
             f"{name} expected exactly one sampled book, "
