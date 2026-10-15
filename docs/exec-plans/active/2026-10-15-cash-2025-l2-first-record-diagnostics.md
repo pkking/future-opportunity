@@ -58,7 +58,7 @@ Do not reinterpret or silently drop invalid book prices.
       `contents: read`, even if preparation fails.
 - [x] Offline tests prove diagnostic contents/failure behavior on a controlled
       synthetic tar.gz with first-level zero price and malformed records.
-- [ ] Final-head CI, API, E2E and pinned Historical Smoke pass.
+- [x] Final-head CI, API, E2E and pinned Historical Smoke pass.
 
 ## Implementation slices
 
@@ -67,19 +67,19 @@ Do not reinterpret or silently drop invalid book prices.
 - [x] 2. Guard canonical normalization in Cash preparer; preserve failed
       diagnostic JSON and original exception.
 - [x] 3. Add always-upload diagnostic artifact step and focused contract tests.
-- [ ] 4. Verify final PR head, merge and verify main; archive this
-      implementation-only task after proof, but preserve Q3 open in Issue #69.
+- [x] 4. Verify final PR head, merge and verify main; preserve Q3 open
+      because source-record semantics remain unassessed.
 
 ## Verification matrix
 
 | Scope | Verification | Evidence |
 |---|---|---|
-| Targeted | `uv run pytest tests/test_cash_l2_failure_diagnostics.py -v` | pending |
-| Static | `uv run ruff check .` | pending |
-| Code | full repository code-tests | pending |
-| API | REST contract CI | pending |
-| E2E | deterministic strategy acceptance | pending |
-| Historical | pinned offline replay | pending |
+| Targeted | `uv run pytest tests/test_cash_l2_failure_diagnostics.py -v` | CI 38694448296 code-tests success |
+| Static | `uv run ruff check .` | CI 38694448296 success |
+| Code | full repository code-tests | CI 38694448296 success |
+| API | REST contract CI | CI 38694448296 success |
+| E2E | deterministic strategy acceptance | CI 38694448296 success |
+| Historical | pinned offline replay | 38694448328 success |
 
 ## Evidence log
 
@@ -93,6 +93,9 @@ Do not reinterpret or silently drop invalid book prices.
   failure-only evidence upload and synthetic negative regression tests.
   First review head `234a841`: checks from runs 38694317455 and
   38694317448 passed (plan, static, code, API, E2E, historical).
+- 2026-10-15: final head `cea5c74` CI 38694448296 and Historical Smoke
+  38694448328 success, squash merged `f50502b`; main CI
+  38694577221 success. No post-merge 2025 Q3 source diagnostic run yet.
 - Parser enforces strictly positive prices and non-negative sizes. This gate
   must remain intact absent raw-data evidence and accepted policy.
 
@@ -104,12 +107,27 @@ separate review. Operator dispatch remains explicit.
 
 ## Resume from here
 
-Verify PR #72 final-head CI and Historical Smoke, squash merge safely;
-verify post-merge main CI. Update Issue #69 with the run 38693593014
-(12/12 failures) and merged diagnostic code. Do not self-dispatch Q3/Q4.
-An operator may rerun the frozen Q3 wave after diagnostic changes reach main.
-Inspect its new `cash-l2-diagnostics-*` artifacts to establish exact
-first-line source evidence before any separate parser-policy change.
+The current issue is **source evidence**, not code deployment. To conserve
+12 repeated failures, ask an operator to explicitly dispatch a *single*
+diagnostic-only Cash fixture using the already-supported workflow:
+```bash
+gh workflow run prepare-cash-historical-fixture.yml -R pkking/future-opportunity --ref main \
+  -f entry_at=2025-07-04T00:15:00+00:00 \
+  -f exit_at=2025-09-25T00:15:00+00:00 \
+  -f future_id=BTC-USDT-250926 \
+  -f expiry_at=2025-09-26T08:00:00+00:00
+```
+The above single-case diagnostic omits the frozen selection-provenance input
+and therefore **must never be promoted** as historical evidence. It exists
+solely to capture a reproducible first-record failure artifact.
+Once the run finishes, inspect `cash-l2-diagnostics-2025-07-04-*`
+for raw archive/member identity, SHA-256 and bounded first-record levels.
+If the raw data contradicts the parser contract, first establish official OKX
+format semantics and regression test before any change to strict positivity.
+Otherwise record source-invalid/unassessed and do not replace frozen dates.
+After any reviewed resolution, rerun the *frozen* Q3 full wave, check its exact
+12x3 artifacts and actuals, then consider Q4 and independent planning.
+Do not self-dispatch Q3/Q4 or promote during diagnosis.
 
 ## Completion
 
