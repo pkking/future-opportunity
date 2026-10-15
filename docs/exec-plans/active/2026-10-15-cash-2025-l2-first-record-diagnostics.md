@@ -1,7 +1,7 @@
 # Cash 2025 Q3 initial L2 record diagnosis
 
 Issue: #69
-Status: IMPLEMENTING
+Status: BLOCKED_EVIDENCE
 Owner: agent
 Started: 2026-10-15
 Last checkpoint: 2026-10-15
@@ -48,24 +48,27 @@ Do not reinterpret or silently drop invalid book prices.
 
 ## Acceptance criteria
 
-- [ ] On normalization failure, write bounded diagnostic JSON that identifies
+- [x] On normalization failure, write bounded diagnostic JSON that identifies
       component, UTC market sample, exact expected instrument, raw archive
       filename/member, bytes/SHA-256 and first-record action/ts/level counts
       and bounded bid/ask preview, without recording presigned source URLs.
-- [ ] Diagnostic capture never masks the original error, nor converts failed
+- [x] Diagnostic capture never masks the original error, nor converts failed
       preparation into success; no raw archive files committed or uploaded.
-- [ ] Workflow uploads diagnostic evidence with `if: always()` and limited
+- [x] Workflow uploads diagnostic evidence with `if: always()` and limited
       `contents: read`, even if preparation fails.
-- [ ] Offline tests prove diagnostic contents/failure behavior on a controlled
+- [x] Offline tests prove diagnostic contents/failure behavior on a controlled
       synthetic tar.gz with first-level zero price and malformed records.
 - [ ] Final-head CI, API, E2E and pinned Historical Smoke pass.
 
 ## Implementation slices
 
-- [ ] 1. Write an explicit first-record diagnostic extractor.
-- [ ] 2. Guard normalization in Cash preparer; preserve diagnostics on failure.
-- [ ] 3. Add always-upload artifact step and focused contract tests.
-- [ ] 4. Run final-head checks, archive evidence or leave active if pending.
+- [x] 1. Add bounded first-record diagnostic extractor in
+      `src/future_opportunity/adapters/historical/okx_l2_diagnostics.py`.
+- [x] 2. Guard canonical normalization in Cash preparer; preserve failed
+      diagnostic JSON and original exception.
+- [x] 3. Add always-upload diagnostic artifact step and focused contract tests.
+- [ ] 4. Verify final PR head, merge and verify main; archive this
+      implementation-only task after proof, but preserve Q3 open in Issue #69.
 
 ## Verification matrix
 
@@ -80,10 +83,16 @@ Do not reinterpret or silently drop invalid book prices.
 
 ## Evidence log
 
-- 2026-10-15: run 38693593014; 2025-07-04 job 116285061210 and
-  2025-07-11 job 116285061294 have identical first-line non-positive
-  price errors. The exact invalid level and raw archive provenance were
-  not logged in those runs.
+- 2026-10-15: Q3 run 38693593014 completed **failure**: 12/12 Cash
+  preparation matrix jobs failed; 0 prepared/compact/actuals data pairs,
+  no corpus growth. Two resolve jobs passed. Jobs 116285061210 and
+  116285061294 independently reproduce `historical price must be positive
+  at line 1`; the entry_spot component comes first. Inspected another
+  failed job 116285552725 showing the same stack.
+- 2026-10-15: PR #72 adds an explicit bounded first-record diagnostic,
+  failure-only evidence upload and synthetic negative regression tests.
+  First review head `234a841`: checks from runs 38694317455 and
+  38694317448 passed (plan, static, code, API, E2E, historical).
 - Parser enforces strictly positive prices and non-negative sizes. This gate
   must remain intact absent raw-data evidence and accepted policy.
 
@@ -95,15 +104,18 @@ separate review. Operator dispatch remains explicit.
 
 ## Resume from here
 
-Implement extractor and failure-upload contract. Once CI passes, merge
-diagnostics only; record Run 38693593014's terminal outcome in Issue #69.
-The operator can rerun frozen Q3 after the diagnostic change is on main.
-Use the diagnostic artifact to determine if raw data is invalid or a
-documented record encoding requires a separate parser fix.
+Verify PR #72 final-head CI and Historical Smoke, squash merge safely;
+verify post-merge main CI. Update Issue #69 with the run 38693593014
+(12/12 failures) and merged diagnostic code. Do not self-dispatch Q3/Q4.
+An operator may rerun the frozen Q3 wave after diagnostic changes reach main.
+Inspect its new `cash-l2-diagnostics-*` artifacts to establish exact
+first-line source evidence before any separate parser-policy change.
 
 ## Completion
 
-Final reviewed head: pending
-CI: pending
-Historical Smoke: pending
-Unassessed: exact first raw record and Q3 source-content correctness.
+Review head so far: `234a8410417f4264f95a6f57b8c1799bb116f202`
+CI: https://github.com/pkking/future-opportunity/actions/runs/38694317455
+Historical Smoke: https://github.com/pkking/future-opportunity/actions/runs/38694317448
+Final merge/post-merge evidence: pending
+Unassessed: exact first raw record, meaning of zero-priced level, and Q3
+source-content correctness. Issue #69 stays OPEN, no data promotion.
