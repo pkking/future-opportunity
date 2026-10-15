@@ -1,7 +1,7 @@
 # Cash 2025 Q3 deep-book non-positive price diagnosis
 
 Issue: #69
-Status: IMPLEMENTING
+Status: BLOCKED_EVIDENCE
 Owner: agent
 Started: 2026-10-15
 Last checkpoint: 2026-10-15
@@ -60,8 +60,8 @@ read-only diagnostic aid and does not make any new samples commit-ready.
 - [x] Synthetic 400-level regression proves a first invalid price at index
       beyond the first 3 is found, and verifies correct reported side/size,
       counts, bounds, and continued fail-closed replay.
-- [ ] Final-head static, code, API, E2E and historical CI gates pass; merge and
-      post-merge main CI evidence recorded.
+- [x] Final-head static, code, API, E2E and historical CI gates pass.
+- [ ] Merge and post-merge main CI evidence recorded.
 
 ## Implementation slices
 
@@ -75,12 +75,12 @@ read-only diagnostic aid and does not make any new samples commit-ready.
 
 | Gate | Command / evidence | Status |
 |---|---|---|
-| Targeted | `uv run pytest tests/test_cash_l2_failure_diagnostics.py -v` | pending |
-| Static | `uv run ruff check .` | pending |
-| Code | `uv run pytest tests --ignore=tests/test_api_smoke.py --ignore=tests/e2e` | pending |
-| API | `uv run pytest tests/test_api_smoke.py` | pending |
-| E2E | `uv run pytest tests/e2e -v` | pending |
-| Historical | Historical Backtest Smoke pinned offline replay | pending |
+| Targeted | `uv run pytest tests/test_cash_l2_failure_diagnostics.py -v` | code-level tests 38710698213 success |
+| Static | `uv run ruff check .` | 38710698213 success |
+| Code | `uv run pytest tests --ignore=tests/test_api_smoke.py --ignore=tests/e2e` | 38710698213 success |
+| API | `uv run pytest tests/test_api_smoke.py` | 38710698213 success |
+| E2E | `uv run pytest tests/e2e -v` | 38710698213 success |
+| Historical | Historical Backtest Smoke pinned offline replay | 38710698154 success |
 
 ## Decision gates
 
@@ -95,7 +95,10 @@ levels, format documentation, a new regression contract, and review.
 - No exact offending `[price,size,orderCount]` tuple is yet available.
 - First code implementation includes full 400-level index traversal with a cap
   of 8 representative anomalies per book side; the replay gate is unchanged.
-  CI must validate the actual test run before this is complete.
+  PR #74 head `566f7a0aab0323c50899cb3d7b69096de9744439` CI
+  [38710698213](https://github.com/pkking/future-opportunity/actions/runs/38710698213)
+  and Historical Smoke [38710698154](https://github.com/pkking/future-opportunity/actions/runs/38710698154)
+  both succeeded for plan/static/code/API/E2E/historical gates.
 
 ## Resume from here
 
@@ -106,5 +109,7 @@ re-run the frozen 12-date Q3 wave until reviewed normalization/source resolution
 
 ## Completion
 
-Pending final reviewed head, CI, Historical Smoke, main.
+Initial fully green review head: `566f7a0aab0323c50899cb3d7b69096de9744439` (PR #74).
+CI 38710698213 success; Historical Smoke 38710698154 success.
+Merge and post-merge main CI: pending.
 Issue #69 stays open. No 2025 Q3 source case promoted.
