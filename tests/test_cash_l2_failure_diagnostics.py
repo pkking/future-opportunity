@@ -6,6 +6,7 @@ import io
 import json
 import runpy
 import shutil
+from decimal import Decimal
 import tarfile
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -19,6 +20,7 @@ from future_opportunity.adapters.historical.okx_l2 import (
 from future_opportunity.adapters.historical.okx_l2_diagnostics import (
     inspect_first_l2_record,
 )
+from future_opportunity.backtest.model import HistoricalInstrumentMetadata
 
 
 ROOT = Path(__file__).parents[1]
@@ -187,3 +189,103 @@ def test_workflow_uploads_failure_diagnostics_and_remains_read_only() -> None:
     assert "contents: read" in text
     assert "contents: write" not in text
     assert "gh pr create" not in text
+
+
+
+def test_deep_400_level_futures_snapshot_reports_offending_indices_bounded(
+    tmp_path: Path,
+) -> None:
+    """The initial three prices may be valid even when deeper levels are not."""
+    bids = [
+        [str(110000 - index), "0.02", "1"] for index in range(400)
+    ]
+    asks = [
+        [str(110001 + index), "0.03", "2"] for index in range(400)
+    ]
+    for index in range(380, 392):
+        bids[index] = ["0", "0", "0"]
+    asks[399] = ["-1", "2.28", "1"]
+
+    raw = (
+        json.dumps(
+            {
+                "instId": "BTC-USDT-250926",
+                "action": "snapshot",
+                "ts": str(int(STAMP.timestamp() * 1000)),
+                "bids": bids,
+                "asks": asks,
+            }
+        ) + "\n"
+    ).encode()
+    member_name = "BTC-USDT-250926-L2orderbook-400lv-2025-07-04.data"
+    path = tmp_path / "BTC-USDT-futureschain-L2orderbook-400lv-2025-07-04.tar.gz"
+    with tarfile.open(path, "w:gz") as tar:
+        info = tarfile.TarInfo(member_name)
+        info.size = len(raw)
+        tar.addfile(info, io.BytesIO(raw))
+
+    data = path.read_bytes()
+    view = inspect_first_l2_record(
+        path, member_name=member_name,
+        expected_instrument_id="BTC-USDT-250926",
+        component="entry_future", sample_at=STAMP.isoformat(),
+        raw_sha256=hashlib.sha256(data).hexdigest(),
+        downloaded_bytes=len(data),
+    )
+    assert view["first_line_sha256"] == hashlib.sha256(raw).hexdigest()
+    bid_report = view["levels"]["bids"]
+    ask_report = view["levels"]["asks"]
+    assert bid_report["count"] == 400
+    assert ask_report["count"] == 400
+    assert bid_report["first_three_levels"][0][0] == "110000"
+    assert bid_report["price_anomaly_counts"]["nonpositive_price"] == 12
+    assert ask_report["price_anomaly_counts"]["nonpositive_price"] == 1
+    assert bid_report["price_anomaly_example_limit"] == 8
+    assert len(bid_report["first_price_anomalies"]) == 8
+    assert bid_report["first_price_anomalies"][0] == {
+        "level_index_zero_based": 380,
+        "reason": "nonpositive_price",
+        "raw_level": ["0", "0", "0"],
+    }
+    assert ask_report["first_price_anomalies"] == [{
+        "level_index_zero_based": 399,
+        "reason": "nonpositive_price",
+        "raw_level": ["-1", "2.28", "1"],
+    }]
+    assert len(json.dumps(view)) < 5500
+
+    # The new diagnostic does not modify or bypass normal replay.
+    with pytest.raises(ValueError, match="historical price must be positive"):
+        list(iter_okx_l2_sampled_archive(
+            path, instrument_type="FUTURES",
+            expected_instrument_id="BTC-USDT-250926", start=STAMP, end=STAMP,
+            cadence=timedelta(minutes=15),
+            metadata=HistoricalInstrumentMetadata(
+                instrument_id="BTC-USDT-250926",
+                instrument_family="BTC-USDT",
+                instrument_type="FUTURES",
+                contract_value=Decimal("0.01"),
+                contract_multiplier=Decimal(1),
+                contract_value_currency="BTC",
+                settlement_currency="USDT",
+                list_time=None,
+                expiry_time=STAMP + timedelta(days=80),
+            ),
+        ))
+
+
+def test_invalid_price_category_classification_and_value_bound() -> None:
+    from future_opportunity.adapters.historical.okx_l2_diagnostics import (
+        _bounded_level, _level_price_anomaly,
+    )
+
+    assert _level_price_anomaly(["0", "0", "0"]) == "nonpositive_price"
+    assert _level_price_anomaly(["-1", "0", "0"]) == "nonpositive_price"
+    assert _level_price_anomaly(["NaN", "0", "0"]) == "nonfinite_price"
+    assert _level_price_anomaly(["Infinity", "0", "0"]) == "nonfinite_price"
+    assert _level_price_anomaly(["not-a-price", "0", "0"]) == "invalid_price"
+    assert _level_price_anomaly([0, "0", "0"]) == "invalid_price"
+    assert _level_price_anomaly(["100", "0"]) == "invalid_level_shape"
+    assert _level_price_anomaly(["100", "0", "0"]) is None
+    assert _bounded_level(["4" * 500, "0", "0"])[0].endswith("[truncated]")
+    assert len(_bounded_level(["4" * 500, "0", "0"])[0]) < 120
