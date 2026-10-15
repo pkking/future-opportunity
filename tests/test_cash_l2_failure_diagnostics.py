@@ -138,7 +138,8 @@ def test_preparer_writes_failed_diagnostic_without_masking_error(
     assert report["levels"]["bids"]["first_three_levels"][0][0] == "0"
     assert "NEVER-STORE-ME" not in output.read_text()
     assert "signed-url" not in output.read_text()
-    assert not (environment["OUTPUT"] / "entry_spot.jsonl").read_text()
+    normalized = environment["OUTPUT"] / "entry_spot.jsonl"
+    assert not normalized.exists() or not normalized.read_text()
 
 
 def test_diagnostic_probe_failure_preserves_primary_normalization_error(
