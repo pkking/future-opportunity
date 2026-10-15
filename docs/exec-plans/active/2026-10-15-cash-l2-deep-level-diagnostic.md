@@ -48,16 +48,16 @@ read-only diagnostic aid and does not make any new samples commit-ready.
 
 ## Acceptance criteria
 
-- [ ] Inspect every level of the **first nonblank source event** on both sides;
+- [x] Inspect every level of the **first nonblank source event** on both sides;
       report all detected nonpositive price counts, out-of-range/non-numeric
       category counts, and bounded offending examples with side, zero-based
       index, raw `[price,size,orderCount]` and reason.
-- [ ] Keep output bounded (at most 8 offending examples per side and capped
+- [x] Keep output bounded (at most 8 offending examples per side and capped
       field lengths), deterministic, JSON-serializable; preserve first three
       levels for continuity with the existing evidence schema.
-- [ ] Never mask or alter the original normalization failure; no source URLs,
+- [x] Never mask or alter the original normalization failure; no source URLs,
       raw archive contents, or strategy semantics change.
-- [ ] Synthetic 400-level regression proves a first invalid price at index
+- [x] Synthetic 400-level regression proves a first invalid price at index
       beyond the first 3 is found, and verifies correct reported side/size,
       counts, bounds, and continued fail-closed replay.
 - [ ] Final-head static, code, API, E2E and historical CI gates pass; merge and
@@ -65,9 +65,9 @@ read-only diagnostic aid and does not make any new samples commit-ready.
 
 ## Implementation slices
 
-- [ ] 1. Extend diagnostic extractor to inspect the full first event and
+- [x] 1. Extend diagnostic extractor to inspect the full first event and
       produce bounded per-side anomaly evidence.
-- [ ] 2. Add synthetic deeper-price and malformed-level regression tests.
+- [x] 2. Add synthetic deeper-price and malformed-level regression tests.
 - [ ] 3. Verify CI, record exact head/results, merge on approved clean PR,
       verify main; leave Issue #69 open pending new operator source evidence.
 
@@ -93,6 +93,9 @@ levels, format documentation, a new regression contract, and review.
 - 2026-10-15: downloaded and read ZIP artifact 11959004684. `entry_future`
   failed; first three prices are nonzero; observed 400 bid and ask levels.
 - No exact offending `[price,size,orderCount]` tuple is yet available.
+- First code implementation includes full 400-level index traversal with a cap
+  of 8 representative anomalies per book side; the replay gate is unchanged.
+  CI must validate the actual test run before this is complete.
 
 ## Resume from here
 
