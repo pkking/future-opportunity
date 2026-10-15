@@ -5,7 +5,6 @@ Diagnostics only: never repair, drop, or interpret an order-book level.
 from __future__ import annotations
 
 import hashlib
-import io
 import json
 import tarfile
 from pathlib import Path
