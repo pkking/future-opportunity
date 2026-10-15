@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from decimal import Decimal, InvalidOperation
 import tarfile
 from pathlib import Path
 from typing import Any
@@ -77,9 +78,65 @@ def inspect_first_l2_record(
         if not isinstance(levels, list):
             view["levels"][side] = {"shape": type(levels).__name__}
             continue
-        # Do not dump entire source lines (some contain hundreds of levels).
+        anomaly_counts = {
+            "nonpositive_price": 0,
+            "nonfinite_price": 0,
+            "invalid_price": 0,
+            "invalid_level_shape": 0,
+        }
+        first_anomalies: list[dict[str, Any]] = []
+        # Analyze all prices, but publish at most eight bounded examples
+        # per side. This is evidence, not replay or source correction.
+        for index, level in enumerate(levels):
+            reason = _level_price_anomaly(level)
+            if reason is None:
+                continue
+            anomaly_counts[reason] += 1
+            if len(first_anomalies) < 8:
+                first_anomalies.append(
+                    {
+                        "level_index_zero_based": index,
+                        "reason": reason,
+                        "raw_level": _bounded_level(level),
+                    }
+                )
         view["levels"][side] = {
             "count": len(levels),
-            "first_three_levels": levels[:3],
+            "first_three_levels": [_bounded_level(x) for x in levels[:3]],
+            "price_anomaly_counts": anomaly_counts,
+            "price_anomaly_example_limit": 8,
+            "first_price_anomalies": first_anomalies,
         }
     return view
+
+
+def _level_price_anomaly(level: Any) -> str | None:
+    if not isinstance(level, list) or len(level) != 3:
+        return "invalid_level_shape"
+    raw_price = level[0]
+    if not isinstance(raw_price, str):
+        return "invalid_price"
+    try:
+        price = Decimal(raw_price)
+    except InvalidOperation:
+        return "invalid_price"
+    if not price.is_finite():
+        return "nonfinite_price"
+    if price <= 0:
+        return "nonpositive_price"
+    return None
+
+
+def _bounded_level(level: Any) -> Any:
+    """Keep the visible raw tuple for ordinary records; cap anomalous fields."""
+    if not isinstance(level, list):
+        return _bounded_field(level)
+    return [_bounded_field(value) for value in level[:3]]
+
+
+def _bounded_field(value: Any) -> str:
+    if isinstance(value, str):
+        text = value
+    else:
+        text = str(value)
+    return text if len(text) <= 96 else text[:96] + "...[truncated]"

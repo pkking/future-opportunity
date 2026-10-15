@@ -37,8 +37,11 @@ Do not reinterpret or silently drop invalid book prices.
   https://github.com/pkking/future-opportunity/actions/runs/38693593014
   on main `811ab34a9da3e8d21147ff94ae48319c038626f2`.
 - Frozen Q3 resolve and acquisition manifest validation succeeded.
-- 2025-07-04, 2025-07-11 and subsequent Cash cases fail while preparing the
-  **first** component `entry_spot`, prior to `entry_future`/exit evidence.
+- 2025-07-04, 2025-07-11 and subsequent Cash cases failed in the initial
+  2025 Q3 wave; the exact failing component could not be determined from
+  those workflow logs alone. The later single-case diagnostic run
+  38709843446 proves the 2025-07-04 failure is in **entry_future**, after
+  the preceding entry_spot component completed.
 - Exact causal stack: `iter_okx_l2_sampled_jsonl` ->
   `_apply_levels` -> `_positive_decimal`; observed error
   `ValueError: historical price must be positive at line 1`.
@@ -87,7 +90,8 @@ Do not reinterpret or silently drop invalid book prices.
   preparation matrix jobs failed; 0 prepared/compact/actuals data pairs,
   no corpus growth. Two resolve jobs passed. Jobs 116285061210 and
   116285061294 independently reproduce `historical price must be positive
-  at line 1`; the entry_spot component comes first. Inspected another
+  at line 1`; the logs lacked a specific component identifier, and the
+  prior inference that entry_spot failed was incorrect. Inspected another
   failed job 116285552725 showing the same stack.
 - 2026-10-15: PR #72 adds an explicit bounded first-record diagnostic,
   failure-only evidence upload and synthetic negative regression tests.
@@ -96,6 +100,11 @@ Do not reinterpret or silently drop invalid book prices.
 - 2026-10-15: final head `cea5c74` CI 38694448296 and Historical Smoke
   38694448328 success, squash merged `f50502b`; main CI
   38694577221 success. No post-merge 2025 Q3 source diagnostic run yet.
+- 2026-10-15: single-case diagnostic run 38709843446 uploaded `entry_future.json`
+  (artifact 11959004684): BTC-USDT-250926 initial snapshot has 400 bids
+  and 400 asks; all first three quoted prices per side are positive. Thus
+  the first nonpositive price lies deeper than the first three levels.
+  See `2026-10-15-cash-l2-deep-level-diagnostic.md` for this follow-up.
 - Parser enforces strictly positive prices and non-negative sizes. This gate
   must remain intact absent raw-data evidence and accepted policy.
 
