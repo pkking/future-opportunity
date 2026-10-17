@@ -244,8 +244,17 @@ and not a selected profitable case.
 - After operator trigger: discover a new `workflow_dispatch` run with exact workflow name, verify `head_sha` and 12-case manifest source, audit all 12 per-case outcomes including failures, compare all 36 expected prepared/compact/actuals artifact names, original SHA/provenance and L2 book consistency. Preserve negative and rejected results; no corpus promotion until separately approved.
 - Status remains `BLOCKED_EVIDENCE` until the authorized run ID and artifacts exist; the open Issue #95 and this active plan retain ownership.
 
+## 2026-10-17 23:28 UTC initial authorized run: source archive size guard
+
+- User-authorized, manually triggered [run 39079100154](https://github.com/pkking/future-opportunity/actions/runs/39079100154), expected main `3b2c9660bf0b22827a2c35e5d80b9619f481281a`. Authorization/resolved 12-case controls succeeded; exact original Actions ZIP hashes and 12 selection identities independently audited.
+- First failing case: 2025-04-09 [job 117532314621](https://github.com/pkking/future-opportunity/actions/runs/39079100154), error `RuntimeError: raw archive exceeded 600 MiB`. No canonical L2 or Actuals for this date. This is an upload/download capacity boundary, **not** a rejected opportunity or negative return.
+- Verified against immutable official module-4 SPOT catalog run 39038071038 artifact 12103210971 SHA256 `1b9a4adcb7035ca4abb70e5a9f1823dc3a71f5e9849070ce59c493df205b57ae`: 2025-04-09 **SPOT 768.01 MB**, FUTURES 350.2 MB. All other 11 selected entry-day SPOT/FUTURES catalog sizes and the fixed 2025-06-26 exit source sizes are under 600 MB. Official declared values do not prove actual compressed sizes or valid L2.
+- Remediation is a scoped, **bounded** technical config change: allow the Q2 manually authorized wrapper to forward a 1024 MiB **per-archive** cap through existing reusable acquisition/fixture workflows; preserve other callers' 600 MiB default, check bounds fail-closed, add regression tests. Never disable bounds, rewrite date sampling, or classify missing data as negative returns. 1024 MiB is a preparation capacity limit, not model evidence.
+- The **one** operator authorization covered run 39079100154, not a repeat. Source acquisition rerun (after any code fix) must have a distinct explicit human approval and manual trigger. No automatic reruns.
+- Existing negative evidence and successful case artifacts remain immutable for this run. Wait for all dates; audit every case separately.
+
 ## Resume from here
-Authorization for one read-only 12-case Cash Q2 historical L2 acquisition is **granted** and preserved in Issue #95. No workflow run has started from this connector. An operator must invoke the existing manual GitHub Actions workflow using the exact input above; once triggered, inspect the actual run, all 12 case outcomes, artifact inventory and independently verifiable L2/provenance before any further gate. **Do not** ask for another acquisition approval and **do not** silently promote corpus or start live trading.
+The first authorized 12-case acquisition is running as Actions run 39079100154. Record complete outcomes and all SHA-verified artifacts; 2025-04-09 failed because its official SPOT archive exceeds the 600MiB guard. Prepare a bounded Q2-specific 1024MiB technical remediation (without changing other callers, source identities or dates), run CI/Smoke, and do not automatically trigger another acquisition. Require a new human decision only for actual additional manual source download.
 
 ## Completion
 Pending audited 2025Q2 population and reviewed acquisition.
