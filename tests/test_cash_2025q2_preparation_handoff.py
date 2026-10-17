@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 import json
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parents[1] / "scripts"))
 
 from scripts.validate_cash_2025q2_preparation_handoff import (
     AUDIT, CORPUS, MANIFEST, REGISTRY, WAVE, validate_handoff,
