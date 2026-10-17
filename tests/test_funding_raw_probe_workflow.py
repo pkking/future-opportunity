@@ -2,13 +2,18 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import importlib.util
 
 import pytest
 
-from scripts import probe_funding_raw_regime_source as probe
-
-
 ROOT = Path(__file__).parents[1]
+spec = importlib.util.spec_from_file_location(
+    "probe_funding_raw_regime_source",
+    ROOT / "scripts/probe_funding_raw_regime_source.py",
+)
+assert spec is not None and spec.loader is not None
+probe = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(probe)
 WORKFLOW = ROOT / ".github/workflows/probe-funding-raw-regime-source.yml"
 SCRIPT = ROOT / "scripts/probe_funding_raw_regime_source.py"
 FROZEN = ROOT / "docs/historical-acquisition-plans/funding-2026-sep-oct-regime-source-windows-v1.json"
