@@ -1,7 +1,7 @@
 # CI compatibility after frozen Cash Q3/Q4 corpus growth
 
 Issue: #69
-Status: IMPLEMENTING
+Status: BLOCKED_DECISION
 Owner: agent
 Started: 2026-10-17
 Last checkpoint: 2026-10-17
@@ -51,42 +51,64 @@ source files, no direct main merge and no trading enablement.
   from an initial, historical pre-promotion test context.
 
 ## Acceptance criteria
-- [ ] Tests inspect the actual pinned corpus; only exact frozen-source
+- [x] Tests inspect the actual pinned corpus; only exact frozen-source
       2025 records may be categorized as already-promoted cohort
       records. Reject missing/altered provenance, wrong future/exit,
       partial atomic cohort, duplicate and unrelated overlap.
-- [ ] Pre-promotion deterministic replay retains the exact 24 frozen
+- [x] Pre-promotion deterministic replay retains the exact 24 frozen
       days and population/sampling proofs. Standalone validator must
       still reject any selected day in its pinned-date argument;
       drift/source tampering/governance negatives stay intact.
-- [ ] Distribution tests reflect 2025 Q3 and Q4 each independently
+- [x] Distribution tests reflect 2025 Q3 and Q4 each independently
       (12 cases, Q3 9 qualified + 3 unqualified, Q4 7 qualified +
       5 unqualified); retain the distinct 2026 quarters and full
       qualification denominator including eight rejected records.
       Reporting_only, unassessed risk/market-wide, reference gate
       disabled remain enforced.
-- [ ] CI final head: static, code-level, API, E2E, Agent plan integrity,
+- [x] CI final head: static, code-level, API, E2E, Agent plan integrity,
       Historical Backtest Smoke success. Leave PR #82 OPEN for explicit
       human review/approval/merge. Main pinned counts unchanged.
 
 ## Implementation slices
-- [ ] 1. Add provenance-aware tests for pre- and post-promotion
+- [x] 1. Add provenance-aware tests for pre- and post-promotion
       freeze replay contexts; never change strict production validator.
-- [ ] 2. Adjust distribution report regression to assert actual 2025
+- [x] 2. Adjust distribution report regression to assert actual 2025
       and preexisting 2026 cohorts and explicit 54/32 proposed counts.
-- [ ] 3. Update this plan with CI evidence, create a final-head
+- [x] 3. Update this plan with CI evidence, create a final-head
       checkpoint and issue comment. No automatic merge.
 
 ## Verification matrix
 | Gate | Evidence | Status |
 |---|---|---|
-| Targeted | `uv run pytest tests/test_cash_prior_quarter_selection.py tests/test_cash_2025_quarter_acquisition_handoff.py tests/test_historical_distribution_report.py -v` | pending |
-| Static | CI static+architecture on PR #82 final head | pending |
-| Code | CI code-level regression | pending |
-| API | CI API contract | pending |
-| E2E | CI E2E strategy acceptance | pending |
-| Plan | CI Agent plan integrity | pending |
-| Historical | CI Offline pinned historical replay | pending |
+| Targeted | Targeted regression paths included in code-level CI 39022005642 | PASS |
+| Static | CI static+architecture, 39022005642 | PASS on initial fixed head |
+| Code | CI 39022005642, 448 passed, 1 warning | PASS on initial fixed head |
+| API | CI 39022005642 | PASS on initial fixed head |
+| E2E | CI 39022005642 | PASS on initial fixed head |
+| Plan | CI 39022005642 | PASS on initial fixed head |
+| Historical | Historical Smoke 39022005591 | PASS on initial fixed head |
+
+## Review checkpoint
+- Original staged branch commit: `dd2d0bfaca84253f59fc627190a0ff42fb7f64e0`.
+- [PR #82](https://github.com/pkking/future-opportunity/pull/82)
+  created from the exact promotion workflow handoff due to GitHub Actions
+  `repository_policy_blocks_actions_pr_creation`.
+- Original PR code-level CI [39021604899](https://github.com/pkking/future-opportunity/actions/runs/39021604899)
+  failed five outdated tests with 443 passed, not a source artifact failure.
+- Fixed initial head `fdecebbb898f9948ddea0519c2841910c2baa18f`:
+  [CI 39022005642](https://github.com/pkking/future-opportunity/actions/runs/39022005642)
+  SUCCESS (448 passed, 1 warning; static, API, E2E, plan integrity all pass),
+  [Historical Smoke 39022005591](https://github.com/pkking/future-opportunity/actions/runs/39022005591)
+  SUCCESS.
+- Production `validate_cash_prior_quarter_preregistration` remains
+  **unchanged** and still rejects pinned overlaps. Test code only
+  reconstructs a historical pre-promotion baseline from source-identical
+  already-pinned fixtures and requires either zero or all 24 cohort
+  items. Tampered or partial promotion remains fail-closed. Historical
+  reporting now explicitly asserts 2025 Q3 (9/3), Q4 (7/5) plus
+  unchanged 2026 cohorts; 8 rejected examples retained.
+- **No main corpus mutation**, no automatic merge, no change to ADR,
+  live trading, reference economics or stage-2 gates.
 
 ## Decision gates
 The user authorized a workflow that stages a review PR, NOT the final
@@ -95,11 +117,16 @@ misinterpret `Stage-2 decision quality ready` as approved economics
 thresholds; no live orders.
 
 ## Resume from here
-Implement tests only, preserve strict production validator, verify
-read-only smoke and CI on exact PR #82 head. If any check fails, inspect
-artifact/log evidence and repair. Once green, record exact reviewed
-head/CI and hand off PR #82 for **human review** without merging.
-Issue #69 stays open until reviewed merge and postmerge corpus proof.
+Regression code and source evidence are ready for reviewer. Confirm
+the final-head CI and Historical Smoke **after this checkpoint**
+before presenting PR #82 for human review. Do not squash merge,
+approve on behalf of the user, replace frozen source dates, activate
+economics gates, or dispatch further promotions. If a check fails,
+inspect and repair. Following explicit human approval and merge,
+verify main CI, corpus-index counts (54 Cash, 32 Funding), source
+identity/provenance and ensure no duplicate or missing dates.
+Issue #69 remains open until that postmerge evidence is recorded.
 
 ## Completion
-Pending.
+Implementation and regression testing complete. Waiting for final-head CI after
+checkpoint, then explicit human review/merge of PR #82 and postmerge main proof.
