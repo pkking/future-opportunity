@@ -21,11 +21,39 @@ INDEX = ROOT / "tests/fixtures/historical/corpus-index.json"
 
 def test_2025_quarter_manifests_replay_exact_source_selection() -> None:
     frozen = json.loads(FROZEN.read_text())
-    pinned = [
-        item["entry_market_date"]
-        for item in json.loads(INDEX.read_text())["entries"]
-        if item["strategy"] == "cash-and-carry"
-    ]
+    # Replaying the *pre-promotion* selection after this wave is merged must
+    # not mistake exact source-matching pinned examples for date-selection
+    # drift. Reject any mismatched source, expiry, exit or partial cohort.
+    selected_by_date = {
+        day: (quarter, Q3 if quarter["quarter"] == "2025-Q3" else Q4)
+        for quarter in frozen["quarters"]
+        for day in quarter["selected_market_dates"]
+    }
+    pinned: list[str] = []
+    promoted: set[str] = set()
+    for item in json.loads(INDEX.read_text())["entries"]:
+        if item["strategy"] != "cash-and-carry":
+            continue
+        day = item["entry_market_date"]
+        if day not in selected_by_date:
+            pinned.append(day)
+            continue
+        quarter, source_manifest_path = selected_by_date[day]
+        staged = json.loads(
+            (ROOT / "tests/fixtures/historical" / item["fixture_path"] / "manifest.json")
+            .read_text()
+        )
+        source = json.loads(source_manifest_path.read_text())
+        assert staged["entry_market_date"] == day
+        assert staged["instrument"]["future_instrument_id"] == quarter["future_id"]
+        assert staged["sample_times"]["entry"] == day + "T00:15:00+00:00"
+        assert staged["sample_times"]["exit"] == quarter["exit_at"]
+        assert staged["selection_provenance"] == source["selection_provenance"]["cash"]
+        promoted.add(day)
+    assert len(set(pinned)) == len(pinned)
+    assert not promoted or promoted == set(selected_by_date), (
+        "frozen cohort must be promoted atomically"
+    )
     selection = validate_cash_prior_quarter_preregistration(
         frozen, pinned_cash_market_dates=pinned,
     )
