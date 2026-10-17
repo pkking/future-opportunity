@@ -1,0 +1,46 @@
+name: Probe Cash Independent Expiry L2
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "scripts/probe_cash_independent_l2.py"
+      - ".github/workflows/probe-cash-independent-l2.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  research-source:
+    name: Research-only complete 2025Q2 four-leg L2 books
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - name: Verify four exact official SPOT/FUTURES book snapshots
+        run: |
+          uv run python scripts/probe_cash_independent_l2.py \
+            --candidate-id 2025q2 \
+            --output-dir artifacts/cash-independent-l2-2025q2
+      - name: Source evidence boundary
+        if: always()
+        shell: bash
+        run: |
+          echo "## Independent Cash 2025Q2 four-book source research" >> "$GITHUB_STEP_SUMMARY"
+          if [[ -f artifacts/cash-independent-l2-2025q2/research-report.json ]]; then
+            jq -r '"Full four-book source: \(.status); max age: \(.max_sampled_book_staleness_ms) ms; acquisition approved: \(.acquisition_approved)."' artifacts/cash-independent-l2-2025q2/research-report.json >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Incomplete source evidence: inspect source-error.json. Do not promote." >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "Research-only source inspection: NO pre-registered case population, economics replay, promotion or live trade." >> "$GITHUB_STEP_SUMMARY"
+      - name: Publish research-only normalized books and provenance
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cash-independent-l2-2025q2-research-only
+          path: |
+            artifacts/cash-independent-l2-2025q2/*.json
+            artifacts/cash-independent-l2-2025q2/*.jsonl
+          if-no-files-found: warn
