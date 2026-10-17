@@ -54,6 +54,7 @@ jobs:
     uses: ./.github/workflows/acquire-historical-campaign.yml
     with:
       acquisition_json: ${{ needs.resolve.outputs.acquisition_json }}
+      cash_max_raw_mb: 1024
 
   summary:
     name: Check frozen artifact inventory; never promote
