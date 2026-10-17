@@ -13,35 +13,41 @@ permissions:
 
 jobs:
   probe:
-    name: Read-only official Funding features probe
+    name: Read-only Funding regime ${{ matrix.window_id }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        window_id:
+          - 2026-09-01-to-07
+          - 2026-09-15-to-21
+          - 2026-10-01-to-07
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
       - run: uv sync --all-extras --dev
-      - name: Capture fixed recent source and reconstruct research features
+      - name: Capture exact pre-registered window from OKX public endpoints
         run: |
           uv run python scripts/probe_funding_raw_regime_source.py \
-            --start-date 2026-09-15 \
-            --end-date 2026-09-21 \
-            --output-dir artifacts/funding-raw-regime-source
-      - name: Publish source and research coverage summary
+            --window-id "${{ matrix.window_id }}" \
+            --output-dir "artifacts/funding-raw-regime-source/${{ matrix.window_id }}"
+      - name: Report exact source coverage and evidence limitations
         if: always()
         shell: bash
         run: |
-          echo "## Funding raw regime-source research" >> "$GITHUB_STEP_SUMMARY"
-          if [[ -f artifacts/funding-raw-regime-source/reconstructed-features.json ]]; then
-            jq -r '"Reconstructed days: \(.feature_rows_reconstructed); missing: \(.missing_days | length)."' \
-              artifacts/funding-raw-regime-source/reconstructed-features.json >> "$GITHUB_STEP_SUMMARY"
+          echo "## Retrospective Funding regime: ${{ matrix.window_id }}" >> "$GITHUB_STEP_SUMMARY"
+          if [[ -f "artifacts/funding-raw-regime-source/${{ matrix.window_id }}/coverage-summary.json" ]]; then
+            jq -r '"Source digest: \(.source_sha256); quota met: \(.quota_fully_met); missing days: \(.missing_days | length)."' \
+              "artifacts/funding-raw-regime-source/${{ matrix.window_id }}/coverage-summary.json" >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "Source unavailable or incomplete; inspect error artifact. No acquisition permitted." >> "$GITHUB_STEP_SUMMARY"
+            echo "Source incomplete or failed; see error.json. Acquisition prohibited." >> "$GITHUB_STEP_SUMMARY"
           fi
-          echo "Captured retrospectively. Historical publication time NOT verified. Economics gate remains disabled." >> "$GITHUB_STEP_SUMMARY"
-      - name: Upload read-only source and research artifacts
+          echo "Retrospective source only. Historical publication as-of-entry UNVERIFIED; no promotions or economics gate." >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload read-only source evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: funding-raw-regime-source-research
-          path: artifacts/funding-raw-regime-source/
+          name: funding-raw-regime-source-${{ matrix.window_id }}
+          path: artifacts/funding-raw-regime-source/${{ matrix.window_id }}/
           if-no-files-found: warn
