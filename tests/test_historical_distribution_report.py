@@ -183,9 +183,12 @@ async def test_report_replays_all_versioned_corpus_days_offline(
     assert cash_stage2["approval_adr"] == "ADR-0009"
     assert cash_stage2["evidence_requirements_met"] is True
     assert cash_stage2["evidence_reasons"] == ()
-    assert cash_stage2["pre_registered_day_count"] == 27
-    assert cash_stage2["qualified_case_count"] == 8
-    assert cash_stage2["realized_return_assessed_count"] == 8
+    # 27 previously registered Cash days plus 24 frozen 2025 Q3/Q4 days.
+    # Do not cherry-pick: all eight newly rejected examples count toward
+    # the selected denominator, without becoming zero-valued realized trades.
+    assert cash_stage2["pre_registered_day_count"] == 51
+    assert cash_stage2["qualified_case_count"] == 24
+    assert cash_stage2["realized_return_assessed_count"] == 24
     assert cash_stage2["decision_quality_ready"] is True
     assert cash_stage2["reasons"] == ()
     assert cash_stage2["realized_return_gate_available"] is True
@@ -197,8 +200,33 @@ async def test_report_replays_all_versioned_corpus_days_offline(
     assert cohorts["market_wide_opportunity_arrival_rate"] is None
     assert cohorts["shared_expiry_cases_are_independent_trials"] is False
     assert cohorts["return_horizon"] == "per_case_not_annualized"
-    assert cohorts["cohort_count"] == 2
-    q1, q2 = cohorts["cohorts"]
+    assert cohorts["cohort_count"] == 4
+    by_expiry = {
+        cohort["contract_expiry_at"][:10]: cohort
+        for cohort in cohorts["cohorts"]
+    }
+    assert set(by_expiry) == {
+        "2025-09-26", "2025-12-26", "2026-03-27", "2026-06-26",
+    }
+    q3_2025 = by_expiry["2025-09-26"]
+    q4_2025 = by_expiry["2025-12-26"]
+    for cohort, qualified, rejected in (
+        (q3_2025, 9, 3),
+        (q4_2025, 7, 5),
+    ):
+        assert cohort["case_count"] == 12
+        assert cohort["pre_registered_case_count"] == 12
+        assert cohort["summary"]["qualified_case_count"] == qualified
+        assert cohort["summary"]["rejected_case_count"] == rejected
+        assert cohort["summary"]["qualification_reason_case_counts"] == {
+            "expected_net_return_not_positive": rejected,
+        }
+        assert cohort["summary"]["realized_return"][
+            "realized_net_return_with_complete_evidence"
+        ]["assessed_count"] == qualified
+
+    q1 = by_expiry["2026-03-27"]
+    q2 = by_expiry["2026-06-26"]
     assert q1["contract_expiry_at"].startswith("2026-03-27")
     assert q1["case_count"] == 12
     assert q1["pre_registered_case_count"] == 12
