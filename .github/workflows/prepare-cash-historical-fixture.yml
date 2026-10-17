@@ -46,15 +46,6 @@ on:
         required: false
         type: string
         default: ""
-  push:
-    paths:
-      - scripts/prepare_okx_cash_and_carry_fixture.py
-      - scripts/run_cash_historical_backtest.py
-      - scripts/finalize_cash_compact_fixture.py
-      - src/future_opportunity/backtest/cash_fixture.py
-      - src/future_opportunity/backtest/cash_compact.py
-      - src/future_opportunity/backtest/compact.py
-      - .github/workflows/prepare-cash-historical-fixture.yml
 
 permissions:
   contents: read
