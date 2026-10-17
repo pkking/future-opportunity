@@ -1,0 +1,101 @@
+name: Prepare Frozen Cash 2025Q2 Wave (Manual Only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      operator_authorization:
+        description: "Explicit separate approval for 12-case read-only historical L2 source preparation"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  resolve:
+    name: Verify approval and immutable 12-case source manifest
+    runs-on: ubuntu-latest
+    outputs:
+      acquisition_json: ${{ steps.verify.outputs.acquisition_json }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - id: verify
+        shell: bash
+        env:
+          AUTHORIZATION: ${{ inputs.operator_authorization }}
+        run: |
+          set -euo pipefail
+          test "$AUTHORIZATION" = "APPROVE-CASH-2025Q2-N12-SOURCE-PREPARATION"
+          work="artifacts/cash-2025q2-manual-control"
+          manifest="docs/historical-acquisition-plans/cash-2025q2-12day-wave-001.json"
+          mkdir -p "$work"
+          uv run python scripts/validate_cash_2025q2_preparation_handoff.py --output "$work/handoff.json"
+          uv run python scripts/resolve_historical_acquisition.py "$manifest" \
+            --max-funding-days 1 --max-cash-cases 12 --max-total-items 12 \
+            --output "$work/resolved.json"
+          test "$(jq -r '.funding == null' "$work/resolved.json")" = "true"
+          test "$(jq -r '.cash_cases | length' "$work/resolved.json")" = "12"
+          test "$(jq -r '.selection_provenance.cash.source.artifact_id' "$work/resolved.json")" = "12106828444"
+          echo "acquisition_json=$(jq -c . "$manifest")" >> "$GITHUB_OUTPUT"
+      - name: Upload operator and immutable control evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cash-2025q2-manual-acquisition-control
+          path: artifacts/cash-2025q2-manual-control/
+          if-no-files-found: warn
+
+  acquire:
+    name: Prepare frozen historical source only
+    needs: resolve
+    uses: ./.github/workflows/acquire-historical-campaign.yml
+    with:
+      acquisition_json: ${{ needs.resolve.outputs.acquisition_json }}
+
+  summary:
+    name: Check frozen artifact inventory; never promote
+    needs: [resolve, acquire]
+    if: always() && needs.resolve.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      ACQUIRE_RESULT: ${{ needs.acquire.result }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Audit expected 12 x 3 named artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/cash-2025q2-summary
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?per_page=100" \
+            > artifacts/cash-2025q2-summary/artifacts.json
+          manifest="docs/historical-acquisition-plans/cash-2025q2-12day-wave-001.json"
+          inventory="artifacts/cash-2025q2-summary/artifacts.json"
+          jq -n --arg status "$ACQUIRE_RESULT" --arg run "$GITHUB_RUN_ID" \
+            '{schema_version:1,evidence_type:"cash_2025q2_preparation_inventory",
+              workflow_run:$run,acquisition_job_result:$status,
+              artifact_contents_verified:false,corpus_mutation:false,
+              promotion_dispatched:false}' \
+            > artifacts/cash-2025q2-summary/summary.json
+          test "$ACQUIRE_RESULT" = "success"
+          for d in $(jq -r '.cash_cases[].entry_at | split("T")[0]' "$manifest"); do
+            suffix="$d-BTC-USDT-250627-$GITHUB_RUN_ID"
+            for prefix in okx-btc-cash-and-carry- okx-btc-cash-and-carry-compact- okx-btc-cash-and-carry-actuals-; do
+              name="$prefix$suffix"
+              test "$(jq --arg name "$name" '[.artifacts[] | select(.name == $name and .expired == false and .digest != null)] | length' "$inventory")" = "1"
+            done
+          done
+          echo "Inventory names checked. Artifact content and strategy economics are NOT approved." >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload inventory even after partial source failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cash-2025q2-manual-acquisition-summary
+          path: artifacts/cash-2025q2-summary/
+          if-no-files-found: warn
