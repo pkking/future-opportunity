@@ -71,7 +71,7 @@ not select dates using paper returns or existing results.
       no outcomes and no source claims.
 - [x] 2. Add bounded, read-only daily catalog scanner and
       offline fail-closed tests.
-- [ ] 3. Audit true GitHub official-source outputs including
+- [x] 3. Audit true GitHub official-source outputs including
       all 90 dates and unique SPOT/FUTURES availability.
 - [ ] 4. Freeze verified 12-date selection from historical
       source capacity and create operator-controlled preparation
@@ -82,9 +82,9 @@ not select dates using paper returns or existing results.
 ## Verification matrix
 | Gate | Expected evidence | Status |
 |---|---|---|
-| Scan preregistration | fixed input before source GET | Pending |
-| Source calendar | all 90 dates classified | Unassessed |
-| Exit source | exact verified existing 2025Q2 L2 | Previously verified |
+| Scan preregistration | fixed input before source GET | Verified: PR #96 |
+| Source calendar | all 90 dates classified | Verified: run 39038071038; family-level only |
+| Exit source | exact verified existing 2025Q2 L2 | Verified: 39029586457 one-source-probe only |
 | Selection | 12-date, source bound, before PnL | Pending |
 | Code, API, E2E, static | final head CI | Pending |
 | Historical smoke | fixed pinned baseline unchanged | Pending |
@@ -142,11 +142,23 @@ and not a selected profitable case.
 
 - [x] Persist `scripts/audit_cash_2025q2_source_calendar.py` with ZIP digest, raw query identity, response SHA, date, archive URL and report-vs-source consistency checks.
 - [x] Add offline positive and corruption/approval-escalation negative tests (11 cases locally passed using `python -m pytest -q`; await final-head CI).
-- [ ] CI and Historical Smoke on the final audit PR head, then review/merge, verify main CI.
+- [x] PR #98 final-head CI/Smoke and post-merge main CI succeeded; main SHA `9b00e900bf22b09216297daacf6148ba43aaf6b8`.
 - [ ] Continue bounded contract-member availability enumeration; do not infer 12 eligible selected dates from the 90 family-level catalogs.
 
+## 2026-10-17 next execution slice: bounded exact-contract source population
+
+- Issue: #95; active task branch `agent/cash-2025q2-member-population`. Exact main starting SHA `9b00e900bf22b09216297daacf6148ba43aaf6b8`.
+- Facts: PR #97 and #98 merged; CI and Historical Smoke green. The immutable 90-date daily source-calendar ZIP is from main run **39038071038**, artifact **12103210971**, SHA-256 `1b9a4adcb7035ca4abb70e5a9f1823dc3a71f5e9849070ce59c493df205b57ae`.
+- Objective: prove whether the exact `BTC-USDT-250627` member is present for **every** preregistered 2025-03-29..2025-06-26 date. Family-level archive presence is insufficient.
+- Implement offline-replayable per-day archive member verifier with SHA-256 of downloaded official archive, archive member names, exact date/future validation, explicit `identity_verified` / `unavailable` / `error` statuses; build no quotes/returns.
+- Split complete registered calendar into nine immutable contiguous 10-day batches; all 90 days must appear exactly once. Workflow is read-only `actions: read` + `contents: read`, can run on its dedicated agent branch to capture source evidence; no trigger on main.
+- Use existing source ZIP auditor before every batch, exact run/artifact/digest pinning; limit individual downloads to 512MiB and bounded HTTP read time. Raw compressed files are transient and never committed.
+- Tests: tar member parsing, wrong contract, different date, bad/missing TAR, oversized archive, tampered selection and 10-day partition; final PR static/code/API/E2E/Historical Smoke.
+- Governance: selection remains frozen **false**, zero opportunity or PnL computations, sample count stays 54 Cash/32 Funding; any sample freeze is a separately reviewed PR based only on **fully verified** available contract-member dates. If any date is an HTTP/parse error, no sample selection or promotion.
+- Resume checkpoint: create worker/script, workflow and offline tests, submit PR and run source-only batch workflow; inspect every batch Actions artifact and independently verify reported SHA/dates/member names before proposing a source-grounded selection.
+
 ## Resume from here
-The official 90-day family-archive API catalog population and both independently reverified ZIPs are grounded above. The reusable ZIP audit command and 11 offline tests are committed; obtain successful final-head CI and Historical Smoke for this PR. Then proceed to bounded source archive *member-level* evidence for the exact `BTC-USDT-250627` contract across the frozen calendar, logging missing/ambiguous days. Do not freeze N=12 availability-based samples until exact per-date eligibility is verified from source archives. No automatic acquisition, corpus promotion, economics threshold activation, or live trading.
+The official 90-day family-archive API catalog population and both independently reverified ZIPs are grounded above. PR #98 is merged and its final-head CI/Smoke and main CI succeeded. Next independently enumerate **all 90 FUTURES archive contract members**, using fixed calendar API evidence from run 39038071038 artifact 12103210971 ZIP sha256 `1b9a4adcb7035ca4abb70e5a9f1823dc3a71f5e9849070ce59c493df205b57ae`. Progress via new read-only matrix workflow (10 days/batch, 9 batches, each archived day bounded to 512MiB), publish raw member identity and SHA-256 per day even for unavailable/error outcomes; fail closed on incompleteness. Never select dates until the entire population has been audited. Then proceed to bounded source archive *member-level* evidence for the exact `BTC-USDT-250627` contract across the frozen calendar, logging missing/ambiguous days. Do not freeze N=12 availability-based samples until exact per-date eligibility is verified from source archives. No automatic acquisition, corpus promotion, economics threshold activation, or live trading.
 
 ## Completion
 Pending audited 2025Q2 population and reviewed acquisition.
