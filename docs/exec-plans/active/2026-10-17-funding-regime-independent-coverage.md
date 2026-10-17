@@ -67,7 +67,7 @@ makes generalized opportunity claims unjustified, even though the
       evidence as acquisition-approved provenance.
 - [ ] PR final head passes all static/code/API/E2E/plan checks and
       offline Historical Smoke; no corpus additions.
-- [ ] Record an exact successful operator/source-probe Run ID
+- [x] Record an exact successful operator/source-probe Run ID
       and inspect its evidence before any future pre-registration
       acquisition proposal. Absent a run or adequate source: keep
       blocker explicit, do not invent data.
@@ -77,12 +77,12 @@ makes generalized opportunity claims unjustified, even though the
       at least two separate pre-specified 7-day windows within
       officially documented source retention, plus the existing
       Sep 15–21 comparator; verify no interaction with strategy PnL.
-- [ ] 2. Build source-only report, deterministic aggregation and
+- [x] 2. Build source-only report, deterministic aggregation and
       negative/empty-source tests.
 - [x] 3. Extend workflow safely for explicit dispatch inputs,
       bounded fan-out or one window per dispatch; no permissions
       beyond `contents: read`.
-- [ ] 4. CI validation and independent official-source probe
+- [x] 4. CI validation and independent official-source probe
       evidence review, then decide if any regime-balanced
       acquisition is actually feasible.
 
@@ -90,7 +90,7 @@ makes generalized opportunity claims unjustified, even though the
 | Gate | Expected evidence | Status |
 |---|---|---|
 | Offline unit | Source/retention/2x2/anti-lookahead tests | Pending |
-| Source run | Exact run and SHA-256, missing windows explicit | Unassessed |
+| Source run | 39028716478, 3/3 jobs; 3 ZIP SHA-256 match | VERIFIED, retrospective publication remains unassessed |
 | Static/code/API/E2E | Final-head CI checks | Pending |
 | Agent plan | Issue #85 open, canonical active plan | Pending |
 | Historical Smoke | Pinned corpus unchanged and smoke pass | Pending |
@@ -122,8 +122,40 @@ window remains **UNASSESSED** until observing a completed source
 run. Source authentication at historical publication time is
 not solved by a retrospective capture.
 
+## 2026-10-17 real three-window operator-free read-only source evidence
+
+[Source research run 39028716478](https://github.com/pkking/future-opportunity/actions/runs/39028716478)
+completed SUCCESS for every **pre-registered** window on source
+implementation commit `1f1e55ef74c58f453bc75afd096cd65a5329c5ad`.
+Three exact GitHub Actions ZIPs were downloaded and SHA-256 verified,
+and their coverage summaries independently inspected:
+
+| Window | Artifact ID | ZIP SHA-256 | Valid days | Negative low | Negative high | Nonnegative low | Nonnegative high |
+|---|---:|---|---:|---:|---:|---:|---:|
+| Sep 01–07 | 12098539844 | abb40c18c6dafa46788fa8885c7eab9acb6843f79e09f2f747309c6434d83d64 | 7 | 0 | 1 | 0 | 3 |
+| Sep 15–21 | 12098994902 | c21e8dd95cb370158bf1d586915aebb13a49fd27c6556809aee190b1fdc3b941 | 7 | 0 | 0 | 0 | 7 |
+| Oct 01–07 | 12099183403 | 8d55695814c9842255db1c7964465396caaf2b374a5739827fbc53732b05a9fe | 7 | 0 | 0 | 6 | 1 |
+
+Total **21 independently preselected dates, 21 reconstructed
+pre-entry feature rows**, no missing source/candle dates within the
+selected windows; population covers only **3/4** frozen
+2×2 strata, *negative + low volatility remains empty*. The
+strict research planner's per-stratum quota remains unfilled.
+Across the windows the sampled buckets include 1 negative/high,
+6 nonnegative/low and 11 nonnegative/high; selected dates
+per-stratum are quota-limited, so do not conflate these
+population counts with the selected list.
+
+All three reports state `point_in_time_publication_verified=false`,
+`source_authentication_status=requires_independent_review`,
+`quota_fully_met=false`, `acquisition_approved=false`,
+`promotion_approved=false`. This is retrospective official
+API source reconstruction, **not** proof records were published as-of
+entry, not a 90-day sample, not sufficient 2×2 coverage, and
+not a market-wide market-state distribution.
+
 ## Resume from here
-Inspect this implementation PR's exact final head, CI results and auto-triggered read-only probe run; verify actual source availability for every frozen window and report exact missing regimes.
+Source probe Run 39028716478 has now been verified: 3/4 regimes populated, negative/low empty. Next verify latest PR-head CI, merge only after green checks; design a *separate* window strategy for the missing regime and seek archival at-time corroboration rather than changing threshold or sampling based on outcomes.
 Read `scripts/probe_funding_raw_regime_source.py`, the existing
 read-only workflow, `funding_raw_feature_lineage.py`, and tests;
 The three window dates/seeds are already frozen by PR #90; do not revise based on returns.
