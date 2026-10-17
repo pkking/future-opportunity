@@ -1,7 +1,7 @@
 # Cash 2025Q2 additional independent expiry cohort
 
 Issue: #95
-Status: BLOCKED_DECISION
+Status: IMPLEMENTING
 Owner: agent
 Started: 2026-10-17
 
@@ -53,7 +53,7 @@ not select dates using paper returns or existing results.
       calendar population scan.
 - [x] Independently verify actual source run/Artifact SHA and
       population; validate separate 2025-06-26 exit evidence. Source-member identity is 90/90; exit 00:15 L2 from run 39029586457, but selected entries remain unverified.
-- [ ] Apply strict `availability-even-rank-v1` to verified
+- [x] Apply strict `availability-even-rank-v1` to verified
       eligible population only; pre-register N=12 exact dates
       and source provenance **before** their strategy outcomes,
       in a separate reviewed PR. If coverage insufficient,
@@ -73,7 +73,7 @@ not select dates using paper returns or existing results.
       offline fail-closed tests.
 - [x] 3. Audit true GitHub official-source outputs including
       all 90 dates and unique SPOT/FUTURES availability.
-- [ ] 4. Freeze verified 12-date selection from historical
+- [x] 4. Freeze verified 12-date selection from historical
       source capacity and create operator-controlled preparation
       handoff.
 - [ ] 5. Governed acquisition / review PR / main CI.
@@ -85,7 +85,7 @@ not select dates using paper returns or existing results.
 | Scan preregistration | fixed input before source GET | Verified: PR #96 |
 | Source calendar | all 90 dates classified | Verified: run 39038071038; family-level only |
 | Exit source | exact verified existing 2025Q2 L2 | Verified: 39029586457 one-source-probe only |
-| Selection | 12-date, source bound, before PnL | Pending |
+| Selection | 12-date, source bound, before PnL | PR #101 approved, merged 4acf3e9, main CI 39050288482 success |
 | Code, API, E2E, static | final head CI | Pending |
 | Historical smoke | fixed pinned baseline unchanged | Pending |
 
@@ -191,8 +191,18 @@ and not a selected profitable case.
 
 **Resume after decision:** approved PR merge → main CI → operator-controlled prepare/Actuals/Compact for the exact selected dates → audit all canonical L2 sources and rejects → separate corpus promotion PR and review. No live orders or economics gates.
 
+## 2026-10-18 user approval and next read-only control slice
+
+- Explicit user approval obtained for the twelve exactly pre-registered dates and PR #101 merger; approval **only** covers date freeze and merge, not acquisition, promotion, economics gate or live trading.
+- PR #101 merged on main: `4acf3e945769d49dd001b686ad1cd114f5bb32f8`. Postmerge main [CI 39050288482](https://github.com/pkking/future-opportunity/actions/runs/39050288482) succeeded.
+- New step: reuse accepted availability selection and existing `validate_cash_2025q2_preregistration.py` to emit a reproducible **selection-control artifact** only from the main-merged frozen registry; record immutable PR reference, source member/catalog run IDs and content SHA-256, and strict `sample_selection_frozen=true` while keeping `acquisition_approved=false`, `promotion_approved=false`, `economic_outcomes_evaluated=false`.
+- Add a `push: main` and manually repeatable read-only workflow for selection evidence; no source archive downloads, no PnL, no data mutation.
+- Obtain exact main-run artifact ID and Actions digest, then prepare a **separate** strictly validated Cash 2025Q2 acquisition control manifest using existing Q3/Q4 mechanisms.
+- Operator-controlled full L2 acquisition dispatch remains **BLOCKED_DECISION** pending explicit separate human authorization. Preparation work may proceed without triggering the download job. No sample replacement.
+- Acceptance: CI/Smoke final-head+main, frozen 12 dates, source SHA match, negative tests, artifact run SHA and digest observed; no live trade or corpus promotion.
+
 ## Resume from here
-Source identity population is independently completed, archived and main-verified (PR #100). The outcome-blind selection proposal, validator and fail-closed tests are committed under PR #101. CI and Historical Smoke passed at prior PR head; verify final checkpoint head checks then **STOP for independent human preregistration approval**. Do not merge the PR or dispatch market acquisition/promotion before that approval. Follow the documented exact source artifact IDs/digests and make no profitability decisions.
+PR #101 is approved and merged, main CI green. Create and verify the official read-only selection-control Actions artifact from main, and then prepare Q2 acquisition manifest + offline validation as a separate review PR. Do not dispatch acquisition without explicit new authorization. Preserve 54 Cash/32 Funding baseline and the exact 12-date committed list.
 
 ## Completion
 Pending audited 2025Q2 population and reviewed acquisition.
