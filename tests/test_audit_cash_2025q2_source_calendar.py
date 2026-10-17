@@ -98,7 +98,7 @@ def test_fails_closed_on_tampering(tmp_path, tamper):
 
 def test_wrong_expected_digest_rejected(tmp_path):
     raw, report = fixture_payloads()
-    archive, digest = write_archive(tmp_path, raw, report)
+    archive, _ = write_archive(tmp_path, raw, report)
     with pytest.raises(ValueError, match="ZIP digest"):
         verify.audit(archive, "0" * 64)
 
