@@ -63,14 +63,14 @@ maturity trials.
       official catalog identity, spot/futures archive availability
       and SHA-256, chain member match, entry and pre-expiry exit
       sample readiness, and explicit missing/invalid reasons.
-- [ ] Tests fail closed on stale/cross-contract metadata,
+- [x] Tests fail closed on stale/cross-contract metadata,
       mistaken duplicate expiry, missing/ambiguous archive member,
       expiry ordering, absent SPOT, malformed data and partial
       source responses. Preserve frozen original probe tests.
 - [x] New source probe never invokes strategy returns or existing
       promotion workflows. Only a later, separately reviewed
       selection freeze may propose acquisition.
-- [ ] PR final-head CI, API/E2E, Agent plan integrity and pinned
+- [x] PR final-head CI, API/E2E, Agent plan integrity and pinned
       Historical Smoke green. Exact official-source probe run,
       raw digests and source scope must be inspected before
       declaring an additional cohort feasible.
@@ -83,7 +83,7 @@ maturity trials.
 - [x] 3. Implement a parameterized read-only source catalog probe,
       report and deterministic tests; retain hardcoded legacy
       regression behavior.
-- [ ] 4. Validate in final-head CI; collect one real source run
+- [x] 4. Validate in final-head CI; collect one real source run
       and publish bounded raw-archive evidence/limitations.
 - [ ] 5. If at least one **independent** expiry shows verified
       entry/exit availability, create a new operator-approved
@@ -95,7 +95,7 @@ maturity trials.
 | Baseline | Four expiry cohorts, Cash 54 | Previously verified |
 | Pre-registration | Fixed dates/instruments before queries | Pending |
 | Probe tests | Coverage/identity/fail-closed negative tests | Pending |
-| Source inspection | 39029044125; ZIP digests checked; 2025q2 2/2 futures members, 2026q3 unavailable | Catalog identity verified only; L2 UNASSESSED |
+| Source inspection | 39029044125 catalog + 39029586457 four L2 books/4 SHA-256, max age 40ms | VERIFIED for 2025q2 fixed source probe; 2026q3 unavailable |
 | Static/code/API/E2E | Final-head CI | Pending |
 | Pinned historical smoke | No changes to corpus or strategy semantics | Pending |
 
@@ -171,8 +171,52 @@ A successful job exit does not imply a usable historical strategy
 sample. Neither a fifth pinned cohort nor additional day count
 exists yet; Cash remains **54**.
 
+## 2026-10-17 complete frozen 2025Q2 sampled L2 source checkpoint
+
+[Research-only source Run 39029586457](https://github.com/pkking/future-opportunity/actions/runs/39029586457)
+ran source-reader components only, deliberately skipping strategy
+economic backtest, compact fixture and promotion.
+
+Independently downloaded exact [artifact 12100345294](https://github.com/pkking/future-opportunity/actions/runs/39029586457/artifacts/12100345294),
+ZIP SHA-256
+`692d51599fa7d08ca75a1975b0bca3ceff4d1815a81b9f476476dcb4f6e172b5`,
+and verified that **4/4** normalized JSONL bytes match their
+manifest SHA-256, one canonical snapshot per book, all strictly
+positive non-crossed top-of-book quotes, original SPOT/FUTURES member
+identities, entry/exit sample times and 5000ms freshness.
+
+| Component | Sample at UTC | Book age | Original archive SHA-256 |
+|---|---|---:|---|
+| entry_spot | 2025-06-12 00:15 | 28ms | `057a3d96f87e299bd7a17854045ba3a5b759ecfe90ec5ca4f0d60fec1590438a` |
+| entry_future | 2025-06-12 00:15 | 28ms | `456c0815f2d9d1ba4a227eeb817866f581fcc5f30e922910b4488a6685112c3c` |
+| exit_spot | 2025-06-26 00:15 | 10ms | `75168b55b3967cb7536008c3010b6807c12ba7dd2fd85f69547d2e2c1c552f7a` |
+| exit_future | 2025-06-26 00:15 | 40ms | `f4daf0c1eabe6e35cab3c2dbf506f5e13bf0a9d08419416496edb342c0759090` |
+
+`BTC-USDT-250627` is now independently source-L2-feasible
+for **one fixed source-probe date** not used to select on returns.
+It is a newly validated *expiry cohort candidate*, NOT a
+new qualified trade or a pinned 2025Q2 cohort.
+
+`research-report.json`: `research_only=true`,
+`economics_evaluated=false`,
+`historical_sampling_provenance=null`,
+`complete_acquisition_provenance=false`,
+`acquisition_approved=false`,
+`promotion_approved=false`. Consequently no corpus
+promotion is possible from this artifact. The fixed
+2026Q3 candidate remains catalog-unavailable.
+
+**Next independent phase:** determine the full official source
+date population and coverage for `BTC-USDT-250627`, then
+pre-register an outcome-blind sample (calendar/availability
+rather than observed returns), before running the ordinary
+governed preparation and promotion stages.
+This work requires its own Issue and acceptance plan;
+one source-probe date must not become a cherry-picked
+historical trading sample.
+
 ## Resume from here
-Catalog-only source inspection is complete (run 39029044125): prioritize 2025q2 for **separate, source-only 00:15 four-leg L2** verification; 2026q3 remains unavailable. Validate this implementation PR's final-head CI, and do not infer L2 or acquisition readiness from the catalog scan. Check main branch, current Cash expiry sets, and all available
+Full one-date four-leg L2 source verification is independently complete (run 39029586457). Reconcile this implementation PR's final-head CI/merge; create a separate, outcome-blind Q2 candidate population and pre-registration Issue. Do not treat the source-probe date as a selected profitable case or promote without frozen sampling provenance. Check main branch, current Cash expiry sets, and all available
 OKX historical source-probe helpers. Audit existing archival
 catalog/retention behavior and the ability to inspect truly
 new expiration contracts. Write the new fixed candidate
