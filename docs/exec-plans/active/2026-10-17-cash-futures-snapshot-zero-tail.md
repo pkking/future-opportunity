@@ -137,38 +137,47 @@ suffix is a provisional adapter rule; if any level differs from the exact
 captured tuple, fail closed with source and level evidence. Widening the
 format contract requires further source evidence and review.
 
+## 2026-10-17 frozen Q3 source revalidation
+
+After single-case validation, operator-dispatched frozen Q3 wave
+[39016938121](https://github.com/pkking/future-opportunity/actions/runs/39016938121)
+completed SUCCESS on `437089cc`. All 12 registered, source-proven
+Cash cases passed preparation and actuals generation. The workflow's
+`cash-2025-quarter-summary-q3` artifact ID `12094684975` reports
+`verified_inventory_only` and exactly 12 prepared, 12 compact,
+12 actuals; no errors, missing, unexpected or expired artifacts.
+
+Independently downloaded and inspected all 36 ZIPs: all 36 Actions ZIP
+SHA-256 values match; all 96 prepared/compact normalized JSONL
+SHA-256 values match; every canonical order-book price and retained
+quantity is positive; all staleness values ≤578ms against 5000ms;
+every compact's parent ZIP ID/digest matches, every source has the
+original frozen selection provenance, and all 12 actuals match dates
+and dataset IDs. **9 qualified + 3 correctly rejected** for
+nonpositive expected net returns (September 7/15/22), no synthetic
+zero realized return assigned to rejections. Paper return economics
+remain reporting-only; no corpus promotion or Stage-2 gate enabled.
+
+See `docs/exec-plans/active/2026-10-10-cash-2025-quarter-artifact-identity.md`
+for the source-of-truth quarter audit and Q4 operator handoff.
+
 ## Resume from here
 
-**Single-case source compatibility is now independently VERIFIED.**
-Issue #69 remains open for **frozen 12-date Q3/Q4 acquisition**, not for
-the old diagnostic run. The operator must explicitly run the unchanged
-frozen 2025 Q3 manifest on current main:
+**Q3 now verified; Q4 source evidence is the next boundary.** Only an
+explicit operator request may dispatch:
 
 ```bash
 gh workflow run prepare-cash-2025-quarter-wave.yml \
-  -R pkking/future-opportunity --ref main -f wave=q3
+  -R pkking/future-opportunity --ref main -f wave=q4
 ```
 
-The Q3 wave embeds the original verified
-`pre_registered_availability_sample` with source run `37755705789`
-and exactly 12 fixed dates; do not replace cases after partial failures.
-On completion, inspect every matrix job, download the
-`cash-2025-quarter-summary-q3` artifact, and require exactly
-**12 prepared + 12 compact + 12 actuals** whose names, source run and
-digests match the frozen manifest. This metadata inventory is insufficient
-for deep market-content verification: independently check ZIP contents,
-canonical hashes, recorded L2 staleness, selection provenance, actuals and
-any incomplete/unassessed risk components before proceeding.
-
-If any case fails, retain that case/date and identify the first source
-failure; do not treat a partial success as the quarter succeeding.
-Only after Q3 succeeds, explicitly dispatch the unchanged Q4 wave and
-repeat the independent verification. Then execute the read-only planner
-with exact successful run IDs, and propose a separately governed
-promotion PR. Do not auto-dispatch any operator workflow from the agent.
+Verify Q4 12x3 metadata and independently downloaded ZIP content before
+any read-only cross-quarter planner or governed promotion. Source-invalid
+Q4 cases must never be silently replaced. Issue #69 remains OPEN.
 
 ## Completion
 Implementation merged and post-merge CI green. Post-fix **2025-07-04
 single-case real source** verified via Run 39016429500 and ZIP content
-checks. Full **Q3 frozen wave remains UNASSESSED**, no new pinned Q3
-case was promoted. Issue #69 is OPEN pending full-quarter evidence.
+checks. Frozen Q3 wave 39016938121 and its 12x3 ZIPs are now independently
+VERIFIED; **no new Q3 fixture has been promoted**. Q4 evidence remains
+UNASSESSED; Issue #69 is OPEN pending the separate Q4 and promotion gates.
