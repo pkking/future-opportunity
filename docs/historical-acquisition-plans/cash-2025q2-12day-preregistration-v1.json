@@ -1,0 +1,58 @@
+{
+  "eligible_population_size": 89,
+  "end_date": "2025-06-26",
+  "entry_time_utc": "00:15:00",
+  "evidence_type": "cash_2025q2_pre_registered_availability_selection",
+  "excluded_market_date_reasons": {
+    "2025-06-26": "entry_0015_equals_fixed_exit_0015"
+  },
+  "excluded_market_dates": [
+    "2025-06-26"
+  ],
+  "exit_at": "2025-06-26T00:15:00+00:00",
+  "expiry_at": "2025-06-27T08:00:00+00:00",
+  "future_id": "BTC-USDT-250627",
+  "invariants": {
+    "automatic_acquisition": false,
+    "automatic_promotion": false,
+    "independent_human_preregistration_review_required": true,
+    "live_trading_enabled": false,
+    "no_outcome_based_replacement": true,
+    "outcomes_not_inspected_for_selection": true,
+    "selected_l2_not_yet_verified": true,
+    "stage2_economics_gate_enabled": false
+  },
+  "requested_sample_size": 12,
+  "schema_version": 1,
+  "selected_market_dates": [
+    "2025-04-01",
+    "2025-04-09",
+    "2025-04-16",
+    "2025-04-23",
+    "2025-05-01",
+    "2025-05-08",
+    "2025-05-16",
+    "2025-05-23",
+    "2025-05-31",
+    "2025-06-07",
+    "2025-06-14",
+    "2025-06-22"
+  ],
+  "selection_evidence_sha256": "9bd08184a3a0c2487ba57087effdf0e8231db45fb4bf10226290627ed2990b37",
+  "selection_policy_version": "availability-even-rank-v1",
+  "source_evidence": {
+    "catalog_artifact_id": "12103210971",
+    "catalog_run": "39038071038",
+    "catalog_zip_sha256": "1b9a4adcb7035ca4abb70e5a9f1823dc3a71f5e9849070ce59c493df205b57ae",
+    "member_artifact_manifest_path": "docs/research/cash-2025q2-member-artifacts-manifest-v1.json",
+    "member_artifact_manifest_sha256": "88669cef7860f616b0483723c07edea82040bd86033a61bcc55a51bf4eb41b72",
+    "member_head_sha": "b5980b907d8e698906ef4fe49de18fba6b451cf6",
+    "member_population_audit_path": "docs/research/cash-2025q2-member-population-audit-v1.json",
+    "member_population_audit_sha256": "6030971d2060c603d6ce78222d68e0ea1f7a040f0c099b108fbf88247a298c6c",
+    "member_run": "39045070860"
+  },
+  "source_unavailable_market_dates": [],
+  "start_date": "2025-03-29",
+  "strategy": "cash-and-carry",
+  "study_id": "cash-2025-q2-250627-source-availability-v1"
+}
