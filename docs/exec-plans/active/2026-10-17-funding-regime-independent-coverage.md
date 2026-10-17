@@ -1,7 +1,7 @@
 # Funding Carry point-in-time regime expansion
 
 Issue: #85
-Status: PLANNING
+Status: VERIFYING
 Owner: agent
 Started: 2026-10-17
 
@@ -51,10 +51,10 @@ makes generalized opportunity claims unjustified, even though the
   economics approval, market-wide arrival claims or live orders.
 
 ## Acceptance criteria
-- [ ] Pre-register several independent study **windows and seed**
+- [x] Pre-register several independent study **windows and seed**
       before any new source queries; choose windows by calendar and
       stated historical API retention, never observed PnL.
-- [ ] Generalize read-only GitHub workflow to accept controlled
+- [x] Generalize read-only GitHub workflow to accept controlled
       explicit study dates or bounded matrix without losing a
       reproducible default; persist exact inputs, OKX raw response
       SHA-256, report, missing evidence and shortfall reasons.
@@ -73,13 +73,13 @@ makes generalized opportunity claims unjustified, even though the
       blocker explicit, do not invent data.
 
 ## Implementation slices
-- [ ] 1. Freeze window design before observation. Start with
+- [x] 1. Freeze window design before observation. Start with
       at least two separate pre-specified 7-day windows within
       officially documented source retention, plus the existing
       Sep 15–21 comparator; verify no interaction with strategy PnL.
 - [ ] 2. Build source-only report, deterministic aggregation and
       negative/empty-source tests.
-- [ ] 3. Extend workflow safely for explicit dispatch inputs,
+- [x] 3. Extend workflow safely for explicit dispatch inputs,
       bounded fan-out or one window per dispatch; no permissions
       beyond `contents: read`.
 - [ ] 4. CI validation and independent official-source probe
@@ -101,16 +101,37 @@ if actual source-validated, point-in-time features support a new
 pre-registered Funding acquisition proposal. Never automatically
 promote research-only records or enable a numeric economics gate.
 
+## 2026-10-17 pre-registered multi-window implementation
+
+The windows were frozen in source-control **before implementation queries**:
+[PR #90](https://github.com/pkking/future-opportunity/pull/90) merged
+`51707ffd1eb5203269b0c2a3d082329c6b6a0236`. Registry:
+`docs/historical-acquisition-plans/funding-2026-sep-oct-regime-source-windows-v1.json`
+defines 2026-09-01..07, 2026-09-15..21, 2026-10-01..07,
+each with immutable seed and quota 2 per frozen 2x2 stratum.
+
+This PR constrains the probe to exact committed `window_id`, adds
+positive schema/anti-overlap/future-date checks, writes a per-window
+`coverage-summary.json` with source SHA-256, raw-source
+publication caveat, missing dates, signed-rate 2x2 eligible and
+selected counts, and adapts the read-only workflow to
+three bounded, isolated jobs with `fail-fast: false`.
+No acquisition or corpus mutation is introduced. Whether
+the official public APIs still expose sufficient rows for each
+window remains **UNASSESSED** until observing a completed source
+run. Source authentication at historical publication time is
+not solved by a retrospective capture.
+
 ## Resume from here
-Check current main, PR status, and actual source age limitations.
+Inspect this implementation PR's exact final head, CI results and auto-triggered read-only probe run; verify actual source availability for every frozen window and report exact missing regimes.
 Read `scripts/probe_funding_raw_regime_source.py`, the existing
 read-only workflow, `funding_raw_feature_lineage.py`, and tests;
-select and **commit fixed windows before any new API probe**.
+The three window dates/seeds are already frozen by PR #90; do not revise based on returns.
 Make source-coverage changes in small PR slices and require
 GitHub source evidence with full SHA-256. Do not interpret missing
 negative-funding periods as a failing investment or as permission
 to alter the frozen sampling design.
 
 ## Completion
-Pending research and independent source verification. Do not move
+Probe implementation requires final CI and independent true-source evidence. Do not move
 to completed until CI and evidence are recorded.
