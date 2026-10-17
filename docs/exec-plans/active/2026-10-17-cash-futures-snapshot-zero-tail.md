@@ -1,7 +1,7 @@
 # Strict OKX FUTURES snapshot empty-tail compatibility
 
 Issue: #69
-Status: IMPLEMENTING
+Status: BLOCKED_EVIDENCE
 Owner: agent
 Started: 2026-10-17
 Last checkpoint: 2026-10-17
@@ -107,4 +107,5 @@ provenance and cannot be promoted. Never auto-dispatch Q3/Q4/planner/
 promotion before a real, independently validated source run.
 
 ## Completion
-Pending.
+Awaiting merged CI checkpoint and a new operator-dispatched source test.
+No new pinned cases or Q3/Q4 promotion; Issue #69 remains open.
