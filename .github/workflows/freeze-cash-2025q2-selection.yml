@@ -1,0 +1,49 @@
+name: Freeze Approved Cash 2025Q2 Source-Bound Selection
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "scripts/freeze_cash_2025q2_selection.py"
+      - ".github/workflows/freeze-cash-2025q2-selection.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  freeze-only:
+    name: Replay approved N12 Cash Q2 selection without acquisition
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - name: Strictly replay approved official source and dates
+        run: |
+          uv run python scripts/freeze_cash_2025q2_selection.py \
+            --output artifacts/cash-2025q2-approved-selection/control.json
+          test "$(jq -r '.historical_selection_frozen' artifacts/cash-2025q2-approved-selection/control.json)" = "true"
+          test "$(jq -r '.sampled_l2_verified' artifacts/cash-2025q2-approved-selection/control.json)" = "false"
+          test "$(jq -r '.acquisition_approved' artifacts/cash-2025q2-approved-selection/control.json)" = "false"
+          test "$(jq -r '.promotion_approved' artifacts/cash-2025q2-approved-selection/control.json)" = "false"
+      - name: Report non-trading selection evidence
+        if: always()
+        shell: bash
+        run: |
+          echo "## Approved prospective Cash Q2 source-only selection" >> "$GITHUB_STEP_SUMMARY"
+          if [[ -f artifacts/cash-2025q2-approved-selection/control.json ]]; then
+            jq -r '"Frozen entry days: \(.selected_market_dates | length); eligible calendar: \(.population_size); selected L2 verified: \(.sampled_l2_verified); acquisition approved: \(.acquisition_approved)."' artifacts/cash-2025q2-approved-selection/control.json >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Selection control missing/failed; do not acquire." >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "This workflow never downloads L2, evaluates PnL, mutates corpus or triggers a preparation/promotion workflow." >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload immutable approval and selection replay evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cash-2025q2-approved-selection-control
+          path: artifacts/cash-2025q2-approved-selection/
+          if-no-files-found: error
