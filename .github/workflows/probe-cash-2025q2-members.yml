@@ -1,0 +1,66 @@
+name: Probe Cash 2025Q2 Exact Contract Member Population
+
+on:
+  push:
+    branches:
+      - agent/cash-2025q2-member-population
+    paths:
+      - "scripts/probe_cash_2025q2_members.py"
+      - "tests/test_cash_2025q2_member_population.py"
+      - ".github/workflows/probe-cash-2025q2-members.yml"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  exact-futures-members:
+    name: Read-only exact contract member days ${{ matrix.batch }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        batch: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - name: Download exact pre-audited official catalog artifact ZIP
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p artifacts/source
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/12103210971/zip" \
+            > artifacts/source/official-catalog.zip
+          sha256sum artifacts/source/official-catalog.zip
+          echo "Pinned catalog source: run 39038071038 / artifact 12103210971" >> "$GITHUB_STEP_SUMMARY"
+      - name: Read official historical FUTURES archives and check exact contract members
+        run: |
+          uv run python scripts/probe_cash_2025q2_members.py \
+            --source-zip artifacts/source/official-catalog.zip \
+            --source-sha256 1b9a4adcb7035ca4abb70e5a9f1823dc3a71f5e9849070ce59c493df205b57ae \
+            --batch-index "${{ matrix.batch }}" \
+            --output-dir "artifacts/cash-2025q2-member-population/batch-${{ matrix.batch }}"
+      - name: Source-only evidence summary
+        if: always()
+        shell: bash
+        run: |
+          echo "## Fixed research batch ${{ matrix.batch }}" >> "$GITHUB_STEP_SUMMARY"
+          if [[ -f "artifacts/cash-2025q2-member-population/batch-${{ matrix.batch }}/member-batch-0${{ matrix.batch }}.json" ]]; then
+            jq -r '"Contract-member verified: \(.status_counts.identity_verified), unavailable: \(.status_counts.unavailable), ambiguous: \(.status_counts.ambiguous), source errors: \(.status_counts.error)."' \
+              "artifacts/cash-2025q2-member-population/batch-${{ matrix.batch }}/member-batch-0${{ matrix.batch }}.json" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No complete report; source evidence unresolved." >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "No historical selection, PnL, corpus promotion, economics gate or live orders." >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload identity, source SHA and missing/error rows even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cash-2025q2-exact-members-batch-${{ matrix.batch }}
+          path: artifacts/cash-2025q2-member-population/batch-${{ matrix.batch }}/
+          if-no-files-found: warn
