@@ -47,13 +47,13 @@ without losing raw source integrity or weakening unrelated instruments/events.
   successful Q3 evidence.
 
 ## Acceptance criteria
-- [ ] Only FUTURES 400-depth `snapshot` may elide a contiguous terminal
+- [x] Only FUTURES 400-depth `snapshot` may elide a contiguous terminal
       suffix of *exact* `["0","0.0","0"]` records, never any other tuple.
       At least one actual price level per side must remain.
-- [ ] Shared handling in full and sampled historical replay; genuine
+- [x] Shared handling in full and sampled historical replay; genuine
       price > 0, size/order count bounds, source order/time and downstream
       canonical checks remain fail-closed.
-- [ ] Tests cover observed 325/75 ask tail, short/no-pad snapshots, middle
+- [x] Tests cover observed 325/75 ask tail, short/no-pad snapshots, middle
       padding with subsequent real level, zero-price nonzero size/count,
       partial/different padding, all-zero side, SPOT/SWAP and update-event
       rejection, full and sampled archive replay and identical resulting books.
@@ -64,20 +64,30 @@ without losing raw source integrity or weakening unrelated instruments/events.
       before any frozen Q3 rerun or Q4 dispatch.
 
 ## Implementation slices
-- [ ] 1. Apply strictly scoped empty-tail parsing to snapshot level arrays.
-- [ ] 2. Add synthetic 400-depth contract tests for both replay paths and
+- [x] 1. Apply strictly scoped empty-tail parsing to snapshot level arrays.
+- [x] 2. Add synthetic 400-depth contract tests for both replay paths and
       negative cases.
 - [ ] 3. Verify final heads, squash merge, main CI, and checkpoint outcomes.
 
 ## Verification matrix
 | Gate | Command | Status |
 |---|---|---|
-| Targeted | `uv run pytest tests/test_okx_historical_l2.py -v` | pending |
-| Static | `uv run ruff check .` | pending |
-| Code | CI Code-level tests | pending |
-| API | CI API contract tests | pending |
-| E2E | CI E2E strategy acceptance | pending |
-| Historical | Historical Backtest Smoke | pending |
+| Targeted | New regression tests in code-level CI | 39015741758 PASS |
+| Static | `uv run ruff check .` | 39015741758 PASS |
+| Code | CI Code-level tests | 39015741758: 448 passed, 1 warning |
+| API | CI API contract tests | 39015741758 PASS |
+| E2E | CI E2E strategy acceptance | 39015741758 PASS |
+| Historical | Historical Backtest Smoke | 39015741705 PASS |
+
+## Evidence log
+
+- PR #76 initial head `862818319d9cd3378bb516b25006a1b5c8a38992`:
+  CI 39015741758 SUCCESS with 448 code-level tests passed, static,
+  API, E2E, plan integrity; historical smoke 39015741705 SUCCESS.
+- The first eight observed anomalous futures ask records match the
+  exact tail tuple, but only these eight sizes/order counts were exposed
+  by the bounded diagnostic. The other 67 must match the accepted
+  tuple or this patch still fails closed. No new valid Q3 source is claimed.
 
 ## Decision gate
 The unsupported general claim that *all* zero-priced exchange levels are
@@ -87,11 +97,14 @@ captured tuple, fail closed with source and level evidence. Widening the
 format contract requires further source evidence and review.
 
 ## Resume from here
-Implement the exact suffix recognition and tests, check full final-head CI and
-historical smoke. Merge only a clean, passing PR. Update Issue #69 with SHA and
-source evidence. Request a new **single-case** operator run using the existing
-Cash fixture workflow; do not run Q3/Q4/planner/promotion until that
-single-case validates a real source.
+Review final-head CI after this checkpoint, squash merge PR #76 only
+after all checks green, then verify post-merge main CI. Record final evidence
+and SHA in Issue #69. Next operator task: the same single-case diagnostic-only
+historical fixture workflow with 2025-07-04 entry, 2025-09-25 exit and
+BTC-USDT-250926 future. If it succeeds, inspect actuals/source integrity;
+if it fails, inspect fresh diagnostics. This run omits frozen selection
+provenance and cannot be promoted. Never auto-dispatch Q3/Q4/planner/
+promotion before a real, independently validated source run.
 
 ## Completion
 Pending.
