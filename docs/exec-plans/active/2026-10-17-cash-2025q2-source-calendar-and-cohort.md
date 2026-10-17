@@ -51,8 +51,8 @@ not select dates using paper returns or existing results.
       hash, exact date and source identity, missing/error days
       and bounded/retry behavior. No download or PnL during
       calendar population scan.
-- [ ] Independently verify actual source run/Artifact SHA and
-      population; validate separate 2025-06-26 exit evidence.
+- [x] Independently verify actual source run/Artifact SHA and
+      population; validate separate 2025-06-26 exit evidence. Source-member identity is 90/90; exit 00:15 L2 from run 39029586457, but selected entries remain unverified.
 - [ ] Apply strict `availability-even-rank-v1` to verified
       eligible population only; pre-register N=12 exact dates
       and source provenance **before** their strategy outcomes,
@@ -143,7 +143,7 @@ and not a selected profitable case.
 - [x] Persist `scripts/audit_cash_2025q2_source_calendar.py` with ZIP digest, raw query identity, response SHA, date, archive URL and report-vs-source consistency checks.
 - [x] Add offline positive and corruption/approval-escalation negative tests (11 cases locally passed using `python -m pytest -q`; await final-head CI).
 - [x] PR #98 final-head CI/Smoke and post-merge main CI succeeded; main SHA `9b00e900bf22b09216297daacf6148ba43aaf6b8`.
-- [ ] Continue bounded contract-member availability enumeration; do not infer 12 eligible selected dates from the 90 family-level catalogs.
+- [x] Complete bounded exact-contract member availability enumeration, all nine archive artifacts audited, preserving 90/90 exact-contract identities without evaluating returns.
 
 ## 2026-10-17 next execution slice: bounded exact-contract source population
 
@@ -157,8 +157,18 @@ and not a selected profitable case.
 - Governance: selection remains frozen **false**, zero opportunity or PnL computations, sample count stays 54 Cash/32 Funding; any sample freeze is a separately reviewed PR based only on **fully verified** available contract-member dates. If any date is an HTTP/parse error, no sample selection or promotion.
 - Resume checkpoint: create worker/script, workflow and offline tests, submit PR and run source-only batch workflow; inspect every batch Actions artifact and independently verify reported SHA/dates/member names before proposing a source-grounded selection.
 
+## 2026-10-17 complete exact-contract source evidence (outcome blind)
+
+- PR #99 [merged](https://github.com/pkking/future-opportunity/pull/99) at `7196746611da611f6a410ed0ae79163f8c6a578e`; final-head CI [39045499828](https://github.com/pkking/future-opportunity/actions/runs/39045499828) and Historical Smoke [39045499795](https://github.com/pkking/future-opportunity/actions/runs/39045499795) passed; postmerge main CI [39045729737](https://github.com/pkking/future-opportunity/actions/runs/39045729737) passed.
+- Official [90-date exact contract source run 39045070860](https://github.com/pkking/future-opportunity/actions/runs/39045070860) completed successfully on source workflow SHA `b5980b907d8e698906ef4fe49de18fba6b451cf6`. All 9/9 10-day jobs succeeded and published one Actions artifact each. Compressed source archive bytes are **not** committed.
+- Exact 9-artifact source run ID, artifact IDs, ZIP SHA-256 digests: `docs/research/cash-2025q2-member-artifacts-manifest-v1.json` (immutable file SHA-256 `88669cef7860f616b0483723c07edea82040bd86033a61bcc55a51bf4eb41b72`).
+- Full independent offline audit of all nine ZIPs against frozen 90-date 180-response official source ZIP (2025-03-29..06-26), exact member names, dated official archive URLs, per-day compressed archive SHA-256, no duplicates, counts, non-trading flags: `docs/research/cash-2025q2-member-population-audit-v1.json` (SHA-256 `6030971d2060c603d6ce78222d68e0ea1f7a040f0c099b108fbf88247a298c6c`).
+- Results: **90/90** dates contain unique exact `BTC-USDT-250627` `.data` members; 0 unavailable, 0 ambiguous, 0 source errors. **Still source member only**: only the separately verified exploratory 2025-06-12 entry/2025-06-26 exit has audited canonical 00:15 L2. No frozen strategy selection, outcomes or corpus promotion.
+- Chronological eligibility: the source population includes `2025-06-26` to prove the fixed exit book; entry `2025-06-26T00:15:00Z` would equal the required exit and violate `entry < exit < expiry`. Therefore the eligible entry-day population is **89** dates after excluding `2025-06-26` on non-economic grounds. This exclusion must be applied to `availability-even-rank-v1` **before** freezing N=12 in an independently reviewed, separate PR.
+- Complete membership doesn't prove sampled historical L2, margin safety, venue exposure, returns, economic approval or live-trading readiness. Keep Cash 54 / Funding 32 pinned baseline.
+
 ## Resume from here
-The official 90-day family-archive API catalog population and both independently reverified ZIPs are grounded above. PR #98 is merged and its final-head CI/Smoke and main CI succeeded. Next independently enumerate **all 90 FUTURES archive contract members**, using fixed calendar API evidence from run 39038071038 artifact 12103210971 ZIP sha256 `1b9a4adcb7035ca4abb70e5a9f1823dc3a71f5e9849070ce59c493df205b57ae`. Progress via new read-only matrix workflow (10 days/batch, 9 batches, each archived day bounded to 512MiB), publish raw member identity and SHA-256 per day even for unavailable/error outcomes; fail closed on incompleteness. Never select dates until the entire population has been audited. Then proceed to bounded source archive *member-level* evidence for the exact `BTC-USDT-250627` contract across the frozen calendar, logging missing/ambiguous days. Do not freeze N=12 availability-based samples until exact per-date eligibility is verified from source archives. No automatic acquisition, corpus promotion, economics threshold activation, or live trading.
+First verify and merge the 90-date source-evidence-only PR after final-head CI + historical smoke, then verify main CI. Build a **separate** immutable, outcome-blind N=12 preregistration PR using existing `availability-even-rank-v1` for eligible entry dates 2025-03-29..2025-06-25; explicitly list the excluded exit date `2025-06-26`. Pin source-run/artifact SHA, independently replay selection, require separate human review, and do **not** dispatch acquisition or promotion automatically. Only after frozen selection approval run source preparation with exact 00:15 SPOT/FUTURES entry/exit L2 for all selected dates and audit all negative/unqualified cases. No Stage-2 economics gate or live trading.
 
 ## Completion
 Pending audited 2025Q2 population and reviewed acquisition.
