@@ -173,13 +173,13 @@ and not a selected profitable case.
 - Source reality: 90/90 FUTURES family archives contain exact BTC-USDT-250627 member, no unverified days; all 9 official source ZIP digests pinned. Exact entry-date eligibility is **89** because the fixed 2025-06-26T00:15:00Z exit is not a strict earlier entry timestamp.
 - Existing accepted algorithm `availability-even-rank-v1` with start 2025-03-29, end 2025-06-26, non-economic `excluded_market_dates=[2025-06-26]`, `sample_size=12`, produces selected date SHA-256 `9bd08184a3a0c2487ba57087effdf0e8231db45fb4bf10226290627ed2990b37`. This is **prospective**, before any sampled economics.
 - A *separate independently reviewed PR* shall pin `docs/historical-acquisition-plans/cash-2025q2-12day-preregistration-v1.json` and provide a reusable fail-closed validator/tests. Do not mark `selected dates frozen` or open acquisition until that review PR is merged.
-- [ ] Record exact source IDs, SHA, N=12 selected dates, exit-day temporal exclusion in immutable registration.
-- [ ] Validate deterministic replay, input-schema mutation, no pinned-day overlap, and all 12 entries strictly before exit.
+- [x] Record exact source IDs, SHA, N=12 selected dates, exit-day temporal exclusion in immutable proposed registration.
+- [x] Implement fail-closed deterministic replay validator and offline negative tests for input-schema drift, no pinned-day overlap, and all 12 entries strictly before exit; CI pending.
 - [ ] Final-head static/code/API/E2E/Historical Smoke green; obtain separate human preregistration review.
 - [ ] After approved freeze only: operator-controlled selected-case full 4-leg L2 acquisition (not authorized by this PR).
 
 ## Resume from here
-Source identity population is independently completed, archived and main-verified (PR #100). In this branch author source-bound N=12 **proposed** preregistration, replayable validator and offline tests, then CI/Smoke. Keep the PR open for separate human selection review; do not dispatch market acquisition or corpus promotion prior to that gate. Follow the documented exact source artifact IDs/digests and make no profitability decisions.
+Source identity population is independently completed, archived and main-verified (PR #100). In this branch the proposed source-bound N=12 registration, replay validator and negative tests have been authored; run CI/Smoke on final head. Keep the PR open for separate human selection review; do not dispatch market acquisition or corpus promotion prior to that gate. Follow the documented exact source artifact IDs/digests and make no profitability decisions.
 
 ## Completion
 Pending audited 2025Q2 population and reviewed acquisition.
