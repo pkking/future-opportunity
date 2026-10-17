@@ -1,7 +1,7 @@
 # Cash 2025Q2 additional independent expiry cohort
 
 Issue: #95
-Status: VERIFYING
+Status: BLOCKED_DECISION
 Owner: agent
 Started: 2026-10-17
 
@@ -76,7 +76,7 @@ not select dates using paper returns or existing results.
 - [x] 4. Freeze verified 12-date selection from historical
       source capacity and create operator-controlled preparation
       handoff.
-- [ ] 5. Governed acquisition / review PR / main CI.
+- [ ] 5. Governed acquisition / review PR / main CI (requires distinct human authorization).
       Do not silently activate thresholds.
 
 ## Verification matrix
@@ -213,8 +213,29 @@ and not a selected profitable case.
 - Gate: user-approved 12-date freeze is recorded. Next material authorization **still needed**: dispatch 12 full 4-leg SPOT+FUTURES historical 00:15 orderbook downloads, per-case actuals/compact fixture artifacts. Promotion and live trading remain separate/unapproved.
 - Upon any failure, preserve cases/negative observations and exact status; do not pick replacements using outcomes.
 
+## 2026-10-18 operator-control implementation and authorization gate
+
+- Explicit approval for **date preregistration** did not authorize downloaded L2 source acquisition. The 12 selected dates were frozen by PR #101; no market economic selection was performed.
+- PR [#102](https://github.com/pkking/future-opportunity/pull/102) merged at `e37120b326d578a2d10ae00769d7d7d5cdfbb6c7`, postmerge [CI 39050630835](https://github.com/pkking/future-opportunity/actions/runs/39050630835) passed. Its read-only [selection-control Run 39050630845](https://github.com/pkking/future-opportunity/actions/runs/39050630845), artifact **12106828444** (`sha256:8f29acfacaa71d1e5a59c0a0b28e28eef43257e6613c5cfa4806fea4740c9e36`) was independently downloaded and inspected (exact N=12, PR #101 reference, registered selection SHA and all acquisition/promotion gates false).
+- PR [#103](https://github.com/pkking/future-opportunity/pull/103) merged at `fc0473cdd47e00316c766796f4cd5143f5196594`, final-head [CI 39051211960](https://github.com/pkking/future-opportunity/actions/runs/39051211960) and [Historical Smoke 39051212068](https://github.com/pkking/future-opportunity/actions/runs/39051212068) passed. Postmerge [main CI 39051301876](https://github.com/pkking/future-opportunity/actions/runs/39051301876) passed. The first CI failure [39051138749](https://github.com/pkking/future-opportunity/actions/runs/39051138749) was a test import path, fixed at `176f88c74fecc82ffc00fd5a78bb75b73c32a5c2` before final gates.
+- The exact 12-case offline manifest: `docs/historical-acquisition-plans/cash-2025q2-12day-wave-001.json`; fail-closed validator: `scripts/validate_cash_2025q2_preparation_handoff.py`; manual-only `workflow_dispatch` wrapper: `.github/workflows/prepare-cash-2025q2-wave.yml` (requires distinct operator authorization input; no push/schedule/automatic invocation).
+- The wrapper delegates to existing `acquire-historical-campaign.yml`, preparing exactly 12 Cash cases, with `funding=null`, immutable source selection and 2025-06-26T00:15Z close. Each case's existing preparation downloads entry/exit SPOT/FUTURES, writes normalized canonical books, evaluates actuals and uploads prepared/compact/actuals artifacts. The repeated exit-source downloads across cases are an implementation cost, **not** a reason to alter frozen dates.
+- This phase only implements future preparation **capacity**. No workflow was dispatched, no selected-day L2 completeness established, no sampled economics assessed, no pinned corpus mutated, no distribution Stage-2 gate activated, and no authenticated live trading enabled. Existing Cash 54 / Funding 32 counts unchanged.
+
+### Decision required before proceeding
+
+**Decision:** authorize or reject **one manually initiated, read-only, historical source preparation run** for exactly the frozen 12 cases. Separate from the already approved *date freeze*. It fetches historical L2 SPOT and FUTURES official archives and calculates paper historical actuals, then uploads bounded, auditable evidence. It does not place market orders, commit new corpus fixtures or promote strategies.
+
+**Options:** (A) authorize the bounded 12-case acquisition workflow with existing immutable manifest, or (B) defer/source-optimize/decline. A failure/negative case is retained with its source status rather than replaced.
+
+**Evidence:** PR #101 + #102 + #103 and final-head/main CI URLs above; exact source artifact SHA and fixed registration SHA `9bd08184a3a0c2487ba57087effdf0e8231db45fb4bf10226290627ed2990b37`.
+
+**Recommendation:** authorize one controlled **research-only** run. Review complete per-case raw SHA/normalized 00:15 L2/actuals/compact artifacts first, and only later separately decide whether to promote a reviewed historical corpus PR.
+
+**Resume after authorization:** an operator runs `prepare-cash-2025q2-wave.yml` with required manual authorization input; inspect its source artifacts, preserve all 12 cases including any failed/missing/negative results. Do not automatically trigger separate promotion or enable live trading.
+
 ## Resume from here
-The source-only approved-selection control is available and independently verified (Run 39050630845, artifact 12106828444). The exact 12-case acquisition manifest, offline validator and manual-only workflow wrapper are now committed. Run full CI/Historical Smoke on the final branch head and merge only if green; verify postmerge main CI. The next material decision is separate operator authorization to dispatch the bounded read-only 12-case historical L2 preparation job. **Do not dispatch** without this distinct authorization. Keep 54 Cash/32 Funding baseline unchanged.
+PR #101 approved/frozen; PR #102 selection evidence and PR #103 manual acquisition handoff merged with successful main CI. **BLOCKED_DECISION**: obtain explicit, separate operator approval before dispatching the 12-case historical L2 + paper actuals workflow. Do not interpret date selection approval as permission for source acquisition; do not dispatch automatically. Preserve frozen 12 dates, source Artifact 12106828444 and SHA, 54 Cash / 32 Funding pinned corpus.
 
 ## Completion
 Pending audited 2025Q2 population and reviewed acquisition.
