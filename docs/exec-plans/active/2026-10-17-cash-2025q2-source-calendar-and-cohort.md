@@ -1,7 +1,7 @@
 # Cash 2025Q2 additional independent expiry cohort
 
 Issue: #95
-Status: VERIFYING
+Status: BLOCKED_DECISION
 Owner: agent
 Started: 2026-10-17
 
@@ -175,11 +175,24 @@ and not a selected profitable case.
 - A *separate independently reviewed PR* shall pin `docs/historical-acquisition-plans/cash-2025q2-12day-preregistration-v1.json` and provide a reusable fail-closed validator/tests. Do not mark `selected dates frozen` or open acquisition until that review PR is merged.
 - [x] Record exact source IDs, SHA, N=12 selected dates, exit-day temporal exclusion in immutable proposed registration.
 - [x] Implement fail-closed deterministic replay validator and offline negative tests for input-schema drift, no pinned-day overlap, and all 12 entries strictly before exit; CI pending.
-- [ ] Final-head static/code/API/E2E/Historical Smoke green; obtain separate human preregistration review.
+- [x] Initial PR #101 code/API/E2E/static/Agent plan CI [39046731182](https://github.com/pkking/future-opportunity/actions/runs/39046731182) and Historical Smoke [39046731185](https://github.com/pkking/future-opportunity/actions/runs/39046731185) green on `866ac25b0a8d6cf7d2903df97899b4c2aad504e0`; final checkpoint commit must be rerun.
+- [ ] Obtain separate independent **human** preregistration review before merging PR #101.
 - [ ] After approved freeze only: operator-controlled selected-case full 4-leg L2 acquisition (not authorized by this PR).
 
+### Human review / decision gate
+
+**Decision:** Whether to approve the source-bound, outcome-blind exact 12-date selection in [PR #101](https://github.com/pkking/future-opportunity/pull/101), with 2025-06-26 excluded from entry eligibility because entry_at would equal fixed exit_at.
+
+**Options:** (A) approve this immutable selection and permit reviewed PR merge, after which controlled per-date source preparation can start under the separate acquisition workflow; (B) request corrections with explicit evidence; (C) decline expanding the cohort. No selection replacement based on observed profitability is permitted.
+
+**Evidence:** 90/90 exact contract archive members independently verified; all nine source ZIP SHA digests and 90-day source audit pinned in PR #100; 89 strictly earlier entry candidate dates; existing `availability-even-rank-v1`, 12 proposed dates, evidence SHA `9bd08184a3a0c2487ba57087effdf0e8231db45fb4bf10226290627ed2990b37`; PR #101 offline mutation tests and full CI/Smoke.
+
+**Recommendation:** Approve the prospective date selection after independent review; preserve all negative future cases, and do not infer any return/profitability before full selected-day four-book acquisition.
+
+**Resume after decision:** approved PR merge → main CI → operator-controlled prepare/Actuals/Compact for the exact selected dates → audit all canonical L2 sources and rejects → separate corpus promotion PR and review. No live orders or economics gates.
+
 ## Resume from here
-Source identity population is independently completed, archived and main-verified (PR #100). In this branch the proposed source-bound N=12 registration, replay validator and negative tests have been authored; run CI/Smoke on final head. Keep the PR open for separate human selection review; do not dispatch market acquisition or corpus promotion prior to that gate. Follow the documented exact source artifact IDs/digests and make no profitability decisions.
+Source identity population is independently completed, archived and main-verified (PR #100). The outcome-blind selection proposal, validator and fail-closed tests are committed under PR #101. CI and Historical Smoke passed at prior PR head; verify final checkpoint head checks then **STOP for independent human preregistration approval**. Do not merge the PR or dispatch market acquisition/promotion before that approval. Follow the documented exact source artifact IDs/digests and make no profitability decisions.
 
 ## Completion
 Pending audited 2025Q2 population and reviewed acquisition.
