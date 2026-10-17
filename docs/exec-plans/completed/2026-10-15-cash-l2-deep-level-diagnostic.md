@@ -1,7 +1,7 @@
 # Cash 2025 Q3 deep-book non-positive price diagnosis
 
 Issue: #69
-Status: BLOCKED_EVIDENCE
+Status: COMPLETED
 Owner: agent
 Started: 2026-10-15
 Last checkpoint: 2026-10-15
@@ -107,25 +107,26 @@ levels, format documentation, a new regression contract, and review.
 
 ## Resume from here
 
-**Blocked on exchange source evidence, not code.** The deep-level diagnostic
-is merged on main at `bc27e44`. Operator should re-dispatch only the exact
-single-case *diagnostic* (not the frozen Q3 wave):
-```bash
-gh workflow run prepare-cash-historical-fixture.yml -R pkking/future-opportunity --ref main \
-  -f entry_at=2025-07-04T00:15:00+00:00 \
-  -f exit_at=2025-09-25T00:15:00+00:00 \
-  -f future_id=BTC-USDT-250926 \
-  -f expiry_at=2025-09-26T08:00:00+00:00
-```
-After this diagnostic-only run, inspect the new ZIP artifact
-`cash-l2-diagnostics-2025-07-04-*` / `entry_future.json` for
-`levels.bids.first_price_anomalies`, `levels.asks.first_price_anomalies`
-and `price_anomaly_counts`, checking exact index and source size. This
-single-case run omits frozen selection provenance and **is not promotable**.
-Determine documented OKX semantics for invalid/zero prices and decide the
-minimal independently reviewed parser contract change or explicit source
-rejection. Only once Q3 genuinely prepares and audits all 12 frozen cases
-may the operator trigger Q4. Keep Issue #69 open until source validation.
+**ARCHIVED / COMPLETED.** Earlier source failures, pending commands and
+review-blocked state described above are retained as historical
+checkpoints only and are superseded by this closeout. Do not replay
+an acquisition, diagnostic, planner or promotion based on a stale
+checkpoint in this file.
+
+Issue #69 is closed/completed after the user approved [PR #82](https://github.com/pkking/future-opportunity/pull/82).
+The exact frozen Q3 and Q4 12-day preparations were independently
+verified (runs [39016938121](https://github.com/pkking/future-opportunity/actions/runs/39016938121)
+and [39018358844](https://github.com/pkking/future-opportunity/actions/runs/39018358844));
+read-only planner [39020272173](https://github.com/pkking/future-opportunity/actions/runs/39020272173)
+and governed staging [39021366976](https://github.com/pkking/future-opportunity/actions/runs/39021366976)
+produced the source-bound 24-item review. User-approved PR #82 merged
+as `ad4790c0c7ec785eb2de9d53704e154515451001`.
+Post-merge main CI and Historical Smoke both succeeded; pinned
+corpus is **Cash 54 / Funding 32**, all 24 registered 2025 dates
+retained including eight correctly unqualified samples.
+For future work start a **new Issue and execution plan**; never
+re-use the closed Issue #69. No economics threshold or live trading
+was approved.
 
 ## Completion
 
@@ -137,3 +138,20 @@ Final-head Historical Smoke: https://github.com/pkking/future-opportunity/action
 PR #74 squash merged: `bc27e44bc8b10e2b41ab87723ddd5beae83f8566`.
 Post-merge main CI: https://github.com/pkking/future-opportunity/actions/runs/38710975850 (success).
 Issue #69 stays open. No 2025 Q3 source case promoted.
+
+### Final reconciliation — 2026-10-17
+
+Final commit: `ad4790c0c7ec785eb2de9d53704e154515451001` (PR #82,
+human-approved completion of Issue #69, postdating the historical
+checkpoints above; this archival move tracked under Issue #83).
+CI run: https://github.com/pkking/future-opportunity/actions/runs/39023534155 (main SUCCESS).
+Historical Smoke: https://github.com/pkking/future-opportunity/actions/runs/39023534123 (main SUCCESS).
+Source integrity: Q3 39016938121 + Q4 39018358844; planner
+39020272173; staged promotion 39021366976; 24/24 unique dates,
+Cash 54 / Funding 32, no original fixture replaced.
+Remaining unassessed items: The 90-day preferred distinct-day
+coverage (Cash needs 36 more, Funding 58 more), more independent
+Cash expiry cohorts, stronger Funding pre-entry regime coverage,
+account-specific MarginSafety and portfolio-level VenueExposure.
+Stage-2 economics and live execution remain DISABLED; these are
+new research/ADR scopes, not unfinished tasks under Issue #69.

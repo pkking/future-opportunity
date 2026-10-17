@@ -1,7 +1,7 @@
 # Strict OKX FUTURES snapshot empty-tail compatibility
 
 Issue: #69
-Status: BLOCKED_EVIDENCE
+Status: COMPLETED
 Owner: agent
 Started: 2026-10-17
 Last checkpoint: 2026-10-17
@@ -182,21 +182,26 @@ dispatched by these preparation workflows.
 
 ## Resume from here
 
-The next action is operator-dispatched **read-only combined historical
-campaign planning** with exact run IDs:
+**ARCHIVED / COMPLETED.** Earlier source failures, pending commands and
+review-blocked state described above are retained as historical
+checkpoints only and are superseded by this closeout. Do not replay
+an acquisition, diagnostic, planner or promotion based on a stale
+checkpoint in this file.
 
-```bash
-gh workflow run plan-historical-campaign.yml \
-  -R pkking/future-opportunity --ref main \
-  -f source_run_ids=39016938121,39018358844 \
-  -f campaign_prefix=cash-2025-q3-q4-review-001
-```
-
-Independently audit planner evidence before any reviewed corpus
-promotion. Q3/Q4 prep is complete, but *corpus promotion, CI and
-risk/completeness policy have not changed*. Do not dispatch promotion
-without the separate governed gate. Issue #69 remains OPEN. Full
-details in `2026-10-10-cash-2025-quarter-artifact-identity.md`.
+Issue #69 is closed/completed after the user approved [PR #82](https://github.com/pkking/future-opportunity/pull/82).
+The exact frozen Q3 and Q4 12-day preparations were independently
+verified (runs [39016938121](https://github.com/pkking/future-opportunity/actions/runs/39016938121)
+and [39018358844](https://github.com/pkking/future-opportunity/actions/runs/39018358844));
+read-only planner [39020272173](https://github.com/pkking/future-opportunity/actions/runs/39020272173)
+and governed staging [39021366976](https://github.com/pkking/future-opportunity/actions/runs/39021366976)
+produced the source-bound 24-item review. User-approved PR #82 merged
+as `ad4790c0c7ec785eb2de9d53704e154515451001`.
+Post-merge main CI and Historical Smoke both succeeded; pinned
+corpus is **Cash 54 / Funding 32**, all 24 registered 2025 dates
+retained including eight correctly unqualified samples.
+For future work start a **new Issue and execution plan**; never
+re-use the closed Issue #69. No economics threshold or live trading
+was approved.
 
 ## Completion
 Implementation merged and post-merge CI green. Post-fix **2025-07-04
@@ -205,3 +210,20 @@ checks. Frozen Q3 wave 39016938121 and its 12x3 ZIPs are now independently
 VERIFIED; **no new Q3 fixture has been promoted**. Q4 Run 39018358844 now VERIFIED. Q3 and Q4 fixed waves are accepted
 as historical preparation evidence, with no promotion or planner
 executed. Issue #69 remains OPEN pending planning and corpus gates.
+
+### Final reconciliation — 2026-10-17
+
+Final commit: `ad4790c0c7ec785eb2de9d53704e154515451001` (PR #82,
+human-approved completion of Issue #69, postdating the historical
+checkpoints above; this archival move tracked under Issue #83).
+CI run: https://github.com/pkking/future-opportunity/actions/runs/39023534155 (main SUCCESS).
+Historical Smoke: https://github.com/pkking/future-opportunity/actions/runs/39023534123 (main SUCCESS).
+Source integrity: Q3 39016938121 + Q4 39018358844; planner
+39020272173; staged promotion 39021366976; 24/24 unique dates,
+Cash 54 / Funding 32, no original fixture replaced.
+Remaining unassessed items: The 90-day preferred distinct-day
+coverage (Cash needs 36 more, Funding 58 more), more independent
+Cash expiry cohorts, stronger Funding pre-entry regime coverage,
+account-specific MarginSafety and portfolio-level VenueExposure.
+Stage-2 economics and live execution remain DISABLED; these are
+new research/ADR scopes, not unfinished tasks under Issue #69.

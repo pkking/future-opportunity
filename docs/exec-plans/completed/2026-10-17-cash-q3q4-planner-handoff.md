@@ -1,7 +1,7 @@
 # Cash 2025 Q3/Q4 planner verification
 
 Issue: #69
-Status: BLOCKED_DECISION
+Status: COMPLETED
 Date: 2026-10-17
 Scope: read-only evidence checkpoint; no corpus mutation.
 
@@ -27,15 +27,15 @@ Record read-only planner and independent evidence so a new agent can safely resu
 - [x] Validate 24 distinct source-backed candidates, one 24-item wave, no existing pinned collisions.
 - [x] Independently validate parent links, two frozen provenance groups, all 96 canonical hashes and 5000ms freshness.
 - [x] Preserve 8 properly unqualified samples in the historical qualification denominator.
-- [ ] Obtain explicit operator authorization to stage the separate corpus promotion proposal.
-- [ ] Validate the staged proposal's own CI and historical smoke before human merge.
+- [x] Operator dispatched staging run 39021366976.
+- [x] PR #82 reviewed and passed final-head CI 39022126155 and Historical Smoke 39022126244; human-approved merge completed.
 
 ## Implementation slices
 
 - [x] 1. Inspect actual completed planner Run 39020272173 and downloaded artifact.
 - [x] 2. Independently audit inventory and complete 24-item wave.
 - [x] 3. Record evidence and exact recovery/decision gate in repository.
-- [ ] 4. Separately stage reviewed corpus proposal after operator authorization.
+- [x] 4. Staged review PR #82 via run 39021366976, verified, human-approved and merged.
 
 ## Verification matrix
 
@@ -49,17 +49,45 @@ Record read-only planner and independent evidence so a new agent can safely resu
 | Review and promotion | Separate operator action | BLOCKED_DECISION |
 
 ## Resume from here
-Only with explicit operator authorization, dispatch the separate write-capable PR staging workflow:
 
-```bash
-gh workflow run promote-planned-historical-wave.yml -R pkking/future-opportunity --ref main \
-  -f planner_run_id=39020272173 \
-  -f planner_artifact_name=historical-campaign-planner-39020272173 \
-  -f wave_file=waves/cash-2025-q3-q4-review-001-wave-001.json
-```
+**ARCHIVED / COMPLETED.** Earlier source failures, pending commands and
+review-blocked state described above are retained as historical
+checkpoints only and are superseded by this closeout. Do not replay
+an acquisition, diagnostic, planner or promotion based on a stale
+checkpoint in this file.
 
-This action proposes corpus changes in a review PR, not an approved main merge. Require promotion.json, exact 24-source inventory, branch/PR or pr-handoff, normal PR CI, historical smoke, human review and merge, then main verification. Do not dispatch automatically, change source dates, enable live trading, or turn on economic thresholds. Issue #69 remains open.
+Issue #69 is closed/completed after the user approved [PR #82](https://github.com/pkking/future-opportunity/pull/82).
+The exact frozen Q3 and Q4 12-day preparations were independently
+verified (runs [39016938121](https://github.com/pkking/future-opportunity/actions/runs/39016938121)
+and [39018358844](https://github.com/pkking/future-opportunity/actions/runs/39018358844));
+read-only planner [39020272173](https://github.com/pkking/future-opportunity/actions/runs/39020272173)
+and governed staging [39021366976](https://github.com/pkking/future-opportunity/actions/runs/39021366976)
+produced the source-bound 24-item review. User-approved PR #82 merged
+as `ad4790c0c7ec785eb2de9d53704e154515451001`.
+Post-merge main CI and Historical Smoke both succeeded; pinned
+corpus is **Cash 54 / Funding 32**, all 24 registered 2025 dates
+retained including eight correctly unqualified samples.
+For future work start a **new Issue and execution plan**; never
+re-use the closed Issue #69. No economics threshold or live trading
+was approved.
 
 ## Completion
 
 Evidence checkpoint is complete once PR #81 final-head CI passes, it is merged, and main CI is verified. Corpus promotion and the separate human review remain pending. No economic gate or live trading permission is granted.
+
+### Final reconciliation — 2026-10-17
+
+Final commit: `ad4790c0c7ec785eb2de9d53704e154515451001` (PR #82,
+human-approved completion of Issue #69, postdating the historical
+checkpoints above; this archival move tracked under Issue #83).
+CI run: https://github.com/pkking/future-opportunity/actions/runs/39023534155 (main SUCCESS).
+Historical Smoke: https://github.com/pkking/future-opportunity/actions/runs/39023534123 (main SUCCESS).
+Source integrity: Q3 39016938121 + Q4 39018358844; planner
+39020272173; staged promotion 39021366976; 24/24 unique dates,
+Cash 54 / Funding 32, no original fixture replaced.
+Remaining unassessed items: The 90-day preferred distinct-day
+coverage (Cash needs 36 more, Funding 58 more), more independent
+Cash expiry cohorts, stronger Funding pre-entry regime coverage,
+account-specific MarginSafety and portfolio-level VenueExposure.
+Stage-2 economics and live execution remain DISABLED; these are
+new research/ADR scopes, not unfinished tasks under Issue #69.
