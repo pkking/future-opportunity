@@ -1,0 +1,49 @@
+name: Probe Independent Cash Expiry Source
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "scripts/probe_cash_independent_expiries.py"
+      - ".github/workflows/probe-cash-independent-expiries.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  source-identity:
+    name: Read-only new expiry ${{ matrix.candidate_id }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    strategy:
+      fail-fast: false
+      matrix:
+        candidate_id: [2025q2, 2026q3]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - name: Inspect immutable source targets and official entry/exit catalog
+        run: |
+          uv run python scripts/probe_cash_independent_expiries.py \
+            --candidate-id "${{ matrix.candidate_id }}" \
+            --output-dir "artifacts/cash-independent-expiry/${{ matrix.candidate_id }}"
+      - name: Report exact source identity limitations
+        if: always()
+        shell: bash
+        run: |
+          echo "## Candidate independent expiry: ${{ matrix.candidate_id }}" >> "$GITHUB_STEP_SUMMARY"
+          if [[ -f "artifacts/cash-independent-expiry/${{ matrix.candidate_id }}/summary.json" ]]; then
+            jq -r '"Source catalog ready: \(.source_catalog_ready); sampled L2: \(.full_orderbook_source_readiness); acquisition: \(.acquisition_approved)."' \
+              "artifacts/cash-independent-expiry/${{ matrix.candidate_id }}/summary.json" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No valid source evidence; candidate remains unassessed." >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "No automatic acquisition, sample promotion, economics gate or live orders." >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload independently auditable source catalog evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cash-independent-expiry-${{ matrix.candidate_id }}
+          path: artifacts/cash-independent-expiry/${{ matrix.candidate_id }}/
+          if-no-files-found: warn
