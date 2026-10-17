@@ -1,0 +1,43 @@
+name: Probe Cash 2025Q2 Source Calendar
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "scripts/probe_cash_2025q2_source_calendar.py"
+      - ".github/workflows/probe-cash-2025q2-source-calendar.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  catalog-source:
+    name: Read-only 90-day fixed Cash Q2 catalog population
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - name: Query exact frozen Q2 source calendar, no economic selection
+        run: |
+          uv run python scripts/probe_cash_2025q2_source_calendar.py \
+            --output-dir artifacts/cash-2025q2-source-calendar
+      - name: Report evidence and remaining source identity limits
+        if: always()
+        shell: bash
+        run: |
+          echo "## Source calendar: BTC-USDT-250627" >> "$GITHUB_STEP_SUMMARY"
+          if [[ -f artifacts/cash-2025q2-source-calendar/source-calendar-report.json ]]; then
+            jq -r '"Catalog paired days: \(.paired_catalog_day_count) / \(.requested_calendar_days); API errors: \(.query_error_days | length). Family-archive member and complete L2 remain unverified."' artifacts/cash-2025q2-source-calendar/source-calendar-report.json >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No complete source population report; archive evidence unresolved." >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "Outcome-blind catalog feasibility only; no sample freeze, acquisition or promotion." >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload official raw responses and per-day source evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cash-2025q2-90day-source-calendar
+          path: artifacts/cash-2025q2-source-calendar/
+          if-no-files-found: warn
