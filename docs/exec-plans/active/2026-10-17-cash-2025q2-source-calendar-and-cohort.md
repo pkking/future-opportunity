@@ -1,7 +1,7 @@
 # Cash 2025Q2 additional independent expiry cohort
 
 Issue: #95
-Status: BLOCKED_DECISION
+Status: BLOCKED_EVIDENCE
 Owner: agent
 Started: 2026-10-17
 
@@ -234,8 +234,18 @@ and not a selected profitable case.
 
 **Resume after authorization:** an operator runs `prepare-cash-2025q2-wave.yml` with required manual authorization input; inspect its source artifacts, preserve all 12 cases including any failed/missing/negative results. Do not automatically trigger separate promotion or enable live trading.
 
+## 2026-10-17 22:37 UTC — independent source acquisition authorization granted
+
+- User explicitly approved **one** manually initiated research-only 12-case Cash 2025Q2 historical L2 acquisition run, separately from the prior PR #101 *date freeze* approval. The exact scope and source evidence are persisted in [Issue #95, approval comment](https://github.com/pkking/future-opportunity/issues/95#issuecomment-6242443010).
+- Current verified main baseline before dispatch: `2c6ed2c1607710fbf162efb30c35001ba815edde`; prior CI [39051482604](https://github.com/pkking/future-opportunity/actions/runs/39051482604) successful. The `prepare-cash-2025q2-wave.yml` workflow retains `workflow_dispatch` only (no push or schedule) and requires an independent operator authorization input.
+- **Authorized exact invocation:** `gh workflow run prepare-cash-2025q2-wave.yml --repo pkking/future-opportunity --ref main -f operator_authorization=APPROVE-CASH-2025Q2-N12-SOURCE-PREPARATION`.
+- User-approved scope: exact pinned 12 dates; retrieve/normalize entry+exit SPOT/FUTURES books and paper actuals; upload full prepared/compact/actuals/failed-case diagnostics without promoting or changing corpus. No economic-target activation, live trading, date replacements or automatic retries.
+- **Execution status: APPROVED / NOT DISPATCHED.** Connected GitHub tool exposes workflow reads and reruns, but no manual `workflow_dispatch` action. Local execution environment has no authenticated `gh` CLI. Thus an operator must execute the quoted command or use the GitHub Actions **Run workflow** form. This is now an operational/evidence dependency, **not** a missing authorization or an invitation to ask for approval again.
+- After operator trigger: discover a new `workflow_dispatch` run with exact workflow name, verify `head_sha` and 12-case manifest source, audit all 12 per-case outcomes including failures, compare all 36 expected prepared/compact/actuals artifact names, original SHA/provenance and L2 book consistency. Preserve negative and rejected results; no corpus promotion until separately approved.
+- Status remains `BLOCKED_EVIDENCE` until the authorized run ID and artifacts exist; the open Issue #95 and this active plan retain ownership.
+
 ## Resume from here
-PR #101 approved/frozen; PR #102 selection evidence and PR #103 manual acquisition handoff merged with successful main CI. **BLOCKED_DECISION**: obtain explicit, separate operator approval before dispatching the 12-case historical L2 + paper actuals workflow. Do not interpret date selection approval as permission for source acquisition; do not dispatch automatically. Preserve frozen 12 dates, source Artifact 12106828444 and SHA, 54 Cash / 32 Funding pinned corpus.
+Authorization for one read-only 12-case Cash Q2 historical L2 acquisition is **granted** and preserved in Issue #95. No workflow run has started from this connector. An operator must invoke the existing manual GitHub Actions workflow using the exact input above; once triggered, inspect the actual run, all 12 case outcomes, artifact inventory and independently verifiable L2/provenance before any further gate. **Do not** ask for another acquisition approval and **do not** silently promote corpus or start live trading.
 
 ## Completion
 Pending audited 2025Q2 population and reviewed acquisition.
