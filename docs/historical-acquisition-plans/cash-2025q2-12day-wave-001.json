@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "acquisition_id": "cash-2025q2-12day-wave-001",
+  "planner_campaign_prefix": "cash-2025q2-review-001",
+  "funding": null,
+  "cash_cases": [
+    {
+      "entry_at": "2025-04-01T00:15:00+00:00",
+      "exit_at": "2025-06-26T00:15:00+00:00",
+      "future_id": "BTC-USDT-250627",
+      "expiry_at": "2025-06-27T08:00:00+00:00"
+    },
+    {
+      "entry_at": "2025-04-09T00:15:00+00:00",
+      "exit_at": "2025-06-26T00:15:00+00:00",
+      "future_id": "BTC-USDT-250627",
+      "expiry_at": "2025-06-27T08:00:00+00:00"
+    },
+    {
+      "entry_at": "2025-04-16T00:15:00+00:00",
+      "exit_at": "2025-06-26T00:15:00+00:00",
+      "future_id": "BTC-USDT-250627",
+      "expiry_at": "2025-06-27T08:00:00+00:00"
+    },
+    {
+      "entry_at": "2025-04-23T00:15:00+00:00",
+      "exit_at": "2025-06-26T00:15:00+00:00",
+      "future_id": "BTC-USDT-250627",
+      "expiry_at": "2025-06-27T08:00:00+00:00"
+    },
+    {
+      "entry_at": "2025-05-01T00:15:00+00:00",
+      "exit_at": "2025-06-26T00:15:00+00:00",
+      "future_id": "BTC-USDT-250627",
+      "expiry_at": "2025-06-27T08:00:00+00:00"
+    },
+    {
+      "entry_at": "2025-05-08T00:15:00+00:00",
+      "exit_at": "2025-06-26T00:15:00+00:00",
+      "future_id": "BTC-USDT-250627",
+      "expiry_at": "2025-06-27T08:00:00+00:00"
+    },
+    {
+      "entry_at": "2025-05-16T00:15:00+00:00",
+      "exit_at": "2025-06-26T00:15:00+00:00",
+      "future_id": "BTC-USDT-250627",
+      "expiry_at": "2025-06-27T08:00:00+00:00"
+    },
+    {
+      "entry_at": "2025-05-23T00:15:00+00:00",
+      "exit_at": "2025-06-26T00:15:00+00:00",
+      "future_id": "BTC-USDT-250627",
+      "expiry_at": "2025-06-27T08:00:00+00:00"
+    },
+    {
+      "entry_at": "2025-05-31T00:15:00+00:00",
+      "exit_at": "2025-06-26T00:15:00+00:00",
+      "future_id": "BTC-USDT-250627",
+      "expiry_at": "2025-06-27T08:00:00+00:00"
+    },
+    {
+      "entry_at": "2025-06-07T00:15:00+00:00",
+      "exit_at": "2025-06-26T00:15:00+00:00",
+      "future_id": "BTC-USDT-250627",
+      "expiry_at": "2025-06-27T08:00:00+00:00"
+    },
+    {
+      "entry_at": "2025-06-14T00:15:00+00:00",
+      "exit_at": "2025-06-26T00:15:00+00:00",
+      "future_id": "BTC-USDT-250627",
+      "expiry_at": "2025-06-27T08:00:00+00:00"
+    },
+    {
+      "entry_at": "2025-06-22T00:15:00+00:00",
+      "exit_at": "2025-06-26T00:15:00+00:00",
+      "future_id": "BTC-USDT-250627",
+      "expiry_at": "2025-06-27T08:00:00+00:00"
+    }
+  ],
+  "selection_provenance": {
+    "funding": null,
+    "cash": {
+      "schema_version": 1,
+      "selection_kind": "pre_registered_availability_sample",
+      "strategy": "cash-and-carry",
+      "source": {
+        "workflow_run": "39050630845",
+        "artifact_name": "cash-2025q2-approved-selection-control",
+        "artifact_id": "12106828444",
+        "artifact_digest": "sha256:8f29acfacaa71d1e5a59c0a0b28e28eef43257e6613c5cfa4806fea4740c9e36"
+      },
+      "sampling": {
+        "policy_version": "availability-even-rank-v1",
+        "start_date": "2025-03-29",
+        "end_date": "2025-06-26",
+        "requested_sample_size": 12,
+        "population_size": 89,
+        "excluded_market_dates": [
+          "2025-06-26"
+        ],
+        "selected_market_dates": [
+          "2025-04-01",
+          "2025-04-09",
+          "2025-04-16",
+          "2025-04-23",
+          "2025-05-01",
+          "2025-05-08",
+          "2025-05-16",
+          "2025-05-23",
+          "2025-05-31",
+          "2025-06-07",
+          "2025-06-14",
+          "2025-06-22"
+        ],
+        "evidence_sha256": "9bd08184a3a0c2487ba57087effdf0e8231db45fb4bf10226290627ed2990b37"
+      }
+    }
+  }
+}
