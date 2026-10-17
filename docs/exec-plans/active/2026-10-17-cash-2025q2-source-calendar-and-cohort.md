@@ -253,6 +253,8 @@ and not a selected profitable case.
 - The **one** operator authorization covered run 39079100154, not a repeat. Source acquisition rerun (after any code fix) must have a distinct explicit human approval and manual trigger. No automatic reruns.
 - Existing negative evidence and successful case artifacts remain immutable for this run. Wait for all dates; audit every case separately.
 
+- Implemented Q2-only `cash_max_raw_mb: 1024` through the existing reusable acquisition/Cash fixture workflows, preserving **600 MiB default** for all other callers. The fixture step only accepts `600|1024`. Added `tests/test_cash_q2_source_budget.py` for configuration guards and mocked bounded HTTP streaming/source SHA. PR CI/Smoke pending.
+
 ## Resume from here
 The first authorized 12-case acquisition is running as Actions run 39079100154. Record complete outcomes and all SHA-verified artifacts; 2025-04-09 failed because its official SPOT archive exceeds the 600MiB guard. Prepare a bounded Q2-specific 1024MiB technical remediation (without changing other callers, source identities or dates), run CI/Smoke, and do not automatically trigger another acquisition. Require a new human decision only for actual additional manual source download.
 
