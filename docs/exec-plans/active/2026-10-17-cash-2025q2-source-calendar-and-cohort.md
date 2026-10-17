@@ -1,7 +1,7 @@
 # Cash 2025Q2 additional independent expiry cohort
 
 Issue: #95
-Status: VERIFYING
+Status: BLOCKED_DECISION
 Owner: agent
 Started: 2026-10-17
 
@@ -265,8 +265,17 @@ and not a selected profitable case.
 - Implementation staged: `scripts/resolve_cash_q2_failed_source_repair.py` derives only the 2025-04-09 case after validating original 12-case manifest and exact source artifact; `.github/workflows/repair-cash-q2-2025-04-09-source.yml` requires new, distinct human authorization string and forwards 1024MiB Q2-only bounded cap; `tests/test_cash_q2_failed_source_repair.py` covers replay, tampering, manual gate and no promotion. CI / historical smoke pending; **not dispatched**.
 - **Decision gate:** the user authorized **one** 12-case run only, now consumed. A subsequent **single 2025-04-09 source retry** requires fresh distinct human approval after this code passes CI. Corpus promotion, Stage-2 return thresholds and live trading remain explicitly unauthorized.
 
+## 2026-10-18 source-only recovery ready, distinct retry approval pending
+
+- PR [#107](https://github.com/pkking/future-opportunity/pull/107) approved code review checks and merged at `9e0782557893393aab21b5c8954f10bc18bdad26`. Final-head [CI 39080352129](https://github.com/pkking/future-opportunity/actions/runs/39080352129) and [Historical Smoke 39080352158](https://github.com/pkking/future-opportunity/actions/runs/39080352158) both successful; postmerge [main CI 39080396793](https://github.com/pkking/future-opportunity/actions/runs/39080396793) successful.
+- The manually triggered dedicated wrapper `.github/workflows/repair-cash-q2-2025-04-09-source.yml` and pure, replayable one-case derivation script `scripts/resolve_cash_q2_failed_source_repair.py` both retain original 12 selected dates in provenance; only the known source-cap failure `2025-04-09` is requested for **new source preparation** (BTC-USDT-250627 entry, fixed 2025-06-26T00:15Z exit, 2025-06-27T08Z expiry). Other eleven downloaded cases, including the 3 unqualified negative market observations, remain untouched.
+- Distinct operator-authorization input required for the new one-date workflow: `operator_authorization=APPROVE-CASH-2025Q2-2025-04-09-SOURCE-REPAIR`. Bound per-source download size is 1024MiB from PR #106; this does **not** disable the stream cap or create trading permissions.
+- First authorized full Q2 run 39079100154 was concluded **failure** (11 cases source-verified; 8 qualified, 3 correctly rejected; 1 2025-04-09 source-size error). Original run and audit evidence captured in [Issue #95 comment](https://github.com/pkking/future-opportunity/issues/95#issuecomment-6243260025), original run Artifact summary SHA `4cd7e6cf98e0e7ba13074b782a61dbe04e8b35427dc7516bf98c553af8d7f832`, full independently recomputed evidence JSON SHA `3e45a877c81f705ac25f14aa03c5fc93f1a1ced34016762a18e77022b5a91e9d`.
+- **Status: BLOCKED_DECISION** — the earlier one-run permission has already been consumed. New explicit user consent is required **only to dispatch the one remaining 2025-04-09 read-only source case**, not to change selection. Connected GitHub plugin cannot invoke workflow_dispatch, so an operator must manually trigger it after approval; the agent will verify exact run ID/head/three artifacts and compare the case against the previous 11, then prepare any *separate reviewed* promotion proposal only after new corpus-promotion approval.
+- No synthetic returns, no sample replacement, no automatic reruns/promotions, no main corpus change, no Stage-2 policy change, no authenticated trading.
+
 ## Resume from here
-The original 12-case acquisition run has fully concluded: 11 independently audited full book + actuals cases (8 qualified, 3 valid unqualified) and 1 2025-04-09 source cap failure; evidence persisted in Issue #95. Scoped Q2 1024MiB fix merged (PR #106); isolated one-day recovery CLI, manual-only workflow and regression tests are committed in the current branch. Run full final-head CI/Historical Smoke and merge only if green. After that **STOP FOR A DISTINCT USER DECISION** to run only 2025-04-09 once; neither automatic dispatch nor corpus promotion is authorized.
+All initial approved research run cases and 33 original ZIPs independently audited: 8 qualified, 3 unqualified (`expected_net_return_not_positive`), 1 source 600MiB capacity failure; no market outcome assigned to missing case. The Q2-only 1024MiB bounded cap, generic no-push safety, and manual-only one-case 2025-04-09 repair have merged with successful main CI. **STOP for explicit NEW user permission to execute that one-case repair**, then an operator must manually trigger `repair-cash-q2-2025-04-09-source.yml` with its required authorization input. Do not re-download the other 11 cases; do not automatically promote corpus or enable trading.
 
 ## Completion
 Pending audited 2025Q2 population and reviewed acquisition.
