@@ -28,6 +28,8 @@ def test_q2_bound_propagates_through_only_its_manual_wave():
     assert "600|1024)" in fixture
     assert "unsupported Cash raw archive budget" in fixture
     assert "cash_max_raw_mb: 1024" in q2
+    assert "push:" not in campaign
+    assert "push:" not in fixture
     assert "workflow_dispatch:" in q2
     assert "APPROVE-CASH-2025Q2-N12-SOURCE-PREPARATION" in q2
     assert "push:" not in q2
