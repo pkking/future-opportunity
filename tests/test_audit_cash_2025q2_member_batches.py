@@ -142,7 +142,7 @@ def test_artifact_byte_tamper_is_rejected(tmp_path, monkeypatch):
 
 @pytest.mark.parametrize("change", [
     lambda report: report.update({"sample_selection_frozen": True}),
-    lambda report: report["observations"][0].update({"member_identity_verified": False}),
+    lambda report: report["observations"][1].update({"member_identity_verified": False}),
     lambda report: report["observations"][0].update({"catalog_response_sha256": "3" * 64}),
     lambda report: report["observations"][0].update({"archive_members": []}),
     lambda report: report["observations"].pop(),
