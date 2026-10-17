@@ -1,7 +1,7 @@
 # CI compatibility after frozen Cash Q3/Q4 corpus growth
 
 Issue: #69
-Status: BLOCKED_DECISION
+Status: COMPLETED
 Owner: agent
 Started: 2026-10-17
 Last checkpoint: 2026-10-17
@@ -117,16 +117,45 @@ misinterpret `Stage-2 decision quality ready` as approved economics
 thresholds; no live orders.
 
 ## Resume from here
-Regression code and source evidence are ready for reviewer. Confirm
-the final-head CI and Historical Smoke **after this checkpoint**
-before presenting PR #82 for human review. Do not squash merge,
-approve on behalf of the user, replace frozen source dates, activate
-economics gates, or dispatch further promotions. If a check fails,
-inspect and repair. Following explicit human approval and merge,
-verify main CI, corpus-index counts (54 Cash, 32 Funding), source
-identity/provenance and ensure no duplicate or missing dates.
-Issue #69 remains open until that postmerge evidence is recorded.
+
+**ARCHIVED / COMPLETED.** Earlier source failures, pending commands and
+review-blocked state described above are retained as historical
+checkpoints only and are superseded by this closeout. Do not replay
+an acquisition, diagnostic, planner or promotion based on a stale
+checkpoint in this file.
+
+Issue #69 is closed/completed after the user approved [PR #82](https://github.com/pkking/future-opportunity/pull/82).
+The exact frozen Q3 and Q4 12-day preparations were independently
+verified (runs [39016938121](https://github.com/pkking/future-opportunity/actions/runs/39016938121)
+and [39018358844](https://github.com/pkking/future-opportunity/actions/runs/39018358844));
+read-only planner [39020272173](https://github.com/pkking/future-opportunity/actions/runs/39020272173)
+and governed staging [39021366976](https://github.com/pkking/future-opportunity/actions/runs/39021366976)
+produced the source-bound 24-item review. User-approved PR #82 merged
+as `ad4790c0c7ec785eb2de9d53704e154515451001`.
+Post-merge main CI and Historical Smoke both succeeded; pinned
+corpus is **Cash 54 / Funding 32**, all 24 registered 2025 dates
+retained including eight correctly unqualified samples.
+For future work start a **new Issue and execution plan**; never
+re-use the closed Issue #69. No economics threshold or live trading
+was approved.
 
 ## Completion
 Implementation and regression testing complete. Waiting for final-head CI after
 checkpoint, then explicit human review/merge of PR #82 and postmerge main proof.
+
+### Final reconciliation — 2026-10-17
+
+Final commit: `ad4790c0c7ec785eb2de9d53704e154515451001` (PR #82,
+human-approved completion of Issue #69, postdating the historical
+checkpoints above; this archival move tracked under Issue #83).
+CI run: https://github.com/pkking/future-opportunity/actions/runs/39023534155 (main SUCCESS).
+Historical Smoke: https://github.com/pkking/future-opportunity/actions/runs/39023534123 (main SUCCESS).
+Source integrity: Q3 39016938121 + Q4 39018358844; planner
+39020272173; staged promotion 39021366976; 24/24 unique dates,
+Cash 54 / Funding 32, no original fixture replaced.
+Remaining unassessed items: The 90-day preferred distinct-day
+coverage (Cash needs 36 more, Funding 58 more), more independent
+Cash expiry cohorts, stronger Funding pre-entry regime coverage,
+account-specific MarginSafety and portfolio-level VenueExposure.
+Stage-2 economics and live execution remain DISABLED; these are
+new research/ADR scopes, not unfinished tasks under Issue #69.

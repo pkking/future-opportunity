@@ -1,7 +1,7 @@
 # Cash 2025 Q3 initial L2 record diagnosis
 
 Issue: #69
-Status: BLOCKED_EVIDENCE
+Status: COMPLETED
 Owner: agent
 Started: 2026-10-15
 Last checkpoint: 2026-10-15
@@ -116,27 +116,26 @@ separate review. Operator dispatch remains explicit.
 
 ## Resume from here
 
-The current issue is **source evidence**, not code deployment. To conserve
-12 repeated failures, ask an operator to explicitly dispatch a *single*
-diagnostic-only Cash fixture using the already-supported workflow:
-```bash
-gh workflow run prepare-cash-historical-fixture.yml -R pkking/future-opportunity --ref main \
-  -f entry_at=2025-07-04T00:15:00+00:00 \
-  -f exit_at=2025-09-25T00:15:00+00:00 \
-  -f future_id=BTC-USDT-250926 \
-  -f expiry_at=2025-09-26T08:00:00+00:00
-```
-The above single-case diagnostic omits the frozen selection-provenance input
-and therefore **must never be promoted** as historical evidence. It exists
-solely to capture a reproducible first-record failure artifact.
-Once the run finishes, inspect `cash-l2-diagnostics-2025-07-04-*`
-for raw archive/member identity, SHA-256 and bounded first-record levels.
-If the raw data contradicts the parser contract, first establish official OKX
-format semantics and regression test before any change to strict positivity.
-Otherwise record source-invalid/unassessed and do not replace frozen dates.
-After any reviewed resolution, rerun the *frozen* Q3 full wave, check its exact
-12x3 artifacts and actuals, then consider Q4 and independent planning.
-Do not self-dispatch Q3/Q4 or promote during diagnosis.
+**ARCHIVED / COMPLETED.** Earlier source failures, pending commands and
+review-blocked state described above are retained as historical
+checkpoints only and are superseded by this closeout. Do not replay
+an acquisition, diagnostic, planner or promotion based on a stale
+checkpoint in this file.
+
+Issue #69 is closed/completed after the user approved [PR #82](https://github.com/pkking/future-opportunity/pull/82).
+The exact frozen Q3 and Q4 12-day preparations were independently
+verified (runs [39016938121](https://github.com/pkking/future-opportunity/actions/runs/39016938121)
+and [39018358844](https://github.com/pkking/future-opportunity/actions/runs/39018358844));
+read-only planner [39020272173](https://github.com/pkking/future-opportunity/actions/runs/39020272173)
+and governed staging [39021366976](https://github.com/pkking/future-opportunity/actions/runs/39021366976)
+produced the source-bound 24-item review. User-approved PR #82 merged
+as `ad4790c0c7ec785eb2de9d53704e154515451001`.
+Post-merge main CI and Historical Smoke both succeeded; pinned
+corpus is **Cash 54 / Funding 32**, all 24 registered 2025 dates
+retained including eight correctly unqualified samples.
+For future work start a **new Issue and execution plan**; never
+re-use the closed Issue #69. No economics threshold or live trading
+was approved.
 
 ## Completion
 
@@ -146,3 +145,20 @@ Historical Smoke: https://github.com/pkking/future-opportunity/actions/runs/3869
 Final merge/post-merge evidence: pending
 Unassessed: exact first raw record, meaning of zero-priced level, and Q3
 source-content correctness. Issue #69 stays OPEN, no data promotion.
+
+### Final reconciliation — 2026-10-17
+
+Final commit: `ad4790c0c7ec785eb2de9d53704e154515451001` (PR #82,
+human-approved completion of Issue #69, postdating the historical
+checkpoints above; this archival move tracked under Issue #83).
+CI run: https://github.com/pkking/future-opportunity/actions/runs/39023534155 (main SUCCESS).
+Historical Smoke: https://github.com/pkking/future-opportunity/actions/runs/39023534123 (main SUCCESS).
+Source integrity: Q3 39016938121 + Q4 39018358844; planner
+39020272173; staged promotion 39021366976; 24/24 unique dates,
+Cash 54 / Funding 32, no original fixture replaced.
+Remaining unassessed items: The 90-day preferred distinct-day
+coverage (Cash needs 36 more, Funding 58 more), more independent
+Cash expiry cohorts, stronger Funding pre-entry regime coverage,
+account-specific MarginSafety and portfolio-level VenueExposure.
+Stage-2 economics and live execution remain DISABLED; these are
+new research/ADR scopes, not unfinished tasks under Issue #69.

@@ -1,7 +1,7 @@
 # Cash 2025 quarter preparation artifact identity gate
 
 Issue: #69
-Status: BLOCKED_EVIDENCE
+Status: COMPLETED
 Owner: agent
 Started: 2026-10-10
 Last checkpoint: 2026-10-17
@@ -241,34 +241,26 @@ The previous Q4-pending handoff below is superseded.
 
 ## Resume from here
 
-**Q3/Q4 source and content evidence gates PASSED.** Both immutable,
-operator-dispatched run IDs are now known:
-- Q3: `39016938121` / BTC-USDT-250926 / 12 fixed dates.
-- Q4: `39018358844` / BTC-USDT-251226 / 12 fixed dates.
+**ARCHIVED / COMPLETED.** Earlier source failures, pending commands and
+review-blocked state described above are retained as historical
+checkpoints only and are superseded by this closeout. Do not replay
+an acquisition, diagnostic, planner or promotion based on a stale
+checkpoint in this file.
 
-The next **explicit operator action**, not agent auto-dispatch, is the
-repository's **read-only historical campaign planner**. A single
-combined wave has 24 items, below the 31-item planner/campaign cap:
-
-```bash
-gh workflow run plan-historical-campaign.yml \
-  -R pkking/future-opportunity --ref main \
-  -f source_run_ids=39016938121,39018358844 \
-  -f campaign_prefix=cash-2025-q3-q4-review-001
-```
-
-Before any promotion, inspect the planner's `historical-campaign-planner`
-artifact, exact ordered input inventory and parent/source ZIP digests,
-the generated promotion-wave JSON, every 24-item source and
-selection identity, exclusions/rejections and readiness. The planner
-must remain read-only; do not confuse successful preparation with
-corpus addition. If it fails, retain frozen source identities and
-diagnose evidence, rather than modifying the selection.
-
-A promotion is a **separate reviewed PR** with normal CI, pinned
-offline Historical Smoke and explicit human governance; do not
-trigger it merely because this planner succeeds. Issue #69 remains
-OPEN until reviewed corpus evidence is actually committed.
+Issue #69 is closed/completed after the user approved [PR #82](https://github.com/pkking/future-opportunity/pull/82).
+The exact frozen Q3 and Q4 12-day preparations were independently
+verified (runs [39016938121](https://github.com/pkking/future-opportunity/actions/runs/39016938121)
+and [39018358844](https://github.com/pkking/future-opportunity/actions/runs/39018358844));
+read-only planner [39020272173](https://github.com/pkking/future-opportunity/actions/runs/39020272173)
+and governed staging [39021366976](https://github.com/pkking/future-opportunity/actions/runs/39021366976)
+produced the source-bound 24-item review. User-approved PR #82 merged
+as `ad4790c0c7ec785eb2de9d53704e154515451001`.
+Post-merge main CI and Historical Smoke both succeeded; pinned
+corpus is **Cash 54 / Funding 32**, all 24 registered 2025 dates
+retained including eight correctly unqualified samples.
+For future work start a **new Issue and execution plan**; never
+re-use the closed Issue #69. No economics threshold or live trading
+was approved.
 
 ## Completion
 
@@ -284,3 +276,20 @@ Remaining UNASSESSED: combined read-only planner output, governed
 promotion PR and committed corpus result. Issue #69 remains OPEN.
 Issue #69 is deliberately OPEN. The task is blocked on operator source evidence,
 not completed. Plan stays active.
+
+### Final reconciliation — 2026-10-17
+
+Final commit: `ad4790c0c7ec785eb2de9d53704e154515451001` (PR #82,
+human-approved completion of Issue #69, postdating the historical
+checkpoints above; this archival move tracked under Issue #83).
+CI run: https://github.com/pkking/future-opportunity/actions/runs/39023534155 (main SUCCESS).
+Historical Smoke: https://github.com/pkking/future-opportunity/actions/runs/39023534123 (main SUCCESS).
+Source integrity: Q3 39016938121 + Q4 39018358844; planner
+39020272173; staged promotion 39021366976; 24/24 unique dates,
+Cash 54 / Funding 32, no original fixture replaced.
+Remaining unassessed items: The 90-day preferred distinct-day
+coverage (Cash needs 36 more, Funding 58 more), more independent
+Cash expiry cohorts, stronger Funding pre-entry regime coverage,
+account-specific MarginSafety and portfolio-level VenueExposure.
+Stage-2 economics and live execution remain DISABLED; these are
+new research/ADR scopes, not unfinished tasks under Issue #69.
