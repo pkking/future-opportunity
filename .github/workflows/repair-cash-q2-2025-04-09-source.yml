@@ -1,0 +1,101 @@
+name: Repair Missing Cash 2025Q2 April 9 Source (Manual Only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      operator_authorization:
+        description: "New explicit human approval for the one failed 2025-04-09 source case only"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  resolve:
+    name: Verify exact failed case, frozen population and separate authorization
+    runs-on: ubuntu-latest
+    outputs:
+      acquisition_json: ${{ steps.verify.outputs.acquisition_json }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - id: verify
+        shell: bash
+        env:
+          OPERATOR_AUTHORIZATION: ${{ inputs.operator_authorization }}
+        run: |
+          set -euo pipefail
+          test "$OPERATOR_AUTHORIZATION" = "APPROVE-CASH-2025Q2-2025-04-09-SOURCE-REPAIR"
+          work="artifacts/cash-q2-single-source-repair"
+          mkdir -p "$work"
+          uv run python scripts/resolve_cash_q2_failed_source_repair.py \
+            --output "$work/operator.json" --control-output "$work/repair-control.json"
+          uv run python scripts/resolve_historical_acquisition.py "$work/operator.json" \
+            --max-funding-days 1 --max-cash-cases 1 --max-total-items 1 \
+            --output "$work/resolved.json"
+          test "$(jq -r '.total_items' "$work/resolved.json")" = "1"
+          test "$(jq -r '.funding == null' "$work/resolved.json")" = "true"
+          test "$(jq -r '.cash_cases[0].entry_market_date' "$work/resolved.json")" = "2025-04-09"
+          test "$(jq -r '.cash_cases[0].future_id' "$work/resolved.json")" = "BTC-USDT-250627"
+          test "$(jq -r '.selection_provenance.cash.sampling.selected_market_dates | length' "$work/resolved.json")" = "12"
+          test "$(jq -r '.selection_provenance.cash.source.artifact_id' "$work/resolved.json")" = "12106828444"
+          echo "acquisition_json=$(jq -c . "$work/operator.json")" >> "$GITHUB_OUTPUT"
+      - name: Save exact manual repair authorization and immutable control
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cash-q2-2025-04-09-source-repair-control
+          path: artifacts/cash-q2-single-source-repair/
+          if-no-files-found: warn
+
+  acquire:
+    name: Prepare only 2025-04-09 with fixed bounded Q2 archive budget
+    needs: resolve
+    uses: ./.github/workflows/acquire-historical-campaign.yml
+    with:
+      acquisition_json: ${{ needs.resolve.outputs.acquisition_json }}
+      cash_max_raw_mb: 1024
+
+  summary:
+    name: Verify only the repaired case artifacts; no promotion
+    needs: [resolve, acquire]
+    if: always() && needs.resolve.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      ACQUIRE_RESULT: ${{ needs.acquire.result }}
+    steps:
+      - name: Verify exactly one Prepared, Compact, Actuals identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/cash-q2-source-repair-summary
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?per_page=100" \
+            > artifacts/cash-q2-source-repair-summary/artifacts.json
+          jq -n --arg result "$ACQUIRE_RESULT" --arg run "$GITHUB_RUN_ID" \
+            '{schema_version:1,evidence_type:"cash_q2_single_source_repair_inventory",
+              source_research_run:"39079100154",failed_source_date:"2025-04-09",
+              repair_run:$run,acquisition_job_result:$result,
+              provenance_content_verified:false,original_corpus_mutation:false,
+              promotion_dispatched:false,live_trading_enabled:false}' \
+            > artifacts/cash-q2-source-repair-summary/summary.json
+          test "$ACQUIRE_RESULT" = "success"
+          suffix="2025-04-09-BTC-USDT-250627-$GITHUB_RUN_ID"
+          for prefix in okx-btc-cash-and-carry- okx-btc-cash-and-carry-compact- okx-btc-cash-and-carry-actuals-; do
+            name="$prefix$suffix"
+            test "$(jq --arg name "$name" '[.artifacts[] | select(.name == $name and .expired == false and .digest != null)] | length' artifacts/cash-q2-source-repair-summary/artifacts.json)" = "1"
+          done
+          echo "One research source case prepared. Independent content audit and corpus promotion are NOT approved." >> "$GITHUB_STEP_SUMMARY"
+      - name: Preserve repair inventory even on source failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cash-q2-2025-04-09-source-repair-summary
+          path: artifacts/cash-q2-source-repair-summary/
+          if-no-files-found: warn

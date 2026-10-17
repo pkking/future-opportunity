@@ -1,7 +1,7 @@
 # Cash 2025Q2 additional independent expiry cohort
 
 Issue: #95
-Status: BLOCKED_EVIDENCE
+Status: VERIFYING
 Owner: agent
 Started: 2026-10-17
 
@@ -255,8 +255,18 @@ and not a selected profitable case.
 
 - Implemented Q2-only `cash_max_raw_mb: 1024` through the existing reusable acquisition/Cash fixture workflows, preserving **600 MiB default** for all other callers. The fixture step only accepts `600|1024`. Added `tests/test_cash_q2_source_budget.py` for configuration guards and mocked bounded HTTP streaming/source SHA. PR CI/Smoke pending.
 
+## 2026-10-18 complete first acquisition audit and bounded one-case recovery implementation
+
+- First user-authorized Q2 [run 39079100154](https://github.com/pkking/future-opportunity/actions/runs/39079100154) **completed failure** at immutable main SHA `3b2c9660bf0b22827a2c35e5d80b9619f481281a`. The only failed case is `2025-04-09` (SPOT daily archive 768.01 MB vs hard limit 600 MiB), so its book and historical outcome remain **UNASSESSED**, not zero or unqualified.
+- Independently downloaded the remaining **33 ZIPs** (Prepared/Compact/Actuals × 11 dates), checked each against GitHub Actions 35-item pre-summary inventory (33 case artifacts + two immutable controls), original ZIP SHA, exact 4 SPOT/FUTURES books and `.data` identifiers, full source/selection hashes, canonical JSONL SHA, Compact parent hashes and Actuals case IDs. Eight cases qualified, three **valid unqualified** on 2025-06-07, 06-14, 06-22 (`expected_net_return_not_positive`); max canonical source age 164 ms. Risk states MarginSafety/VenueExposure remain unassessed. Reproducible independent audit local JSON SHA-256 `3e45a877c81f705ac25f14aa03c5fc93f1a1ced34016762a18e77022b5a91e9d`; source IDs and results preserved in [Issue #95 comment](https://github.com/pkking/future-opportunity/issues/95#issuecomment-6243260025).
+- The failed original run's artifact-summary ZIP **12118472292** SHA256 `4cd7e6cf98e0e7ba13074b782a61dbe04e8b35427dc7516bf98c553af8d7f832` preserves the original source run's artifact inventory and `acquisition_job_result=failure`. The original run itself lists 36 artifacts including this final summary.
+- Root-cause remediation PR [#106](https://github.com/pkking/future-opportunity/pull/106) merged `83f653205e67ad0a3c71e444796c9319d71769a0`, final-head [CI 39079932015](https://github.com/pkking/future-opportunity/actions/runs/39079932015) / [Historical Smoke 39079932016](https://github.com/pkking/future-opportunity/actions/runs/39079932016), postmerge main [CI 39080050730](https://github.com/pkking/future-opportunity/actions/runs/39080050730) successful. Bounded 1024 MiB is **Q2 only**; other historical prepares remain at 600 MiB, and generic historical workflow-file pushes no longer trigger source acquisition.
+- **Next implementation without invoking source:** a new manual-only single-case repair workflow, locked to failed `2025-04-09`, preserves all 12 preregistered selection dates and provenance, 2025-06-26 fixed exit, BTC-USDT-250627 future, and bounded 1024MiB input. Never rerun the eleven finished cases or select replacement dates.
+- Implementation staged: `scripts/resolve_cash_q2_failed_source_repair.py` derives only the 2025-04-09 case after validating original 12-case manifest and exact source artifact; `.github/workflows/repair-cash-q2-2025-04-09-source.yml` requires new, distinct human authorization string and forwards 1024MiB Q2-only bounded cap; `tests/test_cash_q2_failed_source_repair.py` covers replay, tampering, manual gate and no promotion. CI / historical smoke pending; **not dispatched**.
+- **Decision gate:** the user authorized **one** 12-case run only, now consumed. A subsequent **single 2025-04-09 source retry** requires fresh distinct human approval after this code passes CI. Corpus promotion, Stage-2 return thresholds and live trading remain explicitly unauthorized.
+
 ## Resume from here
-The first authorized 12-case acquisition is running as Actions run 39079100154. Record complete outcomes and all SHA-verified artifacts; 2025-04-09 failed because its official SPOT archive exceeds the 600MiB guard. Prepare a bounded Q2-specific 1024MiB technical remediation (without changing other callers, source identities or dates), run CI/Smoke, and do not automatically trigger another acquisition. Require a new human decision only for actual additional manual source download.
+The original 12-case acquisition run has fully concluded: 11 independently audited full book + actuals cases (8 qualified, 3 valid unqualified) and 1 2025-04-09 source cap failure; evidence persisted in Issue #95. Scoped Q2 1024MiB fix merged (PR #106); isolated one-day recovery CLI, manual-only workflow and regression tests are committed in the current branch. Run full final-head CI/Historical Smoke and merge only if green. After that **STOP FOR A DISTINCT USER DECISION** to run only 2025-04-09 once; neither automatic dispatch nor corpus promotion is authorized.
 
 ## Completion
 Pending audited 2025Q2 population and reviewed acquisition.
