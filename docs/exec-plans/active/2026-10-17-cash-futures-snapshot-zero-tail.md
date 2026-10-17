@@ -161,23 +161,47 @@ remain reporting-only; no corpus promotion or Stage-2 gate enabled.
 See `docs/exec-plans/active/2026-10-10-cash-2025-quarter-artifact-identity.md`
 for the source-of-truth quarter audit and Q4 operator handoff.
 
+## 2026-10-17 Q4 content verification (supersedes Q4 pending)
+
+Frozen Q4 [Run 39018358844](https://github.com/pkking/future-opportunity/actions/runs/39018358844)
+on main `5bdc259` succeeded **12/12**, 12 prepared +
+12 compact + 12 actuals. Built-in `summary-q4` artifact ID
+`12095459608`: `verified_inventory_only`, no metadata errors.
+An additional independent content audit verified **36/36 Actions ZIP
+SHA-256**, **96/96 normalized JSONL SHA-256**, all four required
+positive-price books, maximum source age 409ms/5000ms, all
+parent artifact digest/ID links, frozen selection provenance,
+and 12/12 actuals. Outcomes: **7 qualified**, **5 correctly
+unqualified** with `realized_net_return=null`.
+
+Q3 [39016938121](https://github.com/pkking/future-opportunity/actions/runs/39016938121)
+was independently verified before this: combined Q3/Q4 now **24
+dates, 72 ZIPs, 192 canonical normalized JSONL**, with no
+content audit errors. No campaign planner or corpus promotion was
+dispatched by these preparation workflows.
+
 ## Resume from here
 
-**Q3 now verified; Q4 source evidence is the next boundary.** Only an
-explicit operator request may dispatch:
+The next action is operator-dispatched **read-only combined historical
+campaign planning** with exact run IDs:
 
 ```bash
-gh workflow run prepare-cash-2025-quarter-wave.yml \
-  -R pkking/future-opportunity --ref main -f wave=q4
+gh workflow run plan-historical-campaign.yml \
+  -R pkking/future-opportunity --ref main \
+  -f source_run_ids=39016938121,39018358844 \
+  -f campaign_prefix=cash-2025-q3-q4-review-001
 ```
 
-Verify Q4 12x3 metadata and independently downloaded ZIP content before
-any read-only cross-quarter planner or governed promotion. Source-invalid
-Q4 cases must never be silently replaced. Issue #69 remains OPEN.
+Independently audit planner evidence before any reviewed corpus
+promotion. Q3/Q4 prep is complete, but *corpus promotion, CI and
+risk/completeness policy have not changed*. Do not dispatch promotion
+without the separate governed gate. Issue #69 remains OPEN. Full
+details in `2026-10-10-cash-2025-quarter-artifact-identity.md`.
 
 ## Completion
 Implementation merged and post-merge CI green. Post-fix **2025-07-04
 single-case real source** verified via Run 39016429500 and ZIP content
 checks. Frozen Q3 wave 39016938121 and its 12x3 ZIPs are now independently
-VERIFIED; **no new Q3 fixture has been promoted**. Q4 evidence remains
-UNASSESSED; Issue #69 is OPEN pending the separate Q4 and promotion gates.
+VERIFIED; **no new Q3 fixture has been promoted**. Q4 Run 39018358844 now VERIFIED. Q3 and Q4 fixed waves are accepted
+as historical preparation evidence, with no promotion or planner
+executed. Issue #69 remains OPEN pending planning and corpus gates.
