@@ -140,13 +140,13 @@ and not a selected profitable case.
 
 ### New independently replayable audit slice
 
-- [ ] Persist `scripts/audit_cash_2025q2_source_calendar.py` with ZIP digest, raw query identity, response SHA, date, archive URL and report-vs-source consistency checks.
-- [ ] Add offline positive and corruption/approval-escalation negative tests.
+- [x] Persist `scripts/audit_cash_2025q2_source_calendar.py` with ZIP digest, raw query identity, response SHA, date, archive URL and report-vs-source consistency checks.
+- [x] Add offline positive and corruption/approval-escalation negative tests (11 cases locally passed using `python -m pytest -q`; await final-head CI).
 - [ ] CI and Historical Smoke on the final audit PR head, then review/merge, verify main CI.
 - [ ] Continue bounded contract-member availability enumeration; do not infer 12 eligible selected dates from the 90 family-level catalogs.
 
 ## Resume from here
-The official 90-day family-archive API catalog population and both independently reverified ZIPs are grounded above. Implement and test the reusable ZIP audit command on this PR; obtain successful final-head CI and Historical Smoke. Then proceed to bounded source archive *member-level* evidence for the exact `BTC-USDT-250627` contract across the frozen calendar, logging missing/ambiguous days. Do not freeze N=12 availability-based samples until exact per-date eligibility is verified from source archives. No automatic acquisition, corpus promotion, economics threshold activation, or live trading.
+The official 90-day family-archive API catalog population and both independently reverified ZIPs are grounded above. The reusable ZIP audit command and 11 offline tests are committed; obtain successful final-head CI and Historical Smoke for this PR. Then proceed to bounded source archive *member-level* evidence for the exact `BTC-USDT-250627` contract across the frozen calendar, logging missing/ambiguous days. Do not freeze N=12 availability-based samples until exact per-date eligibility is verified from source archives. No automatic acquisition, corpus promotion, economics threshold activation, or live trading.
 
 ## Completion
 Pending audited 2025Q2 population and reviewed acquisition.
