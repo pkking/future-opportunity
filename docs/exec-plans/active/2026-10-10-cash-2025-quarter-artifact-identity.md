@@ -176,31 +176,99 @@ same 36 distinct, nonexpired Actions artifacts:
 The original status block and pre-Q3 resume instructions below were
 written before this run and are superseded by the next actions here.
 
+## 2026-10-17 Q4 independently verified and combined Q3/Q4 checkpoint
+
+**Both frozen quarters are accepted at the preparation/content-audit boundary.**
+The Q4 operator-dispatched [run 39018358844](https://github.com/pkking/future-opportunity/actions/runs/39018358844)
+completed **SUCCESS** on main
+`5bdc2598307140624d0e7cfb734bcc519bd0b186`, with all 12
+`BTC-USDT-251226` fixed-date cases passed. The frozen source-bound
+resolver, acquisition manifest and 12-case audit jobs succeeded.
+Source selection unchanged: run `37755705789`,
+artifact `11539833591`, digest
+`sha256:f67f1db18609c87e2cea363abf33eff7dc4592d4ab8680019ff6e1a63b206c74`.
+
+Downloaded the `cash-2025-quarter-summary-q4` artifact
+(ID `12095459608`, Actions ZIP SHA-256
+`c10176846f26365179eacdb00c23a2c7adfd86d85fef7599c7f7a576f57e22f1`).
+Its `summary.json` reports `status=verified_inventory_only`,
+`acquisition_result=success`, exactly **12 prepared + 12 compact +
+12 actuals**, no errors, missing/extra names, expired artifacts or
+checksum-format violations. It explicitly marks
+`artifact_contents_verified=false`, `corpus_mutation=false`,
+`promotion_dispatched=false`.
+
+**Independent ZIP content audit, not just inventory metadata:**
+- Downloaded **all 36 actual Q4 ZIPs** and checked each archive's
+  SHA-256 against its GitHub Actions artifact digest: **36/36 match**.
+- Verified exactly four normalized entry/exit SPOT/FUTURES sampled
+  books per prepared and compact manifest: **96/96 JSONL
+  SHA-256 match**. Prices and retained quantities are finite and
+  strictly positive; each side has nonempty levels, book time
+  staleness ≤**409ms** vs a 5000ms maximum.
+- All **12 compact** `pinning_status=commit_ready`; exact source
+  selection provenance and the same run ID match; each parent prepared
+  artifact ID and SHA-256 of the *downloaded ZIP bytes* agree.
+  All 12 actuals dataset IDs, entry 00:15 UTC, expiry-contract
+  identity and exit 2025-12-25T00:15:00+00:00 agree with frozen manifest.
+- **7 qualified cases** with `return_complete=true` and complete
+  simulated realized net returns (positive in these seven pre-selected
+  cases; median ~**0.3110%** for their respective holding periods,
+  min ~0.0802%, max ~0.6623%).
+- **5 legitimately rejected** dates: 2025-11-22, 2025-11-29,
+  2025-12-07, 2025-12-14, 2025-12-22, each reason
+  `expected_net_return_not_positive`, with
+  `realized_net_return=null` (not a numerical zero).
+
+**Combined Q3 [39016938121](https://github.com/pkking/future-opportunity/actions/runs/39016938121)
+and Q4 [39018358844](https://github.com/pkking/future-opportunity/actions/runs/39018358844)
+independently verified:** 24 distinct frozen dates; **72/72**
+prepared/compact/actuals ZIP SHA-256 and **192/192**
+canonical sampled JSONL SHA-256 match; maximum source age **578ms**.
+**16 qualified** with complete simulated realized net returns,
+**8 appropriately rejected** with null realized returns.
+The 16 qualified cases have median per-holding-period paper realized
+net return ~**0.3110%** (range ~0.0568%–0.6623%).
+This is NOT an annualized yield, market-wide opportunity frequency,
+guaranteed return, account-level risk assessment, or Stage-2 economics
+gate. `MarginSafety` and `VenueExposure` remain unassessed in
+their respective historical reports.
+
+**No pinned corpus case was promoted** by either run.
+`Issue #69` stays OPEN for the separate read-only planner,
+reviewed corpus promotion, CI, and final corpus accounting.
+The previous Q4-pending handoff below is superseded.
+
 ## Resume from here
 
-**Q3 evidence gate PASSED.** The next operator action is the distinct,
-frozen **Q4** wave on current `main`:
+**Q3/Q4 source and content evidence gates PASSED.** Both immutable,
+operator-dispatched run IDs are now known:
+- Q3: `39016938121` / BTC-USDT-250926 / 12 fixed dates.
+- Q4: `39018358844` / BTC-USDT-251226 / 12 fixed dates.
+
+The next **explicit operator action**, not agent auto-dispatch, is the
+repository's **read-only historical campaign planner**. A single
+combined wave has 24 items, below the 31-item planner/campaign cap:
 
 ```bash
-gh workflow run prepare-cash-2025-quarter-wave.yml \
-  -R pkking/future-opportunity --ref main -f wave=q4
+gh workflow run plan-historical-campaign.yml \
+  -R pkking/future-opportunity --ref main \
+  -f source_run_ids=39016938121,39018358844 \
+  -f campaign_prefix=cash-2025-q3-q4-review-001
 ```
 
-Q4 must retain all 12 registered dates with `BTC-USDT-251226`,
-each expected parent/compact/actuals triplet, and exact frozen
-selection evidence. Require the Q4 workflow's final `success`
-and summary `verified_inventory_only`, then independently download
-and inspect all 36 Q4 ZIPs for real canonical content SHA-256,
-parent artifact digests, source staleness, selection provenance and
-report semantics as done for Q3. If any source fails, preserve the
-frozen date and diagnose the first error; never skip it.
+Before any promotion, inspect the planner's `historical-campaign-planner`
+artifact, exact ordered input inventory and parent/source ZIP digests,
+the generated promotion-wave JSON, every 24-item source and
+selection identity, exclusions/rejections and readiness. The planner
+must remain read-only; do not confuse successful preparation with
+corpus addition. If it fails, retain frozen source identities and
+diagnose evidence, rather than modifying the selection.
 
-Only **after** Q4's independent evidence is validated may the
-read-only historical campaign planner use exact successful Q3/Q4
-run IDs. Do not auto-dispatch planner or corpus promotion. Any
-resulting promotion is a separate reviewed PR; the existing pinned
-corpus counts do not change until that promotion passes CI/merges.
-Issue #69 remains OPEN through this sequence.
+A promotion is a **separate reviewed PR** with normal CI, pinned
+offline Historical Smoke and explicit human governance; do not
+trigger it merely because this planner succeeds. Issue #69 remains
+OPEN until reviewed corpus evidence is actually committed.
 
 ## Completion
 
@@ -210,7 +278,9 @@ CI run: https://github.com/pkking/future-opportunity/actions/runs/38047639238 (s
 Historical Smoke: https://github.com/pkking/future-opportunity/actions/runs/38047639302 (success)
 E2E: strategy-e2e-evidence uploaded by 38047639238 (strategy acceptance success)
 Updated 2026-10-17: Q3 Run 39016938121 and its 36 ZIP contents independently
-verified as detailed above. Remaining unassessed: Q4 frozen ZIP contents and
-run ID, read-only planner evidence, and governed promotion. Issue #69 open.
+verified as detailed above. Updated 2026-10-17: frozen Q3 Run 39016938121 and Q4 Run 39018358844
+both independently verified (24 days / 72 ZIPs / 192 canonical files).
+Remaining UNASSESSED: combined read-only planner output, governed
+promotion PR and committed corpus result. Issue #69 remains OPEN.
 Issue #69 is deliberately OPEN. The task is blocked on operator source evidence,
 not completed. Plan stays active.
