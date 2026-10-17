@@ -1,7 +1,7 @@
 # Cash 2025Q2 additional independent expiry cohort
 
 Issue: #95
-Status: IMPLEMENTING
+Status: VERIFYING
 Owner: agent
 Started: 2026-10-17
 
@@ -208,13 +208,13 @@ and not a selected profitable case.
 - Read-only [selection-control Run 39050630845](https://github.com/pkking/future-opportunity/actions/runs/39050630845) succeeded on main SHA `e37120b326d578a2d10ae00769d7d7d5cdfbb6c7`: artifact **12106828444**, Actions ZIP SHA256 `8f29acfacaa71d1e5a59c0a0b28e28eef43257e6613c5cfa4806fea4740c9e36`. Independently downloaded/verified exact ZIP SHA256 and sole control.json, 12 approved days, registry content SHA `0aff5c24a439a12117b6268aac6b57e8de4f6092fd8f11f54fb5060f47a1ccbd`, all non-acquisition flags.
 - This next implementation slice builds **only a deterministic operator manifest, offline validator and review handoff** using the existing Q3/Q4 approved `HistoricalAcquisitionManifest` / availability-selection provenance / preparation workflows. No new trading system, no economic selection, no exchange access, no automatic acquisition.
 - Freeze `docs/historical-acquisition-plans/cash-2025q2-12day-wave-001.json` containing 12 unchanged cases and immutable selection-control run/artifact digest above, with `funding=null`. Error if manifest source digest/date/release deviates from approved registry.
-- Add offline fail-closed validator and negative tests (changed future contract, date, exit, source digest, 11/13 cases, missing approval, no PnL).
-- Prepare human-triggered workflow handoff, using existing reusable `acquire-historical-campaign.yml` only **after** distinct operator approval for historical data preparation. A merge of preparation *code* is not authorization to invoke the workflow.
+- Added `scripts/validate_cash_2025q2_preparation_handoff.py` and `tests/test_cash_2025q2_preparation_handoff.py`; offline positive, changed FUTURES ID and changed Actions artifact digest checks. Remaining negative coverage follows CI feedback.
+- Implemented manual-only `.github/workflows/prepare-cash-2025q2-wave.yml`, exact authorization phrase guard, reuses existing `acquire-historical-campaign.yml` only when an operator invokes it. Wrapper only audits 12x3 artifact **names/digests presence**, not data contents. A merge of preparation *code* is not authorization to invoke the workflow.
 - Gate: user-approved 12-date freeze is recorded. Next material authorization **still needed**: dispatch 12 full 4-leg SPOT+FUTURES historical 00:15 orderbook downloads, per-case actuals/compact fixture artifacts. Promotion and live trading remain separate/unapproved.
 - Upon any failure, preserve cases/negative observations and exact status; do not pick replacements using outcomes.
 
 ## Resume from here
-The source-only approved-selection control is available and independently verified (Run 39050630845, artifact 12106828444). Prepare a 12-case acquisition manifest and strict **offline** replay, and a manual-only workflow wrapper for future operator use. Run CI/Historical Smoke, merge only after checks. **Do not dispatch** any download, test economics or corpus mutation without separate explicit operator authorization.
+The source-only approved-selection control is available and independently verified (Run 39050630845, artifact 12106828444). The exact 12-case acquisition manifest, offline validator and manual-only workflow wrapper are now committed. Run full CI/Historical Smoke on the final branch head and merge only if green; verify postmerge main CI. The next material decision is separate operator authorization to dispatch the bounded read-only 12-case historical L2 preparation job. **Do not dispatch** without this distinct authorization. Keep 54 Cash/32 Funding baseline unchanged.
 
 ## Completion
 Pending audited 2025Q2 population and reviewed acquisition.
