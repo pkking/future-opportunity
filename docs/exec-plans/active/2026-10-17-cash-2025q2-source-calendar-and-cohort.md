@@ -167,8 +167,19 @@ and not a selected profitable case.
 - Chronological eligibility: the source population includes `2025-06-26` to prove the fixed exit book; entry `2025-06-26T00:15:00Z` would equal the required exit and violate `entry < exit < expiry`. Therefore the eligible entry-day population is **89** dates after excluding `2025-06-26` on non-economic grounds. This exclusion must be applied to `availability-even-rank-v1` **before** freezing N=12 in an independently reviewed, separate PR.
 - Complete membership doesn't prove sampled historical L2, margin safety, venue exposure, returns, economic approval or live-trading readiness. Keep Cash 54 / Funding 32 pinned baseline.
 
+## 2026-10-17 prospective N=12 selection registration (separate review gate)
+
+- The prior source-bound evidence-only PR #100 merged on `c0d03775edc6f8ef86e8d537d5d1b18c9e4c3184`, postmerge CI [39046454543](https://github.com/pkking/future-opportunity/actions/runs/39046454543) succeeded.
+- Source reality: 90/90 FUTURES family archives contain exact BTC-USDT-250627 member, no unverified days; all 9 official source ZIP digests pinned. Exact entry-date eligibility is **89** because the fixed 2025-06-26T00:15:00Z exit is not a strict earlier entry timestamp.
+- Existing accepted algorithm `availability-even-rank-v1` with start 2025-03-29, end 2025-06-26, non-economic `excluded_market_dates=[2025-06-26]`, `sample_size=12`, produces selected date SHA-256 `9bd08184a3a0c2487ba57087effdf0e8231db45fb4bf10226290627ed2990b37`. This is **prospective**, before any sampled economics.
+- A *separate independently reviewed PR* shall pin `docs/historical-acquisition-plans/cash-2025q2-12day-preregistration-v1.json` and provide a reusable fail-closed validator/tests. Do not mark `selected dates frozen` or open acquisition until that review PR is merged.
+- [ ] Record exact source IDs, SHA, N=12 selected dates, exit-day temporal exclusion in immutable registration.
+- [ ] Validate deterministic replay, input-schema mutation, no pinned-day overlap, and all 12 entries strictly before exit.
+- [ ] Final-head static/code/API/E2E/Historical Smoke green; obtain separate human preregistration review.
+- [ ] After approved freeze only: operator-controlled selected-case full 4-leg L2 acquisition (not authorized by this PR).
+
 ## Resume from here
-First verify and merge the 90-date source-evidence-only PR after final-head CI + historical smoke, then verify main CI. Build a **separate** immutable, outcome-blind N=12 preregistration PR using existing `availability-even-rank-v1` for eligible entry dates 2025-03-29..2025-06-25; explicitly list the excluded exit date `2025-06-26`. Pin source-run/artifact SHA, independently replay selection, require separate human review, and do **not** dispatch acquisition or promotion automatically. Only after frozen selection approval run source preparation with exact 00:15 SPOT/FUTURES entry/exit L2 for all selected dates and audit all negative/unqualified cases. No Stage-2 economics gate or live trading.
+Source identity population is independently completed, archived and main-verified (PR #100). In this branch author source-bound N=12 **proposed** preregistration, replayable validator and offline tests, then CI/Smoke. Keep the PR open for separate human selection review; do not dispatch market acquisition or corpus promotion prior to that gate. Follow the documented exact source artifact IDs/digests and make no profitability decisions.
 
 ## Completion
 Pending audited 2025Q2 population and reviewed acquisition.
