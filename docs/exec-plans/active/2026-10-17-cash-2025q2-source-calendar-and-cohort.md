@@ -1,7 +1,7 @@
 # Cash 2025Q2 additional independent expiry cohort
 
 Issue: #95
-Status: BLOCKED_DECISION
+Status: BLOCKED_EVIDENCE
 Owner: agent
 Started: 2026-10-17
 
@@ -274,8 +274,18 @@ and not a selected profitable case.
 - **Status: BLOCKED_DECISION** — the earlier one-run permission has already been consumed. New explicit user consent is required **only to dispatch the one remaining 2025-04-09 read-only source case**, not to change selection. Connected GitHub plugin cannot invoke workflow_dispatch, so an operator must manually trigger it after approval; the agent will verify exact run ID/head/three artifacts and compare the case against the previous 11, then prepare any *separate reviewed* promotion proposal only after new corpus-promotion approval.
 - No synthetic returns, no sample replacement, no automatic reruns/promotions, no main corpus change, no Stage-2 policy change, no authenticated trading.
 
+## 2026-10-17 23:53:22 UTC — separate one-date source-repair approval confirmed
+
+- User explicitly authorized **one** additional read-only source preparation **only for 2025-04-09**, separately from the already-consumed first 12-case acquisition authorization. See immutable [Issue #95 approval note](https://github.com/pkking/future-opportunity/issues/95#issuecomment-6243393601).
+- The fixed manual recovery entrypoint is `.github/workflows/repair-cash-q2-2025-04-09-source.yml` on main. Verified baseline `6e96a7b0fd2469108112d3d73b4ad9a65129d26c`. The strict input is `operator_authorization=APPROVE-CASH-2025Q2-2025-04-09-SOURCE-REPAIR`.
+- **Current execution state: APPROVED, NOT DISPATCHED.** Existing connector is read-only for new workflow dispatch; there were no matching 2025-04-09 single-case workflow runs in the latest manual Actions inventory at the time of approval. This is an operational trigger dependency (`BLOCKED_EVIDENCE`), **not** an outstanding request for human authorization.
+- Exact operator-only command:
+  `gh workflow run repair-cash-q2-2025-04-09-source.yml --repo pkking/future-opportunity --ref main -f operator_authorization=APPROVE-CASH-2025Q2-2025-04-09-SOURCE-REPAIR`.
+- One immutable failed case `2025-04-09T00:15:00+00:00`; BTC-USDT-250627; exit `2025-06-26T00:15:00+00:00`; expiry `2025-06-27T08:00:00+00:00`; Q2-specific 1024 MiB raw-source bound, original 12-date source-pinned registration, no sample substitution or redownload of other 11 cases.
+- Once started, fetch the new exact Actions run ID, SHA, authorization control, only one Prepared+Compact+Actuals group, source archive SHA and member proof, book staleness and actuals. Preserve any source failure or negative economic outcome. **No automatic retry, corpus promotion, economics-target activation or trading.**
+
 ## Resume from here
-All initial approved research run cases and 33 original ZIPs independently audited: 8 qualified, 3 unqualified (`expected_net_return_not_positive`), 1 source 600MiB capacity failure; no market outcome assigned to missing case. The Q2-only 1024MiB bounded cap, generic no-push safety, and manual-only one-case 2025-04-09 repair have merged with successful main CI. **STOP for explicit NEW user permission to execute that one-case repair**, then an operator must manually trigger `repair-cash-q2-2025-04-09-source.yml` with its required authorization input. Do not re-download the other 11 cases; do not automatically promote corpus or enable trading.
+Separate human authorization for **one** research-only 2025-04-09 source-repair run was granted and persisted in Issue #95. Existing GitHub connector cannot trigger workflow_dispatch, and no matching new repair run was observed. An operator needs to start the already merged manual workflow with the exact input documented above. Next agent: locate the actual run, audit the single case's Prepared/Compact/Actuals SHA and official source, join with original 11 independently verified cases. **Do not seek repeated authorization for this same run, do not download the other 11 cases, and do not promote corpus or trade without a separate decision.**
 
 ## Completion
 Pending audited 2025Q2 population and reviewed acquisition.
