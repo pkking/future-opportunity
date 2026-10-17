@@ -119,16 +119,34 @@ separately frozen availability-based date selection. The one
 source-only June 12 L2 example remains strictly research-only
 and not a selected profitable case.
 
+## 2026-10-17 independent full-calendar artifact audit checkpoint
+
+- PR #97 merged as `1734dae3a8c9ce8d70208a18d17a91b73ba20f22`; final-head CI run [39030211155](https://github.com/pkking/future-opportunity/actions/runs/39030211155) and Historical Smoke run [39030211154](https://github.com/pkking/future-opportunity/actions/runs/39030211154) both succeeded. Post-merge main CI run [39038070997](https://github.com/pkking/future-opportunity/actions/runs/39038070997) succeeded.
+- First official source-population run [39030128781](https://github.com/pkking/future-opportunity/actions/runs/39030128781), artifact **12100067444**, ZIP SHA-256 `dba051d06449e1ca0251e65e67a8f44754e177fbe82ac5bcd5b3e8b7593e5307`. Downloaded archive contained exactly two JSON reports, 90 ordered dates, 180 raw API responses, 180 independently recomputed raw hashes matching the summaries, 90/90 paired catalog archive records, and zero API-error dates. Official FUTURES entries are **family-chain**, not `BTC-USDT-250627` members.
+- Post-merge source run [39038071038](https://github.com/pkking/future-opportunity/actions/runs/39038071038), artifact **12103210971**, ZIP SHA-256 `1b9a4adcb7035ca4abb70e5a9f1823dc3a71f5e9849070ce59c493df205b57ae`; independently verified the same 90 dates/180 raw API responses and non-promotion flags.
+- Add a reusable **offline, fail-closed** audit command and tests for the exact Actions ZIP. Neither result proves per-day FUTURES contract member existence, orderbook snapshot completeness, trading qualification, sample selection, economics or promotion. Do not move the Issue to COMPLETED.
+
+### Audit verification matrix
+
+| Gate | Evidence | Status |
+|---|---|---|
+| Calendar preregistration before source GET | PR #96 merged before scan | Verified |
+| Immutable Actions ZIP provenance | Two exact run/artifact pairs and SHA-256 above | Verified |
+| Raw HTTP catalog responses and 90 day reports | Independent recomputation of all 180 hashes and dated rows | Verified |
+| Unique SPOT/FUTURES family archives for every date | 90 paired official catalogs; 0 API-error days | Verified (catalog only) |
+| `BTC-USDT-250627` member across eligible dates | Requires chain archive member verification, not an API catalog guess | UNASSESSED |
+| Complete 00:15 L2 books across frozen selected dates | Must be verified only after independently frozen date sample | UNASSESSED |
+| Historical acquisition / corpus promotion | Separate operator-controlled reviewed PR | NOT APPROVED |
+
+### New independently replayable audit slice
+
+- [x] Persist `scripts/audit_cash_2025q2_source_calendar.py` with ZIP digest, raw query identity, response SHA, date, archive URL and report-vs-source consistency checks.
+- [x] Add offline positive and corruption/approval-escalation negative tests (11 cases locally passed using `python -m pytest -q`; await final-head CI).
+- [ ] CI and Historical Smoke on the final audit PR head, then review/merge, verify main CI.
+- [ ] Continue bounded contract-member availability enumeration; do not infer 12 eligible selected dates from the 90 family-level catalogs.
+
 ## Resume from here
-The registered source-calendar file was merged in PR #96. Inspect the new scanner PR final-head CI and official Actions source-run artifact. Independently verify each day and raw response SHA, then design availability sampling; do not infer exact FUTURES contract membership from the family-chain catalog alone. Verify exact source-study JSON is committed before running new
-official catalog queries. Validate existing contract and
-source research archive. Build a read-only daily FUTURES/SPOT
-availability scanner using official `OkxHistoricalCatalogQuery`
-with bounded rate/retry. Treat daily family-chain file existence
-as **catalog identity only**; ensure each raw API body is hashed
-and incomplete days recorded. Only then plan an outcome-blind
-12-day selection using approved selection code, preserving
-all known failures. Keep Issue #95 open.
+The official 90-day family-archive API catalog population and both independently reverified ZIPs are grounded above. The reusable ZIP audit command and 11 offline tests are committed; obtain successful final-head CI and Historical Smoke for this PR. Then proceed to bounded source archive *member-level* evidence for the exact `BTC-USDT-250627` contract across the frozen calendar, logging missing/ambiguous days. Do not freeze N=12 availability-based samples until exact per-date eligibility is verified from source archives. No automatic acquisition, corpus promotion, economics threshold activation, or live trading.
 
 ## Completion
 Pending audited 2025Q2 population and reviewed acquisition.
