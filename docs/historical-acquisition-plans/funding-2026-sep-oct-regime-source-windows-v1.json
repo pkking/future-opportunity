@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "evidence_type": "funding_regime_source_window_preregistration",
+  "study_id": "funding-2026-sep-oct-regime-coverage-v1",
+  "research_only": true,
+  "selection_before_source_inspection": true,
+  "outcome_blind": true,
+  "request_per_regime": 2,
+  "volatility_threshold_bps": "100",
+  "feature_policy": "pre-entry-funding-regime-research-v1",
+  "candidate_windows": [
+    {
+      "id": "2026-09-01-to-07",
+      "start_date": "2026-09-01",
+      "end_date": "2026-09-07",
+      "seed": "funding-2026-09-01to07-v1"
+    },
+    {
+      "id": "2026-09-15-to-21",
+      "start_date": "2026-09-15",
+      "end_date": "2026-09-21",
+      "seed": "funding-2026-09-15to21-v1"
+    },
+    {
+      "id": "2026-10-01-to-07",
+      "start_date": "2026-10-01",
+      "end_date": "2026-10-07",
+      "seed": "funding-2026-10-01to07-v1"
+    }
+  ],
+  "source_requirements": [
+    "official OKX settled funding history and confirmed closed 1Dutc spot candles",
+    "entry is 00:15 UTC; lagged funding settlement must be at least 1h old and at most 36h old",
+    "seven completed daily spot returns before entry",
+    "retrospective API evidence does not independently verify historical publication at entry"
+  ],
+  "acquisition_approved": false,
+  "promotion_approved": false
+}
