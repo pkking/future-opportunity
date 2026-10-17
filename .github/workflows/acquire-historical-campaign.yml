@@ -17,9 +17,6 @@ on:
         required: false
         type: number
         default: 600
-  push:
-    paths:
-      - ".github/workflows/acquire-historical-campaign.yml"
 
 permissions:
   contents: read
