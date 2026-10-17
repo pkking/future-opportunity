@@ -163,8 +163,18 @@ def iter_okx_l2_jsonl(
                 f"(line {source_line})"
             )
 
-        raw_bids = _levels(event, "bids", source_line)
-        raw_asks = _levels(event, "asks", source_line)
+        raw_bids = _snapshot_replay_levels(
+            _levels(event, "bids", source_line),
+            action=action,
+            instrument_type=instrument_type,
+            source_line=source_line,
+        )
+        raw_asks = _snapshot_replay_levels(
+            _levels(event, "asks", source_line),
+            action=action,
+            instrument_type=instrument_type,
+            source_line=source_line,
+        )
 
         if action == "snapshot":
             bids = {}
@@ -317,6 +327,48 @@ def _levels(
             )
         result.append(level)
     return result
+
+
+# The 2025-07-04 OKX BTC-USDT-250926 futures 400-depth snapshot
+# contains 325 real asks followed by 75 ["0","0.0","0"] empty tail
+# rows. This source-observed transport representation is NOT an order
+# with price 0. Never generalize it to updates or unrelated markets.
+_FUTURES_EMPTY_SNAPSHOT_LEVEL = ["0", "0.0", "0"]
+
+
+def _snapshot_replay_levels(
+    levels: list[list[Any]],
+    *,
+    action: str,
+    instrument_type: str,
+    source_line: int,
+) -> list[list[Any]]:
+    """Accept only the exact proven zero-tail encoding of 400-level FUTURES snapshots.
+
+    Any interleaved empty rows, nonzero quantities or changed encodings
+    continue through the existing strict price/quantity validators.
+    """
+    if action != "snapshot" or instrument_type != "FUTURES" or len(levels) != 400:
+        return levels
+
+    for index, level in enumerate(levels):
+        if level != _FUTURES_EMPTY_SNAPSHOT_LEVEL:
+            continue
+        if index == 0:
+            raise ValueError(
+                "historical futures snapshot has no active depth "
+                f"at line {source_line}"
+            )
+        if any(
+            tail_level != _FUTURES_EMPTY_SNAPSHOT_LEVEL
+            for tail_level in levels[index:]
+        ):
+            raise ValueError(
+                "historical futures snapshot empty depth is not a "
+                f"contiguous suffix at line {source_line} level {index}"
+            )
+        return levels[:index]
+    return levels
 
 
 def _apply_levels(
@@ -526,8 +578,18 @@ def iter_okx_l2_sampled_jsonl(
         if sampled_at > end:
             return
 
-        raw_bids = _levels(event, "bids", source_line)
-        raw_asks = _levels(event, "asks", source_line)
+        raw_bids = _snapshot_replay_levels(
+            _levels(event, "bids", source_line),
+            action=action,
+            instrument_type=instrument_type,
+            source_line=source_line,
+        )
+        raw_asks = _snapshot_replay_levels(
+            _levels(event, "asks", source_line),
+            action=action,
+            instrument_type=instrument_type,
+            source_line=source_line,
+        )
         if action == "snapshot":
             bids = {}
             asks = {}
