@@ -41,8 +41,10 @@ without losing raw source integrity or weakening unrelated instruments/events.
 - No generic ignoring of zero prices, no nonzero quantities removed, no update
   or SPOT/SWAP changes, no source/date replacement, no corpus growth before
   real operator evidence, and no automated dispatch/promotion.
-- Do not infer remaining 67 raw level sizes/order counts. Fail closed unless
-  *all* 75 levels match the exact observed empty-row tuple.
+- Do not infer remaining 67 raw level sizes/order counts from the **previous
+  bounded diagnostic alone**. The 2026-10-17 post-fix Run 39016429500
+  successfully replayed the *same SHA-256 raw archive* under an exact-match
+  fail-closed parser, giving runtime support for source compatibility.
 - Do not count a diagnostic-only run without frozen selection provenance as
   successful Q3 evidence.
 
@@ -59,9 +61,10 @@ without losing raw source integrity or weakening unrelated instruments/events.
       rejection, full and sampled archive replay and identical resulting books.
 - [x] Final-head CI (static/code/API/E2E/plan) and Historical Smoke success;
       squash merge and post-merge main CI success.
-- [ ] Issue #69 checkpointed; user operator explicitly re-runs **one
-      diagnostic-only historical case** to verify live source semantics,
-      before any frozen Q3 rerun or Q4 dispatch.
+- [x] Issue #69 checkpointed; operator executed one **diagnostic-only**
+      historical case, Run 39016429500, which completed SUCCESS, with four
+      normalized books and auditable return evidence. This establishes only
+      the single-case parser compatibility, not frozen Q3 wave completion.
 
 ## Implementation slices
 - [x] 1. Apply strictly scoped empty-tail parsing to snapshot level arrays.
@@ -97,6 +100,36 @@ without losing raw source integrity or weakening unrelated instruments/events.
   [post-merge main CI 39015937288](https://github.com/pkking/future-opportunity/actions/runs/39015937288)
   SUCCESS. No live Q3 source sample has been replayed under the fix yet.
 
+- 2026-10-17: **post-fix operator single-case run [39016429500](https://github.com/pkking/future-opportunity/actions/runs/39016429500) SUCCESS** on main `991b6dfd54b2fe92282f699ce8fc05e1d7cfdcbd`. Independently downloaded and inspected three Actions ZIPs:
+  - Prepared artifact ID `12094861759`, ZIP SHA-256
+    `f952e173a7f24d47cc4f467361dea2ad7e37ff1cb559137d94b54800dc03a39f`;
+  - Compact artifact ID `12094144514`, ZIP SHA-256
+    `889f28216557caf13ea99cdfd046bd82b2583c54416ec56931bbde2f4eabdc35`;
+  - Actuals artifact ID `12095101201`, ZIP SHA-256
+    `bc23d6fe578b7e0a88130646c3ac79957c666792a7501a86def3396d36b020bc`.
+- SHA-256 validation for all four prepared and all four compact canonical
+  JSONL files passes; all retained prices/sizes are positive. Every
+  component contains exactly one sampled book. Observed staleness:
+  `entry_spot` 5ms (400/400 bid/ask levels),
+  `entry_future` 15ms (400/347),
+  `exit_spot` 7ms (400/400),
+  `exit_future` 17ms (293/200), all under 5000ms.
+  The `entry_future` raw source SHA
+  `0889b779631687d433472d8c1d2b3b8890edc29afff583d3891bff1900d0cafa`
+  matches the source archive that failed before the fix.
+  Compact `derived_from_artifact` correctly pins parent prepared ID,
+  parent ZIP digest and run `39016429500`.
+- Actuals: one `qualified=true`, `return_complete=true` paper backtest
+  case, `initial_delta_pct=0`; expected net return
+  `0.003344534466122320868897087483`, simulated realized net return
+  `0.003524818444121093505496828224`; `target_status=not_yet_decided`.
+  `MarginSafety` and `VenueExposure` **unassessed**.
+  This is single-case reporting, not Stage 2 return threshold evidence.
+- **Crucial:** this diagnostic-only run's prepared manifest has
+  **no `selection_provenance`** and is **NOT promotable**. It adds **zero**
+  pinned 2025 Q3 corpus days; do not count its `commit_ready` compact
+  metadata alone as satisfying frozen selection proof.
+
 ## Decision gate
 The unsupported general claim that *all* zero-priced exchange levels are
 meaningless remains prohibited. This narrowly recognized transport-format
@@ -105,28 +138,37 @@ captured tuple, fail closed with source and level evidence. Widening the
 format contract requires further source evidence and review.
 
 ## Resume from here
-**Blocked on operator source verification, not development.** The
-strict FUTURES suffix parser is on main at `a41fe7366b6412d23cdf660198dde80753847ab4`.
-Explicitly dispatch only the original **single-case diagnostic**:
+
+**Single-case source compatibility is now independently VERIFIED.**
+Issue #69 remains open for **frozen 12-date Q3/Q4 acquisition**, not for
+the old diagnostic run. The operator must explicitly run the unchanged
+frozen 2025 Q3 manifest on current main:
 
 ```bash
-gh workflow run prepare-cash-historical-fixture.yml -R pkking/future-opportunity --ref main \
-  -f entry_at=2025-07-04T00:15:00+00:00 \
-  -f exit_at=2025-09-25T00:15:00+00:00 \
-  -f future_id=BTC-USDT-250926 \
-  -f expiry_at=2025-09-26T08:00:00+00:00
+gh workflow run prepare-cash-2025-quarter-wave.yml \
+  -R pkking/future-opportunity --ref main -f wave=q3
 ```
 
-If it succeeds, validate entry and exit SPOT/FUTURES provenance, checksum,
-staleness and actuals; inspect whether all 75 trailing rows were accepted by
-the **exact** 3-field suffix gate, not just first eight. If it fails, capture
-the new source error and diagnostic artifact. This single-case run lacks
-frozen selection provenance and is **not promotable**. Only after independent
-review of a successful diagnostic, operator runs the unchanged frozen Q3
-12-date wave, audits exact 12×3 artifacts, then Q4 and corpus planning.
-Issue #69 stays open; no new pinned case or trading/economics gate was enabled.
+The Q3 wave embeds the original verified
+`pre_registered_availability_sample` with source run `37755705789`
+and exactly 12 fixed dates; do not replace cases after partial failures.
+On completion, inspect every matrix job, download the
+`cash-2025-quarter-summary-q3` artifact, and require exactly
+**12 prepared + 12 compact + 12 actuals** whose names, source run and
+digests match the frozen manifest. This metadata inventory is insufficient
+for deep market-content verification: independently check ZIP contents,
+canonical hashes, recorded L2 staleness, selection provenance, actuals and
+any incomplete/unassessed risk components before proceeding.
+
+If any case fails, retain that case/date and identify the first source
+failure; do not treat a partial success as the quarter succeeding.
+Only after Q3 succeeds, explicitly dispatch the unchanged Q4 wave and
+repeat the independent verification. Then execute the read-only planner
+with exact successful run IDs, and propose a separately governed
+promotion PR. Do not auto-dispatch any operator workflow from the agent.
 
 ## Completion
-Implementation merged and post-merge CI green; acceptance of *real* Q3
-historical source remains UNASSESSED until the next explicit operator run.
-No new pinned cases or Q3/Q4 promotion; Issue #69 remains open.
+Implementation merged and post-merge CI green. Post-fix **2025-07-04
+single-case real source** verified via Run 39016429500 and ZIP content
+checks. Full **Q3 frozen wave remains UNASSESSED**, no new pinned Q3
+case was promoted. Issue #69 is OPEN pending full-quarter evidence.
