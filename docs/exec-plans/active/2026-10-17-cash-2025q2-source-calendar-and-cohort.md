@@ -197,12 +197,13 @@ and not a selected profitable case.
 - PR #101 merged on main: `4acf3e945769d49dd001b686ad1cd114f5bb32f8`. Postmerge main [CI 39050288482](https://github.com/pkking/future-opportunity/actions/runs/39050288482) succeeded.
 - New step: reuse accepted availability selection and existing `validate_cash_2025q2_preregistration.py` to emit a reproducible **selection-control artifact** only from the main-merged frozen registry; record immutable PR reference, source member/catalog run IDs and content SHA-256, and strict `sample_selection_frozen=true` while keeping `acquisition_approved=false`, `promotion_approved=false`, `economic_outcomes_evaluated=false`.
 - Add a `push: main` and manually repeatable read-only workflow for selection evidence; no source archive downloads, no PnL, no data mutation.
+- Implemented new `scripts/freeze_cash_2025q2_selection.py` (reuses existing strict validator), `tests/test_cash_2025q2_selection_control.py`, `.github/workflows/freeze-cash-2025q2-selection.yml`; source-only control reports exactly 12 frozen entries and all acquisition/promotion/economics flags false. PR CI and main artifact pending.
 - Obtain exact main-run artifact ID and Actions digest, then prepare a **separate** strictly validated Cash 2025Q2 acquisition control manifest using existing Q3/Q4 mechanisms.
 - Operator-controlled full L2 acquisition dispatch remains **BLOCKED_DECISION** pending explicit separate human authorization. Preparation work may proceed without triggering the download job. No sample replacement.
 - Acceptance: CI/Smoke final-head+main, frozen 12 dates, source SHA match, negative tests, artifact run SHA and digest observed; no live trade or corpus promotion.
 
 ## Resume from here
-PR #101 is approved and merged, main CI green. Create and verify the official read-only selection-control Actions artifact from main, and then prepare Q2 acquisition manifest + offline validation as a separate review PR. Do not dispatch acquisition without explicit new authorization. Preserve 54 Cash/32 Funding baseline and the exact 12-date committed list.
+PR #101 is approved and merged, main CI green. Submit the approved source-selection control implementation for full CI and Historical Smoke; merge only after final-head gates pass. Verify resulting main source-only Actions run and artifact ID/digest. Then create a separate Q2 acquisition manifest + offline validation PR. Do not dispatch acquisition until separately authorized. Do not dispatch acquisition without explicit new authorization. Preserve 54 Cash/32 Funding baseline and the exact 12-date committed list.
 
 ## Completion
 Pending audited 2025Q2 population and reviewed acquisition.
