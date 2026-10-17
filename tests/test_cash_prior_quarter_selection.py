@@ -21,11 +21,62 @@ def input_selection() -> dict:
 
 
 def pinned_dates() -> list[str]:
-    return [
+    """Reconstruct the original frozen selection's pinned baseline.
+
+    Post-promotion overlap is permitted *for the test's historical baseline*
+    only when every already-pinned 2025 fixture exactly matches the original
+    source-bound selection. The production validator remains fail-closed for
+    all overlaps supplied to it. Never filter by profitability.
+    """
+    frozen = input_selection()
+    quarter_by_day = {
+        day: quarter
+        for quarter in frozen["quarters"]
+        for day in quarter["selected_market_dates"]
+    }
+    expected_provenance = {
+        quarter["future_id"]: json.loads(
+            (ROOT / "docs/historical-acquisition-plans" / filename).read_text()
+        )["selection_provenance"]["cash"]
+        for quarter, filename in zip(
+            frozen["quarters"],
+            (
+                "cash-2025-q3-12day-wave-001.json",
+                "cash-2025-q4-12day-wave-001.json",
+            ),
+            strict=True,
+        )
+    }
+    baseline: list[str] = []
+    promoted: set[str] = set()
+    entries = json.loads(INDEX.read_text())["entries"]
+    all_cash_dates = [
         entry["entry_market_date"]
-        for entry in json.loads(INDEX.read_text())["entries"]
-        if entry["strategy"] == "cash-and-carry"
+        for entry in entries if entry["strategy"] == "cash-and-carry"
     ]
+    assert len(all_cash_dates) == len(set(all_cash_dates))
+    for entry in entries:
+        if entry["strategy"] != "cash-and-carry":
+            continue
+        day = entry["entry_market_date"]
+        quarter = quarter_by_day.get(day)
+        if quarter is None:
+            baseline.append(day)
+            continue
+        manifest = json.loads(
+            (ROOT / "tests/fixtures/historical" / entry["fixture_path"] / "manifest.json")
+            .read_text()
+        )
+        assert manifest["entry_market_date"] == day
+        assert manifest["instrument"]["future_instrument_id"] == quarter["future_id"]
+        assert manifest["sample_times"]["entry"] == day + "T00:15:00+00:00"
+        assert manifest["sample_times"]["exit"] == quarter["exit_at"]
+        assert manifest["selection_provenance"] == expected_provenance[quarter["future_id"]]
+        promoted.add(day)
+    assert not promoted or promoted == set(quarter_by_day), (
+        "frozen 24-case promotion must be atomic, with no partial cohort"
+    )
+    return baseline
 
 
 def test_two_expiry_cohorts_are_deterministically_frozen() -> None:
