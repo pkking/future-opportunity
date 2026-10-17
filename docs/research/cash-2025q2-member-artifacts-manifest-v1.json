@@ -1,0 +1,65 @@
+{
+  "batches": [
+    {
+      "artifact_id": 12105781609,
+      "artifact_name": "cash-2025q2-exact-members-batch-0",
+      "batch_index": 0,
+      "zip_sha256": "2c8f4830280024ba8cf0d3ebf9a13eafa3d07a3668f0f282f1ffc87684d22144"
+    },
+    {
+      "artifact_id": 12105487424,
+      "artifact_name": "cash-2025q2-exact-members-batch-1",
+      "batch_index": 1,
+      "zip_sha256": "c6ea8a5323538a806d7c3f69acf9a9e43a12ff3382bdd2320c483aac1a21001c"
+    },
+    {
+      "artifact_id": 12105059343,
+      "artifact_name": "cash-2025q2-exact-members-batch-2",
+      "batch_index": 2,
+      "zip_sha256": "0de8a0ad267954286faa21a5077dbe53f84ba122448711d25c76cb549994dd35"
+    },
+    {
+      "artifact_id": 12105811417,
+      "artifact_name": "cash-2025q2-exact-members-batch-3",
+      "batch_index": 3,
+      "zip_sha256": "33d020678cd9b9af4639b70e8077815cbb82185d158587440c8fbf3d09c8cfaa"
+    },
+    {
+      "artifact_id": 12105541845,
+      "artifact_name": "cash-2025q2-exact-members-batch-4",
+      "batch_index": 4,
+      "zip_sha256": "9b36064e856d82327a98f1b2f23218d50a380ab1e821c07222645e0646a30e8f"
+    },
+    {
+      "artifact_id": 12105646834,
+      "artifact_name": "cash-2025q2-exact-members-batch-5",
+      "batch_index": 5,
+      "zip_sha256": "fd7edacd81004781b950000d60cddf68790b5b8669c7fdf7cecefa6c855df3f9"
+    },
+    {
+      "artifact_id": 12105697245,
+      "artifact_name": "cash-2025q2-exact-members-batch-6",
+      "batch_index": 6,
+      "zip_sha256": "61d89ef0f1fbba91651e7b70115faebf48b15ebfd89c5a7e0466c23b2efba82f"
+    },
+    {
+      "artifact_id": 12106175347,
+      "artifact_name": "cash-2025q2-exact-members-batch-7",
+      "batch_index": 7,
+      "zip_sha256": "0f1a23d4aeac67a69f75070b1171dd257194f4caa291dee21c7dc84fa3dcb3a9"
+    },
+    {
+      "artifact_id": 12105851856,
+      "artifact_name": "cash-2025q2-exact-members-batch-8",
+      "batch_index": 8,
+      "zip_sha256": "8ee993c8a93f90fb2c992543404bc1383a9971e80b3c3a40cc92ec9b737cadb1"
+    }
+  ],
+  "evidence_type": "cash_2025q2_exact_member_artifacts_manifest",
+  "member_source_head_sha": "b5980b907d8e698906ef4fe49de18fba6b451cf6",
+  "member_source_run": "39045070860",
+  "schema_version": 1,
+  "source_catalog_artifact_id": "12103210971",
+  "source_catalog_run": "39038071038",
+  "source_catalog_sha256": "1b9a4adcb7035ca4abb70e5a9f1823dc3a71f5e9849070ce59c493df205b57ae"
+}
