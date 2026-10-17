@@ -4,7 +4,7 @@ import argparse
 import json
 import time
 import traceback
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +23,44 @@ from future_opportunity.backtest.funding_regime_research import (
 ROOT = Path(__file__).parents[1]
 CORPUS_INDEX = ROOT / "tests/fixtures/historical/corpus-index.json"
 BASE_URL = "https://www.okx.com"
+
+WINDOWS_PATH = ROOT / "docs/historical-acquisition-plans/funding-2026-sep-oct-regime-source-windows-v1.json"
+
+def registered_research_window(window_id: str) -> dict[str, Any]:
+    registry = json.loads(WINDOWS_PATH.read_text())
+    if registry.get("schema_version") != 1 or registry.get("research_only") is not True:
+        raise ValueError("invalid Funding source window registry")
+    if not (registry.get("outcome_blind") is True
+            and registry.get("selection_before_source_inspection") is True
+            and registry.get("acquisition_approved") is False
+            and registry.get("promotion_approved") is False
+            and registry.get("volatility_threshold_bps") == "100"
+            and registry.get("request_per_regime") == 2):
+        raise ValueError("Funding source window registry governance mismatch")
+    windows = registry.get("candidate_windows")
+    if not isinstance(windows, list) or len(windows) != 3:
+        raise ValueError("Funding research requires three frozen windows")
+    seen_days: set[int] = set()
+    ids: set[str] = set()
+    for window in windows:
+        if not isinstance(window, dict) or set(window) != {"id", "start_date", "end_date", "seed"}:
+            raise ValueError("unexpected Funding window fields")
+        start = date.fromisoformat(window["start_date"])
+        end = date.fromisoformat(window["end_date"])
+        if (end - start).days != 6 or end > date(2026, 10, 17):
+            raise ValueError("Funding window must be seven historical days")
+        days = set(range(start.toordinal(), end.toordinal() + 1))
+        if window["id"] in ids or seen_days & days:
+            raise ValueError("duplicate or overlapping Funding windows")
+        if not isinstance(window["seed"], str) or not window["seed"]:
+            raise ValueError("Funding research seed must be fixed")
+        ids.add(window["id"])
+        seen_days.update(days)
+    matches = [w for w in windows if w["id"] == window_id]
+    if len(matches) != 1:
+        raise ValueError("unknown Funding window ID")
+    return matches[0]
+
 
 
 def _get_public_api(
@@ -53,7 +91,12 @@ def main() -> None:
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--start-date", default="2026-09-15")
     parser.add_argument("--end-date", default="2026-09-21")
+    parser.add_argument("--window-id", default=None)
     args = parser.parse_args()
+    fixed = registered_research_window(args.window_id) if args.window_id else None
+    if fixed:
+        args.start_date, args.end_date = fixed["start_date"], fixed["end_date"]
+    seed = fixed["seed"] if fixed else "2026-09-funding-raw-probe-v1"
 
     output = args.output_dir
     output.mkdir(parents=True, exist_ok=True)
@@ -84,7 +127,7 @@ def main() -> None:
             "captured_at": datetime.now(UTC).isoformat(),
             "start_date": args.start_date,
             "end_date": args.end_date,
-            "seed": "2026-09-funding-raw-probe-v1",
+            "seed": seed,
             "requested_per_regime": 2,
             "pinned_market_dates": pinned,
             "funding_query": funding_query,
@@ -109,6 +152,25 @@ def main() -> None:
         )
         (output / "research-selection.json").write_text(
             json.dumps(research, indent=2, sort_keys=True) + "\n"
+        )
+        coverage = {
+            "schema_version": 1,
+            "evidence_type": "funding_regime_source_coverage",
+            "window_id": args.window_id or "legacy",
+            "start_date": args.start_date,
+            "end_date": args.end_date,
+            "seed": seed,
+            "source_sha256": reconstructed["source_sha256"],
+            "source_authentication_status": reconstructed["source_authentication_status"],
+            "point_in_time_publication_verified": False,
+            "regimes": research["regimes"],
+            "missing_days": reconstructed["missing_days"],
+            "quota_fully_met": research["quota_fully_met"],
+            "acquisition_approved": False,
+            "promotion_approved": False,
+        }
+        (output / "coverage-summary.json").write_text(
+            json.dumps(coverage, indent=2, sort_keys=True) + "\n"
         )
         print(
             json.dumps(
