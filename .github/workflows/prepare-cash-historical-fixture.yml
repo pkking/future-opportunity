@@ -25,6 +25,11 @@ on:
         default: ""
   workflow_call:
     inputs:
+      max_raw_mb:
+        description: Bounded maximum compressed source archive MiB
+        required: false
+        type: number
+        default: 600
       entry_at:
         required: true
         type: string
@@ -41,15 +46,6 @@ on:
         required: false
         type: string
         default: ""
-  push:
-    paths:
-      - scripts/prepare_okx_cash_and_carry_fixture.py
-      - scripts/run_cash_historical_backtest.py
-      - scripts/finalize_cash_compact_fixture.py
-      - src/future_opportunity/backtest/cash_fixture.py
-      - src/future_opportunity/backtest/cash_compact.py
-      - src/future_opportunity/backtest/compact.py
-      - .github/workflows/prepare-cash-historical-fixture.yml
 
 permissions:
   contents: read
@@ -81,9 +77,16 @@ jobs:
       - name: Download, verify, normalize and compact official history
         env:
           CASH_HISTORICAL_FIXTURE_DIR: artifacts/cash-historical-fixture
-          CASH_HISTORY_MAX_RAW_MB: "600"
+          CASH_HISTORY_MAX_RAW_MB: ${{ inputs.max_raw_mb || 600 }}
           CASH_HISTORY_MAX_STALENESS_MS: "5000"
-        run: uv run python scripts/prepare_okx_cash_and_carry_fixture.py
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "${CASH_HISTORY_MAX_RAW_MB}" in
+            600|1024) ;;
+            *) echo "unsupported Cash raw archive budget; only 600 or 1024 MiB allowed" >&2; exit 1 ;;
+          esac
+          uv run python scripts/prepare_okx_cash_and_carry_fixture.py
 
       - name: Evaluate historical actuals
         run: |

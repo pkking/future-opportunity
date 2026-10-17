@@ -30,6 +30,13 @@ def test_funding_raw_archive_cap_tracks_measured_current_okx_sizes() -> None:
     assert 'os.getenv("HISTORY_MAX_RAW_MB", "1024")' in script
     assert "raw archive exceeded {MAX_RAW_MB} MiB limit" in script
 
-    # Wave 002 only established a Funding-capacity defect.
-    # Do not silently widen the independent Cash safety boundary.
-    assert 'CASH_HISTORY_MAX_RAW_MB: "600"' in cash
+    # Generic Cash retains the original 600 MiB default; only the
+    # separately reviewed Q2 manual wave opts into 1024 MiB. The input
+    # remains explicitly bounded: never silently remove the cap.
+    assert "max_raw_mb:" in cash
+    assert "default: 600" in cash
+    assert "CASH_HISTORY_MAX_RAW_MB: ${{ inputs.max_raw_mb || 600 }}" in cash
+    assert "600|1024)" in cash
+    q2_wave = (ROOT / ".github/workflows/prepare-cash-2025q2-wave.yml").read_text()
+    assert "cash_max_raw_mb: 1024" in q2_wave
+    assert "push:" not in cash

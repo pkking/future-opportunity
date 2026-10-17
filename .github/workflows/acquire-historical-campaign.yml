@@ -12,9 +12,11 @@ on:
         description: Versioned normalized acquisition JSON
         required: true
         type: string
-  push:
-    paths:
-      - ".github/workflows/acquire-historical-campaign.yml"
+      cash_max_raw_mb:
+        description: Fixed maximum compressed size in MiB for each Cash source archive
+        required: false
+        type: number
+        default: 600
 
 permissions:
   contents: read
@@ -89,6 +91,7 @@ jobs:
       future_id: ${{ matrix.case.future_id }}
       expiry_at: ${{ matrix.case.expiry_at }}
       selection_provenance_json: ${{ needs.resolve.outputs.cash_selection_provenance }}
+      max_raw_mb: ${{ inputs.cash_max_raw_mb || 600 }}
 
   summary:
     name: Acquisition completion evidence
