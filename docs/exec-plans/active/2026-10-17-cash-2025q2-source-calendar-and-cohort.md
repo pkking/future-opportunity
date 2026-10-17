@@ -1,7 +1,7 @@
 # Cash 2025Q2 additional independent expiry cohort
 
 Issue: #95
-Status: PLANNING
+Status: VERIFYING
 Owner: agent
 Started: 2026-10-17
 
@@ -43,10 +43,10 @@ not select dates using paper returns or existing results.
   no live trading, no automatic Stage-2 economics gate.
 
 ## Acceptance criteria
-- [ ] Freeze source-capacity scope in
+- [x] Freeze source-capacity scope in
       `docs/historical-acquisition-plans/cash-2025q2-source-capacity-study-v1.json`
       before any official OKX catalog queries.
-- [ ] Implement read-only official module-4 FUTURES/SPOT 90-day
+- [x] Implement read-only official module-4 FUTURES/SPOT 90-day
       daily source population scanner; preserve raw-response
       hash, exact date and source identity, missing/error days
       and bounded/retry behavior. No download or PnL during
@@ -67,9 +67,9 @@ not select dates using paper returns or existing results.
       at final PR head; postmerge main CI verified.
 
 ## Implementation slices
-- [ ] 1. Commit immutable scan population and 12-date target,
+- [x] 1. Commit immutable scan population and 12-date target,
       no outcomes and no source claims.
-- [ ] 2. Add bounded, read-only daily catalog scanner and
+- [x] 2. Add bounded, read-only daily catalog scanner and
       offline fail-closed tests.
 - [ ] 3. Audit true GitHub official-source outputs including
       all 90 dates and unique SPOT/FUTURES availability.
@@ -96,8 +96,31 @@ for operator-controlled acquisition dispatch and governed
 promotion PR merge. If complete/independent source population
 cannot be proved, do not force a selection or invent availability.
 
+## 2026-10-17 fixed source calendar read-only implementation
+
+[PR #96](https://github.com/pkking/future-opportunity/pull/96)
+froze the exact 90-calendar-day 2025Q2 source
+population **before** this scanner was authored or executed:
+`docs/historical-acquisition-plans/cash-2025q2-source-capacity-study-v1.json`.
+This PR adds an official OKX module-4 source-only
+`probe-cash-2025q2-source-calendar.yml` workflow:
+180 bounded date/source requests, daily raw official response
+bodies and separate SHA-256, explicit API error/missing/ambiguous
+labels, and a full 90-day report with one-to-one date coverage
+checks. No historical member (250627) existence is inferred
+from FUTURES family-chain archive catalog; results remain
+`contract_member_inside_futures_archive_verified=false`.
+No strategy outcome inspected, no selected historical sample
+declared, and no promotion or live trade authorized.
+
+The next gate is the exact real official-source run ZIP, all
+180 response hashes and source calendar coverage, followed by
+separately frozen availability-based date selection. The one
+source-only June 12 L2 example remains strictly research-only
+and not a selected profitable case.
+
 ## Resume from here
-Verify exact source-study JSON is committed before running new
+The registered source-calendar file was merged in PR #96. Inspect the new scanner PR final-head CI and official Actions source-run artifact. Independently verify each day and raw response SHA, then design availability sampling; do not infer exact FUTURES contract membership from the family-chain catalog alone. Verify exact source-study JSON is committed before running new
 official catalog queries. Validate existing contract and
 source research archive. Build a read-only daily FUTURES/SPOT
 availability scanner using official `OkxHistoricalCatalogQuery`
