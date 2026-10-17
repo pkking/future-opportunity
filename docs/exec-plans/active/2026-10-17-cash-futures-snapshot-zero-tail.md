@@ -57,7 +57,7 @@ without losing raw source integrity or weakening unrelated instruments/events.
       padding with subsequent real level, zero-price nonzero size/count,
       partial/different padding, all-zero side, SPOT/SWAP and update-event
       rejection, full and sampled archive replay and identical resulting books.
-- [ ] Final-head CI (static/code/API/E2E/plan) and Historical Smoke success;
+- [x] Final-head CI (static/code/API/E2E/plan) and Historical Smoke success;
       squash merge and post-merge main CI success.
 - [ ] Issue #69 checkpointed; user operator explicitly re-runs **one
       diagnostic-only historical case** to verify live source semantics,
@@ -67,17 +67,17 @@ without losing raw source integrity or weakening unrelated instruments/events.
 - [x] 1. Apply strictly scoped empty-tail parsing to snapshot level arrays.
 - [x] 2. Add synthetic 400-depth contract tests for both replay paths and
       negative cases.
-- [ ] 3. Verify final heads, squash merge, main CI, and checkpoint outcomes.
+- [x] 3. Verify final heads, squash merge, main CI, and checkpoint outcomes.
 
 ## Verification matrix
 | Gate | Command | Status |
 |---|---|---|
-| Targeted | New regression tests in code-level CI | 39015741758 PASS |
-| Static | `uv run ruff check .` | 39015741758 PASS |
-| Code | CI Code-level tests | 39015741758: 448 passed, 1 warning |
-| API | CI API contract tests | 39015741758 PASS |
-| E2E | CI E2E strategy acceptance | 39015741758 PASS |
-| Historical | Historical Backtest Smoke | 39015741705 PASS |
+| Targeted | New regression tests in code-level CI | final-head 39015877087 PASS |
+| Static | `uv run ruff check .` | final-head 39015877087 PASS |
+| Code | CI Code-level tests | 39015877087 PASS; initial head 448 passed |
+| API | CI API contract tests | final-head 39015877087 PASS |
+| E2E | CI E2E strategy acceptance | final-head 39015877087 PASS |
+| Historical | Historical Backtest Smoke | final-head 39015877090 PASS |
 
 ## Evidence log
 
@@ -89,6 +89,14 @@ without losing raw source integrity or weakening unrelated instruments/events.
   by the bounded diagnostic. The other 67 must match the accepted
   tuple or this patch still fails closed. No new valid Q3 source is claimed.
 
+- 2026-10-17: final reviewed head `edf593ba489c78f5109ebdbc126b2ac0e745658b`:
+  [CI 39015877087](https://github.com/pkking/future-opportunity/actions/runs/39015877087) SUCCESS,
+  [Historical Smoke 39015877090](https://github.com/pkking/future-opportunity/actions/runs/39015877090)
+  SUCCESS; PR #76 squash merged as
+  `a41fe7366b6412d23cdf660198dde80753847ab4`;
+  [post-merge main CI 39015937288](https://github.com/pkking/future-opportunity/actions/runs/39015937288)
+  SUCCESS. No live Q3 source sample has been replayed under the fix yet.
+
 ## Decision gate
 The unsupported general claim that *all* zero-priced exchange levels are
 meaningless remains prohibited. This narrowly recognized transport-format
@@ -97,15 +105,28 @@ captured tuple, fail closed with source and level evidence. Widening the
 format contract requires further source evidence and review.
 
 ## Resume from here
-Review final-head CI after this checkpoint, squash merge PR #76 only
-after all checks green, then verify post-merge main CI. Record final evidence
-and SHA in Issue #69. Next operator task: the same single-case diagnostic-only
-historical fixture workflow with 2025-07-04 entry, 2025-09-25 exit and
-BTC-USDT-250926 future. If it succeeds, inspect actuals/source integrity;
-if it fails, inspect fresh diagnostics. This run omits frozen selection
-provenance and cannot be promoted. Never auto-dispatch Q3/Q4/planner/
-promotion before a real, independently validated source run.
+**Blocked on operator source verification, not development.** The
+strict FUTURES suffix parser is on main at `a41fe7366b6412d23cdf660198dde80753847ab4`.
+Explicitly dispatch only the original **single-case diagnostic**:
+
+```bash
+gh workflow run prepare-cash-historical-fixture.yml -R pkking/future-opportunity --ref main \
+  -f entry_at=2025-07-04T00:15:00+00:00 \
+  -f exit_at=2025-09-25T00:15:00+00:00 \
+  -f future_id=BTC-USDT-250926 \
+  -f expiry_at=2025-09-26T08:00:00+00:00
+```
+
+If it succeeds, validate entry and exit SPOT/FUTURES provenance, checksum,
+staleness and actuals; inspect whether all 75 trailing rows were accepted by
+the **exact** 3-field suffix gate, not just first eight. If it fails, capture
+the new source error and diagnostic artifact. This single-case run lacks
+frozen selection provenance and is **not promotable**. Only after independent
+review of a successful diagnostic, operator runs the unchanged frozen Q3
+12-date wave, audits exact 12×3 artifacts, then Q4 and corpus planning.
+Issue #69 stays open; no new pinned case or trading/economics gate was enabled.
 
 ## Completion
-Awaiting merged CI checkpoint and a new operator-dispatched source test.
+Implementation merged and post-merge CI green; acceptance of *real* Q3
+historical source remains UNASSESSED until the next explicit operator run.
 No new pinned cases or Q3/Q4 promotion; Issue #69 remains open.
