@@ -12,12 +12,6 @@ from typing import Any
 
 import httpx
 
-from probe_cash_independent_expiries import (
-    REGISTRY,
-    pinned_cash_futures,
-    validated_candidates,
-)
-
 
 def verify_four_books(
     output: Path, books: dict[str, dict[str, Any]],
@@ -120,6 +114,10 @@ def main() -> None:
     parser.add_argument("--candidate-id", required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args()
+    from probe_cash_independent_expiries import (
+        REGISTRY, pinned_cash_futures, validated_candidates,
+    )
+
     registry = json.loads(REGISTRY.read_text())
     candidates = validated_candidates(registry, pinned_cash_futures())
     selected = [x for x in candidates if x["id"] == args.candidate_id]
