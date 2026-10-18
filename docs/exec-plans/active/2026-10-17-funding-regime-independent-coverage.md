@@ -1,7 +1,7 @@
 # Funding Carry point-in-time regime expansion
 
 Issue: #85
-Status: IMPLEMENTING
+Status: VERIFYING
 Owner: agent
 Started: 2026-10-17
 
@@ -408,20 +408,20 @@ recompute features and inspect its signed file. Failures must remain visible
 rather than being silently accepted as empty market regimes.
 
 Acceptance criteria:
-- [ ] A follow-on read-only audit job runs after scheduled capture, even on
+- [x] A follow-on read-only audit job runs after scheduled capture, even on
       capture failure. It downloads the **original** (not repacked) Actions ZIP,
       checks a separately fetched artifact ID/digest owned by that same run,
       and refuses wrong-run, duplicate or missing artifact metadata.
-- [ ] Existing `audit_funding_preentry_source_artifact.audit_zip` runs
+- [x] Existing `audit_funding_preentry_source_artifact.audit_zip` runs
       unchanged for successful attempts and requires exact observed UTC day;
       offline replay cannot be claimed without raw/time/research agreement.
-- [ ] The original raw JSON file is checked using official `gh attestation
+- [x] The original raw JSON file is checked using official `gh attestation
       verify` with constrained repository, signer workflow, main ref, commit
       SHA and raw subject digest; verification errors fail closed.
-- [ ] Failed capture with `error.json` is reported `UNASSESSED` with explicit
+- [x] Failed capture with `error.json` is reported `UNASSESSED` with explicit
       reason; no attestation success claimed. Strictly reject forged status
       flags, malformed JSON or unusual ZIP members even for failure receipts.
-- [ ] Any success says GitHub provenance validated only, **not** exchange-
+- [x] Any success says GitHub provenance validated only, **not** exchange-
       authenticated historical availability; no change to `point_in_time_publication_verified=false`,
       no promotion/acquisition/economics/live orders.
 - [ ] Deterministic, fully offline tests for all positive/negative paths,
@@ -442,9 +442,26 @@ Current baseline: `1a1e21cc67ec66eeea7605b597a58f592342826c`,
 Issue #85 OPEN, no prior successful scheduled capture to audit. Independent
 pre-entry OKX source-publication claim stays **UNASSESSED**.
 
+### Implementation checkpoint before PR validation
+
+- Pure orchestration `scripts/audit_scheduled_funding_capture.py` consumes
+  exactly matching Actions run metadata, original ZIP and immutable artifact
+  digest; it reuses existing independent `audit_zip` and GitHub CLI signature
+  policy and generates an explicit machine-readable result or failure.
+- New `audit` job on the existing *scheduled-only* workflow uses first-party
+  ZIP download without decompressing, `gh api` run/artifact identity and
+  bounded read-only `gh attestation verify`. A failed capture receives
+  `UNASSESSED` without requiring any nonexistent attestation.
+- Added offline unit tests and source evidence contract documentation.
+  **Tests not yet run at this checkpoint**: require final PR-head normal CI,
+  historical smoke, and postmerge main CI; no actual scheduled source received.
+- No change to historical corpus, Funding regimes, strategy outcomes, order
+  routes or Stage-2 economics approval.
+
+
 ## Resume from here
 
-Implement and test the approved read-only scheduled artifact review on `agent/funding-preentry-auto-evidence-review`. Verify final PR-head CI/Historical Smoke and postmerge CI. No real scheduled source exists yet; retain underlying BLOCKED_EVIDENCE.
+Verify PR CI for automated signed-artifact review (static/code/API/E2E/plan + Historical Smoke), fix any failure, checkpoint final run IDs, merge once all pass and verify postmerge CI. Remain BLOCKED_EVIDENCE for any actual exchange publication/provenance claim until a real scheduled run exists.
 
 ## Completion
 
