@@ -1,7 +1,7 @@
 # Funding Carry point-in-time regime expansion
 
 Issue: #85
-Status: IMPLEMENTING
+Status: BLOCKED_EVIDENCE
 Owner: agent
 Started: 2026-10-17
 
@@ -168,17 +168,24 @@ Frozen new windows (inclusive, all entry 00:15 UTC):
 Constraints: all 21 dates are distinct from the existing 21 Sept/Oct dates; fixed 100 bps threshold and requested 2 cases per regime; point-in-time publication not implied by historical event timestamps. API retention and availability are *hypotheses*, not sourced facts; record missing/truncated days without substitution. Preserve original registry and its exact three windows unchanged. No change to Funding 32/Cash 66 corpus, approved Stage-2 reporting posture, risk or live-trading boundary.
 
 Implementation plan:
-- [ ] Add second frozen `docs/historical-acquisition-plans/funding-2026-jul-aug-regime-source-windows-v1.json` registry, preserving original preregistration untouched.
-- [ ] Teach `registered_research_window` to recognize exactly the two immutable registries with strict outcome-blind/governance and unique nonoverlapping IDs/days.
-- [ ] Add a **manually dispatched only** new read-only source workflow for exactly the three July/August windows; remove the old source workflow's surprise `push` trigger. No automatic source reads by ordinary code merges.
-- [ ] Add regression tests for both fixed manifests, duplicate/overlapping windows, altered source authorization, stale dates, and no automatic source-trigger or archive/promotion write calls.
+- [x] Add second frozen `docs/historical-acquisition-plans/funding-2026-jul-aug-regime-source-windows-v1.json` registry, preserving original preregistration untouched.
+- [x] Teach `registered_research_window` to recognize exactly the two immutable registries with strict outcome-blind/governance and unique nonoverlapping IDs/days.
+- [x] Add a **manually dispatched only** new read-only source workflow for exactly the three July/August windows; remove the old source workflow's surprise `push` trigger. No automatic source reads by ordinary code merges.
+- [x] Add regression tests for both fixed manifests, duplicate/overlapping windows, altered source authorization, stale dates, and no automatic source-trigger or archive/promotion write calls.
 - [ ] Verify final PR-head static/code/API/E2E/Agent Plan and Historical Smoke; report new actual-source evidence as UNASSESSED until a **separately manually triggered** run has completed and exact ZIPs/digests have been independently audited.
 
 Verification evidence: CI-run URLs and GitHub Actions source artifact IDs+SHA, source statuses and missing dates where available. No source API run is authorized by the PR alone.
 
+## 2026-10-18 code and evidence checkpoint
+
+- PR [#117](https://github.com/pkking/future-opportunity/pull/117) implements the independently frozen new 21-calendar-date research registry, separate exact-window/seed validation, two read-only manually dispatched workflows, and offline governance/negative tests. Original Sept/Oct frozen 21 dates unchanged.
+- First implementation head `6e015c6a20a74ca862db2bb2348f1ec51d0de0af`: [CI 39096979396](https://github.com/pkking/future-opportunity/actions/runs/39096979396) SUCCESS (Static/architecture, Code tests, API, E2E, Agent plan integrity all success); [Historical Smoke 39096979309](https://github.com/pkking/future-opportunity/actions/runs/39096979309) SUCCESS.
+- The current plan-only checkpoint update will itself receive a *new* final-head check before PR merge. Research source windows July/August have NOT been queried, no source-run ZIP digest exists and all 21 historical Funding sign/vol classifications remain **UNASSESSED**. Even a later retrospective capture cannot prove historical publication as-of-entry.
+- Prior unexpected `push` trigger of the old Funding source workflow removed; new workflow only `workflow_dispatch`. No automatic API source read, historical acquisition, corpus mutation, economic-target activation or trading.
+
 ## Resume from here
 
-Create the July/August frozen registry and manual-only workflow, generalize the source-window resolver without rewriting the original three-window manifest, add strict offline regressions, then run full final-head CI and Historical Smoke. **Do not** treat the new 21 date hypotheses as observed market states until an independently completed source run is inspected. After reviewed merge, any historical public-source dispatch needs an explicit new operator action; the GitHub connector lacks workflow_dispatch. The missing negative/low Funding stratum and publication-time authentication remain open research.
+Verify **final PR #117 head** CI/Agent Plan/Historical Smoke after this plan-only checkpoint, then merge only if all green and verify main CI. Next external dependency is a **separately manually dispatched, read-only** run of `.github/workflows/probe-funding-jul-aug-regime-source.yml` on verified main, followed by downloading/auditing each of its 3 ZIPs (actual SHA-256, source status, raw response hashes, complete vs missing days and unbiased 2x2 regime counts). The linked GitHub integration does **not** expose workflow_dispatch, so do not claim a source run happened or fabricate results. Never reselect windows based on funding sign/returns, change the 100bps split, automatically promote these research cases or infer market-wide opportunity success.
 
 ## Completion
 
