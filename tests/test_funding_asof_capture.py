@@ -1,10 +1,6 @@
 """Offline negative/positive controls for prospective, not retrospective, Funding capture."""
 from __future__ import annotations
 
-import copy
-import importlib.util
-from datetime import UTC, datetime, timedelta
-from pathlib import Path
 
 import pytest
 
