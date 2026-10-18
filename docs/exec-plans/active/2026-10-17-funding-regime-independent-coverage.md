@@ -1,7 +1,7 @@
 # Funding Carry point-in-time regime expansion
 
 Issue: #85
-Status: VERIFYING
+Status: BLOCKED_EVIDENCE
 Owner: agent
 Started: 2026-10-17
 
@@ -196,18 +196,30 @@ Verification evidence: CI-run URLs and GitHub Actions source artifact IDs+SHA, s
 Issue: #85 remains the canonical task. Human independently triggered **one** read-only GitHub run [39102598192](https://github.com/pkking/future-opportunity/actions/runs/39102598192) at source head `2228bab91ce74b83abef54ffb544286cc90f29d8` (workflow_dispatch, all 3 jobs SUCCESS). Code work stays strictly within the frozen preregistration, not outcome-driven sampling.
 
 Audit acceptance:
-- [ ] Record exact three artifact IDs and original ZIP SHA-256; independently check all archive bytes and five JSON files per ZIP, correct window/seed/head/provenance.
-- [ ] Replay 21 00:15 UTC entries against raw HTTP funding and confirmed 1Dutc candle evidence; check prior-event 1..36h age, eight closed candles, seven Decimal log-returns, 100bps regime assignment and SHA-256 per row.
-- [ ] Independently recompute canonical raw source digest, planner input and deterministic selected dates; preserve pinned 2026-08-29 exclusion without removing its observed feature row.
-- [ ] Publish an immutable, machine-readable audit summary, human-readable report and offline consistency tests; never commit raw fetched archives or strategy outcomes.
-- [ ] Final-head CI/Agent Plan/Historical Smoke and post-merge main CI verified.
+- [x] Record exact three artifact IDs and original ZIP SHA-256; independently check all archive bytes and five JSON files per ZIP, correct window/seed/head/provenance.
+- [x] Replay 21 00:15 UTC entries against raw HTTP funding and confirmed 1Dutc candle evidence; check prior-event 1..36h age, eight closed candles, seven Decimal log-returns, 100bps regime assignment and SHA-256 per row.
+- [x] Independently recompute canonical raw source digest, planner input and deterministic selected dates; preserve pinned 2026-08-29 exclusion without removing its observed feature row.
+- [x] Publish an immutable, machine-readable audit summary, human-readable report and offline consistency tests; never commit raw fetched archives or strategy outcomes.
+- [x] Final-head CI/Agent Plan/Historical Smoke and post-merge main CI verified.
 - [ ] Publication-as-of-entry independently authenticated, and four-regime quota fully met. These are **research exit gates**, not items to auto-approve from retrospective data.
 
 Already observed external evidence (to be verified and retained in the reviewed audit PR): 21/21 reconstructable dates, one pinned (2026-08-29) excluded from **new selection**, 20 unpinned candidates. Four raw feature regime populations under frozen sign/100bps taxonomy: negative+low **0**, negative+high **2**, nonnegative+low **7**, nonnegative+high **12**. All three source ZIPs passed initial byte SHA-256 checks; the clean, independent offline replay must be recorded before completion claims. All 21 are retrospective official API responses captured 2026-10-18. Research cannot infer contemporaneous publication, ROI, qualified market opportunities or live trading readiness.
 
+## 2026-10-18 source audit merged and evidence verified
+
+- User-triggered [official public-source research run 39102598192](https://github.com/pkking/future-opportunity/actions/runs/39102598192), **workflow_dispatch** on `main` at `2228bab91ce74b83abef54ffb544286cc90f29d8`. All 3 jobs succeeded.
+- The three exact original GitHub Actions artifact ZIPs **12127216329** (SHA `3363e8cb256f293d8fdebcdbda24dbcbde5e74e0fe5fe5ee0e36ef084f311a1c`), **12127506247** (`2587c63913627161c0c8cc98a72410bade896a229275b1a2b9165bd670bfafca`) and **12127316983** (`9eec4e3804115f4edf6278a79a1121835ae1d322057aa7ae1342c1ced3620996`) were downloaded and byte-SHA verified against GitHub's published checksums.
+- Independent local replay recomputed raw canonical source SHA, each selected original funding event and eight confirmed spot daily candles, seven-return Decimal log volatility, one-hour pre-entry lag, row SHA and deterministic dates. **21/21 raw feature rows verified**, 0 source-missing; 2026-08-29 is already pinned, leaving **20 unpinned eligible**; fixed selected research population of **8** (not authorized promotion cases).
+- Complete frozen audit JSON at `docs/research/funding-2026-julaug-source-run-audit-v1.json`, human explanation at `docs/research/funding-2026-julaug-source-run-audit.md`, reusable offline ZIP replayer `scripts/audit_funding_julaug_source_artifacts.py` and offline regression tests at `tests/test_funding_julaug_source_audit.py`.
+- Audited **raw observed** regime counts: negative/low **0**, negative/high **2**, nonnegative/low **7**, nonnegative/high **12**. One previously pinned nonnegative/high day is excluded from prospective eligible populations, but retained in raw 21-day denominator. Never select extra dates based on strategy returns.
+- [PR #119](https://github.com/pkking/future-opportunity/pull/119) merged at `369ddb04bb66b428423437544faa0f1b4adec00f`; final-head [CI 39103175660](https://github.com/pkking/future-opportunity/actions/runs/39103175660) all five required jobs SUCCESS, [Historical Smoke 39103175638](https://github.com/pkking/future-opportunity/actions/runs/39103175638) SUCCESS. Main follow-up CI [39103227714](https://github.com/pkking/future-opportunity/actions/runs/39103227714) to be independently verified at this checkpoint's close.
+- Both successful selected raw API acquisitions for July 27 and Aug 24 expose identical source canonical digest `53649680be1e3a5c22acb43443eccd925d1856a6c6947c130a5fba798c5d6dd9` (response bytes reused across fixed windows); this does not establish independent archive publishers.
+- **Remaining blockers**: Negative Funding below 100 bps trailing spot volatility **not observed**, plus *retrospective API query cannot prove publication as-of historical entry*. Policy `point_in_time_publication_verified=false`; source provenance therefore is not acquisition/promotion-grade evidence. MarginSafety / VenueExposure UNASSESSED. Original Funding 32 / Cash 66 pinned corpus and disabled Stage-2 economics gate unchanged.
+
 ## Resume from here
 
-Complete independent source audit using the three exact GitHub artifact archives from run 39102598192; preserve negative/low zero and pinned-date exclusion; commit reviewable report + regression tests. Wait for CI and merge only green. Afterwards Issue #85 remains blocked on **genuine point-in-time publication evidence and missing negative/low regime**, which are not solvable by declaring the 21 retrospective records publication-authenticated. Any new sampling period requires a separately pre-registered scope. No strategy/corpus/economics or authenticated exchange changes.
+**BLOCKED_EVIDENCE**, not a new operator-dispatch request. Research source collection and audited ZIP replay for frozen July/Aug windows are complete; do not trigger the same workflow again. Next independently planned task should pursue authentic published-as-of-entry OKX funding and daily candle evidence (e.g., proven contemporaneous archive timestamps, independent historical source) and a **separately pre-registered, return-blind** time window specifically for missing negative/low market regime if warranted. Do not retroactively alter the 100bps split, quotas, selection seed or scanned date population to fill a missing cell; do not authorize source acquisition, corpus promotion, economics gating, or live order submission. Keep #85 open.
+
 
 ## Completion
 
