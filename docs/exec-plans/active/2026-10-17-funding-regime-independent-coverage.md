@@ -306,9 +306,96 @@ checkpoint; the open Issue #85 retains its external evidence blocker.
   and missing negative/low regime evidence are still unresolved. No acquisition,
   corpus promotion, numerical economics gate or live trade is approved.
 
+## 2026-10-18 authorized unattended pre-entry capture (Issue #85)
+
+**Human decision received 2026-10-18:** enable option A, a separate scheduled
+GitHub Actions workflow pre-warmed before UTC midnight. This explicitly changes
+the earlier manual-only/no-scheduled-capture posture **for prospective source
+observation only**; all economic/provenance/trading limits remain unchanged.
+The manual workflow stays manual-only and its clock gates remain intact.
+
+Objective: eliminate exact-time operator intervention without weakening any
+as-of-entry safety boundary. Reuse existing public-GET collection, signed
+GitHub raw subject and offline archive replay (PR #123). GitHub's schedule is
+best effort and can delay/drop runs: missed days become explicit missing evidence,
+never retrospectively inferred successful samples.
+
+Acceptance criteria:
+- [x] New `schedule`-only workflow, daily **23:37 UTC** start (not on the
+      high-load hour), pre-installs dependencies, then waits until the *following*
+      00:00 UTC or executes promptly if delayed into 00:00..00:15 UTC.
+- [x] Finite waiting: refuse unexpected late-day start, crossed UTC 00:15
+      cutoff, naive/bad clocks; never sleep to the **next** day's opening after
+      a missed window. Runner timeout allows the prewarm window.
+- [x] Existing strict capture implementation makes at most two unauthenticated
+      GETs, both with completed responses strictly before 00:15 UTC; no
+      modification to the canonical source/time/replay validators.
+- [x] Failure writes `UNASSESSED` error-only artifact and does not invoke
+      signing; success retains the exact original three-file source ZIP,
+      GitHub raw-file provenance attestation and read-only 90-day retention.
+- [x] Workflow cannot be manually dispatched, has no `push` trigger,
+      prevents concurrent auto-capture and excludes rerun attempts; manual
+      diagnostic workflow stays unchanged.
+- [x] Offline tests cover both sides of midnight, GitHub delay, deadline,
+      malformed/rolled-back clocks, and static workflow permissions/triggers.
+- [ ] Final-head static/code/API/E2E/plan + Historical Smoke all SUCCESS;
+      postmerge main CI SUCCESS. Record exact run IDs, no automatic
+      fixture acquisition/promotion, Stage-2 economics or exchange trading.
+
+Implementation slices:
+1. Pure, deterministic UTC wait/guard helper + offline tests.
+2. Scheduled Actions shell with minimal permissions and `if: always()`
+   failure receipt; separate signed raw source only on successful capture.
+3. Document scheduling risk, as-of provenance limitations and operational
+   verification; PR review and complete CI before merge.
+
+Baseline: `db35d8d0e0b636ce357b2bf9921755fbffac945a`,
+[main CI 39113607582](https://github.com/pkking/future-opportunity/actions/runs/39113607582) SUCCESS.
+Manual runs [39113998331](https://github.com/pkking/future-opportunity/actions/runs/39113998331)
+and [39115074084](https://github.com/pkking/future-opportunity/actions/runs/39115074084)
+failed **as designed** outside UTC window with one error-only artifact each.
+No original prospective market-response ZIP exists yet.
+
+Safety: keep Funding 32, Cash 66, 100bps regime threshold, four buckets,
+all previously fixed historical dates, historical economics gate OFF and live
+trading OFF. Scheduled success still reports `point_in_time_publication_verified=false`
+until independent external verification. Decision was only to automate capture,
+**not** to approve an economic opportunity.
+
+### Implementation checkpoint (before PR final-head CI)
+
+- New: `.github/workflows/capture-funding-preentry-scheduled.yml`,
+  `scripts/wait_for_funding_preentry_window.py`,
+  `tests/test_funding_preentry_scheduled_window.py`.
+- Updated: `docs/research/funding-prospective-point-in-time-capture-contract.md`.
+- No modification to manual-only source workflow or its independent bounded GET
+  validator. Scheduled GitHub runner re-runs are disabled and no event except
+  `schedule` can start the new workflow.
+- Static and offline unit tests are authored; **test success not asserted before
+  CI runs**. Need final-head five CI checks and Historical Smoke on this revision.
+- True prospective event evidence still **UNASSESSED**, and Issue #85 cannot
+  be closed merely because the schedule is configured.
+
+
+### 2026-10-18 PR #124 implementation-head verification
+
+- [PR #124](https://github.com/pkking/future-opportunity/pull/124)
+  implementation head `a48111e72454d0a90f6aa6a0ddd00076cca35957`:
+  [CI #39116716764](https://github.com/pkking/future-opportunity/actions/runs/39116716764)
+  **5/5 SUCCESS** (static, code-level including new scheduler tests,
+  API, E2E, agent-plan);
+  [Historical Backtest Smoke #39116716755](https://github.com/pkking/future-opportunity/actions/runs/39116716755)
+  **SUCCESS** on that same commit.
+- New pure bounded wait guard, cron-only pipeline, UTC timing/failure tests,
+  and documented provenance boundary validated by repository CI. No scheduled
+  job has fired yet and no public source has been captured under this design.
+- Record final **documentation-head** PR CI/Smoke after this checkpoint commit,
+  then merge. The Issue remains `BLOCKED_EVIDENCE` because exchange publication
+  time and negative/low regime observation are not independently proven.
+
 ## Resume from here
 
-**BLOCKED_EVIDENCE** after CI-validated offline-audit PR #123. Before merge, verify its final documentation-head checks; after merge, return to future-day source authentication. The prospective capture workflow is ready, but no independently authenticated pre-entry response exists. The next evidence action is a **future UTC-day operator-initiated** `workflow_dispatch` at an actual safe pre-entry moment, then audit the original raw Actions ZIP, GitHub/Sigstore attestation, timestamps and source completeness without inferring exchange-authenticated publication. An automatically timed source collector is **not enabled**, because GitHub cron delivery is not exact and the previous read-only workflows are intentionally manual. Do not dispatch historical probes again, alter four-regime threshold/seed or fill the missing negative+low bucket from economic outcomes. Issue #85 remains OPEN pending additional genuine source evidence and independent future pre-registration as appropriate; no acquisition/promotion or live-trading approval.
+Review the final documentation-head PR #124 CI/Historical Smoke, then merge and verify postmerge main CI. After merge, record activation in #85 and return to `BLOCKED_EVIDENCE` until first genuine independent prospective artifact arrives. No human midnight dispatch should be necessary.
 
 ## Completion
 
