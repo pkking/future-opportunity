@@ -1,7 +1,7 @@
 # Funding Carry point-in-time regime expansion
 
 Issue: #85
-Status: VERIFYING
+Status: BLOCKED_EVIDENCE
 Owner: agent
 Started: 2026-10-17
 
@@ -264,7 +264,7 @@ Acceptance criteria:
 - [x] Document **separate** GitHub/Sigstore verification and independent run-time
       review. Internal ZIP checks do NOT authenticate the exchange, runner clock
       or actual as-of dissemination; returned status remains UNASSESSED.
-- [ ] Final PR-head CI (static/code/API/E2E/plan) and Historical Smoke succeed,
+- [x] PR-head CI (static/code/API/E2E/plan) and Historical Smoke succeeded,
       with no scheduled calls, additional historical dates or trading permissions.
 
 Implementation: add one standalone stdlib ZIP audit script reusing the existing
@@ -287,9 +287,28 @@ and UTC day, and emits `offline_replay_verified_only`; it does not invoke
 OKX, GitHub or the exchange trading API. **CI not yet confirmed** as of this
 checkpoint; the open Issue #85 retains its external evidence blocker.
 
+## 2026-10-18 offline-audit implementation verification (PR #123)
+
+- [PR #123](https://github.com/pkking/future-opportunity/pull/123)
+  initial tested head `b23f7f06bb926128bf02ae65248275684d6c5e86`:
+  [CI 39113460207](https://github.com/pkking/future-opportunity/actions/runs/39113460207)
+  five checks **SUCCESS**: static architecture, code-level including
+  `tests/test_funding_preentry_source_audit.py`, API, E2E and agent-plan;
+  [Historical Backtest Smoke 39113460257](https://github.com/pkking/future-opportunity/actions/runs/39113460257)
+  **SUCCESS** on the same SHA.
+- Offline ZIP replay code, fail-closed tests and separate Sigstore review
+  instructions landed on the review branch. No true pre-entry source has
+  been captured, independently verified, or retrospectively authenticated.
+- This documentation checkpoint itself requires a **new final-head CI and
+  Historical Smoke** before the PR may merge. Record their final run/commit
+  against PR #123 or the Issue thread before closing this engineering slice.
+- Status returns to `BLOCKED_EVIDENCE` because the Issue's source-authenticity
+  and missing negative/low regime evidence are still unresolved. No acquisition,
+  corpus promotion, numerical economics gate or live trade is approved.
+
 ## Resume from here
 
-**VERIFYING THIS REVIEW SLICE**: inspect PR final-head static/code/API/E2E/plan and Historical Smoke results; fix any failed code/test check first. Then return to **BLOCKED_EVIDENCE** for future-day source authentication. The prospective capture workflow is ready, but no independently authenticated pre-entry response exists. The next evidence action is a **future UTC-day operator-initiated** `workflow_dispatch` at an actual safe pre-entry moment, then audit the original raw Actions ZIP, GitHub/Sigstore attestation, timestamps and source completeness without inferring exchange-authenticated publication. An automatically timed source collector is **not enabled**, because GitHub cron delivery is not exact and the previous read-only workflows are intentionally manual. Do not dispatch historical probes again, alter four-regime threshold/seed or fill the missing negative+low bucket from economic outcomes. Issue #85 remains OPEN pending additional genuine source evidence and independent future pre-registration as appropriate; no acquisition/promotion or live-trading approval.
+**BLOCKED_EVIDENCE** after CI-validated offline-audit PR #123. Before merge, verify its final documentation-head checks; after merge, return to future-day source authentication. The prospective capture workflow is ready, but no independently authenticated pre-entry response exists. The next evidence action is a **future UTC-day operator-initiated** `workflow_dispatch` at an actual safe pre-entry moment, then audit the original raw Actions ZIP, GitHub/Sigstore attestation, timestamps and source completeness without inferring exchange-authenticated publication. An automatically timed source collector is **not enabled**, because GitHub cron delivery is not exact and the previous read-only workflows are intentionally manual. Do not dispatch historical probes again, alter four-regime threshold/seed or fill the missing negative+low bucket from economic outcomes. Issue #85 remains OPEN pending additional genuine source evidence and independent future pre-registration as appropriate; no acquisition/promotion or live-trading approval.
 
 ## Completion
 
