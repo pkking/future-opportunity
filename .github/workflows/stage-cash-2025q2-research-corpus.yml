@@ -1,0 +1,126 @@
+name: Stage Approved Cash 2025Q2 Research Corpus (One-Time)
+
+# Only the first reviewed commit of this exact approval file triggers staging.
+# The stage only creates a corpus-review PR; it never commits corpus to main.
+on:
+  push:
+    branches: [main]
+    paths:
+      - docs/historical-acquisition-plans/cash-2025q2-research-corpus-promotion-authorization-v1.json
+
+permissions:
+  actions: read
+  contents: write
+  pull-requests: write
+
+jobs:
+  stage-review-only:
+    name: Validate and stage exact 12-case Q2 corpus for review
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - name: Check independently authorized research-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          auth="docs/historical-acquisition-plans/cash-2025q2-research-corpus-promotion-authorization-v1.json"
+          jq -e '
+            .schema_version == 1 and .status == "approved_for_research_only"
+            and .issue == 95 and .approved_date_count == 12
+            and .original_source_run == 39079100154
+            and .repair_source_run == 39091438598
+            and .selection_evidence_sha256 == "9bd08184a3a0c2487ba57087effdf0e8231db45fb4bf10226290627ed2990b37"
+            and .promotion_requires_reviewed_pr == true
+            and .corpus_auto_merge == false
+            and .live_trading_enabled == false
+            and .stage2_economics_gate_activated == false
+          ' "$auth" >/dev/null
+          mkdir -p artifacts/cash-q2-research-promotion
+      - name: Verify exact job results, original Artifact digests and paper outcomes
+        shell: bash
+        run: |
+          set -euo pipefail
+          uv run python scripts/stage_cash_2025q2_research_corpus.py
+      - name: Run offline corpus, policy and historical acceptance gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          uv run pytest \
+            tests/test_historical_corpus.py tests/test_historical_policy.py \
+            tests/test_historical_campaign.py \
+            tests/test_cash_2025q2_cross_run_audit_index.py \
+            tests/test_cash_q2_research_corpus_promotion.py \
+            tests/e2e/test_historical_backtest_acceptance.py \
+            -v --junitxml=artifacts/cash-q2-research-promotion/junit.xml
+          uv run python scripts/run_pinned_historical_smoke.py
+          cp artifacts/historical-smoke/evidence.json \
+            artifacts/cash-q2-research-promotion/historical-smoke-evidence.json
+      - name: Create versioned research-fixtures review branch and PR
+        id: review
+        shell: bash
+        run: |
+          set -euo pipefail
+          branch="historical-corpus-research/cash-2025q2-n12-$GITHUB_RUN_ID"
+          title="test: pin 12 verified Q2 Cash research cases including 3 rejected"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add tests/fixtures/historical
+          test "$(git diff --cached --name-only | grep -c '^tests/fixtures/historical/')" -gt 1
+          test "$(git diff --cached --name-only | grep -cv '^tests/fixtures/historical/' || true)" = "0"
+          git commit -m "$title"
+          git push -u origin "$branch"
+          cat > artifacts/cash-q2-research-promotion/pr-body.md <<'BODY'
+          Issue: #95
+          Plan: docs/exec-plans/active/2026-10-17-cash-2025q2-source-calendar-and-cohort.md
+
+          Promotes precisely 12 pre-registered BTC-USDT-250627 Cash historical
+          research fixtures with immutable audit evidence (36 artifact ZIPs).
+          Original run 39079100154 had 11 individually successful source jobs;
+          one raw archive overflow was separately repaired by successful run
+          39091438598. Exact source runs, job conclusions, SHA256s, compact L2
+          checksums, sample provenance, paper Actuals and all dates were checked.
+
+          Cash corpus 54 -> 66, Funding remains 32. Three deliberately rejected
+          dates 2025-06-07/14/22 remain with null realized returns. These
+          dates all share one expiry/close and are NOT independent expiries.
+          MarginSafety/VenueExposure are still UNASSESSED; Stage2 economics
+          gate remains disabled and live trading remains forbidden.
+
+          Offline tests and historical pinned smoke passed before review.
+          Require separate final-head GitHub CI and Historical Smoke before
+          merge. This workflow cannot auto-merge corpus.
+          BODY
+          set +e
+          url="$(gh pr create --repo "$GITHUB_REPOSITORY" \
+            --base main --head "$branch" --title "$title" \
+            --body-file artifacts/cash-q2-research-promotion/pr-body.md \
+            2>artifacts/cash-q2-research-promotion/pr-create-error.txt)"
+          status=$?
+          set -e
+          if [ "$status" -eq 0 ]; then
+            echo "Review PR: $url" >> "$GITHUB_STEP_SUMMARY"
+          elif grep -Fq "GitHub Actions is not permitted to create or approve pull requests" \
+            artifacts/cash-q2-research-promotion/pr-create-error.txt; then
+            jq -n --arg branch "$branch" --arg title "$title" \
+              '{status:"handoff_required",reason:"actions_pr_creation_blocked",
+                branch:$branch,title:$title}' \
+              > artifacts/cash-q2-research-promotion/pr-handoff.json
+            echo "Review branch ready; connected agent can create PR: $branch" >> "$GITHUB_STEP_SUMMARY"
+          else
+            cat artifacts/cash-q2-research-promotion/pr-create-error.txt >&2
+            exit "$status"
+          fi
+      - name: Preserve original provenance and review evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cash-2025q2-research-corpus-promotion-evidence
+          path: artifacts/cash-q2-research-promotion/
+          if-no-files-found: warn
