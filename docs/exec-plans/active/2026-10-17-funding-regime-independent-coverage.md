@@ -1,7 +1,7 @@
 # Funding Carry point-in-time regime expansion
 
 Issue: #85
-Status: VERIFYING
+Status: BLOCKED_EVIDENCE
 Owner: agent
 Started: 2026-10-17
 
@@ -226,7 +226,7 @@ This slice addresses only the **time authenticity** blocker of Issue #85. Histor
 - [x] Add a **manual-only**, no secret or authenticated trading `workflow_dispatch` to capture the *actual UTC day only* and upload raw evidence; add GitHub official artifact provenance attestation, **not** exchange-side signed rates. No schedule, push, automatic source fetch or historical backfill.
 - [x] Distinguish `local_http_completed_before_entry` from independently GitHub Sigstore attestation-verified and exchange-published data; recorded as-of result remains **UNASSESSED** until separately signed provenance is verified. Never infer past availability from an after-the-fact run.
 - [x] Negative tests for after-entry capture, before-daily-close capture, swapped API receive times, missing daily candle, stale funding, corrupted raw digests, missing row hashes, and audit/read-only workflow contracts. CI remains deterministic and offline.
-- [ ] Final-head static/code/API/E2E/Agent Plan/Historical Smoke and postmerge main CI recorded; no source workflow executed without human action.
+- [x] Final-head static/code/API/E2E/Agent Plan/Historical Smoke and postmerge main CI recorded; no source workflow executed without human action.
 
 **Decision constraints**: No change to Cash 66 / Funding 32 historical corpus, strategy economics, Stage-2 gate, sample selection dates, existing retrospective evidence or live trading. This is new *future-day evidence capability*, not a retrospective proof for missing negative/low Funding. GitHub cron is best effort and may be delayed; do not schedule unattended exact-time data capture here. SLSA GitHub artifact attestation proves the workflow origin only after verification, not exchange source integrity or economic qualification.
 
@@ -239,9 +239,16 @@ This slice addresses only the **time authenticity** blocker of Issue #85. Histor
 - [Final implementation-head CI 39112004681](https://github.com/pkking/future-opportunity/actions/runs/39112004681) verified all **five** PR jobs successful (static, code, API, E2E, agent plan) after fixing test import F821 from earlier failed runs. [Historical Smoke 39112004678](https://github.com/pkking/future-opportunity/actions/runs/39112004678) successful on the same implementation SHA `ca51b116cb93a33e305233b803bb5efa69500671`. The plan-checkpoint commit will receive another final-head CI/Smoke before merge.
 - Evidence specification: [Prospective point-in-time capture contract](../../research/funding-prospective-point-in-time-capture-contract.md). GitHub Signed Artifact provenance does not certify **exchange** publication time; this code never marks as-of historically independently verified. No prospective capture has yet been dispatched. 2026-07/08 21-day retrospective evidence and still-empty negative+low regime remain unchanged.
 
+## 2026-10-18 merged pre-entry observer CI and evidence checkpoint
+
+- [PR #121](https://github.com/pkking/future-opportunity/pull/121) merged `ac021970f7cbaa4f1fbdcdff074a1f8dfb479668` after final-head `8596e48138150debb2582e937b66570ccc9fd77f` passed [CI 39112099810](https://github.com/pkking/future-opportunity/actions/runs/39112099810) **5/5** (static, code, API, E2E, agent-plan integrity) and [Historical Smoke 39112099737](https://github.com/pkking/future-opportunity/actions/runs/39112099737) **success**. Main [CI 39112151112](https://github.com/pkking/future-opportunity/actions/runs/39112151112), [Historical Smoke 39112151103](https://github.com/pkking/future-opportunity/actions/runs/39112151103), and [Evaluate Prepared Historical Fixture 39112151167](https://github.com/pkking/future-opportunity/actions/runs/39112151167) all **success** at the merged SHA.
+- New manual workflow: [Capture Prospective Funding Pre-Entry Source](https://github.com/pkking/future-opportunity/actions/workflows/capture-funding-preentry-source.yml). It has *no* `push` or `schedule` trigger and was **not dispatched** here. A valid call must actually begin in UTC 00:00–00:15, with both official public GET results complete before UTC 00:15. Late/absent data stays UNASSESSED. First-party GitHub provenance attests the raw captured file; it never signs on behalf of OKX.
+- Source-only implementation reuses existing anti-lookahead settled-funding and eight-closed-daily-candle reconstruction and 100bps research planner. Pure validator rejects raw responses with any future-dated event or prematurely confirmed daily candle. Output always has `point_in_time_publication_verified=false` and acquisition/promotion disabled until independent provenance assessment.
+- Old retrospective July/August samples **cannot be upgraded** to as-of historical publication by this future observation capability. Their previously audited 21/21 feature rows, unfilled negative/low cell, and full source hashes remain unchanged. Funding 32/Cash 66 corpus, Stage-2 economic gate disabled, account MarginSafety/VenueExposure UNASSESSED, no live trading.
+
 ## Resume from here
 
-Verify the final-head CI and Historical Smoke on the PR containing this plan checkpoint, then merge only if all gates remain green and verify postmerge main CI. Do **not** run the new prospective manual workflow automatically or change historical strategy data. The next material evidence gate is a real future UTC day's original before-entry source capture plus independently verified provenance/timing (subject digest, workflow SHA and any trustworthy timestamp); manual dispatch is only meaningful if actual Python source collection starts in UTC 00:00..00:15. Even then, exchange-side publication authentication is not implied. The missing negative Funding / low volatility regime remains a separate unfilled 2x2 cell; any new candidate window requires a fresh outcome-blind pre-registration. Keep Issue #85 OPEN as `BLOCKED_EVIDENCE`, Funding 32 and Cash 66 unchanged.
+**BLOCKED_EVIDENCE**, not a code or CI blocker. The prospective capture workflow is ready, but no independently authenticated pre-entry response exists. The next evidence action is a **future UTC-day operator-initiated** `workflow_dispatch` at an actual safe pre-entry moment, then audit the original raw Actions ZIP, GitHub/Sigstore attestation, timestamps and source completeness without inferring exchange-authenticated publication. An automatically timed source collector is **not enabled**, because GitHub cron delivery is not exact and the previous read-only workflows are intentionally manual. Do not dispatch historical probes again, alter four-regime threshold/seed or fill the missing negative+low bucket from economic outcomes. Issue #85 remains OPEN pending additional genuine source evidence and independent future pre-registration as appropriate; no acquisition/promotion or live-trading approval.
 
 ## Completion
 
