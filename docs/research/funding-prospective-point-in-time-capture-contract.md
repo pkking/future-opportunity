@@ -124,3 +124,45 @@ without repository activity; verify this separately when observing a long gap.
 
 Official GitHub schedule policy:
 https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule
+
+## Automatic scheduled-artifact review (read-only)
+
+The scheduled workflow now includes an **audit job**, running on a separate
+Runner after the capture job, including when capture fails. It reuses
+`scripts/audit_funding_preentry_source_artifact.py` and runs
+`scripts/audit_scheduled_funding_capture.py`:
+
+1. Download the original ZIP **without decompression** using the first-party
+   `actions/download-artifact@v8`, with artifact digest verification enabled.
+   Independently obtain the originating Actions workflow-run JSON and artifact
+   inventory with read-only `gh api`. Match exact run ID, head commit, branch,
+   schedule event, workflow path, attempt number and one artifact ID/digest.
+2. If capture **failed**, require the ZIP to contain only an explicit
+   `error.json` declaring `UNASSESSED`; do not run any signature check or
+   infer that the opportunity frequency was zero.
+3. If capture **succeeded**, validate exact three-file ZIP identity and
+   replay the preentry Funding features and original HTTP timestamps using the
+   existing offline auditor. Then invoke the **official** GitHub CLI
+   `gh attestation verify` on the original raw JSON **bytes**, constraining
+   repository, signer-workflow file, `refs/heads/main`, commit SHA and SHA-256
+   subject identity. This proves the indicated GitHub provenance only, not
+   exchange publication time.
+4. Preserve the structured result as
+   `scheduled-funding-evidence-review/scheduled-evidence-review.json`.
+   On verification/setup/download failure upload an explicit
+   `scheduled-funding-evidence-review/error.json` with
+   `status=UNASSESSED`. Reports never contain exchange credentials.
+
+The success status is specifically
+`offline_replay_and_github_provenance_verified_only`, **not**
+`point_in_time_publication_verified`. A later signed GitHub workflow
+attestation alone cannot establish OKX's historical dissemination time.
+GitHub scheduled jobs can be skipped, so **absence of a workflow run is
+missing evidence**, not a test failure proving a market state; an
+independent cadence monitor may be proposed if missing-run alerts are needed.
+
+Before treating any observation as research-quality historical availability,
+still independently review GitHub timestamps, runner clock implications,
+actual response completeness, source provenance and entry date.
+This automation grants **no** historical acquisition/promotion, Stage-2
+economics thresholds, or authenticated/live trading capabilities.
