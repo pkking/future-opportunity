@@ -1,7 +1,7 @@
 # Funding Carry point-in-time regime expansion
 
 Issue: #85
-Status: IMPLEMENTING
+Status: VERIFYING
 Owner: agent
 Started: 2026-10-17
 
@@ -321,22 +321,22 @@ best effort and can delay/drop runs: missed days become explicit missing evidenc
 never retrospectively inferred successful samples.
 
 Acceptance criteria:
-- [ ] New `schedule`-only workflow, daily **23:37 UTC** start (not on the
+- [x] New `schedule`-only workflow, daily **23:37 UTC** start (not on the
       high-load hour), pre-installs dependencies, then waits until the *following*
       00:00 UTC or executes promptly if delayed into 00:00..00:15 UTC.
-- [ ] Finite waiting: refuse unexpected late-day start, crossed UTC 00:15
+- [x] Finite waiting: refuse unexpected late-day start, crossed UTC 00:15
       cutoff, naive/bad clocks; never sleep to the **next** day's opening after
       a missed window. Runner timeout allows the prewarm window.
-- [ ] Existing strict capture implementation makes at most two unauthenticated
+- [x] Existing strict capture implementation makes at most two unauthenticated
       GETs, both with completed responses strictly before 00:15 UTC; no
       modification to the canonical source/time/replay validators.
-- [ ] Failure writes `UNASSESSED` error-only artifact and does not invoke
+- [x] Failure writes `UNASSESSED` error-only artifact and does not invoke
       signing; success retains the exact original three-file source ZIP,
       GitHub raw-file provenance attestation and read-only 90-day retention.
-- [ ] Workflow cannot be manually dispatched, has no `push` trigger,
+- [x] Workflow cannot be manually dispatched, has no `push` trigger,
       prevents concurrent auto-capture and excludes rerun attempts; manual
       diagnostic workflow stays unchanged.
-- [ ] Offline tests cover both sides of midnight, GitHub delay, deadline,
+- [x] Offline tests cover both sides of midnight, GitHub delay, deadline,
       malformed/rolled-back clocks, and static workflow permissions/triggers.
 - [ ] Final-head static/code/API/E2E/plan + Historical Smoke all SUCCESS;
       postmerge main CI SUCCESS. Record exact run IDs, no automatic
@@ -362,9 +362,24 @@ trading OFF. Scheduled success still reports `point_in_time_publication_verified
 until independent external verification. Decision was only to automate capture,
 **not** to approve an economic opportunity.
 
+### Implementation checkpoint (before PR final-head CI)
+
+- New: `.github/workflows/capture-funding-preentry-scheduled.yml`,
+  `scripts/wait_for_funding_preentry_window.py`,
+  `tests/test_funding_preentry_scheduled_window.py`.
+- Updated: `docs/research/funding-prospective-point-in-time-capture-contract.md`.
+- No modification to manual-only source workflow or its independent bounded GET
+  validator. Scheduled GitHub runner re-runs are disabled and no event except
+  `schedule` can start the new workflow.
+- Static and offline unit tests are authored; **test success not asserted before
+  CI runs**. Need final-head five CI checks and Historical Smoke on this revision.
+- True prospective event evidence still **UNASSESSED**, and Issue #85 cannot
+  be closed merely because the schedule is configured.
+
+
 ## Resume from here
 
-Implement option-A UTC bounded scheduler and tests on `agent/funding-preentry-scheduled-window`; then verify final PR-head CI/Historical Smoke before merging. **Underlying Issue #85 evidence remains blocked** until real source/provenance review; the automation authorization does not change 2x2 coverage or permit acquisition.
+Review the proposed scheduled capture PR on a final head, require five CI gates plus Historical Smoke SUCCESS, then merge and verify postmerge main CI. After merge, record activation in #85 and return to `BLOCKED_EVIDENCE` until first genuine independent prospective artifact arrives. No human midnight dispatch should be necessary.
 
 ## Completion
 
