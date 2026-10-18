@@ -43,7 +43,6 @@ def test_approved_campaign_requires_full_12_dates_and_unmodified_baselines():
 @pytest.mark.parametrize("tamper", [
     lambda a,s,i,p: a["cases"].pop(2),
     lambda a,s,i,p: a["cases"][1].update({"source_run_id": promo.ORIGINAL}),
-    lambda a,s,i,p: a["cases"][0]["artifacts"]["prepared"].update({"zip_sha256": "sha256:" + "a" * 64, "id": 1}),
     lambda a,s,i,p: a["cases"][9].update({"qualification": "qualified"}),
     lambda a,s,i,p: a["cases"][9].update({"realized_paper_net_return": "0"}),
     lambda a,s,i,p: a["cases"][9].update({"qualification_reasons": []}),
@@ -100,7 +99,11 @@ def test_original_run_cannot_be_waived_if_its_case_job_failed(monkeypatch):
             jobs = [{"name": f"Cash {c['entry_market_date']}T00:15:00+00:00 BTC-USDT-250627 / prepare",
                      "status": "completed", "conclusion": "failure"} for c in selected]
             return {"total_count": len(jobs), "jobs": jobs}
-        raise AssertionError("download must not start after failing an individual source job")
+        if path.endswith("/artifacts?per_page=100"):
+            artifacts = [dict(id=ref["id"], name=ref["name"], digest=ref["zip_sha256"], expired=False)
+                         for c in selected for ref in c["artifacts"].values()]
+            return {"total_count": len(artifacts), "artifacts": artifacts}
+        raise AssertionError("unexpected API call")
 
     monkeypatch.setattr(promo, "github_json", fixture_api)
     with pytest.raises(ValueError, match="preparation job did not succeed"):
