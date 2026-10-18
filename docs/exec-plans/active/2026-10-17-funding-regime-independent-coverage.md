@@ -1,7 +1,7 @@
 # Funding Carry point-in-time regime expansion
 
 Issue: #85
-Status: BLOCKED_EVIDENCE
+Status: IMPLEMENTING
 Owner: agent
 Started: 2026-10-17
 
@@ -215,6 +215,22 @@ Already observed external evidence (to be verified and retained in the reviewed 
 - [PR #119](https://github.com/pkking/future-opportunity/pull/119) merged at `369ddb04bb66b428423437544faa0f1b4adec00f`; final-head [CI 39103175660](https://github.com/pkking/future-opportunity/actions/runs/39103175660) all five required jobs SUCCESS, [Historical Smoke 39103175638](https://github.com/pkking/future-opportunity/actions/runs/39103175638) SUCCESS. Main follow-up CI [39103227714](https://github.com/pkking/future-opportunity/actions/runs/39103227714) to be independently verified at this checkpoint's close.
 - Both successful selected raw API acquisitions for July 27 and Aug 24 expose identical source canonical digest `53649680be1e3a5c22acb43443eccd925d1856a6c6947c130a5fba798c5d6dd9` (response bytes reused across fixed windows); this does not establish independent archive publishers.
 - **Remaining blockers**: Negative Funding below 100 bps trailing spot volatility **not observed**, plus *retrospective API query cannot prove publication as-of historical entry*. Policy `point_in_time_publication_verified=false`; source provenance therefore is not acquisition/promotion-grade evidence. MarginSafety / VenueExposure UNASSESSED. Original Funding 32 / Cash 66 pinned corpus and disabled Stage-2 economics gate unchanged.
+
+## 2026-10-18 next implementation slice — prospective as-of source observation
+
+This slice addresses only the **time authenticity** blocker of Issue #85. Historical July/August 2026 responses from October cannot be backdated into point-in-time evidence; the existing 21 observed dates and all source artifacts stay unchanged.
+
+**Acceptance scope**:
+- [ ] Implement an independently testable single-day UTC 00:15 Funding observation gate: both public API requests must **start after UTC midnight and finish strictly before 00:15 UTC**, be tied to the identical target day, and have complete confirmed previous daily candles and a settled funding event at least 1h old. Any clock/window mismatch or missing source fails closed.
+- [ ] Reuse existing `reconstruct_funding_regime_features` and `plan_funding_regime_research`, preserving Decimal, original official raw source SHA, exact per-observation SHA and event-time rules. No duplicate strategy selection/threshold implementation.
+- [ ] Add a **manual-only**, no secret or authenticated trading `workflow_dispatch` to capture the *actual UTC day only* and upload raw evidence; add GitHub official artifact provenance attestation, **not** exchange-side signed rates. No schedule, push, automatic source fetch or historical backfill.
+- [ ] Distinguish `local_http_completed_before_entry` from independently GitHub Sigstore attestation-verified and exchange-published data; recorded as-of result remains **UNASSESSED** until separately signed provenance is verified. Never infer past availability from an after-the-fact run.
+- [ ] Negative tests for after-entry capture, before-daily-close capture, swapped API receive times, missing daily candle, stale funding, corrupted raw digests, missing row hashes, and audit/read-only workflow contracts. CI remains deterministic and offline.
+- [ ] Final-head static/code/API/E2E/Agent Plan/Historical Smoke and postmerge main CI recorded; no source workflow executed without human action.
+
+**Decision constraints**: No change to Cash 66 / Funding 32 historical corpus, strategy economics, Stage-2 gate, sample selection dates, existing retrospective evidence or live trading. This is new *future-day evidence capability*, not a retrospective proof for missing negative/low Funding. GitHub cron is best effort and may be delayed; do not schedule unattended exact-time data capture here. SLSA GitHub artifact attestation proves the workflow origin only after verification, not exchange source integrity or economic qualification.
+
+**Resume action**: implement the new narrow observer/validator, manual workflow, tests, and evidence contract documentation; run CI and leave the plan `BLOCKED_EVIDENCE` until independently captured and provenance-verified future-day inputs exist. Do not request the user to retrigger July/Aug source scans.
 
 ## Resume from here
 
