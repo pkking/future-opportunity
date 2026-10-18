@@ -43,7 +43,7 @@ def target_midnight(started: datetime) -> datetime:
 def wait_for_preentry_window(
     now: Callable[[], datetime] | None = None,
     sleeper: Callable[[float], None] | None = None,
-) -> dict[str, str]:
+) -> dict[str, str | bool]:
     """Wait for real UTC midnight, with bounded polling and fail-closed expiry."""
     now = now or (lambda: datetime.now(UTC))
     sleeper = sleeper or time.sleep
@@ -64,7 +64,7 @@ def wait_for_preentry_window(
                 "runner_observed_at": observed.isoformat(),
                 "target_entry_date": midnight.date().isoformat(),
                 "entry_at": cutoff.isoformat(),
-                "point_in_time_publication_verified": "false",
+                "point_in_time_publication_verified": False,
             }
         remaining = (midnight - observed).total_seconds()
         sleeper(min(POLL_SECONDS, remaining))
