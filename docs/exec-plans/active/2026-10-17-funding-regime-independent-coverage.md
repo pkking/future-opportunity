@@ -1,7 +1,7 @@
 # Funding Carry point-in-time regime expansion
 
 Issue: #85
-Status: BLOCKED_EVIDENCE
+Status: VERIFYING
 Owner: agent
 Started: 2026-10-17
 
@@ -216,10 +216,32 @@ Already observed external evidence (to be verified and retained in the reviewed 
 - Both successful selected raw API acquisitions for July 27 and Aug 24 expose identical source canonical digest `53649680be1e3a5c22acb43443eccd925d1856a6c6947c130a5fba798c5d6dd9` (response bytes reused across fixed windows); this does not establish independent archive publishers.
 - **Remaining blockers**: Negative Funding below 100 bps trailing spot volatility **not observed**, plus *retrospective API query cannot prove publication as-of historical entry*. Policy `point_in_time_publication_verified=false`; source provenance therefore is not acquisition/promotion-grade evidence. MarginSafety / VenueExposure UNASSESSED. Original Funding 32 / Cash 66 pinned corpus and disabled Stage-2 economics gate unchanged.
 
+## 2026-10-18 next implementation slice — prospective as-of source observation
+
+This slice addresses only the **time authenticity** blocker of Issue #85. Historical July/August 2026 responses from October cannot be backdated into point-in-time evidence; the existing 21 observed dates and all source artifacts stay unchanged.
+
+**Acceptance scope**:
+- [x] Implement an independently testable single-day UTC 00:15 Funding observation gate: both public API requests must **start after UTC midnight and finish strictly before 00:15 UTC**, be tied to the identical target day, and have complete confirmed previous daily candles and a settled funding event at least 1h old. Any clock/window mismatch or missing source fails closed.
+- [x] Reuse existing `reconstruct_funding_regime_features` and `plan_funding_regime_research`, preserving Decimal, original official raw source SHA, exact per-observation SHA and event-time rules. No duplicate strategy selection/threshold implementation.
+- [x] Add a **manual-only**, no secret or authenticated trading `workflow_dispatch` to capture the *actual UTC day only* and upload raw evidence; add GitHub official artifact provenance attestation, **not** exchange-side signed rates. No schedule, push, automatic source fetch or historical backfill.
+- [x] Distinguish `local_http_completed_before_entry` from independently GitHub Sigstore attestation-verified and exchange-published data; recorded as-of result remains **UNASSESSED** until separately signed provenance is verified. Never infer past availability from an after-the-fact run.
+- [x] Negative tests for after-entry capture, before-daily-close capture, swapped API receive times, missing daily candle, stale funding, corrupted raw digests, missing row hashes, and audit/read-only workflow contracts. CI remains deterministic and offline.
+- [ ] Final-head static/code/API/E2E/Agent Plan/Historical Smoke and postmerge main CI recorded; no source workflow executed without human action.
+
+**Decision constraints**: No change to Cash 66 / Funding 32 historical corpus, strategy economics, Stage-2 gate, sample selection dates, existing retrospective evidence or live trading. This is new *future-day evidence capability*, not a retrospective proof for missing negative/low Funding. GitHub cron is best effort and may be delayed; do not schedule unattended exact-time data capture here. SLSA GitHub artifact attestation proves the workflow origin only after verification, not exchange source integrity or economic qualification.
+
+**Resume action**: implement the new narrow observer/validator, manual workflow, tests, and evidence contract documentation; run CI and leave the plan `BLOCKED_EVIDENCE` until independently captured and provenance-verified future-day inputs exist. Do not request the user to retrigger July/Aug source scans.
+
+## 2026-10-18 prospective point-in-time observer verification checkpoint
+
+- [PR #121](https://github.com/pkking/future-opportunity/pull/121) implements an independent, **future-day-only**, two-public-GET, manual-source-capture capability with exact UTC 00:15 boundary. `scripts/capture_funding_preentry_source.py` rejects requests started before midnight or after entry, late/malformed HTTP response, wrong entry date, stale settled Funding or unconfirmed/missing candles. The pure validator also rejects **any future-dated raw funding settlement or prematurely confirmed daily candle anywhere in the response**, even when a lagged selected row itself looks valid.
+- Uses existing Funding feature reconstruction + frozen 100bps planner; preserves raw source and per-row checksums, UTC request/receive times, `UNASSESSED` failure artifacts, and `point_in_time_publication_verified=false` output. The action has `workflow_dispatch` **only**, read-only public exchange API with bounded 5s HTTP timeout, GitHub `attest-build-provenance@v2` subject-path of the raw response, and no automatic scheduling or sampling/promotion.
+- [Final implementation-head CI 39112004681](https://github.com/pkking/future-opportunity/actions/runs/39112004681) verified all **five** PR jobs successful (static, code, API, E2E, agent plan) after fixing test import F821 from earlier failed runs. [Historical Smoke 39112004678](https://github.com/pkking/future-opportunity/actions/runs/39112004678) successful on the same implementation SHA `ca51b116cb93a33e305233b803bb5efa69500671`. The plan-checkpoint commit will receive another final-head CI/Smoke before merge.
+- Evidence specification: [Prospective point-in-time capture contract](../../research/funding-prospective-point-in-time-capture-contract.md). GitHub Signed Artifact provenance does not certify **exchange** publication time; this code never marks as-of historically independently verified. No prospective capture has yet been dispatched. 2026-07/08 21-day retrospective evidence and still-empty negative+low regime remain unchanged.
+
 ## Resume from here
 
-**BLOCKED_EVIDENCE**, not a new operator-dispatch request. Research source collection and audited ZIP replay for frozen July/Aug windows are complete; do not trigger the same workflow again. Next independently planned task should pursue authentic published-as-of-entry OKX funding and daily candle evidence (e.g., proven contemporaneous archive timestamps, independent historical source) and a **separately pre-registered, return-blind** time window specifically for missing negative/low market regime if warranted. Do not retroactively alter the 100bps split, quotas, selection seed or scanned date population to fill a missing cell; do not authorize source acquisition, corpus promotion, economics gating, or live order submission. Keep #85 open.
-
+Verify the final-head CI and Historical Smoke on the PR containing this plan checkpoint, then merge only if all gates remain green and verify postmerge main CI. Do **not** run the new prospective manual workflow automatically or change historical strategy data. The next material evidence gate is a real future UTC day's original before-entry source capture plus independently verified provenance/timing (subject digest, workflow SHA and any trustworthy timestamp); manual dispatch is only meaningful if actual Python source collection starts in UTC 00:00..00:15. Even then, exchange-side publication authentication is not implied. The missing negative Funding / low volatility regime remains a separate unfilled 2x2 cell; any new candidate window requires a fresh outcome-blind pre-registration. Keep Issue #85 OPEN as `BLOCKED_EVIDENCE`, Funding 32 and Cash 66 unchanged.
 
 ## Completion
 
