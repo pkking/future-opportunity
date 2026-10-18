@@ -25,7 +25,29 @@ WF = ROOT / ".github/workflows/stage-cash-2025q2-research-corpus.yml"
 
 
 def baseline():
-    return [json.loads(p.read_text()) for p in (AUDIT, SELECTION, INDEX, POLICY)]
+    """Construct the immutable pre-promotion baseline even after staging.
+
+    The dedicated workflow stages the 12 fixtures *before* running its own
+    tests. Its unit preflight tests must still exercise a baseline of 86
+    entries, while the full repository corpus tests validate the staged 98.
+    """
+    audit, selection, index, policy = [
+        json.loads(p.read_text()) for p in (AUDIT, SELECTION, INDEX, POLICY)
+    ]
+    dates = set(selection["selected_market_dates"])
+    if len(index["entries"]) == 98:
+        promoted = [
+            e for e in index["entries"]
+            if e["strategy"] == "cash-and-carry"
+            and e["entry_market_date"] in dates
+        ]
+        assert len(promoted) == 12
+        assert {e["entry_market_date"] for e in promoted} == dates
+        index["entries"] = [
+            e for e in index["entries"] if e not in promoted
+        ]
+    assert len(index["entries"]) == 86
+    return audit, selection, index, policy
 
 
 def test_approved_campaign_requires_full_12_dates_and_unmodified_baselines():

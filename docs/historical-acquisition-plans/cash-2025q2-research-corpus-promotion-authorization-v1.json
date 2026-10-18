@@ -15,5 +15,9 @@
   "corpus_auto_merge": false,
   "activation_of_other_workflows": false,
   "stage2_economics_gate_activated": false,
-  "live_trading_enabled": false
+  "live_trading_enabled": false,
+  "staging_retry_after_premerge_ci_error_run_id": 39093708831,
+  "staging_retry_reason": "Initial authorized staging run validated exact 12 source jobs/artifacts and atomically staged 98-entry corpus, but its post-stage unit test erroneously assumed pre-promotion 86-entry index. This commit repairs test-only baseline normalization and retries the same research-only staging; no new market data or broader approval.",
+  "maximum_approved_source_cases": 12,
+  "additional_exchange_acquisition_approved": false
 }
