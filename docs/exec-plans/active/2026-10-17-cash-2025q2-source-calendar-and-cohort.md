@@ -1,7 +1,7 @@
 # Cash 2025Q2 additional independent expiry cohort
 
 Issue: #95
-Status: BLOCKED_DECISION
+Status: IMPLEMENTING
 Owner: agent
 Started: 2026-10-17
 
@@ -295,8 +295,16 @@ and not a selected profitable case.
 - Existing pinned corpus stays **Cash 54 / Funding 32**: no corpus promotion, Stage-2 economic target/gate changes, risk readiness claims, or trading. The two separate operator source permissions have both been exercised and are no longer outstanding.
 - **NEXT DISTINCT HUMAN DECISION (BLOCKED_DECISION):** whether to create a separately reviewed **research-corpus promotion** of the complete 12-date Q2 evidence including three rejected observations, without relaxing strategy/risk gates, changing existing corpus baselines silently, or enabling live trading; or defer promotion and study additional contract-expiry cohorts. Do not treat preparation completion as promotion approval.
 
+## 2026-10-18 03:14:20 UTC — Research-only corpus promotion APPROVED
+
+- User explicitly approved promotion of the complete, preregistered 2025Q2 **12 Cash cases**, **including three strategy-rejected observations**, into the versioned, offline historical research corpus. This is a **separate** authorization from original and repair-only source acquisition. Approval is preserved at [Issue #95 comment](https://github.com/pkking/future-opportunity/issues/95#issuecomment-6245110794).
+- Frozen selection, source runs, 36 ZIP IDs/digests and nine-qualified / three-unqualified statuses are checked in `docs/historical-acquisition-plans/cash-2025q2-12day-cross-run-audit-v1.json`. The existing index on main contains **Cash 54, Funding 32** and none of the 12 Q2 dates. Intended historical corpus after approved, reviewed promotion: **Cash 66, Funding 32**, exact additional Q2 cases, preserving three negative observations with NULL realized returns.
+- **Important discovery**: the generic `promote-historical-campaign.yml` insists the *entire* source run be successful. Original run `39079100154` is `failure` solely due to the subsequently repaired 2025-04-09 source cap, while the other **11 per-date jobs succeeded** with fully audited Prep/Compact/Actuals. Do **not** weaken generic fail-closed campaign behavior or discard 11 cases; use a narrowly scoped, one-shot Q2 allowlisted campaign validating each case job, exact run/head SHA, all ZIP digests, provenance, 12-date sampling and actuals, then stage via the existing atomic promotion API.
+- The research-only promotion is subject to **reviewable GitHub PR + all CI and historical-smoke checks**. No workflow may directly mutate main corpus or auto-merge unreviewed changes. The single-use authorization manifest may trigger a dedicated, fixed-scope staging workflow on its first merge to main; that workflow must only produce a review PR and evidence.
+- **Non-negotiable exclusions:** no source re-acquisition, no replacement dates, no Stage-2 economics activation, no strategy/risk threshold changes, no capital policies, no authenticated trades; `MarginSafety` and `VenueExposure` still unassessed; selected days all share same expiry and exit (not 12 independent cohorts).
+
 ## Resume from here
-Original Q2 run 39079100154 (11 successes, one raw-archive source cap failure) and the separately approved source-only repair run 39091438598 (missing 2025-04-09 success) together yield **12/12 source-audited cases, 36/36 SHA-verified ZIP artifacts, nine qualified, three genuine unqualified**, no missing source. Complete offline audit JSON SHA256 `00ac19aa623467d0a1985c1ca9bf7f52a0e0ae46cd6a72374a16d6c68f80901c`; inspect the in-repo research-only audit index and Issue #95 comment 6244944016 for all immutable IDs. Status is **BLOCKED_DECISION** on whether to promote research evidence through an independently reviewed corpus change. No user permission exists for corpus promotion, economics-gate activation or live trading. Preserve Cash 54 / Funding 32 pinned baseline and the three unqualified cases.
+Research-only corpus promotion **authorized** for all twelve source-audited Q2 cash dates with 3 rejected cases preserved. Implement one-shot allowlisted source artifact staging and review PR generation because original 11-case source workflow concluded failure due to only April 9 cap. Gate by exact two source run IDs, source head SHAs and 36 artifact IDs/digests, successful 12 individual preparation jobs, strict original date-selection SHA and negative paper Actuals. Never auto-merge corpus PR or alter policy/trading. Run final CI and Smoke, then inspect promotion review PR and merge only on successful full tests.
 
 ## Completion
 Source population and fixed 12-date research acquisition verified complete. Separate corpus-promotion decision and risk/economics readiness remain pending.
