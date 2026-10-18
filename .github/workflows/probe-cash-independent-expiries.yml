@@ -2,10 +2,6 @@ name: Probe Independent Cash Expiry Source
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - "scripts/probe_cash_independent_expiries.py"
-      - ".github/workflows/probe-cash-independent-expiries.yml"
 
 permissions:
   contents: read
@@ -18,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        candidate_id: [2025q2, 2026q3]
+        candidate_id: [2026q3]
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
