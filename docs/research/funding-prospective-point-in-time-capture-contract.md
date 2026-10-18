@@ -18,7 +18,7 @@ Official references: [OKX v5 API docs](https://app.okx.com/docs-v5/en), [GitHub 
 
 `validate_preentry_source` invokes the existing `reconstruct_funding_regime_features` (event-time anti-lookahead, prior funding settlement 1–36h, eight confirmed daily spot candles, seven Decimal log returns and row/source SHA256) and the already accepted regime planner with the **unchanged 100bps** threshold. It also requires both HTTP calls to start after 00:00 UTC and complete before the *same* day's 00:15 UTC entry. The output records `local_capture_not_independently_attested`, `point_in_time_publication_verified=false`, and explicitly disables historical acquisition/promotion.
 
-## Manual-only source observation (future UTC days)
+## Manual diagnostic source observation (future UTC days)
 
 The [manual GitHub workflow](../../.github/workflows/capture-funding-preentry-source.yml) has only `workflow_dispatch` and **no** `push` or `schedule`. The operator must invoke it so Python actually starts **between UTC 00:00 and strictly before UTC 00:15**; starting late fails **before any HTTP call**. The HTTP client makes exactly two bounded, read-only, unauthenticated GETs (OKX public settled Funding history and BTC-USDT 1Dutc candles). If either response is late, missing, incomplete or stale, the job fails and saves `error.json`, never an endorsed success.
 
@@ -31,7 +31,7 @@ A GitHub schedule cannot substitute for this clock gate; GitHub documents delaye
 - The original 2026-07/08 research remains retrospective and unverified as-of-entry.
 - Missing negative-Funding + low volatility is still a real coverage gap; no backfilled sample can be manufactured.
 - Historical corpus remains Funding 32, Cash 66; risk/account MarginSafety and VenueExposure UNASSESSED.
-- No new automatic external API polling, experimental ROI targets, capital-policy changes, sample substitutions, authenticated exchange mutations or live orders.
+- One approved prospective read-only scheduled observation per UTC day is allowed under Issue #85's 2026-10-18 explicit operator authorization. No other automated polling, experimental ROI targets, capital-policy changes, sample substitutions, authenticated exchange mutations or live orders.
 
 ## Offline verification of a prospective artifact (post-capture only)
 
@@ -74,3 +74,53 @@ A missing signature, mismatch or ambiguous clock/source timeline leaves
 `point_in_time_publication_verified=false` and the claim **UNASSESSED**.
 Never use this audit to promote a historical case, fill a frozen regime quota,
 approve economics or enable live orders.
+
+## Scheduled UTC prewarm observer (option A, approved 2026-10-18)
+
+[Scheduled workflow](../../.github/workflows/capture-funding-preentry-scheduled.yml)
+runs once per UTC calendar day on GitHub Actions, using `37 23 * * *`
+(23:37 UTC the **previous** day, which is 16:37 PDT or 15:37 PST
+in Los Angeles). It first checks out code and installs dependencies,
+then invokes `scripts/wait_for_funding_preentry_window.py`. That
+clock guard polls until 00:00 UTC and **only then** hands off to the
+unchanged, strict `capture_funding_preentry_source.py` observer.
+
+It also accepts a GitHub queue-delayed runner arriving during the *actual*
+00:00..00:15 UTC window; after 00:15 UTC, or for a runner starting at another
+unexpected clock time, it fails without trying the next day's window.
+The exact entry cutoff is 00:15 UTC (17:15 PDT / 16:15 PST).
+Original capture validation independently enforces start/end times of both
+public HTTP requests strictly before that cutoff.
+
+The schedule is **best effort, not a reliable exact-time guarantee**:
+GitHub explicitly warns that queued `schedule` events can be delayed or
+dropped. A missed day yields no research sample and must be reported as
+missing evidence, not zero opportunity. The waiting loop has a 30-minute
+finite poll cap and a 45-minute runner timeout. `concurrency` suppresses
+parallel scheduled executions; an attempted re-run of a scheduled run is
+skipped. The existing separate manual diagnostic workflow remains
+`workflow_dispatch`-only. An artifact's unique Actions run ID prevents
+confusing separate observation attempts; the system does **not** assert
+exactly-once collection in the presence of external scheduler behavior.
+
+If waiting fails, `error.json` states `UNASSESSED` and is uploaded with
+`if: always()`. No successful raw file exists, so no raw-file attestation
+is attempted. If source capture fails its independent cutoff/data validation,
+its own failure receipt is uploaded. Only when the actual HTTP responses
+and reconstruction succeed do the same three raw/time/evidence files enter
+the success ZIP, with a separate GitHub attestation of the raw JSON bytes.
+This is **prospective, research-only**; success does not set
+`point_in_time_publication_verified=true`, does not cryptographically sign
+for OKX, and cannot initiate historical promotion, quantitative economics
+gating, exchange orders, or retroactive source inclusion.
+
+Operational review: inspect
+[the scheduled Actions runs](https://github.com/pkking/future-opportunity/actions/workflows/capture-funding-preentry-scheduled.yml),
+ensure `event=schedule`, examine actual job/step UTC timestamps, check the
+per-run artifact/attestation and perform the separately documented offline ZIP
+audit. No historical day should be accepted because a cron expression exists.
+In public repositories GitHub may disable scheduled Actions after 60 days
+without repository activity; verify this separately when observing a long gap.
+
+Official GitHub schedule policy:
+https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule
