@@ -1,7 +1,7 @@
 # Funding Carry point-in-time regime expansion
 
 Issue: #85
-Status: VERIFYING
+Status: IMPLEMENTING
 Owner: agent
 Started: 2026-10-17
 
@@ -154,16 +154,32 @@ API source reconstruction, **not** proof records were published as-of
 entry, not a 90-day sample, not sufficient 2×2 coverage, and
 not a market-wide market-state distribution.
 
+## 2026-10-18 next independent research slice — July/August pre-registration
+
+Decision context: The [read-only three-window run 39028716478](https://github.com/pkking/future-opportunity/actions/runs/39028716478) covered **21/21** eligible Sept/Oct entry days but only **3/4** frozen sign x 100bps volatility strata. In particular negative-Funding/low-volatility has zero observed dates. This is a coverage limit, not permission to mine past returns or adjust threshold. All features were retrospectively retrieved; publication as-of-entry remains **UNASSESSED**.
+
+Objective: freeze **three further calendar-picked seven-day July/August 2026 windows** as a separate new immutable research-only registry *before* any public API fetch. Choose dates by fixed two-week spacing and conservative rolling 100-candle/400-funding-record API capacity, not observed funding sign, spreads, returns or qualification.
+
+Frozen new windows (inclusive, all entry 00:15 UTC):
+- `2026-07-27-to-08-02`, seed `funding-2026-07-27to08-02-v1`.
+- `2026-08-10-to-16`, seed `funding-2026-08-10to16-v1`.
+- `2026-08-24-to-30`, seed `funding-2026-08-24to30-v1`.
+
+Constraints: all 21 dates are distinct from the existing 21 Sept/Oct dates; fixed 100 bps threshold and requested 2 cases per regime; point-in-time publication not implied by historical event timestamps. API retention and availability are *hypotheses*, not sourced facts; record missing/truncated days without substitution. Preserve original registry and its exact three windows unchanged. No change to Funding 32/Cash 66 corpus, approved Stage-2 reporting posture, risk or live-trading boundary.
+
+Implementation plan:
+- [ ] Add second frozen `docs/historical-acquisition-plans/funding-2026-jul-aug-regime-source-windows-v1.json` registry, preserving original preregistration untouched.
+- [ ] Teach `registered_research_window` to recognize exactly the two immutable registries with strict outcome-blind/governance and unique nonoverlapping IDs/days.
+- [ ] Add a **manually dispatched only** new read-only source workflow for exactly the three July/August windows; remove the old source workflow's surprise `push` trigger. No automatic source reads by ordinary code merges.
+- [ ] Add regression tests for both fixed manifests, duplicate/overlapping windows, altered source authorization, stale dates, and no automatic source-trigger or archive/promotion write calls.
+- [ ] Verify final PR-head static/code/API/E2E/Agent Plan and Historical Smoke; report new actual-source evidence as UNASSESSED until a **separately manually triggered** run has completed and exact ZIPs/digests have been independently audited.
+
+Verification evidence: CI-run URLs and GitHub Actions source artifact IDs+SHA, source statuses and missing dates where available. No source API run is authorized by the PR alone.
+
 ## Resume from here
-Source probe Run 39028716478 has now been verified: 3/4 regimes populated, negative/low empty. Next verify latest PR-head CI, merge only after green checks; design a *separate* window strategy for the missing regime and seek archival at-time corroboration rather than changing threshold or sampling based on outcomes.
-Read `scripts/probe_funding_raw_regime_source.py`, the existing
-read-only workflow, `funding_raw_feature_lineage.py`, and tests;
-The three window dates/seeds are already frozen by PR #90; do not revise based on returns.
-Make source-coverage changes in small PR slices and require
-GitHub source evidence with full SHA-256. Do not interpret missing
-negative-funding periods as a failing investment or as permission
-to alter the frozen sampling design.
+
+Create the July/August frozen registry and manual-only workflow, generalize the source-window resolver without rewriting the original three-window manifest, add strict offline regressions, then run full final-head CI and Historical Smoke. **Do not** treat the new 21 date hypotheses as observed market states until an independently completed source run is inspected. After reviewed merge, any historical public-source dispatch needs an explicit new operator action; the GitHub connector lacks workflow_dispatch. The missing negative/low Funding stratum and publication-time authentication remain open research.
 
 ## Completion
-Probe implementation requires final CI and independent true-source evidence. Do not move
-to completed until CI and evidence are recorded.
+
+In progress. PR-head CI, historical source reports, publication-as-of evidence, and source validity for July/August remain UNASSESSED. Strategy corpus and economic thresholds remain unchanged.
