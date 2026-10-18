@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "evidence_type": "cash_q2_2025_research_corpus_promotion_explicit_user_approval",
+  "status": "approved_for_research_only",
+  "issue": 95,
+  "approved_at_utc": "2026-10-18T03:14:20Z",
+  "approval_evidence_url": "https://github.com/pkking/future-opportunity/issues/95#issuecomment-6245110794",
+  "approved_date_count": 12,
+  "original_source_run": 39079100154,
+  "repair_source_run": 39091438598,
+  "selection_evidence_sha256": "9bd08184a3a0c2487ba57087effdf0e8231db45fb4bf10226290627ed2990b37",
+  "cross_run_source_audit": "docs/historical-acquisition-plans/cash-2025q2-12day-cross-run-audit-v1.json",
+  "approved_effect": "Stage exactly 12 research-only, compact and replayable Cash Q2 historical cases into reviewable versioned corpus PR, including three strategy-rejected observations with unassessed realized returns",
+  "promotion_requires_reviewed_pr": true,
+  "corpus_auto_merge": false,
+  "activation_of_other_workflows": false,
+  "stage2_economics_gate_activated": false,
+  "live_trading_enabled": false
+}
