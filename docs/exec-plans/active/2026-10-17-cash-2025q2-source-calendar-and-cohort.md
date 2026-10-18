@@ -1,7 +1,7 @@
 # Cash 2025Q2 additional independent expiry cohort
 
 Issue: #95
-Status: BLOCKED_EVIDENCE
+Status: BLOCKED_DECISION
 Owner: agent
 Started: 2026-10-17
 
@@ -284,8 +284,19 @@ and not a selected profitable case.
 - One immutable failed case `2025-04-09T00:15:00+00:00`; BTC-USDT-250627; exit `2025-06-26T00:15:00+00:00`; expiry `2025-06-27T08:00:00+00:00`; Q2-specific 1024 MiB raw-source bound, original 12-date source-pinned registration, no sample substitution or redownload of other 11 cases.
 - Once started, fetch the new exact Actions run ID, SHA, authorization control, only one Prepared+Compact+Actuals group, source archive SHA and member proof, book staleness and actuals. Preserve any source failure or negative economic outcome. **No automatic retry, corpus promotion, economics-target activation or trading.**
 
+## 2026-10-18 research cohort completed across original + one-date repair (12/12)
+
+- User-triggered [single-case research source repair 39091438598](https://github.com/pkking/future-opportunity/actions/runs/39091438598) at approved main SHA `6600b330fd8bb78f3385b89227b7c06eb0749c72` **completed success**. The strict operator authorization and original twelve-date sampling provenance were validated, and the job only prepared `2025-04-09`; the other eleven cases were not resampled or re-downloaded.
+- Repaired Prepared ZIP Artifact **12122683921**, SHA256 `6f8024bc2c70b437af4ff7c46fcbdea39a4dc4447caf235e016137f8a8c36dfa`; Compact **12122833427**, SHA256 `aa021128f583c610cee18fffd012c78adbff9a7d44acdd8bbd797401a024e63b`; Actuals **12122554018**, SHA256 `b84a8eb3cb04fe7693ba846ed7f8e7c92ce9fd9290648d3e26571a62fb2c1849`. Repair summary **12122987799**, SHA256 `87a3b97e19c22d671d57dde5cafbe9cc7b0cfc0c9c1609e0d373ce857c0245fb`.
+- 2025-04-09 **qualified** paper actuals: `realized_net_return=0.003519902531521683005931941343` (+0.3519903%). Canonical 00:15 entry/exit SPOT/FUTURES books all present, SHA-checked with source metadata/archive member IDs and parent ZIP ancestry, max sample staleness **40 ms**. The source-provenance raw archives were *not* independently re-downloaded by the offline auditor; their metadata-reported SHA/bytes were cross-checked for identity. Exit SPOT/FUTURES archive SHA equal the prior 11-case exit source records. MarginSafety / VenueExposure remain **unassessed**.
+- **Frozen 12-date cohort complete** across original [run 39079100154](https://github.com/pkking/future-opportunity/actions/runs/39079100154) and repair [run 39091438598](https://github.com/pkking/future-opportunity/actions/runs/39091438598): **36/36** SHA-verified Prepared/Compact/Actuals ZIPs; **9 qualified** and **3 valid unqualified** cases, specifically 2025-06-07/14/22 (`expected_net_return_not_positive`, no realized return, never represented as zero); missing source **0**; max L2 staleness **164 ms**.
+- Offline **complete 12-case independent audit JSON SHA256** `00ac19aa623467d0a1985c1ca9bf7f52a0e0ae46cd6a72374a16d6c68f80901c` (generated conversation artifact), and in-repo machine-readable, audit-only 36-Artifact index at `docs/historical-acquisition-plans/cash-2025q2-12day-cross-run-audit-v1.json` with regression tests. GitHub Issue [#95 completed cohort audit note](https://github.com/pkking/future-opportunity/issues/95#issuecomment-6244944016) preserves source IDs, original and repaired run SHA, per-file SHA and risk caveats.
+- Among the nine **executed and qualified paper scenarios only**, conditional mean realized net return `0.00225050806729944181109750239` (+0.22505%), not a 12-date unconditional expectation, not live profitability. These date samples all share one BTC future expiry and a common 2025-06-26 pre-expiry close: they are *not* twelve independent expiries. Their outcomes may be correlated.
+- Existing pinned corpus stays **Cash 54 / Funding 32**: no corpus promotion, Stage-2 economic target/gate changes, risk readiness claims, or trading. The two separate operator source permissions have both been exercised and are no longer outstanding.
+- **NEXT DISTINCT HUMAN DECISION (BLOCKED_DECISION):** whether to create a separately reviewed **research-corpus promotion** of the complete 12-date Q2 evidence including three rejected observations, without relaxing strategy/risk gates, changing existing corpus baselines silently, or enabling live trading; or defer promotion and study additional contract-expiry cohorts. Do not treat preparation completion as promotion approval.
+
 ## Resume from here
-Separate human authorization for **one** research-only 2025-04-09 source-repair run was granted and persisted in Issue #95. Existing GitHub connector cannot trigger workflow_dispatch, and no matching new repair run was observed. An operator needs to start the already merged manual workflow with the exact input documented above. Next agent: locate the actual run, audit the single case's Prepared/Compact/Actuals SHA and official source, join with original 11 independently verified cases. **Do not seek repeated authorization for this same run, do not download the other 11 cases, and do not promote corpus or trade without a separate decision.**
+Original Q2 run 39079100154 (11 successes, one raw-archive source cap failure) and the separately approved source-only repair run 39091438598 (missing 2025-04-09 success) together yield **12/12 source-audited cases, 36/36 SHA-verified ZIP artifacts, nine qualified, three genuine unqualified**, no missing source. Complete offline audit JSON SHA256 `00ac19aa623467d0a1985c1ca9bf7f52a0e0ae46cd6a72374a16d6c68f80901c`; inspect the in-repo research-only audit index and Issue #95 comment 6244944016 for all immutable IDs. Status is **BLOCKED_DECISION** on whether to promote research evidence through an independently reviewed corpus change. No user permission exists for corpus promotion, economics-gate activation or live trading. Preserve Cash 54 / Funding 32 pinned baseline and the three unqualified cases.
 
 ## Completion
-Pending audited 2025Q2 population and reviewed acquisition.
+Source population and fixed 12-date research acquisition verified complete. Separate corpus-promotion decision and risk/economics readiness remain pending.
