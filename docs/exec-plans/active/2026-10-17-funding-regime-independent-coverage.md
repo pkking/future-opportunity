@@ -1,7 +1,7 @@
 # Funding Carry point-in-time regime expansion
 
 Issue: #85
-Status: BLOCKED_EVIDENCE
+Status: IMPLEMENTING
 Owner: agent
 Started: 2026-10-17
 
@@ -393,9 +393,58 @@ until independent external verification. Decision was only to automate capture,
   then merge. The Issue remains `BLOCKED_EVIDENCE` because exchange publication
   time and negative/low regime observation are not independently proven.
 
+## 2026-10-18 automated read-only review of scheduled captures (Issue #85)
+
+**Decision scope**: continue user-approved option-A unattended *prospective*
+source-observation infrastructure. This slice adds a second, independently
+started GitHub job to check the scheduled workflow's exact immutable artifact,
+replay the offline source validator and verify first-party GitHub provenance.
+It never treats this as OKX publication authentication or changes the accepted
+research/economics/trading policy.
+
+Problem: PR #124 captures and uploads only. Every future run would still need
+an operator to download the original ZIP, check its GitHub-issued digest,
+recompute features and inspect its signed file. Failures must remain visible
+rather than being silently accepted as empty market regimes.
+
+Acceptance criteria:
+- [ ] A follow-on read-only audit job runs after scheduled capture, even on
+      capture failure. It downloads the **original** (not repacked) Actions ZIP,
+      checks a separately fetched artifact ID/digest owned by that same run,
+      and refuses wrong-run, duplicate or missing artifact metadata.
+- [ ] Existing `audit_funding_preentry_source_artifact.audit_zip` runs
+      unchanged for successful attempts and requires exact observed UTC day;
+      offline replay cannot be claimed without raw/time/research agreement.
+- [ ] The original raw JSON file is checked using official `gh attestation
+      verify` with constrained repository, signer workflow, main ref, commit
+      SHA and raw subject digest; verification errors fail closed.
+- [ ] Failed capture with `error.json` is reported `UNASSESSED` with explicit
+      reason; no attestation success claimed. Strictly reject forged status
+      flags, malformed JSON or unusual ZIP members even for failure receipts.
+- [ ] Any success says GitHub provenance validated only, **not** exchange-
+      authenticated historical availability; no change to `point_in_time_publication_verified=false`,
+      no promotion/acquisition/economics/live orders.
+- [ ] Deterministic, fully offline tests for all positive/negative paths,
+      including mocked GitHub CLI and ZIP identity, with documented review
+      metadata schema. Final-head PR CI 5/5 + Historical Smoke and postmerge
+      main CI recorded before calling engineering slice complete.
+
+Implementation:
+1. Write a pure-input audit orchestrator for Actions ZIP + immutable run
+   metadata and a verifier injection boundary (no network from unit tests).
+2. Wire `needs: capture` read-only audit job in the approved **scheduled**
+   workflow, using first-party artifact download with original ZIP option,
+   `gh api` run metadata and `gh attestation verify`.
+3. Publish machine-readable review/error artifact, tests and documentation.
+
+Current baseline: `1a1e21cc67ec66eeea7605b597a58f592342826c`,
+[main CI 39116878803](https://github.com/pkking/future-opportunity/actions/runs/39116878803) SUCCESS.
+Issue #85 OPEN, no prior successful scheduled capture to audit. Independent
+pre-entry OKX source-publication claim stays **UNASSESSED**.
+
 ## Resume from here
 
-Review the final documentation-head PR #124 CI/Historical Smoke, then merge and verify postmerge main CI. After merge, record activation in #85 and return to `BLOCKED_EVIDENCE` until first genuine independent prospective artifact arrives. No human midnight dispatch should be necessary.
+Implement and test the approved read-only scheduled artifact review on `agent/funding-preentry-auto-evidence-review`. Verify final PR-head CI/Historical Smoke and postmerge CI. No real scheduled source exists yet; retain underlying BLOCKED_EVIDENCE.
 
 ## Completion
 
