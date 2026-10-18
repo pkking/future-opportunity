@@ -1,0 +1,41 @@
+name: Capture Prospective Funding Pre-Entry Source (Manual)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+
+jobs:
+  capture:
+    name: Capture one genuine pre-entry UTC day or fail closed
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - name: Observe public sources only if currently UTC 00:00-00:15
+        run: |
+          uv run python scripts/capture_funding_preentry_source.py \
+            --output-dir artifacts/prospective-funding
+      - name: Attest original raw API observation bytes (GitHub provenance only)
+        if: success()
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: artifacts/prospective-funding/raw-api-capture.json
+      - name: Preserve raw receipt and failed-time evidence without promotion
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prospective-funding-preentry-source
+          path: artifacts/prospective-funding/
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Record limit of claimed evidence
+        if: always()
+        run: |
+          echo "Source-only. This workflow cannot authorize acquisition, historical promotion, economics thresholds or real orders." >> "$GITHUB_STEP_SUMMARY"
+          echo "GitHub artifact provenance is distinct from exchange-signed publication and must be independently verified." >> "$GITHUB_STEP_SUMMARY"
