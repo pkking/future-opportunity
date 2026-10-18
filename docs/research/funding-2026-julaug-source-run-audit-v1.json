@@ -1,0 +1,132 @@
+{
+  "schema_version": 1,
+  "evidence_type": "funding_julaug_preentry_retrospective_source_audit",
+  "issue_number": 85,
+  "run_id": 39102598192,
+  "run_url": "https://github.com/pkking/future-opportunity/actions/runs/39102598192",
+  "run_head_sha": "2228bab91ce74b83abef54ffb544286cc90f29d8",
+  "run_event": "workflow_dispatch",
+  "run_conclusion": "success",
+  "run_attempt": 1,
+  "research_only": true,
+  "source_provider": "OKX",
+  "instruments": {
+    "funding": "BTC-USDT-SWAP",
+    "spot": "BTC-USDT"
+  },
+  "source_endpoint_identifiers": [
+    "/api/v5/public/funding-rate-history",
+    "/api/v5/market/history-candles"
+  ],
+  "source_data_retrieved_retrospectively": true,
+  "point_in_time_publication_verified": false,
+  "source_authentication_status": "requires_independent_review",
+  "acquisition_approved": false,
+  "promotion_approved": false,
+  "stage2_economics_gate_enabled": false,
+  "live_order_execution_approved": false,
+  "sampling_policy": "pre-entry-funding-regime-research-v1",
+  "volatility_threshold_bps": "100",
+  "sample_request_per_regime": 2,
+  "raw_feature_days": 21,
+  "previously_pinned_days": [
+    "2026-08-29"
+  ],
+  "new_eligible_days": 20,
+  "total_selected_new_days": 8,
+  "missing_days": [],
+  "regime_population_all_observed": {
+    "negative_low_volatility": 0,
+    "negative_high_volatility": 2,
+    "nonnegative_low_volatility": 7,
+    "nonnegative_high_volatility": 12
+  },
+  "negative_low_unobserved": true,
+  "full_regime_quota_met": false,
+  "full_audit_report_sha256": "492e4febd2153f85bccc38aeed67b2efdbe1a393c0419cc551ba24411382d49e",
+  "canonical_zip_members": [
+    "coverage-summary.json",
+    "planner-input.json",
+    "raw-api-capture.json",
+    "reconstructed-features.json",
+    "research-selection.json"
+  ],
+  "windows": [
+    {
+      "id": "2026-07-27-to-08-02",
+      "first": "2026-07-27",
+      "last": "2026-08-02",
+      "seed": "funding-2026-07-27to08-02-v1",
+      "artifact_id": 12127216329,
+      "artifact_name": "funding-jul-aug-source-2026-07-27-to-08-02",
+      "zip_sha256": "3363e8cb256f293d8fdebcdbda24dbcbde5e74e0fe5fe5ee0e36ef084f311a1c",
+      "source_sha256": "53649680be1e3a5c22acb43443eccd925d1856a6c6947c130a5fba798c5d6dd9",
+      "captured_at": "2026-10-18T06:02:14.967053+00:00",
+      "raw_feature_days": 7,
+      "pinned_market_dates": [],
+      "eligible_new_days": 7,
+      "selected_dates": [
+        "2026-07-30",
+        "2026-07-31",
+        "2026-08-02"
+      ],
+      "regimes": {
+        "negative_low_volatility": 0,
+        "negative_high_volatility": 1,
+        "nonnegative_low_volatility": 0,
+        "nonnegative_high_volatility": 6
+      }
+    },
+    {
+      "id": "2026-08-10-to-16",
+      "first": "2026-08-10",
+      "last": "2026-08-16",
+      "seed": "funding-2026-08-10to16-v1",
+      "artifact_id": 12127506247,
+      "artifact_name": "funding-jul-aug-source-2026-08-10-to-16",
+      "zip_sha256": "2587c63913627161c0c8cc98a72410bade896a229275b1a2b9165bd670bfafca",
+      "source_sha256": "b6c29746c29403071b213f5b3a8a28e725e5ef4c33f7ba407818c5ef603a8acd",
+      "captured_at": "2026-10-18T06:02:15.468020+00:00",
+      "raw_feature_days": 7,
+      "pinned_market_dates": [],
+      "eligible_new_days": 7,
+      "selected_dates": [
+        "2026-08-14",
+        "2026-08-15"
+      ],
+      "regimes": {
+        "negative_low_volatility": 0,
+        "negative_high_volatility": 0,
+        "nonnegative_low_volatility": 7,
+        "nonnegative_high_volatility": 0
+      }
+    },
+    {
+      "id": "2026-08-24-to-30",
+      "first": "2026-08-24",
+      "last": "2026-08-30",
+      "seed": "funding-2026-08-24to30-v1",
+      "artifact_id": 12127316983,
+      "artifact_name": "funding-jul-aug-source-2026-08-24-to-30",
+      "zip_sha256": "9eec4e3804115f4edf6278a79a1121835ae1d322057aa7ae1342c1ced3620996",
+      "source_sha256": "53649680be1e3a5c22acb43443eccd925d1856a6c6947c130a5fba798c5d6dd9",
+      "captured_at": "2026-10-18T06:02:19.040397+00:00",
+      "raw_feature_days": 7,
+      "pinned_market_dates": [
+        "2026-08-29"
+      ],
+      "eligible_new_days": 6,
+      "selected_dates": [
+        "2026-08-24",
+        "2026-08-27",
+        "2026-08-28"
+      ],
+      "regimes": {
+        "negative_low_volatility": 0,
+        "negative_high_volatility": 1,
+        "nonnegative_low_volatility": 0,
+        "nonnegative_high_volatility": 6
+      }
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 # Funding Carry point-in-time regime expansion
 
 Issue: #85
-Status: BLOCKED_EVIDENCE
+Status: VERIFYING
 Owner: agent
 Started: 2026-10-17
 
@@ -191,11 +191,24 @@ Verification evidence: CI-run URLs and GitHub Actions source artifact IDs+SHA, s
 - Confirmed new `.github/workflows/probe-funding-jul-aug-regime-source.yml` is present on main with `workflow_dispatch` only. Old Funding raw probe also has no `push` trigger. **No July/Aug source dispatch/run or source artifact exists** from this task; missing-stratum and publication-as-of-entry evidence remain unassessed.
 - Corpus remains Funding 32, Cash 66, Stage-2 numerical economics gating disabled, no authenticated trading or capital-policy changes.
 
+## 2026-10-18 source evidence audit — operator-run completed, independent review
+
+Issue: #85 remains the canonical task. Human independently triggered **one** read-only GitHub run [39102598192](https://github.com/pkking/future-opportunity/actions/runs/39102598192) at source head `2228bab91ce74b83abef54ffb544286cc90f29d8` (workflow_dispatch, all 3 jobs SUCCESS). Code work stays strictly within the frozen preregistration, not outcome-driven sampling.
+
+Audit acceptance:
+- [ ] Record exact three artifact IDs and original ZIP SHA-256; independently check all archive bytes and five JSON files per ZIP, correct window/seed/head/provenance.
+- [ ] Replay 21 00:15 UTC entries against raw HTTP funding and confirmed 1Dutc candle evidence; check prior-event 1..36h age, eight closed candles, seven Decimal log-returns, 100bps regime assignment and SHA-256 per row.
+- [ ] Independently recompute canonical raw source digest, planner input and deterministic selected dates; preserve pinned 2026-08-29 exclusion without removing its observed feature row.
+- [ ] Publish an immutable, machine-readable audit summary, human-readable report and offline consistency tests; never commit raw fetched archives or strategy outcomes.
+- [ ] Final-head CI/Agent Plan/Historical Smoke and post-merge main CI verified.
+- [ ] Publication-as-of-entry independently authenticated, and four-regime quota fully met. These are **research exit gates**, not items to auto-approve from retrospective data.
+
+Already observed external evidence (to be verified and retained in the reviewed audit PR): 21/21 reconstructable dates, one pinned (2026-08-29) excluded from **new selection**, 20 unpinned candidates. Four raw feature regime populations under frozen sign/100bps taxonomy: negative+low **0**, negative+high **2**, nonnegative+low **7**, nonnegative+high **12**. All three source ZIPs passed initial byte SHA-256 checks; the clean, independent offline replay must be recorded before completion claims. All 21 are retrospective official API responses captured 2026-10-18. Research cannot infer contemporaneous publication, ROI, qualified market opportunities or live trading readiness.
+
 ## Resume from here
 
-**BLOCKED_EVIDENCE: external source capture, not a product decision.** An operator must explicitly run [Probe Funding Jul-Aug Regime Source (Manual)](https://github.com/pkking/future-opportunity/actions/workflows/probe-funding-jul-aug-regime-source.yml) using `Run workflow` on `main`, exactly once for this frozen, read-only 3-window research cohort. The connected GitHub actions do not include `workflow_dispatch`; never claim to have run it. After the run completes, verify every matrix job, download all 3 research artifact ZIPs, independently check ZIP SHA-256 and source payload/row hashes, enumerate reconstructed/missing days and 2x2 regime coverage, and record `point_in_time_publication_verified=false` unless independently contemporaneous evidence is discovered. Keep negative/low shortfalls as shortfalls. Do not vary date windows, threshold, seed, source inputs, corpus, promotion, economic gates or live trading.
-
+Complete independent source audit using the three exact GitHub artifact archives from run 39102598192; preserve negative/low zero and pinned-date exclusion; commit reviewable report + regression tests. Wait for CI and merge only green. Afterwards Issue #85 remains blocked on **genuine point-in-time publication evidence and missing negative/low regime**, which are not solvable by declaring the 21 retrospective records publication-authenticated. Any new sampling period requires a separately pre-registered scope. No strategy/corpus/economics or authenticated exchange changes.
 
 ## Completion
 
-In progress. PR-head CI, historical source reports, publication-as-of evidence, and source validity for July/August remain UNASSESSED. Strategy corpus and economic thresholds remain unchanged.
+In progress; July/Aug source run succeeded but publication-as-of-entry and full four-regime quota remain **UNASSESSED / NOT MET**, respectively. Funding corpus remains 32 and Cash 66.
