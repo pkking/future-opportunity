@@ -5,7 +5,6 @@ import hashlib
 import importlib.util
 import json
 import subprocess
-import sys
 import zipfile
 from pathlib import Path
 from types import SimpleNamespace
