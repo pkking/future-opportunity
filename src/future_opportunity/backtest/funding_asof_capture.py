@@ -5,11 +5,13 @@ publication; GitHub/Sigstore provenance must be verified separately.
 """
 from __future__ import annotations
 
-from datetime import UTC, date, datetime, time
+from datetime import UTC, datetime, time, timedelta
 from typing import Any
 
 from future_opportunity.backtest.funding_raw_feature_lineage import (
     reconstruct_funding_regime_features,
+    _funding_index,
+    _spot_index,
 )
 from future_opportunity.backtest.funding_regime_research import (
     plan_funding_regime_research,
@@ -66,6 +68,21 @@ def validate_preentry_source(
     recorded = _utc(capture.get("captured_at"), "captured_at")
     if not moments[3] <= recorded < entry:
         raise ValueError("captured_at must follow source responses before entry")
+    # Entire response must be causally possible when HTTP receipt finished.
+    # Merely selecting an old row cannot excuse future-dated raw payload rows.
+    try:
+        funding_rows = _funding_index(capture["funding_response"])
+        spot_rows = _spot_index(capture["spot_response"])
+    except (KeyError, TypeError) as exc:
+        raise ValueError("original source response fields are incomplete") from exc
+    if any(event > moments[1] for event in funding_rows):
+        raise ValueError("future settled funding event in preentry HTTP response")
+    if any(
+        opened > moments[3]
+        or (row[8] == "1" and opened + timedelta(days=1) > moments[3])
+        for opened, row in spot_rows.items()
+    ):
+        raise ValueError("future confirmed daily candle in preentry HTTP response")
     reconstructed = reconstruct_funding_regime_features(capture)
     if (reconstructed["feature_rows_reconstructed"] != 1
         or reconstructed["missing_days"]):
