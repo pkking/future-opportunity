@@ -1,7 +1,7 @@
 # Funding Carry point-in-time regime expansion
 
 Issue: #85
-Status: VERIFYING
+Status: BLOCKED_EVIDENCE
 Owner: agent
 Started: 2026-10-17
 
@@ -377,9 +377,25 @@ until independent external verification. Decision was only to automate capture,
   be closed merely because the schedule is configured.
 
 
+### 2026-10-18 PR #124 implementation-head verification
+
+- [PR #124](https://github.com/pkking/future-opportunity/pull/124)
+  implementation head `a48111e72454d0a90f6aa6a0ddd00076cca35957`:
+  [CI #39116716764](https://github.com/pkking/future-opportunity/actions/runs/39116716764)
+  **5/5 SUCCESS** (static, code-level including new scheduler tests,
+  API, E2E, agent-plan);
+  [Historical Backtest Smoke #39116716755](https://github.com/pkking/future-opportunity/actions/runs/39116716755)
+  **SUCCESS** on that same commit.
+- New pure bounded wait guard, cron-only pipeline, UTC timing/failure tests,
+  and documented provenance boundary validated by repository CI. No scheduled
+  job has fired yet and no public source has been captured under this design.
+- Record final **documentation-head** PR CI/Smoke after this checkpoint commit,
+  then merge. The Issue remains `BLOCKED_EVIDENCE` because exchange publication
+  time and negative/low regime observation are not independently proven.
+
 ## Resume from here
 
-Review the proposed scheduled capture PR on a final head, require five CI gates plus Historical Smoke SUCCESS, then merge and verify postmerge main CI. After merge, record activation in #85 and return to `BLOCKED_EVIDENCE` until first genuine independent prospective artifact arrives. No human midnight dispatch should be necessary.
+Review the final documentation-head PR #124 CI/Historical Smoke, then merge and verify postmerge main CI. After merge, record activation in #85 and return to `BLOCKED_EVIDENCE` until first genuine independent prospective artifact arrives. No human midnight dispatch should be necessary.
 
 ## Completion
 
