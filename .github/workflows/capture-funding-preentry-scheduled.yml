@@ -54,3 +54,67 @@ jobs:
           echo "Best-effort cron; a missed or late window is UNASSESSED, not a historical zero." >> "$GITHUB_STEP_SUMMARY"
           echo "GitHub-signed bytes do not independently establish OKX publication timing." >> "$GITHUB_STEP_SUMMARY"
           echo "No promotion, acquisition, economic thresholds or exchange orders are authorized." >> "$GITHUB_STEP_SUMMARY"
+
+  audit:
+    # Separate runner; only original GitHub API metadata and signed evidence.
+    # This may verify workflow origin but NEVER certifies OKX source publication.
+    name: Audit scheduled source artifact (read-only)
+    needs: capture
+    if: ${{ always() && github.run_attempt == 1 }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+      attestations: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - name: Download original immutable ZIP with digest validation
+        uses: actions/download-artifact@v8
+        with:
+          name: prospective-funding-preentry-source
+          path: artifacts/original-source-zip/
+          skip-decompress: true
+          digest-mismatch: error
+      - name: Fetch independent run/artifact identity and replay signed source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CAPTURE_CONCLUSION: ${{ needs.capture.result }}
+        run: |
+          mkdir -p artifacts/scheduled-review
+          gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" > artifacts/scheduled-review/run-metadata.json
+          gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts" > artifacts/scheduled-review/artifact-metadata.json
+          uv run python scripts/audit_scheduled_funding_capture.py \
+            --archive-dir artifacts/original-source-zip \
+            --run-metadata artifacts/scheduled-review/run-metadata.json \
+            --artifact-metadata artifacts/scheduled-review/artifact-metadata.json \
+            --repository "${GITHUB_REPOSITORY}" \
+            --run-id "${GITHUB_RUN_ID}" \
+            --source-sha "${GITHUB_SHA}" \
+            --capture-conclusion "${CAPTURE_CONCLUSION}" \
+            --output-dir artifacts/scheduled-review
+      - name: Retain explicit UNASSESSED audit receipt on setup/download failures
+        if: failure()
+        run: |
+          mkdir -p artifacts/scheduled-review
+          if [ ! -f artifacts/scheduled-review/error.json ] && [ ! -f artifacts/scheduled-review/scheduled-evidence-review.json ]; then
+            printf '%s\n' '{"status":"UNASSESSED","reason":"scheduled review could not download or authenticate source","github_attestation_verified":false,"point_in_time_publication_verified":false,"acquisition_approved":false,"promotion_approved":false}' > artifacts/scheduled-review/error.json
+          fi
+      - name: Retain read-only scheduled evidence review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scheduled-funding-evidence-review
+          path: |
+            artifacts/scheduled-review/scheduled-evidence-review.json
+            artifacts/scheduled-review/error.json
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Explain evidentiary limits
+        if: always()
+        run: |
+          echo "This downstream job verifies immutable Actions ZIP, offline replay and GitHub signer only." >> "$GITHUB_STEP_SUMMARY"
+          echo "Unverified OKX publication, missing event days and all historical economics remain UNASSESSED." >> "$GITHUB_STEP_SUMMARY"
+          echo "No acquisition, promotion, Stage-2 thresholds or exchange orders." >> "$GITHUB_STEP_SUMMARY"
