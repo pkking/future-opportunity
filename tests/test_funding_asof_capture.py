@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 
+from pathlib import Path
+
 import pytest
 
 from future_opportunity.backtest.funding_asof_capture import validate_preentry_source
