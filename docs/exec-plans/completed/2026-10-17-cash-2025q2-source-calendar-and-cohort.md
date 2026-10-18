@@ -1,7 +1,7 @@
 # Cash 2025Q2 additional independent expiry cohort
 
 Issue: #95
-Status: VERIFYING
+Status: COMPLETED
 Owner: agent
 Started: 2026-10-17
 
@@ -58,12 +58,12 @@ not select dates using paper returns or existing results.
       and source provenance **before** their strategy outcomes,
       in a separate reviewed PR. If coverage insufficient,
       stop without selection.
-- [ ] Only upon reviewed frozen selection use original
+- [x] Only upon reviewed frozen selection use original
       preparation/Compact/Actuals workflow, complete content
       audit and read-only planner, then separately reviewed
       corpus promotion. Do not use missing or rejected days
       as automatic replacement.
-- [ ] All code/API/E2E/Agent Plan/Historical Smoke pass
+- [x] All code/API/E2E/Agent Plan/Historical Smoke pass
       at final PR head; postmerge main CI verified.
 
 ## Implementation slices
@@ -76,7 +76,7 @@ not select dates using paper returns or existing results.
 - [x] 4. Freeze verified 12-date selection from historical
       source capacity and create operator-controlled preparation
       handoff.
-- [ ] 5. Governed acquisition / review PR / main CI (requires distinct human authorization).
+- [x] 5. Governed acquisition / review PR / main CI (separately human authorized).
       Do not silently activate thresholds.
 
 ## Verification matrix
@@ -317,8 +317,22 @@ and not a selected profitable case.
 - Root cause: a new unit-test helper reloaded the changed 98-entry index **after** staging and incorrectly asserted the original 86-entry preflight baseline. The source/promoter were not at fault. The technical retry preserves the same exact approval, two source runs and all 12 cases. The test helper now strips exactly the twelve frozen Q2 entries from the post-stage index in its **test-only in-memory snapshot** and asserts both 98 staged entries and 86 immutable preflight baseline; production promoter remains strictly fail-closed on the true pre-promotion 86.
 - Documented the first failed staging Run ID in the existing authorization JSON to intentionally start a single scoped review-PR staging retry after final-head CI passes. No raw market archives are downloaded, no dates/targets/risk semantics changed, no corpus auto-merge. Any subsequent failure must be inspected rather than silently weakened.
 
+## 2026-10-18 verified research promotion and archive checkpoint
+
+- Separately authorized source preparation: original 12-date run [39079100154](https://github.com/pkking/future-opportunity/actions/runs/39079100154) produced 11 valid complete case groups, plus successful isolated April 9 repair [39091438598](https://github.com/pkking/future-opportunity/actions/runs/39091438598), exactly 36 audited Prepared/Compact/Actuals ZIPs and 12 canonical four-book L2 groups.
+- Separately authorized, one-time corpus staging [39093915758](https://github.com/pkking/future-opportunity/actions/runs/39093915758) succeeded and created review PR [#113](https://github.com/pkking/future-opportunity/pull/113). The earlier staging failure [39093708831](https://github.com/pkking/future-opportunity/actions/runs/39093708831) was a post-stage baseline test issue; repaired by [PR #112](https://github.com/pkking/future-opportunity/pull/112). Original prospective date-selection regression compatibility was repaired in [PR #114](https://github.com/pkking/future-opportunity/pull/114).
+- PR #113 is **merged**, merge commit `8e4c528167b5fbc40704782688d8645237441721` on main. Post-merge [CI 39094900964](https://github.com/pkking/future-opportunity/actions/runs/39094900964) **success**: static/architecture, code-level, API-contract and deterministic E2E strategy jobs success (PR-only agent plan check skipped on main by design). [Historical Smoke 39094900926](https://github.com/pkking/future-opportunity/actions/runs/39094900926) **success**.
+- The resulting *versioned offline research corpus* contains **Cash 66, Funding 32** cases; added **12 frozen Q2 2025 Cash cases**, of which **nine** qualify in paper evaluation and **three** (June 7, 14, 22) fail `expected_net_return_not_positive`. Rejected cases retain **NULL/UNASSESSED realized returns**, not numeric zero; no old samples were rewritten.
+- Source eligibility was pre-frozen and sampled without profitability-based substitution. The twelve dates represent **one new independent contract expiry** (June 27, 2025), **not twelve independent settlement cycles**. The fifth expiry cohort adds coverage but does not establish general-market profitability. The preferred 90 Cash-day study target remains unmet (**24** dates short).
+- The complete archived plan preserves historic failed attempts and gates verbatim above as chronological audit records; prior pending statements are no longer current instructions. Neither source re-acquisition nor staging retries are authorized by this archive.
+
 ## Resume from here
-Research-only 12-case corpus promotion is user approved, but initial one-time staging run 39093708831 failed only at a unit test that assumed 86 baseline after already staging 98 (source jobs/artifacts/atomic promote all passed). The current PR contains an exact-test-state repair and an explicitly recorded one-time staging retry via the authorization manifest. Final-head CI/Historical Smoke must pass; then merge, inspect new staging run's offline acceptance + evidence, obtain generated corpus PR, verify CI against its final SHA, and merge only on all green. No new market source runs, no economics activation/live trading.
+
+ARCHIVED for Issue #95 following reviewed research-only corpus promotion and verified main CI/Smoke. Do not re-dispatch the prior Q2 authorization, source jobs, repair or staging workflows. Next independent research belongs to open Issue #86 (broader expiry diversity) and #85 (Funding point-in-time market-state evidence), each with its own active plan. No Stage-2 economics activation or live-trading permission is implied.
 
 ## Completion
-Source population and fixed 12-date research acquisition verified complete. Separate corpus-promotion decision and risk/economics readiness remain pending.
+
+Final commit: 8e4c528167b5fbc40704782688d8645237441721 (merged research-corpus PR #113).
+CI run: https://github.com/pkking/future-opportunity/actions/runs/39094900964 (SUCCESS, main at final implementation commit).
+Historical Smoke: https://github.com/pkking/future-opportunity/actions/runs/39094900926 (SUCCESS, same main commit).
+Remaining unassessed items: A further 24 Cash market days to preferred 90-day reporting coverage; correlated cases within expiry; Funding regime and publication-as-of evidence under #85; additional independent expiry diversity under #86; MarginSafety and VenueExposure remain UNASSESSED; Stage-2 economics gate remains disabled; no live trading approval.
