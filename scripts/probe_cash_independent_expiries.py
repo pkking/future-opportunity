@@ -18,7 +18,7 @@ from future_opportunity.adapters.historical.okx_catalog import (
 from future_opportunity.backtest.cash_expiry_probe import evaluate_cash_expiry_probe
 
 ROOT = Path(__file__).parents[1]
-REGISTRY = ROOT / "docs/historical-acquisition-plans/cash-independent-expiry-source-probes-v1.json"
+REGISTRY = ROOT / "docs/historical-acquisition-plans/cash-independent-expiry-source-probes-v2.json"
 CORPUS = ROOT / "tests/fixtures/historical"
 SOURCE_BASE = "https://www.okx.com"
 
@@ -56,8 +56,8 @@ def validated_candidates(registry: dict[str, Any], pinned: set[str]) -> list[dic
     ):
         raise ValueError("Cash independent-expiry registry governance/pinned mismatch")
     targets = registry["candidates"]
-    if not isinstance(targets, list) or len(targets) != 2:
-        raise ValueError("requires two frozen Cash expiry candidates")
+    if not isinstance(targets, list) or len(targets) != 1:
+        raise ValueError("requires exactly one remaining frozen Cash expiry candidate")
     ids = set()
     futures = set()
     used_dates = set()
