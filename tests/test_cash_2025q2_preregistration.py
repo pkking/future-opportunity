@@ -20,8 +20,14 @@ def registered():
     audit = json.loads(validator.AUDIT.read_text())
     manifest = json.loads(validator.MANIFEST.read_text())
     corpus = json.loads(validator.CORPUS.read_text())
+    # Re-evaluate the historical *pre*-registration snapshot, not the
+    # current corpus after these exact 12 days were subsequently promoted.
+    # The production validator itself still rejects already-pinned dates.
+    selected = set(registry["selected_market_dates"])
     pinned = [x["entry_market_date"] for x in corpus["entries"]
               if x["strategy"] == "cash-and-carry"]
+    assert (set(pinned) & selected) in (set(), selected)
+    pinned = [d for d in pinned if d not in selected]
     return registry, audit, manifest, pinned
 
 
@@ -93,6 +99,16 @@ def test_overlapping_pinned_day_fails():
 
 
 def test_cli_writes_review_only_evidence(tmp_path, monkeypatch):
+    registry, audit, manifest, pinned = registered()
+    corpus = json.loads(validator.CORPUS.read_text())
+    corpus["entries"] = [
+        e for e in corpus["entries"]
+        if e["strategy"] != "cash-and-carry"
+        or e["entry_market_date"] not in registry["selected_market_dates"]
+    ]
+    fixture = tmp_path / "corpus-before-approved-promotion.json"
+    fixture.write_text(json.dumps(corpus))
+    monkeypatch.setattr(validator, "CORPUS", fixture)
     monkeypatch.setattr("sys.argv", [
         str(SCRIPT), "--output", str(tmp_path / "proposal.json")
     ])

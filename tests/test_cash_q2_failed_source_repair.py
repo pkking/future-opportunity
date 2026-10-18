@@ -25,6 +25,9 @@ def frozen_inputs():
     corpus = json.loads(repair.CORPUS.read_text())
     pinned = [e["entry_market_date"] for e in corpus["entries"]
               if e["strategy"] == "cash-and-carry"]
+    selected = set(registration["selected_market_dates"])
+    assert (set(pinned) & selected) in (set(), selected)
+    pinned = [d for d in pinned if d not in selected]
     return wave, registration, member_audit, manifest, pinned
 
 
@@ -85,6 +88,16 @@ def test_repair_workflow_is_manual_only_and_enforces_bounded_cost():
 
 
 def test_cli_creates_reproducible_control_without_dispatch(tmp_path, monkeypatch):
+    wave, registration, audit, source, pinned = frozen_inputs()
+    corpus = json.loads(repair.CORPUS.read_text())
+    corpus["entries"] = [
+        e for e in corpus["entries"]
+        if e["strategy"] != "cash-and-carry"
+        or e["entry_market_date"] not in registration["selected_market_dates"]
+    ]
+    fixture = tmp_path / "corpus-before-approved-promotion.json"
+    fixture.write_text(json.dumps(corpus))
+    monkeypatch.setattr(repair, "CORPUS", fixture)
     op = tmp_path / "operator.json"
     control = tmp_path / "control.json"
     monkeypatch.setattr(sys, "argv", [
