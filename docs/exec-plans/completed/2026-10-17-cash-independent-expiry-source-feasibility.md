@@ -1,7 +1,7 @@
 # Cash-and-Carry independent futures expiry source feasibility
 
 Issue: #86
-Status: VERIFYING
+Status: COMPLETED
 Owner: agent
 Started: 2026-10-17
 
@@ -85,7 +85,7 @@ maturity trials.
       regression behavior.
 - [x] 4. Validate in final-head CI; collect one real source run
       and publish bounded raw-archive evidence/limitations.
-- [ ] 5. If at least one **independent** expiry shows verified
+- [x] 5. If at least one **independent** expiry shows verified
       entry/exit availability, create a new operator-approved
       pre-registration Issue/PR, not instant promotion.
 
@@ -215,17 +215,21 @@ This work requires its own Issue and acceptance plan;
 one source-probe date must not become a cherry-picked
 historical trading sample.
 
+## 2026-10-18 independent-expiry follow-through
+
+The separately governed next-stage work requested by this research plan was created as [Issue #95](https://github.com/pkking/future-opportunity/issues/95), completed and closed **after** reviewer/CI controls. The observed new contract expiry `BTC-USDT-250627` passed the original four-book source probe (run 39029586457), then the exact source population study (90/90 archives, only 89 chronologically entry-eligible), independent freeze of 12 blind dates, one approved 12-case source preparation (run 39079100154), separately approved one-date source repair (run 39091438598), 36/36 immutable per-case artifacts, and reviewed offline corpus promotion. Rejected cases were **not** swapped for profitable alternatives.
+
+Research-corpus [PR #113](https://github.com/pkking/future-opportunity/pull/113) merged at main `8e4c528167b5fbc40704782688d8645237441721`. Main [CI 39094900964](https://github.com/pkking/future-opportunity/actions/runs/39094900964) and [Historical Smoke 39094900926](https://github.com/pkking/future-opportunity/actions/runs/39094900926) succeeded. Independent [Issue #95 archival PR #115](https://github.com/pkking/future-opportunity/pull/115) merged at `df236155ee195870c701d6aa49e0dea181857dd8`, archival PR CI 39096383239 and Smoke 39096383146 passed, post-merge main CI 39096464284 succeeded.
+
+The original 2026Q3 candidate was unavailable at the frozen probe time and was **not** silently treated as a sixth settlement. The observable corpus is now Cash **66 market dates across five dated-futures expiries**; Funding remains **32**. Each selected Q2 entry day shares one fixed maturity and exit, so there are not 12 independent expiry events. Source probes and PnL are not equivalent to market-wide returns.
+
 ## Resume from here
-Full one-date four-leg L2 source verification is independently complete (run 39029586457). Reconcile this implementation PR's final-head CI/merge; create a separate, outcome-blind Q2 candidate population and pre-registration Issue. Do not treat the source-probe date as a selected profitable case or promote without frozen sampling provenance. Check main branch, current Cash expiry sets, and all available
-OKX historical source-probe helpers. Audit existing archival
-catalog/retention behavior and the ability to inspect truly
-new expiration contracts. Write the new fixed candidate
-cohort list **before** source requests or strategy-result inspection.
-Keep success, incomplete and unavailable probes distinct.
-Plan code changes and negative tests before extending
-read-only workflow; do not dispatch old 2025 Q3/Q4 as
-if that were a new independent expiry.
+
+ARCHIVED: Issue #86's goal of identifying and source-proving at least one new independent Cash expiry and preparing a separately governed acquisition proposal is fulfilled via closed Issue #95. Do not automatically run further Cash source jobs. Future expansion toward preferred 90 days or further maturity diversity requires **a new independently pre-registered research scope** with explicit source provenance and approval gates. Continue the separately active Funding market regime problem under Issue #85.
 
 ## Completion
-Pending real independent expiry source verification and
-subsequent reviewed workflow updates.
+
+Final commit: 8e4c528167b5fbc40704782688d8645237441721 (independent cohort successfully promoted in PR #113; follow-up archived with #95).
+CI run: https://github.com/pkking/future-opportunity/actions/runs/39094900964 (SUCCESS).
+Historical Smoke: https://github.com/pkking/future-opportunity/actions/runs/39094900926 (SUCCESS).
+Remaining unassessed items: Preferred Cash 90-day count is 24 short; five settlement cohorts do not imply market-wide profitability or truly independent entry outcomes; as-of-evidence caveats remain; Stage-2 economics gate disabled; MarginSafety and VenueExposure UNASSESSED; no live trading.
