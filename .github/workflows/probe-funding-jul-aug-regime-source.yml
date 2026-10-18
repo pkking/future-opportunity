@@ -1,0 +1,48 @@
+name: Probe Funding Jul-Aug Regime Source (Manual)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    name: Read-only Funding regime ${{ matrix.window_id }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        window_id:
+          - 2026-07-27-to-08-02
+          - 2026-08-10-to-16
+          - 2026-08-24-to-30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - name: Capture exact pre-registered window from read-only OKX endpoints
+        run: |
+          uv run python scripts/probe_funding_raw_regime_source.py \
+            --window-id "${{ matrix.window_id }}" \
+            --output-dir "artifacts/funding-jul-aug-regime-source/${{ matrix.window_id }}"
+      - name: Report source coverage and non-promotable evidence limitations
+        if: always()
+        shell: bash
+        run: |
+          echo "## Funding research only: ${{ matrix.window_id }}" >> "$GITHUB_STEP_SUMMARY"
+          if [[ -f "artifacts/funding-jul-aug-regime-source/${{ matrix.window_id }}/coverage-summary.json" ]]; then
+            jq -r '"Source: \(.source_sha256); quota met: \(.quota_fully_met); missing: \(.missing_days | length)"' \
+              "artifacts/funding-jul-aug-regime-source/${{ matrix.window_id }}/coverage-summary.json" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Missing or failed source capture. No acquisition permission." >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "Retrospective only. Historical publication as-of-entry UNVERIFIED; no corpus promotion." >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload immutable source research artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: funding-jul-aug-source-${{ matrix.window_id }}
+          path: artifacts/funding-jul-aug-regime-source/${{ matrix.window_id }}/
+          if-no-files-found: warn

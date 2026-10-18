@@ -25,25 +25,53 @@ CORPUS_INDEX = ROOT / "tests/fixtures/historical/corpus-index.json"
 BASE_URL = "https://www.okx.com"
 
 WINDOWS_PATH = ROOT / "docs/historical-acquisition-plans/funding-2026-sep-oct-regime-source-windows-v1.json"
+EXPANSION_WINDOWS_PATH = (
+    ROOT / "docs/historical-acquisition-plans/funding-2026-jul-aug-regime-source-windows-v1.json"
+)
 
-def registered_research_window(window_id: str) -> dict[str, Any]:
-    registry = json.loads(WINDOWS_PATH.read_text())
+# Reviewed selection commitments, independent of source values or strategy outcomes.
+# Changing either registry requires changing this contract and its regression tests.
+EXPECTED_RESEARCH_WINDOWS = {
+    "funding-2026-sep-oct-regime-coverage-v1": (
+        ("2026-09-01-to-07", "2026-09-01", "2026-09-07", "funding-2026-09-01to07-v1"),
+        ("2026-09-15-to-21", "2026-09-15", "2026-09-21", "funding-2026-09-15to21-v1"),
+        ("2026-10-01-to-07", "2026-10-01", "2026-10-07", "funding-2026-10-01to07-v1"),
+    ),
+    "funding-2026-jul-aug-regime-coverage-v1": (
+        ("2026-07-27-to-08-02", "2026-07-27", "2026-08-02", "funding-2026-07-27to08-02-v1"),
+        ("2026-08-10-to-16", "2026-08-10", "2026-08-16", "funding-2026-08-10to16-v1"),
+        ("2026-08-24-to-30", "2026-08-24", "2026-08-30", "funding-2026-08-24to30-v1"),
+    ),
+}
+
+
+def _validated_research_windows(path: Path) -> list[dict[str, Any]]:
+    registry = json.loads(path.read_text())
     if registry.get("schema_version") != 1 or registry.get("research_only") is not True:
         raise ValueError("invalid Funding source window registry")
-    if not (registry.get("outcome_blind") is True
-            and registry.get("selection_before_source_inspection") is True
-            and registry.get("acquisition_approved") is False
-            and registry.get("promotion_approved") is False
-            and registry.get("volatility_threshold_bps") == "100"
-            and registry.get("request_per_regime") == 2):
+    if not (
+        registry.get("outcome_blind") is True
+        and registry.get("selection_before_source_inspection") is True
+        and registry.get("acquisition_approved") is False
+        and registry.get("promotion_approved") is False
+        and registry.get("volatility_threshold_bps") == "100"
+        and registry.get("request_per_regime") == 2
+    ):
         raise ValueError("Funding source window registry governance mismatch")
+    study_id = registry.get("study_id")
+    expected = EXPECTED_RESEARCH_WINDOWS.get(study_id)
+    if expected is None:
+        raise ValueError("unregistered Funding source study ID")
     windows = registry.get("candidate_windows")
     if not isinstance(windows, list) or len(windows) != 3:
         raise ValueError("Funding research requires three frozen windows")
     seen_days: set[int] = set()
     ids: set[str] = set()
+    tuples: list[tuple[str, str, str, str]] = []
     for window in windows:
-        if not isinstance(window, dict) or set(window) != {"id", "start_date", "end_date", "seed"}:
+        if not isinstance(window, dict) or set(window) != {
+            "id", "start_date", "end_date", "seed"
+        }:
             raise ValueError("unexpected Funding window fields")
         start = date.fromisoformat(window["start_date"])
         end = date.fromisoformat(window["end_date"])
@@ -56,11 +84,32 @@ def registered_research_window(window_id: str) -> dict[str, Any]:
             raise ValueError("Funding research seed must be fixed")
         ids.add(window["id"])
         seen_days.update(days)
-    matches = [w for w in windows if w["id"] == window_id]
+        tuples.append((
+            window["id"], window["start_date"], window["end_date"], window["seed"]
+        ))
+    if tuple(tuples) != expected:
+        raise ValueError("Funding frozen windows, dates, or seeds drifted")
+    return windows
+
+
+def registered_research_window(window_id: str) -> dict[str, Any]:
+    all_windows: list[dict[str, Any]] = []
+    seen_days: set[int] = set()
+    seen_ids: set[str] = set()
+    for path in (WINDOWS_PATH, EXPANSION_WINDOWS_PATH):
+        for window in _validated_research_windows(path):
+            start = date.fromisoformat(window["start_date"])
+            end = date.fromisoformat(window["end_date"])
+            days = set(range(start.toordinal(), end.toordinal() + 1))
+            if window["id"] in seen_ids or seen_days & days:
+                raise ValueError("duplicate or overlapping Funding study windows")
+            seen_ids.add(window["id"])
+            seen_days.update(days)
+            all_windows.append(window)
+    matches = [w for w in all_windows if w["id"] == window_id]
     if len(matches) != 1:
         raise ValueError("unknown Funding window ID")
     return matches[0]
-
 
 
 def _get_public_api(

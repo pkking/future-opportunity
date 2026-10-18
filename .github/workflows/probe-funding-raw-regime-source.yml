@@ -2,11 +2,6 @@ name: Probe Funding Raw Regime Source
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - "src/future_opportunity/backtest/funding_raw_feature_lineage.py"
-      - "scripts/probe_funding_raw_regime_source.py"
-      - ".github/workflows/probe-funding-raw-regime-source.yml"
 
 permissions:
   contents: read
