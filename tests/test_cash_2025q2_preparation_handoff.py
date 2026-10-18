@@ -16,6 +16,7 @@ def test_offline_handoff_does_not_dispatch():
         x["entry_market_date"]
         for x in json.loads(CORPUS.read_text())["entries"]
         if x["strategy"] == "cash-and-carry"
+        and x["entry_market_date"] not in json.loads(REGISTRY.read_text())["selected_market_dates"]
     ]
     report = validate_handoff(
         json.loads(WAVE.read_text()),
@@ -40,6 +41,7 @@ def test_mutated_future_id_is_rejected():
         x["entry_market_date"]
         for x in json.loads(CORPUS.read_text())["entries"]
         if x["strategy"] == "cash-and-carry"
+        and x["entry_market_date"] not in json.loads(REGISTRY.read_text())["selected_market_dates"]
     ]
     with pytest.raises(ValueError):
         validate_handoff(
@@ -63,6 +65,7 @@ def test_selection_source_digest_cannot_drift():
         x["entry_market_date"]
         for x in json.loads(CORPUS.read_text())["entries"]
         if x["strategy"] == "cash-and-carry"
+        and x["entry_market_date"] not in json.loads(REGISTRY.read_text())["selected_market_dates"]
     ]
     with pytest.raises(ValueError):
         validate_handoff(
