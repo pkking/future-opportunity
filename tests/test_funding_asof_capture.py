@@ -15,6 +15,10 @@ SCRIPT = ROOT / "scripts/capture_funding_preentry_source.py"
 def _base():
     raw = make_capture()
     raw["start_date"] = raw["end_date"] = "2026-09-15"
+    # Simulated observation at UTC 00:10 cannot include later settled events
+    # or future daily candles; keep only genuine prior source rows.
+    raw["funding_response"]["data"] = raw["funding_response"]["data"][:1]
+    raw["spot_response"]["data"] = raw["spot_response"]["data"][:8]
     raw["captured_at"] = "2026-09-15T00:10:00+00:00"
     return raw, {
         "entry_at": "2026-09-15T00:15:00+00:00",
@@ -77,6 +81,22 @@ def test_rejects_historical_relabeling_and_source_missing():
     raw, timing = _base()
     raw["extra_profitability"] = 123
     with pytest.raises(ValueError, match="schema"):
+        validate_preentry_source(raw, timing)
+
+
+def test_future_funding_event_and_future_confirmed_candle_fail_closed():
+    raw, timing = _base()
+    row = dict(raw["funding_response"]["data"][0])
+    row["fundingTime"] = "1790006400000"
+    raw["funding_response"]["data"].append(row)
+    with pytest.raises(ValueError, match="future settled funding"):
+        validate_preentry_source(raw, timing)
+
+    raw, timing = _base()
+    row = list(raw["spot_response"]["data"][-1])
+    row[0] = "1789516800000"
+    raw["spot_response"]["data"].append(row)
+    with pytest.raises(ValueError, match="future confirmed daily candle"):
         validate_preentry_source(raw, timing)
 
 
