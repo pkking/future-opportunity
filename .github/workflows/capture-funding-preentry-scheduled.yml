@@ -1,0 +1,56 @@
+name: Capture Prospective Funding Pre-Entry Source (Scheduled)
+
+# GitHub's schedule is best effort: start away from minute 00, then warm up.
+# Do not accept any run that misses the actual 00:00..00:15 UTC HTTP window.
+on:
+  schedule:
+    - cron: '37 23 * * *'
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+
+concurrency:
+  group: funding-preentry-source-scheduled
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    # An operator re-run of a stale scheduled run must never count as a
+    # fresh independent scheduled observation; use the manual workflow instead.
+    if: github.run_attempt == 1
+    name: Observe a genuine UTC entry day or fail closed
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - name: Wait for UTC 00:00 or reject a delayed/dropped schedule
+        run: |
+          uv run python scripts/wait_for_funding_preentry_window.py \
+            --output-dir artifacts/prospective-funding
+      - name: Capture only genuine public pre-entry OKX responses
+        run: |
+          uv run python scripts/capture_funding_preentry_source.py \
+            --output-dir artifacts/prospective-funding
+      - name: Attest original raw source bytes (GitHub provenance, not OKX signature)
+        if: success()
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: artifacts/prospective-funding/raw-api-capture.json
+      - name: Retain successful raw sources or an explicit failure receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prospective-funding-preentry-source
+          path: artifacts/prospective-funding/
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Explain missing evidence and publication limits
+        if: always()
+        run: |
+          echo "Best-effort cron; a missed or late window is UNASSESSED, not a historical zero." >> "$GITHUB_STEP_SUMMARY"
+          echo "GitHub-signed bytes do not independently establish OKX publication timing." >> "$GITHUB_STEP_SUMMARY"
+          echo "No promotion, acquisition, economic thresholds or exchange orders are authorized." >> "$GITHUB_STEP_SUMMARY"
