@@ -24,6 +24,9 @@ def inputs():
     corpus = json.loads(control.CORPUS.read_text())
     dates = [entry["entry_market_date"] for entry in corpus["entries"]
              if entry["strategy"] == "cash-and-carry"]
+    selected = set(registry["selected_market_dates"])
+    assert (set(dates) & selected) in (set(), selected)
+    dates = [d for d in dates if d not in selected]
     return registry, member_audit, manifest, dates
 
 
@@ -72,6 +75,16 @@ def test_invalid_registration_digest_fails_closed():
 
 
 def test_cli_replay_writes_evidence_without_acquisition(tmp_path, monkeypatch):
+    registry, audit, manifest, pinned = inputs()
+    corpus = json.loads(control.CORPUS.read_text())
+    corpus["entries"] = [
+        e for e in corpus["entries"]
+        if e["strategy"] != "cash-and-carry"
+        or e["entry_market_date"] not in registry["selected_market_dates"]
+    ]
+    fixture = tmp_path / "corpus-before-approved-promotion.json"
+    fixture.write_text(json.dumps(corpus))
+    monkeypatch.setattr(control, "CORPUS", fixture)
     monkeypatch.setattr(sys, "argv", [str(p), "--output", str(tmp_path / "control.json")])
     control.main()
     report = json.loads((tmp_path / "control.json").read_text())
