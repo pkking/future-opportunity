@@ -246,9 +246,69 @@ This slice addresses only the **time authenticity** blocker of Issue #85. Histor
 - Source-only implementation reuses existing anti-lookahead settled-funding and eight-closed-daily-candle reconstruction and 100bps research planner. Pure validator rejects raw responses with any future-dated event or prematurely confirmed daily candle. Output always has `point_in_time_publication_verified=false` and acquisition/promotion disabled until independent provenance assessment.
 - Old retrospective July/August samples **cannot be upgraded** to as-of historical publication by this future observation capability. Their previously audited 21/21 feature rows, unfilled negative/low cell, and full source hashes remain unchanged. Funding 32/Cash 66 corpus, Stage-2 economic gate disabled, account MarginSafety/VenueExposure UNASSESSED, no live trading.
 
+## 2026-10-18 offline prospective evidence audit readiness (Issue #85)
+
+**Engineering scope, not evidence completion.** The original prospective raw capture has
+not been run. A reviewer currently lacks a small repeatable offline entrypoint to
+check an original downloaded Actions ZIP against an independently recorded archive
+digest and re-run the exact pre-entry feature validation. This slice makes a future
+capture auditable without granting any new source, acquisition or promotion rights.
+
+Acceptance criteria:
+- [x] Purely offline auditor accepts only the three original successful files,
+      an independently supplied exact ZIP SHA-256 and an explicit UTC entry day;
+      exact raw bytes and source-reconstruction hashes are reported separately.
+- [x] Fail closed for wrong original ZIP digest, missing/extra/duplicate ZIP files,
+      oversized members, incorrect day, altered timing, altered analysis, late
+      source and positive acquisition/verified-publication claims.
+- [x] Document **separate** GitHub/Sigstore verification and independent run-time
+      review. Internal ZIP checks do NOT authenticate the exchange, runner clock
+      or actual as-of dissemination; returned status remains UNASSESSED.
+- [x] PR-head CI (static/code/API/E2E/plan) and Historical Smoke succeeded,
+      with no scheduled calls, additional historical dates or trading permissions.
+
+Implementation: add one standalone stdlib ZIP audit script reusing the existing
+strict backtest validator, an offline test suite and a review procedure.
+Verification: `uv run pytest tests/test_funding_preentry_source_audit.py -v`,
+`uv run ruff check .`, repository CI and Historical Backtest Smoke.
+
+Evidence checkpoint: main `ea69203deb6b220e7bf2d851cc63d9b76f38c2fd`
+([CI 39112320029](https://github.com/pkking/future-opportunity/actions/runs/39112320029)
+SUCCESS), no open PR at start, Issue #85 OPEN / BLOCKED_EVIDENCE.
+The only missing external fact remains independently authenticated future-day
+source publication. The audit cannot retroactively prove July/August data timing.
+
+## 2026-10-18 implementation checkpoint — awaiting PR evidence
+
+The review branch `agent/funding-preentry-offline-audit` contains the offline audit script,
+standalone negative tests and the manual provenance-verification procedure.
+The check accepts only original ZIP bytes plus independently supplied digest
+and UTC day, and emits `offline_replay_verified_only`; it does not invoke
+OKX, GitHub or the exchange trading API. **CI not yet confirmed** as of this
+checkpoint; the open Issue #85 retains its external evidence blocker.
+
+## 2026-10-18 offline-audit implementation verification (PR #123)
+
+- [PR #123](https://github.com/pkking/future-opportunity/pull/123)
+  initial tested head `b23f7f06bb926128bf02ae65248275684d6c5e86`:
+  [CI 39113460207](https://github.com/pkking/future-opportunity/actions/runs/39113460207)
+  five checks **SUCCESS**: static architecture, code-level including
+  `tests/test_funding_preentry_source_audit.py`, API, E2E and agent-plan;
+  [Historical Backtest Smoke 39113460257](https://github.com/pkking/future-opportunity/actions/runs/39113460257)
+  **SUCCESS** on the same SHA.
+- Offline ZIP replay code, fail-closed tests and separate Sigstore review
+  instructions landed on the review branch. No true pre-entry source has
+  been captured, independently verified, or retrospectively authenticated.
+- This documentation checkpoint itself requires a **new final-head CI and
+  Historical Smoke** before the PR may merge. Record their final run/commit
+  against PR #123 or the Issue thread before closing this engineering slice.
+- Status returns to `BLOCKED_EVIDENCE` because the Issue's source-authenticity
+  and missing negative/low regime evidence are still unresolved. No acquisition,
+  corpus promotion, numerical economics gate or live trade is approved.
+
 ## Resume from here
 
-**BLOCKED_EVIDENCE**, not a code or CI blocker. The prospective capture workflow is ready, but no independently authenticated pre-entry response exists. The next evidence action is a **future UTC-day operator-initiated** `workflow_dispatch` at an actual safe pre-entry moment, then audit the original raw Actions ZIP, GitHub/Sigstore attestation, timestamps and source completeness without inferring exchange-authenticated publication. An automatically timed source collector is **not enabled**, because GitHub cron delivery is not exact and the previous read-only workflows are intentionally manual. Do not dispatch historical probes again, alter four-regime threshold/seed or fill the missing negative+low bucket from economic outcomes. Issue #85 remains OPEN pending additional genuine source evidence and independent future pre-registration as appropriate; no acquisition/promotion or live-trading approval.
+**BLOCKED_EVIDENCE** after CI-validated offline-audit PR #123. Before merge, verify its final documentation-head checks; after merge, return to future-day source authentication. The prospective capture workflow is ready, but no independently authenticated pre-entry response exists. The next evidence action is a **future UTC-day operator-initiated** `workflow_dispatch` at an actual safe pre-entry moment, then audit the original raw Actions ZIP, GitHub/Sigstore attestation, timestamps and source completeness without inferring exchange-authenticated publication. An automatically timed source collector is **not enabled**, because GitHub cron delivery is not exact and the previous read-only workflows are intentionally manual. Do not dispatch historical probes again, alter four-regime threshold/seed or fill the missing negative+low bucket from economic outcomes. Issue #85 remains OPEN pending additional genuine source evidence and independent future pre-registration as appropriate; no acquisition/promotion or live-trading approval.
 
 ## Completion
 

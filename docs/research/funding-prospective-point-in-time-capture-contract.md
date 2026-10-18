@@ -32,3 +32,45 @@ A GitHub schedule cannot substitute for this clock gate; GitHub documents delaye
 - Missing negative-Funding + low volatility is still a real coverage gap; no backfilled sample can be manufactured.
 - Historical corpus remains Funding 32, Cash 66; risk/account MarginSafety and VenueExposure UNASSESSED.
 - No new automatic external API polling, experimental ROI targets, capital-policy changes, sample substitutions, authenticated exchange mutations or live orders.
+
+## Offline verification of a prospective artifact (post-capture only)
+
+The offline audit tool does **not** trigger data collection or attest to when OKX
+actually published an event. Start from the **original ZIP bytes** downloaded
+from a future, genuine UTC-day source workflow run, and independently obtain
+the expected artifact ZIP digest from the GitHub Actions artifact metadata.
+Do not substitute a repacked directory or calculate the expected digest only
+from the file being inspected (that would make identity verification circular).
+
+```bash
+uv run python scripts/audit_funding_preentry_source_artifact.py \
+  --zip original-prospective-funding-preentry-source.zip \
+  --expected-zip-sha256 "<independently obtained original artifact digest>" \
+  --entry-date "YYYY-MM-DD"
+```
+
+This fail-closed step requires exactly the three successful files, enforces
+bounded archive members and UTC timing, reruns the original strict Funding
+feature reconstruction, and requires exact agreement with the saved study
+result. It reports three **different** digests: the original ZIP SHA-256,
+the raw JSON file byte SHA-256, and the canonical source-content SHA-256.
+`offline_replay_verified_only` is **not** source authentication.
+
+As a distinct manual verification, extract the original
+`raw-api-capture.json` without modifying its bytes and use the official CLI:
+
+```bash
+gh attestation verify raw-api-capture.json \
+  --repo pkking/future-opportunity --format json
+```
+
+Inspect the verified provenance subject digest against the audit's
+`raw_file_sha256`, and inspect its repository/workflow/ref/commit identity.
+Separately compare original Actions run metadata, job/step logs, artifact
+creation time and recorded HTTP request/receive time. An attestation verified
+later does **not** prove that the OKX response was available before the
+claimed entry, and a local clock timestamp is not a trusted timestamp.
+A missing signature, mismatch or ambiguous clock/source timeline leaves
+`point_in_time_publication_verified=false` and the claim **UNASSESSED**.
+Never use this audit to promote a historical case, fill a frozen regime quota,
+approve economics or enable live orders.
