@@ -32,6 +32,7 @@ def test_raw_funding_probe_is_read_only_and_source_windows_precommitted() -> Non
         assert window["id"] in workflow
         assert probe.registered_research_window(window["id"]) == window
     assert "workflow_dispatch:" in workflow
+    assert "push:" not in workflow
     assert "contents: read" in workflow
     assert "fail-fast: false" in workflow
     assert "matrix.window_id" in workflow
