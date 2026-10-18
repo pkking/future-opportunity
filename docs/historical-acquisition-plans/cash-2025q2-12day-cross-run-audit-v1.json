@@ -1,0 +1,378 @@
+{
+  "schema_version": 1,
+  "evidence_type": "cash_2025q2_cross_run_complete_research_audit_index",
+  "purpose": "Immutable catalog of source-preparation research evidence; not a pinned corpus fixture, not a profitability or live-trading approval",
+  "contract": "BTC-USDT-250627",
+  "exit_at": "2025-06-26T00:15:00+00:00",
+  "expiry_at": "2025-06-27T08:00:00+00:00",
+  "registration_policy": "availability-even-rank-v1",
+  "registered_entry_date_count": 12,
+  "source_registry_population_size": 89,
+  "selection_evidence_sha256": "9bd08184a3a0c2487ba57087effdf0e8231db45fb4bf10226290627ed2990b37",
+  "selection_control": {
+    "run_id": 39050630845,
+    "artifact_id": 12106828444,
+    "zip_sha256": "sha256:8f29acfacaa71d1e5a59c0a0b28eef43257e6613c5cfa4806fea4740c9e36"
+  },
+  "acquisition_runs": [
+    {
+      "run_id": 39079100154,
+      "head_sha": "3b2c9660bf0b22827a2c35e5d80b9619f481281a",
+      "run_conclusion": "failure",
+      "retained_complete_cases": 11,
+      "failed_date": "2025-04-09",
+      "cause": "entry spot raw source exceeds previous 600 MiB safety cap"
+    },
+    {
+      "run_id": 39091438598,
+      "head_sha": "6600b330fd8bb78f3385b89227b7c06eb0749c72",
+      "run_conclusion": "success",
+      "retained_complete_cases": 1,
+      "repair_date": "2025-04-09"
+    }
+  ],
+  "audit_report": {
+    "file_name": "cash-q2-complete-12case-independent-audit.json",
+    "sha256": "00ac19aa623467d0a1985c1ca9bf7f52a0e0ae46cd6a72374a16d6c68f80901c",
+    "source_note": "Downloaded and independently hash-checked all 36 normalized/compact/actuals artifact ZIPs; raw daily source archives themselves were not independently redownloaded; their recorded source digests and precise .data archive member provenance were audited."
+  },
+  "results": {
+    "prepared_compact_actuals_artifact_count": 36,
+    "complete_case_count": 12,
+    "qualified_case_count": 9,
+    "unqualified_case_count": 3,
+    "missing_case_count": 0,
+    "max_book_staleness_ms": 164,
+    "conditional_mean_paper_realized_net_return_executed_only": "0.00225050806729944181109750239",
+    "conditional_return_warning": "Only 9 qualified paper executions have realized returns; 3 strategy-rejected dates have null returns. All 12 share the same expiry and fixed June 26 exit, and are not independent contract cohorts."
+  },
+  "policy_boundaries": {
+    "corpus_promotion_approved": false,
+    "stage2_economics_gate_activated": false,
+    "margin_safety_fully_assessed": false,
+    "venue_exposure_fully_assessed": false,
+    "live_trading_enabled": false,
+    "baseline_cash_cases": 54,
+    "baseline_funding_cases": 32
+  },
+  "cases": [
+    {
+      "entry_market_date": "2025-04-01",
+      "source_run_id": 39079100154,
+      "qualification": "qualified",
+      "qualification_reasons": [],
+      "realized_paper_net_return": "0.002947663987405569405898678204",
+      "return_complete": true,
+      "risk_scope_note": "MarginSafety and VenueExposure unassessed",
+      "artifacts": {
+        "compact": {
+          "id": 12118730123,
+          "name": "okx-btc-cash-and-carry-compact-2025-04-01-BTC-USDT-250627-39079100154",
+          "zip_sha256": "sha256:25a6b58148005370232b9f0d1d98c7a637c2d9046001cafb91eb1e867d4e43b0"
+        },
+        "prepared": {
+          "id": 12118655473,
+          "name": "okx-btc-cash-and-carry-2025-04-01-BTC-USDT-250627-39079100154",
+          "zip_sha256": "sha256:2fc09b8f710ebb74bfe9e7acfbfcbfc586cce3ec85473c67cd950e30c8b715e3"
+        },
+        "actuals": {
+          "id": 12118571277,
+          "name": "okx-btc-cash-and-carry-actuals-2025-04-01-BTC-USDT-250627-39079100154",
+          "zip_sha256": "sha256:63d68ba454a2023f3f32084e7a0fbfa41919f5a165395726a78105fe3164e654"
+        }
+      }
+    },
+    {
+      "entry_market_date": "2025-04-09",
+      "source_run_id": 39091438598,
+      "qualification": "qualified",
+      "qualification_reasons": [],
+      "realized_paper_net_return": "0.003519902531521683005931941343",
+      "return_complete": true,
+      "risk_scope_note": "MarginSafety and VenueExposure unassessed",
+      "artifacts": {
+        "compact": {
+          "id": 12122833427,
+          "name": "okx-btc-cash-and-carry-compact-2025-04-09-BTC-USDT-250627-39091438598",
+          "zip_sha256": "sha256:aa021128f583c610cee18fffd012c78adbff9a7d44acdd8bbd797401a024e63b"
+        },
+        "prepared": {
+          "id": 12122683921,
+          "name": "okx-btc-cash-and-carry-2025-04-09-BTC-USDT-250627-39091438598",
+          "zip_sha256": "sha256:6f8024bc2c70b437af4ff7c46fcbdea39a4dc4447caf235e016137f8a8c36dfa"
+        },
+        "actuals": {
+          "id": 12122554018,
+          "name": "okx-btc-cash-and-carry-actuals-2025-04-09-BTC-USDT-250627-39091438598",
+          "zip_sha256": "sha256:b84a8eb3cb04fe7693ba846ed7f8e7c92ce9fd9290648d3e26571a62fb2c1849"
+        }
+      }
+    },
+    {
+      "entry_market_date": "2025-04-16",
+      "source_run_id": 39079100154,
+      "qualification": "qualified",
+      "qualification_reasons": [],
+      "realized_paper_net_return": "0.002707426536757355545032017487",
+      "return_complete": true,
+      "risk_scope_note": "MarginSafety and VenueExposure unassessed",
+      "artifacts": {
+        "prepared": {
+          "id": 12118466684,
+          "name": "okx-btc-cash-and-carry-2025-04-16-BTC-USDT-250627-39079100154",
+          "zip_sha256": "sha256:a9e2ba787c4aa024cbe0d0f6cbe759e8760718076b36abbae44d49602fb947bd"
+        },
+        "actuals": {
+          "id": 12117289488,
+          "name": "okx-btc-cash-and-carry-actuals-2025-04-16-BTC-USDT-250627-39079100154",
+          "zip_sha256": "sha256:cb7d10d234c6d109aa4d837c0ba36132da35f49dd44edbb718a900632156b98c"
+        },
+        "compact": {
+          "id": 12117249665,
+          "name": "okx-btc-cash-and-carry-compact-2025-04-16-BTC-USDT-250627-39079100154",
+          "zip_sha256": "sha256:15d733fc4188853946aae8fcdd796c9816de6045e6d2ff1d4aa4df8bbc449eb2"
+        }
+      }
+    },
+    {
+      "entry_market_date": "2025-04-23",
+      "source_run_id": 39079100154,
+      "qualification": "qualified",
+      "qualification_reasons": [],
+      "realized_paper_net_return": "0.00278369138119308988094224258",
+      "return_complete": true,
+      "risk_scope_note": "MarginSafety and VenueExposure unassessed",
+      "artifacts": {
+        "compact": {
+          "id": 12118625863,
+          "name": "okx-btc-cash-and-carry-compact-2025-04-23-BTC-USDT-250627-39079100154",
+          "zip_sha256": "sha256:2ccd103f218f8749b2bcc06a03ea42be018bd8f6581e771c4e9a25dc20879a3a"
+        },
+        "prepared": {
+          "id": 12118487936,
+          "name": "okx-btc-cash-and-carry-2025-04-23-BTC-USDT-250627-39079100154",
+          "zip_sha256": "sha256:ffd687fc63af2a17fab54693f1516cc051a9294fcb540174e9b71f8381ffc71b"
+        },
+        "actuals": {
+          "id": 12118023530,
+          "name": "okx-btc-cash-and-carry-actuals-2025-04-23-BTC-USDT-250627-39079100154",
+          "zip_sha256": "sha256:3bff95c580f3fb632b5cf586872cf5dfc68f8667126a0fa11721005eaccee6bc"
+        }
+      }
+    },
+    {
+      "entry_market_date": "2025-05-01",
+      "source_run_id": 39079100154,
+      "qualification": "qualified",
+      "qualification_reasons": [],
+      "realized_paper_net_return": "0.002845556352428022448106039961",
+      "return_complete": true,
+      "risk_scope_note": "MarginSafety and VenueExposure unassessed",
+      "artifacts": {
+        "prepared": {
+          "id": 12118341419,
+          "name": "okx-btc-cash-and-carry-2025-05-01-BTC-USDT-250627-39079100154",
+          "zip_sha256": "sha256:9b84406ad34d02047ddba951f4eb729c789662c47a699f9a6ef196d992c51336"
+        },
+        "actuals": {
+          "id": 12118002305,
+          "name": "okx-btc-cash-and-carry-actuals-2025-05-01-BTC-USDT-250627-39079100154",
+          "zip_sha256": "sha256:733de38790b012087266e6dc38a568903cb53f677f01d8a2664f49e07338f8ca"
+        },
+        "compact": {
+          "id": 12117793103,
+          "name": "okx-btc-cash-and-carry-compact-2025-05-01-BTC-USDT-250627-39079100154",
+          "zip_sha256": "sha256:3158394b564ffb76f72e4dfb2886f4e97ab417672bc33d0664b500f6eb1cec59"
+        }
+      }
+    },
+    {
+      "entry_market_date": "2025-05-08",
+      "source_run_id": 39079100154,
+      "qualification": "qualified",
+      "qualification_reasons": [],
+      "realized_paper_net_return": "0.001300802503535357554505338305",
+      "return_complete": true,
+      "risk_scope_note": "MarginSafety and VenueExposure unassessed",
+      "artifacts": {
+        "prepared": {
+          "id": 12118397238,
+          "name": "okx-btc-cash-and-carry-2025-05-08-BTC-USDT-250627-39079100154",
+          "zip_sha256": "sha256:856199dc0d714c05b816d538cfec1538b3e22c69c648d74f716e5d9ac28a61f7"
+        },
+        "compact": {
+          "id": 12118267672,
+          "name": "okx-btc-cash-and-carry-compact-2025-05-08-BTC-USDT-250627-39079100154",
+          "zip_sha256": "sha256:dc1dee9171134ebe1e9891e05ff59bf22c7ee04846e15dabd45e050327e7b900"
+        },
+        "actuals": {
+          "id": 12118202747,
+          "name": "okx-btc-cash-and-carry-actuals-2025-05-08-BTC-USDT-250627-39079100154",
+          "zip_sha256": "sha256:29dfc519cc5c436b1ba12e86a60f7b4771ef75b27f3cd5f56b1ff9b0c13305a3"
+        }
+      }
+    },
+    {
+      "entry_market_date": "2025-05-16",
+      "source_run_id": 39079100154,
+      "qualification": "qualified",
+      "qualification_reasons": [],
+      "realized_paper_net_return": "0.001555388244843233480232820779",
+      "return_complete": true,
+      "risk_scope_note": "MarginSafety and VenueExposure unassessed",
+      "artifacts": {
+        "actuals": {
+          "id": 12118146893,
+          "name": "okx-btc-cash-and-carry-actuals-2025-05-16-BTC-USDT-250627-39079100154",
+          "zip_sha256": "sha256:bc347258921c73c395b4ea7174170375e992459ca5574d0c81087f38db9ca9a4"
+        },
+        "prepared": {
+          "id": 12117982239,
+          "name": "okx-btc-cash-and-carry-2025-05-16-BTC-USDT-250627-39079100154",
+          "zip_sha256": "sha256:8d5130613fb5f5b83a2230ba16ba22a7653e5b30c82f8cef1652dcc6198a0ab2"
+        },
+        "compact": {
+          "id": 12117568864,
+          "name": "okx-btc-cash-and-carry-compact-2025-05-16-BTC-USDT-250627-39079100154",
+          "zip_sha256": "sha256:bfd2dd41921974f242607495b0161d6219064f6dfbda391cbc8b65d3b27a8c89"
+        }
+      }
+    },
+    {
+      "entry_market_date": "2025-05-23",
+      "source_run_id": 39079100154,
+      "qualification": "qualified",
+      "qualification_reasons": [],
+      "realized_paper_net_return": "0.001949475215851492627103915792",
+      "return_complete": true,
+      "risk_scope_note": "MarginSafety and VenueExposure unassessed",
+      "artifacts": {
+        "prepared": {
+          "id": 12118102147,
+          "name": "okx-btc-cash-and-carry-2025-05-23-BTC-USDT-250627-39079100154",
+          "zip_sha256": "sha256:99c95544915fe855948581f03b77d2e652d0b202755c6500db707c12cc922c53"
+        },
+        "actuals": {
+          "id": 12117504145,
+          "name": "okx-btc-cash-and-carry-actuals-2025-05-23-BTC-USDT-250627-39079100154",
+          "zip_sha256": "sha256:82d7ac3557eaadc6467610d90473ea5befc5e5cd43f642dd38b0e9e222d2f28f"
+        },
+        "compact": {
+          "id": 12117479125,
+          "name": "okx-btc-cash-and-carry-compact-2025-05-23-BTC-USDT-250627-39079100154",
+          "zip_sha256": "sha256:a1acaa4f2d549293c83d368368e3f778adeab493eaeca5e6b058ed257c179ef6"
+        }
+      }
+    },
+    {
+      "entry_market_date": "2025-05-31",
+      "source_run_id": 39079100154,
+      "qualification": "qualified",
+      "qualification_reasons": [],
+      "realized_paper_net_return": "0.000644665852159172352124527062",
+      "return_complete": true,
+      "risk_scope_note": "MarginSafety and VenueExposure unassessed",
+      "artifacts": {
+        "actuals": {
+          "id": 12117688642,
+          "name": "okx-btc-cash-and-carry-actuals-2025-05-31-BTC-USDT-250627-39079100154",
+          "zip_sha256": "sha256:d9bf16cd88de3cb6752b6cd33841b3aff59f79b9e259dfd81147f49e374bb7e6"
+        },
+        "compact": {
+          "id": 12117524060,
+          "name": "okx-btc-cash-and-carry-compact-2025-05-31-BTC-USDT-250627-39079100154",
+          "zip_sha256": "sha256:b2750d6cf3f241b20d6bd1ea69f5bc4e8d6dcaea8a1f85e8663b16ac6d70e335"
+        },
+        "prepared": {
+          "id": 12117364405,
+          "name": "okx-btc-cash-and-carry-2025-05-31-BTC-USDT-250627-39079100154",
+          "zip_sha256": "sha256:e65f80de0f76eeec7a8315c5d7d725ac80abb719d4d4c2e97855e7829b425c93"
+        }
+      }
+    },
+    {
+      "entry_market_date": "2025-06-07",
+      "source_run_id": 39079100154,
+      "qualification": "unqualified",
+      "qualification_reasons": [
+        "expected_net_return_not_positive"
+      ],
+      "realized_paper_net_return": null,
+      "return_complete": false,
+      "risk_scope_note": "strategy rejected before simulated execution",
+      "artifacts": {
+        "actuals": {
+          "id": 12118371589,
+          "name": "okx-btc-cash-and-carry-actuals-2025-06-07-BTC-USDT-250627-39079100154",
+          "zip_sha256": "sha256:4848747f42aadf6cf373d3d355ceb700cc7f1dd6b21810519a6ea2eb2b455f2f"
+        },
+        "prepared": {
+          "id": 12118097104,
+          "name": "okx-btc-cash-and-carry-2025-06-07-BTC-USDT-250627-39079100154",
+          "zip_sha256": "sha256:30a4438a8fca557acfc591e8b8d01d41f3aa4d7f65241365569f74632389769e"
+        },
+        "compact": {
+          "id": 12118057360,
+          "name": "okx-btc-cash-and-carry-compact-2025-06-07-BTC-USDT-250627-39079100154",
+          "zip_sha256": "sha256:e1cdf08e2543486d8f0d67b2dbe98cbe04f73935d32406077dc166cda769b441"
+        }
+      }
+    },
+    {
+      "entry_market_date": "2025-06-14",
+      "source_run_id": 39079100154,
+      "qualification": "unqualified",
+      "qualification_reasons": [
+        "expected_net_return_not_positive"
+      ],
+      "realized_paper_net_return": null,
+      "return_complete": false,
+      "risk_scope_note": "strategy rejected before simulated execution",
+      "artifacts": {
+        "prepared": {
+          "id": 12118476367,
+          "name": "okx-btc-cash-and-carry-2025-06-14-BTC-USDT-250627-39079100154",
+          "zip_sha256": "sha256:23f3b98a9f33c5da0291856048d6ce4b2abd4bfb44fded3449ee598ace7f6a87"
+        },
+        "compact": {
+          "id": 12117628742,
+          "name": "okx-btc-cash-and-carry-compact-2025-06-14-BTC-USDT-250627-39079100154",
+          "zip_sha256": "sha256:c6c5f320fc130ec9d5c9bb10424da16a67005f93e624f495bca3214b79e09848"
+        },
+        "actuals": {
+          "id": 12117484119,
+          "name": "okx-btc-cash-and-carry-actuals-2025-06-14-BTC-USDT-250627-39079100154",
+          "zip_sha256": "sha256:54d43aa592b3d4940226b7dc58c2f0407809476f5ca71b3d790dd027c2ad6c35"
+        }
+      }
+    },
+    {
+      "entry_market_date": "2025-06-22",
+      "source_run_id": 39079100154,
+      "qualification": "unqualified",
+      "qualification_reasons": [
+        "expected_net_return_not_positive"
+      ],
+      "realized_paper_net_return": null,
+      "return_complete": false,
+      "risk_scope_note": "strategy rejected before simulated execution",
+      "artifacts": {
+        "actuals": {
+          "id": 12118502140,
+          "name": "okx-btc-cash-and-carry-actuals-2025-06-22-BTC-USDT-250627-39079100154",
+          "zip_sha256": "sha256:e2477950b0e93132e655ff1fc7f1a1ef036349a674eb7f48941f4deb915436ea"
+        },
+        "prepared": {
+          "id": 12118472262,
+          "name": "okx-btc-cash-and-carry-2025-06-22-BTC-USDT-250627-39079100154",
+          "zip_sha256": "sha256:f69e7ad90c3947d95921fb56429e0e3bb62f38b7dfa7a2a4a309aa56af22cdad"
+        },
+        "compact": {
+          "id": 12117939705,
+          "name": "okx-btc-cash-and-carry-compact-2025-06-22-BTC-USDT-250627-39079100154",
+          "zip_sha256": "sha256:9380c77a1d9026975a27ed7b947412ce0c531afa66c677150efa81572a8a6d5f"
+        }
+      }
+    }
+  ]
+}
