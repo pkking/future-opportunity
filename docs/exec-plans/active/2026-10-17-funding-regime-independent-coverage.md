@@ -1,7 +1,7 @@
 # Funding Carry point-in-time regime expansion
 
 Issue: #85
-Status: VERIFYING
+Status: BLOCKED_EVIDENCE
 Owner: agent
 Started: 2026-10-17
 
@@ -424,7 +424,7 @@ Acceptance criteria:
 - [x] Any success says GitHub provenance validated only, **not** exchange-
       authenticated historical availability; no change to `point_in_time_publication_verified=false`,
       no promotion/acquisition/economics/live orders.
-- [ ] Deterministic, fully offline tests for all positive/negative paths,
+- [x] Deterministic, fully offline tests for all positive/negative paths,
       including mocked GitHub CLI and ZIP identity, with documented review
       metadata schema. Final-head PR CI 5/5 + Historical Smoke and postmerge
       main CI recorded before calling engineering slice complete.
@@ -459,9 +459,24 @@ pre-entry OKX source-publication claim stays **UNASSESSED**.
   routes or Stage-2 economics approval.
 
 
+### PR #125 implementation-head verified (2026-10-18)
+
+- [PR #125](https://github.com/pkking/future-opportunity/pull/125)
+  initial implementation head `6f3774ed0d662a0fb243eb07b91138dc05903f97`:
+  [CI #39118649398](https://github.com/pkking/future-opportunity/actions/runs/39118649398)
+  **5/5 SUCCESS** (Static, code-level including new audit tests, API,
+  E2E, agent-plan integrity),
+  [Historical Smoke #39118649404](https://github.com/pkking/future-opportunity/actions/runs/39118649404)
+  **SUCCESS**.
+- Follow-on audit job uses GitHub-signed subject identity and the same offline
+  validator, but neither metadata nor attestation alone verifies OKX's
+  historical publication. A prospective scheduled observation has not yet run.
+- This **documentation checkpoint** requires final-head CI and Smoke before
+  merge, then postmerge main CI. No acquisition or quantitative economics gate.
+
 ## Resume from here
 
-Verify PR CI for automated signed-artifact review (static/code/API/E2E/plan + Historical Smoke), fix any failure, checkpoint final run IDs, merge once all pass and verify postmerge CI. Remain BLOCKED_EVIDENCE for any actual exchange publication/provenance claim until a real scheduled run exists.
+Verify final documentation-head CI and Historical Smoke on PR #125, merge once all pass and verify postmerge main CI. Remain BLOCKED_EVIDENCE for any actual exchange publication/provenance claim until a real scheduled run exists.
 
 ## Completion
 
