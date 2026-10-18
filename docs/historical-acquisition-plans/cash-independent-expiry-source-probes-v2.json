@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "evidence_type": "cash_independent_expiry_source_probe_preregistration",
+  "study_id": "cash-independent-expiry-catalog-probe-2026-v2",
+  "research_only": true,
+  "outcome_blind": true,
+  "known_pinned_futures_expiries": [
+    "BTC-USDT-250627",
+    "BTC-USDT-250926",
+    "BTC-USDT-251226",
+    "BTC-USDT-260327",
+    "BTC-USDT-260626"
+  ],
+  "candidates": [
+    {
+      "id": "2026q3",
+      "future_id": "BTC-USDT-260925",
+      "entry_market_date": "2026-09-11",
+      "exit_market_date": "2026-09-24",
+      "expiry_at": "2026-09-25T08:00:00+00:00"
+    }
+  ],
+  "required_sources": [
+    "official OKX module-4 FUTURES chain archive for entry and exit",
+    "matching SPOT archive for entry and exit",
+    "L2orderbook sample at 00:15 UTC on both entry and exit for both legs",
+    "historical futures instrument and expiry metadata independently sourced"
+  ],
+  "source_availability_status": "unverified",
+  "acquisition_approved": false,
+  "promotion_approved": false
+}

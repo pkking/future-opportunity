@@ -1,0 +1,301 @@
+{
+  "base": "BTC",
+  "close_mode": "pre-expiry",
+  "dataset_id": "okx-btc-usdt-cash-and-carry-2025-04-16-BTC-USDT-250627-v1-target-compact",
+  "derived_from_artifact": {
+    "artifact_id": "12118466684",
+    "artifact_zip_sha256": "a9e2ba787c4aa024cbe0d0f6cbe759e8760718076b36abbae44d49602fb947bd",
+    "workflow_run": "39079100154"
+  },
+  "entry_market_date": "2025-04-16",
+  "fixture_scope": {
+    "capital": "10000",
+    "futures_leverage": "1",
+    "hedge_notional_ratio": "1.009765868786665514493379804",
+    "preserve_base_quantity": "0.06449482339466114240636157829",
+    "purpose": "offline deterministic replay of the frozen reference-capital scenario; not full-book market-capacity reconstruction",
+    "quantity_margin": "1.20",
+    "reserve_ratio": "0.10",
+    "target_base_quantity": "0.05374568616221761867196798191"
+  },
+  "instrument": {
+    "expiry": "2025-06-27T08:00:00+00:00",
+    "future_instrument_id": "BTC-USDT-250627",
+    "metadata_provenance": {
+      "contract_multiplier": "1",
+      "contract_value": "0.01",
+      "contract_value_currency": "BTC",
+      "delivery_rule": "Friday 08:00 UTC",
+      "input_contract": {
+        "expiry": "2025-06-27T08:00:00+00:00",
+        "future_instrument_id": "BTC-USDT-250627"
+      },
+      "note": "Contract value/multiplier are documented BTCUSDT expiry-futures product specifications. The concrete historical future ID and expiry are explicit preparation inputs, not reconstructed from the current-instrument API.",
+      "official_doc": "https://www.okx.com/help/expiry-futures",
+      "settlement_currency": "USDT",
+      "type": "official_product_spec"
+    }
+  },
+  "max_staleness_ms": 5000,
+  "normalized": {
+    "entry_future": {
+      "age_ms": 33,
+      "best_ask": "84146.8",
+      "best_bid": "84134.5",
+      "derivation": {
+        "compact_ask_levels": 2,
+        "compact_bid_levels": 3,
+        "frozen_capital": "10000",
+        "hedge_notional_ratio": "1.009765868786665514493379804",
+        "parent_ask_levels": 380,
+        "parent_bid_levels": 340,
+        "parent_canonical_sha256": "e349cb87d6b52a3ca78eef061515d5fd0ab6c0e9bcc6294923952b11f559528c",
+        "preserve_base_quantity": "0.06449482339466114240636157829",
+        "quantity_margin": "1.20",
+        "retained_ask_quantity": "0.0725",
+        "retained_bid_quantity": "0.1202",
+        "rule": "retain minimum best-price-outward levels on both sides covering the declared preserved base quantity",
+        "target_base_quantity": "0.05374568616221761867196798191"
+      },
+      "observed_at": "2025-04-16T00:14:59.967000+00:00",
+      "path": "entry_future.jsonl",
+      "sample_at": "2025-04-16T00:15:00+00:00",
+      "sha256": "f2035de7fc68a44283949ef71786dd8af61dc2399cd3314b16ad91ef7cd23829",
+      "source_line": 36032
+    },
+    "entry_spot": {
+      "age_ms": 3,
+      "best_ask": "83320.8",
+      "best_bid": "83320.7",
+      "derivation": {
+        "compact_ask_levels": 1,
+        "compact_bid_levels": 8,
+        "frozen_capital": "10000",
+        "hedge_notional_ratio": "1.009765868786665514493379804",
+        "parent_ask_levels": 400,
+        "parent_bid_levels": 400,
+        "parent_canonical_sha256": "32fe76900973544381232501fa0b92d1fb9e630d2c2bea2ea2c38e181dc9c58b",
+        "preserve_base_quantity": "0.06449482339466114240636157829",
+        "quantity_margin": "1.20",
+        "retained_ask_quantity": "0.85116029",
+        "retained_bid_quantity": "0.09529151",
+        "rule": "retain minimum best-price-outward levels on both sides covering the declared preserved base quantity",
+        "target_base_quantity": "0.05374568616221761867196798191"
+      },
+      "observed_at": "2025-04-16T00:14:59.997000+00:00",
+      "path": "entry_spot.jsonl",
+      "sample_at": "2025-04-16T00:15:00+00:00",
+      "sha256": "397f78ad432bf429c0152368369b93023cfd9d06e400820cadb197c00766e3ec",
+      "source_line": 62120
+    },
+    "exit_future": {
+      "age_ms": 40,
+      "best_ask": "107522.6",
+      "best_bid": "107521.9",
+      "derivation": {
+        "compact_ask_levels": 3,
+        "compact_bid_levels": 4,
+        "frozen_capital": "10000",
+        "hedge_notional_ratio": "1.009765868786665514493379804",
+        "parent_ask_levels": 318,
+        "parent_bid_levels": 380,
+        "parent_canonical_sha256": "9ddff0bf66ba82ae14c828ecc1e84f71112b124f9e76c9da484db080e5db9756",
+        "preserve_base_quantity": "0.06449482339466114240636157829",
+        "quantity_margin": "1.20",
+        "retained_ask_quantity": "0.1379",
+        "retained_bid_quantity": "0.1034",
+        "rule": "retain minimum best-price-outward levels on both sides covering the declared preserved base quantity",
+        "target_base_quantity": "0.05374568616221761867196798191"
+      },
+      "observed_at": "2025-06-26T00:14:59.960000+00:00",
+      "path": "exit_future.jsonl",
+      "sample_at": "2025-06-26T00:15:00+00:00",
+      "sha256": "6d4194c10c8fdce2103cc621071650cece0c8e149a15eff0e70385ddc2eb46c1",
+      "source_line": 24307
+    },
+    "exit_spot": {
+      "age_ms": 10,
+      "best_ask": "107502.1",
+      "best_bid": "107502.0",
+      "derivation": {
+        "compact_ask_levels": 21,
+        "compact_bid_levels": 1,
+        "frozen_capital": "10000",
+        "hedge_notional_ratio": "1.009765868786665514493379804",
+        "parent_ask_levels": 400,
+        "parent_bid_levels": 400,
+        "parent_canonical_sha256": "b622a0cd739b4783ce32bc4238d4c2280819f00918382da5f2c3d934f4dcdeaf",
+        "preserve_base_quantity": "0.06449482339466114240636157829",
+        "quantity_margin": "1.20",
+        "retained_ask_quantity": "0.15003652",
+        "retained_bid_quantity": "1.05653816",
+        "rule": "retain minimum best-price-outward levels on both sides covering the declared preserved base quantity",
+        "target_base_quantity": "0.05374568616221761867196798191"
+      },
+      "observed_at": "2025-06-26T00:14:59.990000+00:00",
+      "path": "exit_spot.jsonl",
+      "sample_at": "2025-06-26T00:15:00+00:00",
+      "sha256": "f7524bf1fd787894ecffc9583b5685956bf2fd300c52df89c1d8bd0707c1e589",
+      "source_line": 40590
+    }
+  },
+  "parent_dataset": {
+    "dataset_id": "okx-btc-usdt-cash-and-carry-2025-04-16-BTC-USDT-250627-v1",
+    "manifest_sha256": "cef2135b47b806251e7e0def683e12429ca65ce7d1db749b03b517162046fde3"
+  },
+  "pinning_status": "commit_ready",
+  "quote": "USDT",
+  "sample_times": {
+    "entry": "2025-04-16T00:15:00+00:00",
+    "exit": "2025-06-26T00:15:00+00:00"
+  },
+  "schema_version": 1,
+  "selection_provenance": {
+    "sampling": {
+      "end_date": "2025-06-26",
+      "evidence_sha256": "9bd08184a3a0c2487ba57087effdf0e8231db45fb4bf10226290627ed2990b37",
+      "excluded_market_dates": [
+        "2025-06-26"
+      ],
+      "policy_version": "availability-even-rank-v1",
+      "population_size": 89,
+      "requested_sample_size": 12,
+      "selected_market_dates": [
+        "2025-04-01",
+        "2025-04-09",
+        "2025-04-16",
+        "2025-04-23",
+        "2025-05-01",
+        "2025-05-08",
+        "2025-05-16",
+        "2025-05-23",
+        "2025-05-31",
+        "2025-06-07",
+        "2025-06-14",
+        "2025-06-22"
+      ],
+      "start_date": "2025-03-29"
+    },
+    "schema_version": 1,
+    "selection_kind": "pre_registered_availability_sample",
+    "source": {
+      "artifact_digest": "sha256:8f29acfacaa71d1e5a59c0a0b28e28eef43257e6613c5cfa4806fea4740c9e36",
+      "artifact_id": "12106828444",
+      "artifact_name": "cash-2025q2-approved-selection-control",
+      "workflow_run": "39050630845"
+    },
+    "strategy": "cash-and-carry"
+  },
+  "sources": {
+    "entry_future": {
+      "file": {
+        "archive_member": "BTC-USDT-250627-L2orderbook-400lv-2025-04-16.data",
+        "data_date": "2025-04-16T00:00:00+00:00",
+        "date_aggregation": "daily",
+        "date_range_end": "2025-04-16T00:00:00+00:00",
+        "date_range_start": "2025-04-16T00:00:00+00:00",
+        "declared_size_mb": "182.08",
+        "downloaded_bytes": 190925750,
+        "filename": "BTC-USDT-futureschain-L2orderbook-400lv-2025-04-16.tar.gz",
+        "instrument_family": "BTC-USDT",
+        "instrument_id": "",
+        "instrument_type": "FUTURES",
+        "module": "4",
+        "raw_sha256": "a873ef3d4f7c3218173df21783074b55f09dfdf5d0320556d27ec3b66981bcfd",
+        "source_timezone": "UTC",
+        "url": "https://static.okx.com/cdn/okx/match/orderbook/L2/400lv/daily/20250416/BTC-USDT-futureschain-L2orderbook-400lv-2025-04-16.tar.gz"
+      },
+      "query": {
+        "begin": "1744761600000",
+        "dateAggrType": "daily",
+        "end": "1744761600000",
+        "instFamilyList": "BTC-USDT",
+        "instType": "FUTURES",
+        "module": "4"
+      }
+    },
+    "entry_spot": {
+      "file": {
+        "archive_member": "BTC-USDT-L2orderbook-400lv-2025-04-16.data",
+        "data_date": "2025-04-16T00:00:00+00:00",
+        "date_aggregation": "daily",
+        "date_range_end": "2025-04-16T00:00:00+00:00",
+        "date_range_start": "2025-04-16T00:00:00+00:00",
+        "declared_size_mb": "401.15",
+        "downloaded_bytes": 420634046,
+        "filename": "BTC-USDT-L2orderbook-400lv-2025-04-16.tar.gz",
+        "instrument_family": "",
+        "instrument_id": "BTC-USDT",
+        "instrument_type": "SPOT",
+        "module": "4",
+        "raw_sha256": "af3350d0d870819d1bed49cfd622f0147ca8a117c6b83e98039d479447b432fa",
+        "source_timezone": "UTC",
+        "url": "https://static.okx.com/cdn/okx/match/orderbook/L2/400lv/daily/20250416/BTC-USDT-L2orderbook-400lv-2025-04-16.tar.gz"
+      },
+      "query": {
+        "begin": "1744761600000",
+        "dateAggrType": "daily",
+        "end": "1744761600000",
+        "instIdList": "BTC-USDT",
+        "instType": "SPOT",
+        "module": "4"
+      }
+    },
+    "exit_future": {
+      "file": {
+        "archive_member": "BTC-USDT-250627-L2orderbook-400lv-2025-06-26.data",
+        "data_date": "2025-06-26T00:00:00+00:00",
+        "date_aggregation": "daily",
+        "date_range_end": "2025-06-26T00:00:00+00:00",
+        "date_range_start": "2025-06-26T00:00:00+00:00",
+        "declared_size_mb": "162.34",
+        "downloaded_bytes": 170227019,
+        "filename": "BTC-USDT-futureschain-L2orderbook-400lv-2025-06-26.tar.gz",
+        "instrument_family": "BTC-USDT",
+        "instrument_id": "",
+        "instrument_type": "FUTURES",
+        "module": "4",
+        "raw_sha256": "f4daf0c1eabe6e35cab3c2dbf506f5e13bf0a9d08419416496edb342c0759090",
+        "source_timezone": "UTC",
+        "url": "https://static.okx.com/cdn/okx/match/orderbook/L2/400lv/daily/20250626/BTC-USDT-futureschain-L2orderbook-400lv-2025-06-26.tar.gz"
+      },
+      "query": {
+        "begin": "1750896000000",
+        "dateAggrType": "daily",
+        "end": "1750896000000",
+        "instFamilyList": "BTC-USDT",
+        "instType": "FUTURES",
+        "module": "4"
+      }
+    },
+    "exit_spot": {
+      "file": {
+        "archive_member": "BTC-USDT-L2orderbook-400lv-2025-06-26.data",
+        "data_date": "2025-06-26T00:00:00+00:00",
+        "date_aggregation": "daily",
+        "date_range_end": "2025-06-26T00:00:00+00:00",
+        "date_range_start": "2025-06-26T00:00:00+00:00",
+        "declared_size_mb": "151.56",
+        "downloaded_bytes": 158917302,
+        "filename": "BTC-USDT-L2orderbook-400lv-2025-06-26.tar.gz",
+        "instrument_family": "",
+        "instrument_id": "BTC-USDT",
+        "instrument_type": "SPOT",
+        "module": "4",
+        "raw_sha256": "75168b55b3967cb7536008c3010b6807c12ba7dd2fd85f69547d2e2c1c552f7a",
+        "source_timezone": "UTC",
+        "url": "https://static.okx.com/cdn/okx/match/orderbook/L2/400lv/daily/20250626/BTC-USDT-L2orderbook-400lv-2025-06-26.tar.gz"
+      },
+      "query": {
+        "begin": "1750896000000",
+        "dateAggrType": "daily",
+        "end": "1750896000000",
+        "instIdList": "BTC-USDT",
+        "instType": "SPOT",
+        "module": "4"
+      }
+    }
+  },
+  "strategy": "cash-and-carry",
+  "venue": "okx"
+}
