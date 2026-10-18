@@ -1,7 +1,7 @@
 # Funding Carry point-in-time regime expansion
 
 Issue: #85
-Status: BLOCKED_EVIDENCE
+Status: IMPLEMENTING
 Owner: agent
 Started: 2026-10-17
 
@@ -245,6 +245,38 @@ This slice addresses only the **time authenticity** blocker of Issue #85. Histor
 - New manual workflow: [Capture Prospective Funding Pre-Entry Source](https://github.com/pkking/future-opportunity/actions/workflows/capture-funding-preentry-source.yml). It has *no* `push` or `schedule` trigger and was **not dispatched** here. A valid call must actually begin in UTC 00:00–00:15, with both official public GET results complete before UTC 00:15. Late/absent data stays UNASSESSED. First-party GitHub provenance attests the raw captured file; it never signs on behalf of OKX.
 - Source-only implementation reuses existing anti-lookahead settled-funding and eight-closed-daily-candle reconstruction and 100bps research planner. Pure validator rejects raw responses with any future-dated event or prematurely confirmed daily candle. Output always has `point_in_time_publication_verified=false` and acquisition/promotion disabled until independent provenance assessment.
 - Old retrospective July/August samples **cannot be upgraded** to as-of historical publication by this future observation capability. Their previously audited 21/21 feature rows, unfilled negative/low cell, and full source hashes remain unchanged. Funding 32/Cash 66 corpus, Stage-2 economic gate disabled, account MarginSafety/VenueExposure UNASSESSED, no live trading.
+
+## 2026-10-18 offline prospective evidence audit readiness (Issue #85)
+
+**Engineering scope, not evidence completion.** The original prospective raw capture has
+not been run. A reviewer currently lacks a small repeatable offline entrypoint to
+check an original downloaded Actions ZIP against an independently recorded archive
+digest and re-run the exact pre-entry feature validation. This slice makes a future
+capture auditable without granting any new source, acquisition or promotion rights.
+
+Acceptance criteria:
+- [ ] Purely offline auditor accepts only the three original successful files,
+      an independently supplied exact ZIP SHA-256 and an explicit UTC entry day;
+      exact raw bytes and source-reconstruction hashes are reported separately.
+- [ ] Fail closed for wrong original ZIP digest, missing/extra/duplicate ZIP files,
+      oversized members, incorrect day, altered timing, altered analysis, late
+      source and positive acquisition/verified-publication claims.
+- [ ] Document **separate** GitHub/Sigstore verification and independent run-time
+      review. Internal ZIP checks do NOT authenticate the exchange, runner clock
+      or actual as-of dissemination; returned status remains UNASSESSED.
+- [ ] Final PR-head CI (static/code/API/E2E/plan) and Historical Smoke succeed,
+      with no scheduled calls, additional historical dates or trading permissions.
+
+Implementation: add one standalone stdlib ZIP audit script reusing the existing
+strict backtest validator, an offline test suite and a review procedure.
+Verification: `uv run pytest tests/test_funding_preentry_source_audit.py -v`,
+`uv run ruff check .`, repository CI and Historical Backtest Smoke.
+
+Evidence checkpoint: main `ea69203deb6b220e7bf2d851cc63d9b76f38c2fd`
+([CI 39112320029](https://github.com/pkking/future-opportunity/actions/runs/39112320029)
+SUCCESS), no open PR at start, Issue #85 OPEN / BLOCKED_EVIDENCE.
+The only missing external fact remains independently authenticated future-day
+source publication. The audit cannot retroactively prove July/August data timing.
 
 ## Resume from here
 
