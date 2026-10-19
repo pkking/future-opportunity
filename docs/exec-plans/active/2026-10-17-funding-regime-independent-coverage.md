@@ -1,7 +1,7 @@
 # Funding Carry point-in-time regime expansion
 
 Issue: #85
-Status: VERIFYING
+Status: BLOCKED_EVIDENCE
 Owner: agent
 Started: 2026-10-17
 
@@ -513,7 +513,7 @@ Acceptance criteria:
 - [x] Machine-readable review records actual run creation time and whether
   its admission window was eligible/missed, without claiming exact scheduled
   delivery timestamps unavailable in the GitHub API.
-- [ ] Targeted offline tests + final five CI gates and Historical Smoke
+- [x] Targeted offline tests + final five CI gates and Historical Smoke
   succeed; final PR commit and postmerge main CI recorded.
 
 Explicit scope limits: no additional auto-polling, no change to cron,
@@ -538,9 +538,23 @@ approval, and never backdate this failed run.
   smoke plus postmerge main CI must all pass. Production capture still has no
   admitted market data; do not automatically enable a different scheduler.
 
+### 2026-10-19 PR #126 implementation-head evidence
+
+- [PR #126](https://github.com/pkking/future-opportunity/pull/126)
+  implementation SHA `d5108dc8eee3bea2e80e04066a6db44bedf1a9ea`:
+  [CI #39277314496](https://github.com/pkking/future-opportunity/actions/runs/39277314496)
+  **5/5 SUCCESS**, including new late-run/error-only audit regression tests;
+  [Historical Backtest Smoke #39277315089](https://github.com/pkking/future-opportunity/actions/runs/39277315089)
+  **SUCCESS**.
+- This checkpoint document changes the PR head again: record final-head
+  checks separately; do not merge based only on the earlier tested revision.
+- Issue #85 remains `BLOCKED_EVIDENCE` for actual source publication as-of-entry
+  and missing negative-low regime. GitHub delayed delivery cannot be remedied
+  by reinterpreting late errors as market-day observations.
+
 ## Resume from here
 
-Review the late-scheduled failure audit PR and require all five CI checks and independent Historical Smoke. Fix failures, write final-head run IDs, merge and check postmerge main CI, then return to BLOCKED_EVIDENCE for a genuine prospective source observation. Retain GitHub schedule best-effort limitation without changing the accepted source clock cutoff.
+Verify the **final plan-head** PR #126 CI and Historical Smoke (in addition to implementation-head evidence), then merge only if all succeed; verify postmerge main CI. Record final evidence in Issue #85 and remain BLOCKED_EVIDENCE for actual independent source observation. Retain GitHub schedule best-effort limitation without changing the accepted source clock cutoff.
 
 ## Completion
 
