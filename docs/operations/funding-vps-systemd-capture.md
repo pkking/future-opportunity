@@ -66,8 +66,10 @@ cd /opt/future-opportunity
 # Pin to the reviewed main commit. Replace with the real merged SHA.
 REVIEWED_SHA=REPLACE_WITH_VERIFIED_40_CHARACTER_MERGE_COMMIT_SHA
 sudo git checkout --detach "$REVIEWED_SHA"
-sudo uv sync --frozen --all-extras --dev
+sudo uv sync --python /usr/bin/python3.12 --all-extras --dev
 sudo chmod -R a+rX /opt/future-opportunity
+
+**Lockfile note:** As of this version of the repository, `uv.lock` is **not** committed. Therefore do **not** use `uv sync --frozen` or `uv sync --locked` on a clean VPS checkout: both would reject a missing lockfile. The command above resolves the declared constraints and creates a local, untracked `uv.lock`. Pin the reviewed application Git commit, but recognize that dependency resolution is not fully reproducible across new hosts until a reviewed lockfile is committed. The proper follow-up is to version and CI-check a lockfile, then switch production instructions to a lock-enforcing invocation. For this VPS, `--python /usr/bin/python3.12` deliberately selects a system-accessible interpreter so the sandboxed `DynamicUser` can run `.venv/bin/python`; confirm the path exists before enabling the timer.
 
 timedatectl status
 timedatectl show --property=NTPSynchronized --value
