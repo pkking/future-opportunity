@@ -1,7 +1,7 @@
 # Funding Carry point-in-time regime expansion
 
 Issue: #85
-Status: BLOCKED_EVIDENCE
+Status: IMPLEMENTING
 Owner: agent
 Started: 2026-10-17
 
@@ -552,9 +552,69 @@ approval, and never backdate this failed run.
   and missing negative-low regime. GitHub delayed delivery cannot be remedied
   by reinterpreting late errors as market-day observations.
 
+## 2026-10-19 authorized Plan B: VPS systemd source collection (#85)
+
+**Decision received:** replace the GitHub Actions best-effort cron as the
+*primary* prospective UTC-window source trigger with a VPS `systemd`
+calendar timer. Keep existing GitHub CI and existing scheduled action as
+a research-only secondary/diagnostic path. User has approved the architecture;
+no VPS credentials, host or storage destination have been supplied, so
+installation and a real VPS-produced sample are still UNASSESSED.
+
+Evidence motivating change: [scheduled run #39186235557](https://github.com/pkking/future-opportunity/actions/runs/39186235557)
+was created at `2026-10-19T01:37:54Z`, over two hours later than the
+configured 23:37 UTC trigger; it failed before any OKX GET. PR #126
+fixed the audit outcome and was merged as `3a1b0960a03f4bc2d483b3bba45fe6617df2aed1`;
+[postmerge main CI #39277720623](https://github.com/pkking/future-opportunity/actions/runs/39277720623) SUCCESS.
+
+Objective: a deployable least-privilege systemd one-shot source collector,
+started after 00:00 UTC, enforcing exact existing 00:15 cutoff and
+saving an immutable per-day local spool with original research-only raw
+JSON, UTC timing, consistency replay and machine-readable integrity
+checksums. Neither root privileges nor Github/exchange tokens are needed
+by the collector. GitHub remains the CI/source-review tooling; the VPS
+transport to GitHub-hosted immutable artifact/attestation is NOT wired
+without an approved secure storage/transport destination.
+
+Acceptance criteria:
+- [ ] systemd `*.service` and `*.timer`: explicit UTC calendar, narrow
+      accuracy, no catch-up on reboot, no restart, non-root dynamic user,
+      read-only code tree and writable state dir, NTP synchronization prerequisite.
+- [ ] Python wrapper invokes the unchanged `capture_today` only once,
+      requires trusted *operational* NTP state and matching UTC window,
+      atomically retains an immutable per-day success/failure archive,
+      source ZIP digest and no duplicates/backdating or overwrite.
+- [ ] Valid success: existing three files and deterministic local offline
+      `audit_zip` replay, with `github_attestation_verified=false`,
+      `point_in_time_publication_verified=false`, promotion OFF.
+      Error: only explicit UNASSESSED receipt, never partial source data.
+- [ ] Offline negative tests cover clock guard/unsynchronized NTP,
+      duplicate day, failed capture, ZIP replay/corruption, permission and
+      timer/service safety, with no external HTTP or real orders.
+- [ ] Operator playbook contains VPS bootstrap, time-sync verification,
+      timer deployment and journal/local evidence commands, secure artifact
+      handoff prerequisites, and distinguishes true independent provenance
+      from local VPS clock + digest (which can be tampered with).
+- [ ] PR CI 5/5 + Historical Smoke and postmerge main CI succeed; record
+      exact final-head checks; Issue #85 stays OPEN/BLOCKED_EVIDENCE
+      until genuine separately verified prospective source data exists.
+
+Non-goals: no live trading, no authenticated OKX API, no raw source blobs
+committed to git, no change to Stage-2 economics, Funding 32 or Cash 66,
+no new automatic cloud credentials, no claimed deployed VPS, no force
+disabling the existing GitHub workflow before host-level validation,
+and no assertion that `systemd` provides hard real-time or trusted
+exchange publication time.
+
+Implementation: (1) add independent dated immutable spool wrapper;
+(2) unit and integration-style offline tests; (3) systemd units + runbook;
+(4) PR CI/merge checkpoint. Stop at verified repo-side handoff if VPS
+access and secure destination are not available; this is a deployment
+blocker rather than an engineering success claim.
+
 ## Resume from here
 
-Verify the **final plan-head** PR #126 CI and Historical Smoke (in addition to implementation-head evidence), then merge only if all succeed; verify postmerge main CI. Record final evidence in Issue #85 and remain BLOCKED_EVIDENCE for actual independent source observation. Retain GitHub schedule best-effort limitation without changing the accepted source clock cutoff.
+Implement the approved Plan-B VPS timer collector, offline tests and runbook on `agent/funding-vps-systemd-collector`; run final PR CI/Historical Smoke, merge, verify postmerge CI. A real VPS installation and secure artifact-handoff configuration remain explicitly UNASSESSED until host details are available. Preserve #85 underlying source-evidence BLOCKED_EVIDENCE.
 
 ## Completion
 
