@@ -1,7 +1,7 @@
 # Funding Carry point-in-time regime expansion
 
 Issue: #85
-Status: IMPLEMENTING
+Status: VERIFYING
 Owner: agent
 Started: 2026-10-17
 
@@ -501,16 +501,16 @@ and verify its original ZIP/digest/error-only receipt, preserving the missing
 observation as `UNASSESSED`. Do not weaken admission of successful captures.
 
 Acceptance criteria:
-- [ ] The same missed 01:37 UTC recorded run can be represented by an offline
+- [x] The same missed 01:37 UTC recorded run can be represented by an offline
   deterministic regression case, yielding `failed_capture_unassessed` and
   `entry_market_date=null`, not a fabricated historical date.
-- [ ] Failed capture still requires valid UTC-aware run timestamp, exact
+- [x] Failed capture still requires valid UTC-aware run timestamp, exact
   repository/workflow/commit/schedule identity and independent ZIP digest,
   single safe error receipt, no GitHub attestation claim.
-- [ ] Successful capture at an invalid/late time remains fail-closed;
+- [x] Successful capture at an invalid/late time remains fail-closed;
   legitimately created, prewarmed/within-window successful captures continue
   their original three-file replay + independent signed subject verification.
-- [ ] Machine-readable review records actual run creation time and whether
+- [x] Machine-readable review records actual run creation time and whether
   its admission window was eligible/missed, without claiming exact scheduled
   delivery timestamps unavailable in the GitHub API.
 - [ ] Targeted offline tests + final five CI gates and Historical Smoke
@@ -523,9 +523,24 @@ cannot guarantee a timely run when GitHub delays a schedule by hours**;
 consider an externally timed source only via a new architecture/operational
 approval, and never backdate this failed run.
 
+### 2026-10-19 implementation checkpoint before PR CI
+
+- Modified `scripts/audit_scheduled_funding_capture.py` to continue
+  fail-closed ZIP/run/digest/error receipt validation for failed runs created
+  after the 00:15 UTC cutoff; success path retains original strict admission.
+  Failed runs now record actual created time and the clock admissibility state
+  with `entry_market_date=null` and without signed-source claims.
+- Extended `tests/test_funding_preentry_auto_audit.py` with a frozen run
+  `39186235557` regression identity, success-time rejection, malformed UTC
+  clocks, tampered artifacts and formerly eligible failed-run checks.
+- Documented the actual two job logs and the independent ZIP digests.
+- Verification not yet asserted: PR static/code/API/E2E/plan CI and historical
+  smoke plus postmerge main CI must all pass. Production capture still has no
+  admitted market data; do not automatically enable a different scheduler.
+
 ## Resume from here
 
-Implement the late-trigger **failed-capture audit reporting fix** on `agent/funding-scheduled-late-audit-recovery`, run targeted tests, then five PR-head CI checks and Historical Smoke. Merge after final-head green and log postmerge CI on Issue #85. True Funding regime evidence remains BLOCKED_EVIDENCE; no automated retries or changed trading thresholds.
+Review the late-scheduled failure audit PR and require all five CI checks and independent Historical Smoke. Fix failures, write final-head run IDs, merge and check postmerge main CI, then return to BLOCKED_EVIDENCE for a genuine prospective source observation. Retain GitHub schedule best-effort limitation without changing the accepted source clock cutoff.
 
 ## Completion
 
