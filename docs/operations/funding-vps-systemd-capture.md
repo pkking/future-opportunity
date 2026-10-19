@@ -64,7 +64,8 @@ sudo install -d -o root -g root -m 0755 /opt
 sudo git clone https://github.com/pkking/future-opportunity.git /opt/future-opportunity
 cd /opt/future-opportunity
 # Pin to the reviewed main commit. Replace with the real merged SHA.
-sudo git checkout <REVIEWED_MERGED_SHA>
+REVIEWED_SHA=REPLACE_WITH_VERIFIED_40_CHARACTER_MERGE_COMMIT_SHA
+sudo git checkout --detach "$REVIEWED_SHA"
 sudo uv sync --frozen --all-extras --dev
 sudo chmod -R a+rX /opt/future-opportunity
 
