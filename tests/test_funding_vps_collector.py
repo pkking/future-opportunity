@@ -5,7 +5,6 @@ import hashlib
 import importlib.util
 import json
 import subprocess
-import sys
 import zipfile
 from datetime import UTC, datetime
 from pathlib import Path
