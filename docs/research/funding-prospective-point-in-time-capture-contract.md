@@ -166,3 +166,45 @@ still independently review GitHub timestamps, runner clock implications,
 actual response completeness, source provenance and entry date.
 This automation grants **no** historical acquisition/promotion, Stage-2
 economics thresholds, or authenticated/live trading capabilities.
+
+## First scheduled production run: 2026-10-19 UTC (negative evidence)
+
+[Scheduled run #39186235557](https://github.com/pkking/future-opportunity/actions/runs/39186235557)
+was created at `2026-10-19T01:37:54Z` although the workflow
+configuration was `37 23 * * *`. It is approximately two hours later
+than the immediately preceding intended UTC schedule slot. GitHub does
+not provide a guaranteed scheduled-delivery clock and documented
+`schedule` events can be significantly delayed or dropped.
+
+The capture job correctly **failed before contacting OKX**:
+`scheduled preentry runner missed current UTC window`. The original
+error-only Actions ZIP is artifact ID `12158480804`,
+SHA-256 `9b08b29645b22cbcecedc94094d7461be5e4c7ac7ef883d2384bb1fd7111f5a2`.
+The audit job downloaded that ZIP but initially rejected the late
+run's timestamp *before* checking the error-only evidence. The
+audit-error ZIP is artifact `12158406450`, digest
+`dc541a389c59af85100ac5be8abd5dfbf26e5158e43c7f35e764ba0629868333`.
+These are neither new historical market observations nor zeros.
+
+The fail-closed audit recovery distinguishes successful and failed
+captures. A **successful** capture still requires a GitHub run created
+in an eligible window, the original preentry HTTP timing checks, the
+three-file ZIP replay and signed GitHub raw-file subject verification.
+For a **failed** capture, a late but otherwise well-formed GitHub run
+and an independently digest-verified *single error.json* ZIP can now
+produce `status=failed_capture_unassessed`,
+`entry_market_date=null`, `github_attestation_verified=false`,
+`run_created_at=<actual time>`, and
+`run_creation_window_status=late_or_unexpected_creation_time`.
+The run's creation time does **not** prove which scheduled slot was
+enqueued; no historical date may be inferred from such a failure.
+Malformed timestamps, wrong workflow/commit/run, tampered ZIP
+digest, forged receipts and incorrectly claimed successful captures
+continue to fail closed.
+
+**Operational consequence:** option A removes human-time precision
+but cannot guarantee a data point every UTC day. No additional
+scheduler/provider, adjusted deadline or market-data backfill is
+approved by this incident. Time-critical source collection would need
+a separate operational/architecture decision for a more predictable
+external clock source, plus independent source/authentication review.

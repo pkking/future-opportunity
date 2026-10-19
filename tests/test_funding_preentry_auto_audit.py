@@ -252,3 +252,91 @@ def test_read_only_workflow_downloads_original_zip_and_reports_failures():
     assert "scheduled-funding-evidence-review" in wf
     assert "client.get(" not in source and "client.post(" not in source
     assert "audit_zip(" in source and "gh" in source
+
+
+def test_real_late_scheduled_failure_is_auditable_without_market_day(monkeypatch, tmp_path):
+    """Regression: observed run #39186235557 reached audit after the 00:15 cutoff."""
+    auditor = _auditor(monkeypatch)
+    path, digest = _source_zip(tmp_path, success=False)
+    run = _run()
+    run.update({
+        "id": 39186235557,
+        "head_sha": "8f72aac5394712b49e9c60fffbe9dcec146dbb5a",
+        "created_at": "2026-10-19T01:37:54Z",
+    })
+    inventory = _inventory(digest)
+    inventory["artifacts"][0]["id"] = 12158480804
+    inventory["artifacts"][0]["workflow_run"].update({
+        "id": run["id"], "head_sha": run["head_sha"],
+    })
+
+    def impossible(*_args, **_kwargs):
+        pytest.fail("late/failed source must never be attestation-verified")
+
+    result = _audit(
+        auditor, path, digest, run=run, inventory=inventory,
+        run_id=run["id"], source_sha=run["head_sha"],
+        capture_conclusion="failure", verifier=impossible,
+    )
+    assert result["status"] == "failed_capture_unassessed"
+    assert result["artifact_id"] == 12158480804
+    assert result["entry_market_date"] is None
+    assert result["run_created_at"] == "2026-10-19T01:37:54+00:00"
+    assert result["run_creation_window_status"] == "late_or_unexpected_creation_time"
+    assert result["github_attestation_verified"] is False
+    assert result["point_in_time_publication_verified"] is False
+    assert result["acquisition_approved"] is False
+    assert result["promotion_approved"] is False
+
+
+def test_late_scheduled_success_remains_forbidden(monkeypatch, tmp_path):
+    auditor = _auditor(monkeypatch)
+    path, digest = _source_zip(tmp_path)
+    run = _run()
+    run["created_at"] = "2026-09-15T01:37:54Z"
+    with pytest.raises(ValueError, match="successful capture has invalid"):
+        _audit(auditor, path, digest, run=run)
+
+
+@pytest.mark.parametrize("created_at", [
+    "2026-10-19T01:37:54",
+    "not-a-timestamp",
+    None,
+])
+def test_failed_capture_still_rejects_invalid_run_clock(
+    monkeypatch, tmp_path, created_at,
+):
+    auditor = _auditor(monkeypatch)
+    path, digest = _source_zip(tmp_path, success=False)
+    run = _run()
+    run["created_at"] = created_at
+    with pytest.raises(ValueError, match="creation UTC time is invalid"):
+        _audit(auditor, path, digest, run=run, capture_conclusion="failure")
+
+
+def test_failed_capture_preserves_signed_archive_identity_checks(monkeypatch, tmp_path):
+    auditor = _auditor(monkeypatch)
+    path, digest = _source_zip(tmp_path, success=False)
+    run = _run()
+    run["created_at"] = "2026-09-15T01:37:54Z"
+    inventory = _inventory(digest)
+    inventory["artifacts"][0]["workflow_run"]["id"] = RUN + 1
+    with pytest.raises(ValueError, match="artifact identity"):
+        _audit(
+            auditor, path, digest, capture_conclusion="failure",
+            run=run, inventory=inventory,
+        )
+    with pytest.raises(ValueError, match="digest mismatch"):
+        _audit(
+            auditor, path, "0" * 64, run=run,
+            capture_conclusion="failure",
+        )
+
+
+def test_prepared_failure_is_not_misrepresented_as_observed_entry(monkeypatch, tmp_path):
+    auditor = _auditor(monkeypatch)
+    path, digest = _source_zip(tmp_path, success=False)
+    result = _audit(auditor, path, digest, capture_conclusion="failure")
+    assert result["entry_market_date"] is None
+    assert result["run_creation_window_status"] == "eligible_creation_time_only"
+    assert result["run_created_at"] == "2026-09-14T23:37:00+00:00"

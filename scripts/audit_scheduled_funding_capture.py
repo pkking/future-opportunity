@@ -28,7 +28,10 @@ MAX_SIZE = 5_000_000
 def _identity(
     run: dict[str, Any], inventory: dict[str, Any], *,
     repository: str, run_id: int, source_sha: str,
-) -> tuple[dict[str, Any], str, str]:
+    capture_conclusion: str,
+) -> tuple[dict[str, Any], str, str | None, str, str]:
+    if capture_conclusion not in ("success", "failure"):
+        raise ValueError("unapproved scheduled capture conclusion")
     if not re.fullmatch(r"[0-9a-f]{40}", source_sha):
         raise ValueError("scheduled source commit must be a Git SHA")
     if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repository):
@@ -45,12 +48,24 @@ def _identity(
     ):
         raise ValueError("scheduled source run identity, trigger or commit mismatch")
     try:
-        triggered_at = datetime.fromisoformat(run["created_at"].replace("Z", "+00:00"))
-        if triggered_at.tzinfo is None:
-            raise ValueError("scheduled trigger missing timezone")
-        day = target_midnight(triggered_at.astimezone(UTC)).date().isoformat()
+        created_at = datetime.fromisoformat(run["created_at"].replace("Z", "+00:00"))
+        if created_at.tzinfo is None:
+            raise ValueError("scheduled run creation time lacks timezone")
+        created_at = created_at.astimezone(UTC)
     except (TypeError, KeyError, AttributeError, ValueError) as exc:
-        raise ValueError("scheduled trigger UTC time is invalid or missed") from exc
+        raise ValueError("scheduled run creation UTC time is invalid") from exc
+    # Only a SUCCESS is allowed to assert an eligible run creation window.
+    # Failure receipts must still be audited when GitHub created the run late:
+    # the missing observation is NOT an entry market day or a zero opportunity.
+    try:
+        candidate_day = target_midnight(created_at).date().isoformat()
+        creation_window = "eligible_creation_time_only"
+    except ValueError as exc:
+        if capture_conclusion == "success":
+            raise ValueError("successful capture has invalid scheduled trigger UTC time") from exc
+        candidate_day = None
+        creation_window = "late_or_unexpected_creation_time"
+    day = candidate_day if capture_conclusion == "success" else None
     if not isinstance(inventory, dict) or not isinstance(
         inventory.get("artifacts"), list
     ):
@@ -79,7 +94,10 @@ def _identity(
         raise ValueError("GitHub artifact digest is missing or invalid")
     if artifact.get("name") != ARTIFACT_NAME:
         raise ValueError("scheduled source artifact name mismatch")
-    return artifact, digest.removeprefix("sha256:"), day
+    return (
+        artifact, digest.removeprefix("sha256:"), day,
+        created_at.isoformat(), creation_window,
+    )
 
 
 def _error_receipt(archive_path: Path) -> dict[str, Any]:
@@ -166,8 +184,9 @@ def audit_scheduled_capture(
     verifier: Callable[..., dict[str, Any]] = verify_github_attestation,
 ) -> dict[str, Any]:
     """One actual run only; no historical backfill, capture, or promotion."""
-    artifact, expected_sha256, day = _identity(
+    artifact, expected_sha256, day, run_created_at, creation_window = _identity(
         run, inventory, repository=repository, run_id=run_id, source_sha=source_sha,
+        capture_conclusion=capture_conclusion,
     )
     payload = archive_path.read_bytes()
     if not payload or len(payload) > MAX_SIZE:
@@ -180,6 +199,8 @@ def audit_scheduled_capture(
         "source_sha": source_sha,
         "artifact_id": artifact["id"],
         "entry_market_date": day,
+        "run_created_at": run_created_at,
+        "run_creation_window_status": creation_window,
         "original_zip_sha256": expected_sha256,
         "exchange_signed": False,
         "point_in_time_publication_verified": False,
@@ -187,10 +208,11 @@ def audit_scheduled_capture(
         "acquisition_approved": False,
         "promotion_approved": False,
     }
-    if capture_conclusion != "success":
-        if capture_conclusion != "failure":
-            raise ValueError("unapproved scheduled capture conclusion")
+    if capture_conclusion == "failure":
         return {**common, **_error_receipt(archive_path)}
+    # _identity must have rejected any late/ambiguous successful capture.
+    if day is None:
+        raise ValueError("successful capture has no eligible UTC entry date")
     replay = audit_zip(
         archive_path, expected_zip_sha256=expected_sha256, expected_entry_date=day,
     )

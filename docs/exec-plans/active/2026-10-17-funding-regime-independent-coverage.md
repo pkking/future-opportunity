@@ -474,9 +474,87 @@ pre-entry OKX source-publication claim stays **UNASSESSED**.
 - This **documentation checkpoint** requires final-head CI and Smoke before
   merge, then postmerge main CI. No acquisition or quantitative economics gate.
 
+## 2026-10-19 first scheduled production-run recovery (#85)
+
+**Observed production facts before implementation:**
+- [Run 39186235557](https://github.com/pkking/future-opportunity/actions/runs/39186235557), `event=schedule`, SHA `8f72aac5394712b49e9c60fffbe9dcec146dbb5a`,
+  created **2026-10-19T01:37:54Z** versus committed daily cron `23:37 UTC`.
+  This first execution was around **2h00m54s late** (assuming the intended
+  immediately preceding scheduled slot). GitHub's documented best-effort
+  delivery does not guarantee an observed run for every scheduled occurrence.
+- Capture job 117849148647 failed at its before-GET guard at 01:38:02Z:
+  `scheduled preentry runner missed current UTC window`. The original
+  `capture_funding_preentry_source.py` and OKX GET were not reached.
+- Read-only audit job 117849187922 downloaded the original source error-only
+  ZIP but then failed in `_identity` because it incorrectly called the
+  **successful-capture-only** `target_midnight()` admission function for a
+  failed capture. This is a genuine loss of useful failure classification, not
+  a failed market observation or a safe reason to relax capture deadlines.
+- Immutable source error artifact 12158480804 digest
+  `sha256:9b08b29645b22cbcecedc94094d7461be5e4c7ac7ef883d2384bb1fd7111f5a2`;
+  audit error artifact 12158406450 digest
+  `sha256:dc541a389c59af85100ac5be8abd5dfbf26e5158e43c7f35e764ba0629868333`.
+  Neither is market-source data.
+
+Objective: make the audit accept an **honestly failed** late/dropped schedule
+and verify its original ZIP/digest/error-only receipt, preserving the missing
+observation as `UNASSESSED`. Do not weaken admission of successful captures.
+
+Acceptance criteria:
+- [x] The same missed 01:37 UTC recorded run can be represented by an offline
+  deterministic regression case, yielding `failed_capture_unassessed` and
+  `entry_market_date=null`, not a fabricated historical date.
+- [x] Failed capture still requires valid UTC-aware run timestamp, exact
+  repository/workflow/commit/schedule identity and independent ZIP digest,
+  single safe error receipt, no GitHub attestation claim.
+- [x] Successful capture at an invalid/late time remains fail-closed;
+  legitimately created, prewarmed/within-window successful captures continue
+  their original three-file replay + independent signed subject verification.
+- [x] Machine-readable review records actual run creation time and whether
+  its admission window was eligible/missed, without claiming exact scheduled
+  delivery timestamps unavailable in the GitHub API.
+- [x] Targeted offline tests + final five CI gates and Historical Smoke
+  succeed; final PR commit and postmerge main CI recorded.
+
+Explicit scope limits: no additional auto-polling, no change to cron,
+no price/funding/regime threshold changes, no historical acquisition or
+promotion, no economic gate and no live exchange order path. **Option A
+cannot guarantee a timely run when GitHub delays a schedule by hours**;
+consider an externally timed source only via a new architecture/operational
+approval, and never backdate this failed run.
+
+### 2026-10-19 implementation checkpoint before PR CI
+
+- Modified `scripts/audit_scheduled_funding_capture.py` to continue
+  fail-closed ZIP/run/digest/error receipt validation for failed runs created
+  after the 00:15 UTC cutoff; success path retains original strict admission.
+  Failed runs now record actual created time and the clock admissibility state
+  with `entry_market_date=null` and without signed-source claims.
+- Extended `tests/test_funding_preentry_auto_audit.py` with a frozen run
+  `39186235557` regression identity, success-time rejection, malformed UTC
+  clocks, tampered artifacts and formerly eligible failed-run checks.
+- Documented the actual two job logs and the independent ZIP digests.
+- Verification not yet asserted: PR static/code/API/E2E/plan CI and historical
+  smoke plus postmerge main CI must all pass. Production capture still has no
+  admitted market data; do not automatically enable a different scheduler.
+
+### 2026-10-19 PR #126 implementation-head evidence
+
+- [PR #126](https://github.com/pkking/future-opportunity/pull/126)
+  implementation SHA `d5108dc8eee3bea2e80e04066a6db44bedf1a9ea`:
+  [CI #39277314496](https://github.com/pkking/future-opportunity/actions/runs/39277314496)
+  **5/5 SUCCESS**, including new late-run/error-only audit regression tests;
+  [Historical Backtest Smoke #39277315089](https://github.com/pkking/future-opportunity/actions/runs/39277315089)
+  **SUCCESS**.
+- This checkpoint document changes the PR head again: record final-head
+  checks separately; do not merge based only on the earlier tested revision.
+- Issue #85 remains `BLOCKED_EVIDENCE` for actual source publication as-of-entry
+  and missing negative-low regime. GitHub delayed delivery cannot be remedied
+  by reinterpreting late errors as market-day observations.
+
 ## Resume from here
 
-Verify final documentation-head CI and Historical Smoke on PR #125, merge once all pass and verify postmerge main CI. Remain BLOCKED_EVIDENCE for any actual exchange publication/provenance claim until a real scheduled run exists.
+Verify the **final plan-head** PR #126 CI and Historical Smoke (in addition to implementation-head evidence), then merge only if all succeed; verify postmerge main CI. Record final evidence in Issue #85 and remain BLOCKED_EVIDENCE for actual independent source observation. Retain GitHub schedule best-effort limitation without changing the accepted source clock cutoff.
 
 ## Completion
 
