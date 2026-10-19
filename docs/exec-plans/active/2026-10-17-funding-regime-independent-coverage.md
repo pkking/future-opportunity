@@ -1,7 +1,7 @@
 # Funding Carry point-in-time regime expansion
 
 Issue: #85
-Status: IMPLEMENTING
+Status: VERIFYING
 Owner: agent
 Started: 2026-10-17
 
@@ -577,21 +577,21 @@ transport to GitHub-hosted immutable artifact/attestation is NOT wired
 without an approved secure storage/transport destination.
 
 Acceptance criteria:
-- [ ] systemd `*.service` and `*.timer`: explicit UTC calendar, narrow
+- [x] systemd `*.service` and `*.timer`: explicit UTC calendar, narrow
       accuracy, no catch-up on reboot, no restart, non-root dynamic user,
       read-only code tree and writable state dir, NTP synchronization prerequisite.
-- [ ] Python wrapper invokes the unchanged `capture_today` only once,
+- [x] Python wrapper invokes the unchanged `capture_today` only once,
       requires trusted *operational* NTP state and matching UTC window,
       atomically retains an immutable per-day success/failure archive,
       source ZIP digest and no duplicates/backdating or overwrite.
-- [ ] Valid success: existing three files and deterministic local offline
+- [x] Valid success: existing three files and deterministic local offline
       `audit_zip` replay, with `github_attestation_verified=false`,
       `point_in_time_publication_verified=false`, promotion OFF.
       Error: only explicit UNASSESSED receipt, never partial source data.
-- [ ] Offline negative tests cover clock guard/unsynchronized NTP,
+- [x] Offline negative tests cover clock guard/unsynchronized NTP,
       duplicate day, failed capture, ZIP replay/corruption, permission and
       timer/service safety, with no external HTTP or real orders.
-- [ ] Operator playbook contains VPS bootstrap, time-sync verification,
+- [x] Operator playbook contains VPS bootstrap, time-sync verification,
       timer deployment and journal/local evidence commands, secure artifact
       handoff prerequisites, and distinguishes true independent provenance
       from local VPS clock + digest (which can be tampered with).
@@ -612,9 +612,31 @@ Implementation: (1) add independent dated immutable spool wrapper;
 access and secure destination are not available; this is a deployment
 blocker rather than an engineering success claim.
 
+### Plan-B code-ready checkpoint — before CI verification
+
+- New `scripts/run_vps_funding_preentry.py`: reuses existing source capture
+  and strict `audit_zip`, checks `timedatectl NTPSynchronized=yes`,
+  holds a nonblocking local exclusive lock and publishes a single atomic
+  dated ZIP + metadata receipt; neither partial raw output nor a second
+  attempt is accepted, no network retry or GitHub token.
+- `deploy/systemd/future-opportunity-funding-capture.{service,timer}`:
+  sandboxed dynamic user, owner-private persistent state dir, UTC 00:00:10,
+  one-shot no catch-up/retry, restrictive code filesystem and no runtime
+  credentials. The previous GitHub scheduled collector remains secondary.
+- Added offline time/NTP/duplicate/failure/ZIP replay/service contract
+  tests in `tests/test_funding_vps_collector.py`,
+  [ADR-0010](../../adr/0010-vps-funding-prospective-scheduler.md),
+  [VPS deployment runbook](../../operations/funding-vps-systemd-capture.md),
+  README and source evidence contract.
+- **CI not yet run** at this checkpoint; final PR-head five CI gates and
+  Historical Smoke plus postmerge main CI remain required.
+- **Deployment blocked by missing VPS connection** and destination/provenance
+  decision. Repo-side implementation cannot honestly claim an operational
+  daily VPS run or signed independent as-of data.
+
 ## Resume from here
 
-Implement the approved Plan-B VPS timer collector, offline tests and runbook on `agent/funding-vps-systemd-collector`; run final PR CI/Historical Smoke, merge, verify postmerge CI. A real VPS installation and secure artifact-handoff configuration remain explicitly UNASSESSED until host details are available. Preserve #85 underlying source-evidence BLOCKED_EVIDENCE.
+Open Plan-B VPS systemd PR, run final head CI 5/5 + Historical Backtest Smoke, merge on green and verify postmerge main CI. Record exact run IDs on Issue #85. Repo-side engineering is verifiable; actual VPS installation, remote evidence transport and independent OKX publication remain UNASSESSED and need host/environment details or a new approved security decision.
 
 ## Completion
 
