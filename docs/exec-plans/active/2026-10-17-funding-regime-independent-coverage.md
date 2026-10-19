@@ -1,7 +1,7 @@
 # Funding Carry point-in-time regime expansion
 
 Issue: #85
-Status: VERIFYING
+Status: BLOCKED_EVIDENCE
 Owner: agent
 Started: 2026-10-17
 
@@ -634,9 +634,24 @@ blocker rather than an engineering success claim.
   decision. Repo-side implementation cannot honestly claim an operational
   daily VPS run or signed independent as-of data.
 
+### 2026-10-19 Plan B PR #127 final implementation-head CI evidence
+
+- [PR #127](https://github.com/pkking/future-opportunity/pull/127)
+  verified implementation head `477abe70b7d4abd5fceb29b617858fe98eff76b9`:
+  [CI #39283471363](https://github.com/pkking/future-opportunity/actions/runs/39283471363)
+  **five check-runs SUCCESS**, including VPS offline source tests, static, API,
+  E2E and Agent Plan Integrity;
+  [Historical Backtest Smoke #39283471425](https://github.com/pkking/future-opportunity/actions/runs/39283471425)
+  **SUCCESS** on the same SHA.
+- This checkpoint documentation itself changes the PR head. Require new final
+  head CI/Smoke before merge and postmerge main CI. The separate production
+  host installation is not done and source timing is not independently attested.
+- Underlying #85 stays OPEN/BLOCKED_EVIDENCE with zero new externally
+  authenticated prospective samples; no promotion or trading.
+
 ## Resume from here
 
-Open Plan-B VPS systemd PR, run final head CI 5/5 + Historical Backtest Smoke, merge on green and verify postmerge main CI. Record exact run IDs on Issue #85. Repo-side engineering is verifiable; actual VPS installation, remote evidence transport and independent OKX publication remain UNASSESSED and need host/environment details or a new approved security decision.
+Check the final documentation-head PR #127 five CI jobs and Historical Backtest Smoke, squash merge when green, verify postmerge main CI, then record exact evidence on Issue #85. The approved Plan-B repo implementation is code-ready but VPS deployment, off-host artifact transport and exchange-authenticated publication evidence remain blocked/unassessed. Do not mark the whole Funding research plan completed.
 
 ## Completion
 
