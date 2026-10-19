@@ -1,0 +1,15 @@
+[Unit]
+Description=Daily UTC read-only Funding capture window (no reboot catch-up)
+Documentation=https://github.com/pkking/future-opportunity
+
+[Timer]
+# Exact midnight is not required: existing source checks enforce 00:00..00:15.
+# NTP status and actual HTTP request/response times remain independent gates.
+OnCalendar=*-*-* 00:00:10 UTC
+AccuracySec=1s
+RandomizedDelaySec=0
+Persistent=false
+Unit=future-opportunity-funding-capture.service
+
+[Install]
+WantedBy=timers.target
