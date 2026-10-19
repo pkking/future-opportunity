@@ -1,7 +1,7 @@
 # Funding Carry point-in-time regime expansion
 
 Issue: #85
-Status: BLOCKED_EVIDENCE
+Status: IMPLEMENTING
 Owner: agent
 Started: 2026-10-17
 
@@ -474,9 +474,58 @@ pre-entry OKX source-publication claim stays **UNASSESSED**.
 - This **documentation checkpoint** requires final-head CI and Smoke before
   merge, then postmerge main CI. No acquisition or quantitative economics gate.
 
+## 2026-10-19 first scheduled production-run recovery (#85)
+
+**Observed production facts before implementation:**
+- [Run 39186235557](https://github.com/pkking/future-opportunity/actions/runs/39186235557), `event=schedule`, SHA `8f72aac5394712b49e9c60fffbe9dcec146dbb5a`,
+  created **2026-10-19T01:37:54Z** versus committed daily cron `23:37 UTC`.
+  This first execution was around **2h00m54s late** (assuming the intended
+  immediately preceding scheduled slot). GitHub's documented best-effort
+  delivery does not guarantee an observed run for every scheduled occurrence.
+- Capture job 117849148647 failed at its before-GET guard at 01:38:02Z:
+  `scheduled preentry runner missed current UTC window`. The original
+  `capture_funding_preentry_source.py` and OKX GET were not reached.
+- Read-only audit job 117849187922 downloaded the original source error-only
+  ZIP but then failed in `_identity` because it incorrectly called the
+  **successful-capture-only** `target_midnight()` admission function for a
+  failed capture. This is a genuine loss of useful failure classification, not
+  a failed market observation or a safe reason to relax capture deadlines.
+- Immutable source error artifact 12158480804 digest
+  `sha256:9b08b29645b22cbcecedc94094d7461be5e4c7ac7ef883d2384bb1fd7111f5a2`;
+  audit error artifact 12158406450 digest
+  `sha256:dc541a389c59af85100ac5be8abd5dfbf26e5158e43c7f35e764ba0629868333`.
+  Neither is market-source data.
+
+Objective: make the audit accept an **honestly failed** late/dropped schedule
+and verify its original ZIP/digest/error-only receipt, preserving the missing
+observation as `UNASSESSED`. Do not weaken admission of successful captures.
+
+Acceptance criteria:
+- [ ] The same missed 01:37 UTC recorded run can be represented by an offline
+  deterministic regression case, yielding `failed_capture_unassessed` and
+  `entry_market_date=null`, not a fabricated historical date.
+- [ ] Failed capture still requires valid UTC-aware run timestamp, exact
+  repository/workflow/commit/schedule identity and independent ZIP digest,
+  single safe error receipt, no GitHub attestation claim.
+- [ ] Successful capture at an invalid/late time remains fail-closed;
+  legitimately created, prewarmed/within-window successful captures continue
+  their original three-file replay + independent signed subject verification.
+- [ ] Machine-readable review records actual run creation time and whether
+  its admission window was eligible/missed, without claiming exact scheduled
+  delivery timestamps unavailable in the GitHub API.
+- [ ] Targeted offline tests + final five CI gates and Historical Smoke
+  succeed; final PR commit and postmerge main CI recorded.
+
+Explicit scope limits: no additional auto-polling, no change to cron,
+no price/funding/regime threshold changes, no historical acquisition or
+promotion, no economic gate and no live exchange order path. **Option A
+cannot guarantee a timely run when GitHub delays a schedule by hours**;
+consider an externally timed source only via a new architecture/operational
+approval, and never backdate this failed run.
+
 ## Resume from here
 
-Verify final documentation-head CI and Historical Smoke on PR #125, merge once all pass and verify postmerge main CI. Remain BLOCKED_EVIDENCE for any actual exchange publication/provenance claim until a real scheduled run exists.
+Implement the late-trigger **failed-capture audit reporting fix** on `agent/funding-scheduled-late-audit-recovery`, run targeted tests, then five PR-head CI checks and Historical Smoke. Merge after final-head green and log postmerge CI on Issue #85. True Funding regime evidence remains BLOCKED_EVIDENCE; no automated retries or changed trading thresholds.
 
 ## Completion
 
