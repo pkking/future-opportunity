@@ -208,3 +208,34 @@ scheduler/provider, adjusted deadline or market-data backfill is
 approved by this incident. Time-critical source collection would need
 a separate operational/architecture decision for a more predictable
 external clock source, plus independent source/authentication review.
+
+## VPS primary scheduling (Plan B, explicitly approved 2026-10-19)
+
+[ADR-0010](../adr/0010-vps-funding-prospective-scheduler.md) establishes
+the primary UTC scheduler on a Linux VPS. Deploy the pinned commit using
+the [operations runbook](../operations/funding-vps-systemd-capture.md).
+A `systemd.timer` starts the same original read-only `capture_today`
+around **00:00:10 UTC**, with one-shot non-root systemd sandboxing,
+operational NTP check, no retry/catch-up and the original **00:15 UTC**
+deadline. Scheduling precision is improved by removing GitHub Actions
+queue delay, but still **not guaranteed**. The first actual VPS
+observation has **not** occurred at implementation time.
+
+The VPS retains an owner-private per-day source ZIP and manifest;
+either exact original three success JSON files, replay-checked with
+the same `audit_zip`, or a single `UNASSESSED` error JSON file.
+All local SHA-256 identities are **self-reported by the VPS** and
+do not independently authenticate its clock, HTTP response time or
+OKX exchange publication. Do not pass a VPS ZIP to the existing
+GitHub-scheduled run-identity validator: that validator only attests
+to **GitHub-origin** source runs, not arbitrary external bytes.
+
+GitHub repository CI, the separate GitHub-origin source-audit workflow
+and the manual diagnostic workflow remain present. GitHub scheduled
+capture is an optional secondary research observation, not the primary
+clock and not a source of automatic historical case promotion.
+VPS-to-off-host/GitHub immutable-artifact transmission remains
+**not configured** until a security-reviewed destination, credential
+exchange and signed provenance policy are decided. A later GitHub
+attestation to a transferred VPS ZIP proves GitHub received the
+bytes, **not** that OKX published them before the entry cutoff.
