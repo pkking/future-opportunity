@@ -968,6 +968,22 @@ preferred_ready
 
 Duplicate strategy/date entries fail closed.
 
+## Prospective Funding UTC-day source capture (research-only)
+
+The user-approved [VPS Plan B](docs/adr/0010-vps-funding-prospective-scheduler.md)
+uses a hardened Linux `systemd.timer` to run the existing two-read-only-GET
+Funding observer shortly after UTC midnight. It locally stores at most one
+immutable-by-application daily original-source ZIP and checksum manifest,
+including `UNASSESSED` for missed/invalid attempts. A local checksum and
+NTP-synchronized VPS clock do **not** prove independent OKX publication time.
+
+See [VPS deployment and verification runbook](docs/operations/funding-vps-systemd-capture.md).
+Repository-only implementation and CI do not establish a VPS installation,
+secure off-host receipt, GitHub signature on VPS-origin bytes, or research
+sample eligibility. GitHub Actions scheduled source observation remains a
+separate secondary diagnostic path. Stage-2 economics and real orders remain
+closed.
+
 ## Architecture
 
 The system follows a domain-centric Ports & Adapters design.

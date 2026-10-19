@@ -1,0 +1,33 @@
+[Unit]
+Description=Read-only prospective Funding pre-entry source capture (VPS local evidence only)
+Documentation=https://github.com/pkking/future-opportunity
+Wants=network-online.target time-sync.target
+After=network-online.target time-sync.target
+
+[Service]
+Type=oneshot
+# Dedicated ephemeral UID and persistent owner-private state directory;
+# Python and repo files are read-only. No GitHub or OKX credentials required.
+DynamicUser=yes
+StateDirectory=future-opportunity-funding
+StateDirectoryMode=0700
+WorkingDirectory=/opt/future-opportunity
+Environment=PYTHONPATH=/opt/future-opportunity/src
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/opt/future-opportunity/.venv/bin/python /opt/future-opportunity/scripts/run_vps_funding_preentry.py --state-dir /var/lib/future-opportunity-funding
+TimeoutStartSec=120s
+Restart=no
+UMask=0077
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+LockPersonality=yes
+RestrictSUIDSGID=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
