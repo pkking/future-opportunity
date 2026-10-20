@@ -649,9 +649,67 @@ blocker rather than an engineering success claim.
 - Underlying #85 stays OPEN/BLOCKED_EVIDENCE with zero new externally
   authenticated prospective samples; no promotion or trading.
 
+## 2026-10-20 incident — VPS NTP state inaccessible via sandboxed D-Bus (#85)
+
+**User-observed host and production facts**: VPS `systemd` timer triggered
+on 2026-10-20T00:00:10Z, but the actual service reported
+`status=UNASSESSED`, `entry_market_date=null`, original error-only
+source ZIP digest `52756a4d01ca5edc9a8f0f6e71f9802a4064e5955da1cbc3b5be0614c0da9bd8`,
+reason `VPS NTP clock is not confirmed synchronized`, no OKX GET.
+Host `timedatectl status` and `timedatectl show -p NTPSynchronized --value`
+both report synchronized/yes; `systemd-timesyncd` is active and the
+VPS uses KVM virtualization. A sandboxed `systemd-run` probe reproduces
+the underlying failure from `timedatectl`: exit 1, no stdout, stderr
+`Failed to parse bus message: Transport endpoint is not connected`.
+The `systemd-run` wrapper reported success only because the probe Python
+process exited 0 after printing diagnostics. Querying `timesyncd` logs
+for 2026-10-19T23:45 to 2026-10-20T00:20 produced no entries, which
+neither proves nor disproves host clock synchronization in that window.
+
+**Root cause established**: the subprocess' D-Bus query cannot obtain
+`timedatectl` status in the restrictive DynamicUser service. Its
+all-failures-false path intentionally blocked capture, but incorrectly
+coupled a safe clock check to a service-incompatible transport.
+Official systemd-timesyncd docs specify a `/run/systemd/timesync/synchronized`
+marker touched on each successful synchronization, which can be read
+without D-Bus. Official default `PollIntervalMaxSec` is 2048 s.
+Use recent marker data only (<=2 h), not bare existence.
+
+**Objective**: check host `systemd-timesyncd` successful NTP
+synchronization through a **read-only, age-limited runtime marker** that
+works under DynamicUser+ProtectSystem; fail closed if missing, symlink,
+non-regular, stale, invalid/future timestamp or inaccessible. Do not
+change timer time, sandbox profile, sources or historical evidence.
+The marker is a local operational precondition, **not** a third-party
+signed source publication timestamp, nor authoritative proof of current
+precision. Host-side probe is still required to establish marker exists
+and is readable under actual sandbox.
+
+Acceptance criteria:
+- [ ] Operational NTP gate uses no D-Bus and never returns true on an
+      old/unknown/forged marker or time anomaly; default allowed age <=2h
+      covers default timesyncd 2048s poll while rejecting stale sync.
+- [ ] Deterministic offline tests verify fresh/old/missing/symlink/
+      non-regular/future/permission errors and service's fail-closed
+      source-GET avoidance.
+- [ ] Unit keeps nonroot DynamicUser and strict sandbox, UTC cutoff,
+      no second attempt and research-only provenance flags unchanged.
+- [ ] Runbook documents proof boundaries, host/sandbox read-only probe
+      and patch-deployment steps, including keeping the 2026-10-20
+      UNASSESSED receipt immutable. No host deployment claim.
+- [ ] Final PR HEAD CI five required checks and Historical Smoke plus
+      postmerge main CI verified and recorded in Issue #85.
+
+Non-goals: no new NTP daemon, no `timedatectl set-ntp` policy change,
+no NTP check bypass, no root service, no polling/retrospective backfill,
+no promotion or order placement. Branch `fix/funding-vps-ntp-sandbox-marker`.
+Expected edits: `scripts/run_vps_funding_preentry.py`,
+`tests/test_funding_vps_collector.py`,
+`docs/operations/funding-vps-systemd-capture.md`, active plan.
+
 ## Resume from here
 
-Check the final documentation-head PR #127 five CI jobs and Historical Backtest Smoke, squash merge when green, verify postmerge main CI, then record exact evidence on Issue #85. The approved Plan-B repo implementation is code-ready but VPS deployment, off-host artifact transport and exchange-authenticated publication evidence remain blocked/unassessed. Do not mark the whole Funding research plan completed.
+Implement the sandbox-readable, age-limited NTP marker check, deterministic offline negative tests and runbook. Validate final PR-head CI and Smoke, merge on green, then verify postmerge CI; keep 2026-10-20 evidence UNASSESSED and require actual VPS post-deploy sandbox probe and first real future-day capture. Issue #85 remains BLOCKED_EVIDENCE.
 
 ## Completion
 
