@@ -11,7 +11,7 @@ import fcntl
 import hashlib
 import json
 import os
-import subprocess
+import stat
 import tempfile
 import zipfile
 from datetime import UTC, datetime, time as clock_time, timedelta
@@ -29,17 +29,34 @@ SOURCE_FILES = (
 MAX_SOURCE_BYTES = 2_000_000
 
 
-def ntp_is_synchronized() -> bool:
-    """Operational guard only, not an independent signed timestamp."""
-    try:
-        result = subprocess.run(
-            ["timedatectl", "show", "--property=NTPSynchronized", "--value"],
-            check=True, text=True, capture_output=True, timeout=5,
-        )
-    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
-        return False
-    return result.stdout.strip() == "yes"
+NTP_SYNC_MARKER = Path("/run/systemd/timesync/synchronized")
+# systemd-timesyncd normally polls no less often than every 2048 seconds.
+# Two hours allows brief outages while rejecting a long-stale sync marker.
+MAX_NTP_SYNC_AGE_SECONDS = 2 * 60 * 60
 
+
+def ntp_is_synchronized(
+    *, marker: Path = NTP_SYNC_MARKER,
+    now: Callable[[], datetime] | None = None,
+) -> bool:
+    """Require a recent systemd-timesyncd sync with no sandboxed D-Bus call.
+
+    /run is volatile across boots. The marker is touched when timesyncd
+    successfully synchronizes; a stale marker is not ongoing clock proof.
+    This local guard is not a trusted UTC timestamp or exchange signature.
+    """
+    try:
+        details = marker.lstat()  # Reject symlinks rather than following them.
+        if not stat.S_ISREG(details.st_mode):
+            return False
+        current = now() if now is not None else datetime.now(UTC)
+        if current.tzinfo is None:
+            return False
+        age = current.astimezone(UTC).timestamp() - details.st_mtime
+        return 0 <= age <= MAX_NTP_SYNC_AGE_SECONDS
+    except (OSError, ValueError, OverflowError):
+        # Missing/unreadable marker, invalid clock or stat -> no source GET.
+        return False
 
 def _persist_json(path: Path, data: dict[str, Any]) -> None:
     with path.open("x", encoding="utf-8") as handle:

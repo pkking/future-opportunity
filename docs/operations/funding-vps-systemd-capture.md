@@ -43,12 +43,19 @@ transferred bytes cannot retroactively establish VPS observation time.
   `https://www.okx.com`, and available `timedatectl`.
 - Python **3.12+**, `uv`, Git and outbound HTTPS. Prefer a fixed git SHA
   that has already passed repository CI and reviewed execution-plan tests.
-- A working NTP time synchronization service: `timedatectl show
-  --property=NTPSynchronized --value` must print **`yes`**.
-  This property depends on the host's time synchronization stack.
-  If using chrony with a different integration, configure your OS's
-  time-sync reporting explicitly rather than bypassing the application
-  guard. `time-sync.target` alone does not prove NTP is synchronized.
+- A working **systemd-timesyncd** service on the VPS. On the **host**,
+  `timedatectl show --property=NTPSynchronized --value` must print
+  **`yes`**, and `/run/systemd/timesync/synchronized` must exist
+  and have been updated **within the past two hours**.
+  The root-owned `/run` state is volatile across reboots, and the
+  marker is touched on each successful timesyncd synchronization.
+  This is a local operational guard, **not** an external timestamp or
+  proof of current sub-second offset. The original sandboxed D-Bus
+  `timedatectl` subprocess failed under DynamicUser in the first live
+  run. The collector now reads the marker directly without using D-Bus.
+  If a host uses chrony rather than timesyncd, a separate safe adapter
+  must be implemented and reviewed; do **not** bypass NTP verification.
+  `time-sync.target` alone does not prove NTP is synchronized.
 - A root-owned immutable/read-only code checkout at
   `/opt/future-opportunity`. The service has no shell login,
   exchange secrets or GitHub personal-access token.
@@ -68,9 +75,11 @@ REVIEWED_SHA=REPLACE_WITH_VERIFIED_40_CHARACTER_MERGE_COMMIT_SHA
 sudo git checkout --detach "$REVIEWED_SHA"
 sudo uv sync --python /usr/bin/python3.12 --all-extras --dev
 sudo chmod -R a+rX /opt/future-opportunity
+```
 
 **Lockfile note:** As of this version of the repository, `uv.lock` is **not** committed. Therefore do **not** use `uv sync --frozen` or `uv sync --locked` on a clean VPS checkout: both would reject a missing lockfile. The command above resolves the declared constraints and creates a local, untracked `uv.lock`. Pin the reviewed application Git commit, but recognize that dependency resolution is not fully reproducible across new hosts until a reviewed lockfile is committed. The proper follow-up is to version and CI-check a lockfile, then switch production instructions to a lock-enforcing invocation. For this VPS, `--python /usr/bin/python3.12` deliberately selects a system-accessible interpreter so the sandboxed `DynamicUser` can run `.venv/bin/python`; confirm the path exists before enabling the timer.
 
+```bash
 timedatectl status
 timedatectl show --property=NTPSynchronized --value
 systemd-analyze calendar --iterations=3 '*-*-* 00:00:10 UTC'
@@ -94,6 +103,61 @@ sandbox availability and the next day's real journal. Using a VPS does
 not provide hard real-time scheduling or prevent clock drift, downtime,
 DNS/TLS failures, delayed data dissemination or exchange endpoint changes.
 
+## First-run NTP incident and read-only sandbox preflight
+
+The first VPS timer did fire at **2026-10-20T00:00:10Z**, but the
+process reported `UNASSESSED` before either public GET: the original
+`timedatectl` D-Bus call failed inside the `DynamicUser` sandbox
+(`Failed to parse bus message: Transport endpoint is not connected`).
+The host itself reported `NTPSynchronized=yes`. The status log for
+that previous UTC interval is empty, which is not a proof of past sync.
+The original 2026-10-20 error ZIP/manifest must remain intact.
+
+The corrected gate reads the systemd-timesyncd synchronization marker,
+requires an ordinary **non-symlink** file with an mtime no older than
+7200 seconds and no future timestamp, and rejects absent, inaccessible
+or stale markers *before* contacting OKX. systemd-timesyncd's default
+maximum poll interval is 2048 seconds. This freshness guard checks only
+local operational time state; it cannot independently authenticate the
+clock, exact offset or OKX publication.
+
+Before the next UTC trigger, run a no-source diagnostic on the host:
+
+```bash
+timedatectl show -p NTPSynchronized --value
+sudo stat -c 'last-sync: %y / permissions: %a' /run/systemd/timesync/synchronized
+
+sudo systemd-run --unit=funding-marker-probe --wait --pipe --collect \
+  -p DynamicUser=yes -p ProtectSystem=strict \
+  -p ProtectHome=yes -p PrivateTmp=yes -p PrivateDevices=yes \
+  -p NoNewPrivileges=yes \
+  -p 'RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6' \
+  /opt/future-opportunity/.venv/bin/python -c '
+import os, stat, time
+path = "/run/systemd/timesync/synchronized"
+info = os.lstat(path)
+age = time.time() - info.st_mtime
+ok = stat.S_ISREG(info.st_mode) and 0 <= age <= 7200
+print("marker_age_seconds:", round(age), "valid:", ok)
+raise SystemExit(0 if ok else 1)
+'
+```
+
+This read-only diagnostic has **no** source GET, no dated archive write
+and no trading. The probe must finish with `valid: True`. If it fails,
+inspect `systemctl status systemd-timesyncd`, `timedatectl
+timesync-status` and the marker permissions. Do not remove
+`DynamicUser` or silently turn off NTP validation.
+
+**Upgrade an installed VPS:** after this PR is merged and all final-head
+CI gates pass, check out its **actual squash-merge commit SHA** (do not
+guess or pin a branch by name), run the documented dependency
+installation if needed, and verify the marker probe. No service unit
+change is needed; the existing timer continues automatically. Do not
+manually start the one-shot service outside the UTC capture window.
+If the previous day has an `UNASSESSED` receipt, preserve it; the
+next UTC calendar day remains an independent new attempt.
+
 ## Per-day behavior and operational inspection
 
 - Timer: `OnCalendar=*-*-* 00:00:10 UTC`,
@@ -102,9 +166,9 @@ DNS/TLS failures, delayed data dissemination or exchange endpoint changes.
   runs only once; the source script rejects any attempt at or after
   **00:15 UTC**.
 - One-shot service: `DynamicUser=yes`, `StateDirectory`, read-only
-  root tree, no privilege elevation; explicit `NTPSynchronized=yes`
-  before first public request. This property is an operational
-  sanity check **not** a signed third-party time measurement.
+  root tree, no privilege elevation; **recent systemd-timesyncd marker**
+  (no D-Bus) before first public request. This local freshness check is
+  **not** a signed third-party time measurement.
 - Existing `capture_today`: no credentials, exactly two bounded
   public GETs and strict event/HTTP-time anti-lookahead validation.
   No additional source retries or historical API backfill.
