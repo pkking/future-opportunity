@@ -686,15 +686,15 @@ precision. Host-side probe is still required to establish marker exists
 and is readable under actual sandbox.
 
 Acceptance criteria:
-- [ ] Operational NTP gate uses no D-Bus and never returns true on an
+- [x] Operational NTP gate uses no D-Bus and never returns true on an
       old/unknown/forged marker or time anomaly; default allowed age <=2h
       covers default timesyncd 2048s poll while rejecting stale sync.
-- [ ] Deterministic offline tests verify fresh/old/missing/symlink/
+- [x] Deterministic offline tests verify fresh/old/missing/symlink/
       non-regular/future/permission errors and service's fail-closed
       source-GET avoidance.
-- [ ] Unit keeps nonroot DynamicUser and strict sandbox, UTC cutoff,
+- [x] Unit keeps nonroot DynamicUser and strict sandbox, UTC cutoff,
       no second attempt and research-only provenance flags unchanged.
-- [ ] Runbook documents proof boundaries, host/sandbox read-only probe
+- [x] Runbook documents proof boundaries, host/sandbox read-only probe
       and patch-deployment steps, including keeping the 2026-10-20
       UNASSESSED receipt immutable. No host deployment claim.
 - [ ] Final PR HEAD CI five required checks and Historical Smoke plus
@@ -707,9 +707,28 @@ Expected edits: `scripts/run_vps_funding_preentry.py`,
 `tests/test_funding_vps_collector.py`,
 `docs/operations/funding-vps-systemd-capture.md`, active plan.
 
+### 2026-10-20 NTP sandbox fix ready for CI
+
+- Changed `scripts/run_vps_funding_preentry.py` clock preflight from
+  subprocess `timedatectl` D-Bus to reading `/run/systemd/timesync/synchronized`
+  via `Path.lstat()` with strict regular-file/no-symlink check and
+  `0 <= sync_age <= 7200 seconds`, returning false on missing,
+  permissions, invalid clock, stale or future marker. No new credentials,
+  dependencies, subprocess, relaxation or retry.
+- Deterministic offline tests added for fresh/at-boundary/stale/future
+  marker, symlink, directory, nonexistent, PermissionError, naive clock
+  and no-OKX-GET `UNASSESSED` on stale sync. Existing success path and
+  source provenance remain unchanged.
+- Updated VPS operations runbook with the actual first scheduled failure,
+  a read-only `systemd-run` sandbox marker probe, pin-to-merge-SHA
+  deployment advice and explicit limits of local NTP marker trust. Also
+  moved the prior lockfile note outside its mistaken Bash code fence.
+- CI and actual sandbox marker probe **not yet verified** at this
+  checkpoint. Do not infer VPS host behavior solely from offline tests.
+
 ## Resume from here
 
-Implement the sandbox-readable, age-limited NTP marker check, deterministic offline negative tests and runbook. Validate final PR-head CI and Smoke, merge on green, then verify postmerge CI; keep 2026-10-20 evidence UNASSESSED and require actual VPS post-deploy sandbox probe and first real future-day capture. Issue #85 remains BLOCKED_EVIDENCE.
+Open VPS sandbox NTP hotfix PR; require final-head 5/5 CI and Historical Smoke, merge and verify postmerge main CI. On VPS separately verify recent timesync marker is readable under DynamicUser, update to pinned merge SHA, then observe next genuine UTC-day capture. Preserve 2026-10-20 UNASSESSED, #85 research remains BLOCKED_EVIDENCE.
 
 ## Completion
 
