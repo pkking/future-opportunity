@@ -4,7 +4,7 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
-import subprocess
+import os
 import zipfile
 from datetime import UTC, datetime
 from pathlib import Path
@@ -152,21 +152,62 @@ def test_vps_replay_failure_fails_closed(monkeypatch, tmp_path):
         assert z.namelist() == ["error.json"]
 
 
-def test_vps_ntp_synchronization_status_is_fail_closed(monkeypatch):
-    mod = _mod(monkeypatch)
-    monkeypatch.setattr(mod.subprocess, "run", lambda *_args, **_kwargs: type(
-        "Completed", (), {"stdout": "yes\n"}
-    )())
-    assert mod.ntp_is_synchronized() is True
-    monkeypatch.setattr(mod.subprocess, "run", lambda *_args, **_kwargs: type(
-        "Completed", (), {"stdout": "no\n"}
-    )())
-    assert mod.ntp_is_synchronized() is False
-    def timeout(*_args, **_kwargs):
-        raise subprocess.TimeoutExpired("timedatectl", 5)
-    monkeypatch.setattr(mod.subprocess, "run", timeout)
-    assert mod.ntp_is_synchronized() is False
+def _marker(tmp_path, timestamp):
+    path = tmp_path / "synchronized"
+    path.touch()
+    os.utime(path, (timestamp, timestamp))
+    return path
 
+
+def test_vps_timesync_marker_requires_recent_success_without_dbus(monkeypatch, tmp_path):
+    mod = _mod(monkeypatch)
+    fresh = _marker(tmp_path, CLOCK.timestamp() - 2048)
+    assert mod.ntp_is_synchronized(marker=fresh, now=lambda: CLOCK) is True
+    os.utime(fresh, (CLOCK.timestamp() - 7200, CLOCK.timestamp() - 7200))
+    assert mod.ntp_is_synchronized(marker=fresh, now=lambda: CLOCK) is True
+    os.utime(fresh, (CLOCK.timestamp() - 7200.01, CLOCK.timestamp() - 7200.01))
+    assert mod.ntp_is_synchronized(marker=fresh, now=lambda: CLOCK) is False
+    os.utime(fresh, (CLOCK.timestamp() + 1, CLOCK.timestamp() + 1))
+    assert mod.ntp_is_synchronized(marker=fresh, now=lambda: CLOCK) is False
+    assert mod.MAX_NTP_SYNC_AGE_SECONDS == 7200
+
+
+def test_vps_timesync_marker_missing_symlink_directory_and_permission_fail_closed(
+    monkeypatch, tmp_path,
+):
+    mod = _mod(monkeypatch)
+    missing = tmp_path / "not-created"
+    assert mod.ntp_is_synchronized(marker=missing, now=lambda: CLOCK) is False
+    real = _marker(tmp_path, CLOCK.timestamp())
+    link = tmp_path / "synced-link"
+    link.symlink_to(real)
+    assert mod.ntp_is_synchronized(marker=link, now=lambda: CLOCK) is False
+    assert mod.ntp_is_synchronized(marker=tmp_path, now=lambda: CLOCK) is False
+    assert mod.ntp_is_synchronized(
+        marker=real, now=lambda: datetime(2026, 9, 15, 0, 10)
+    ) is False
+
+    class NotReadable:
+        def lstat(self):
+            raise PermissionError("sandbox path denied")
+
+    assert mod.ntp_is_synchronized(marker=NotReadable(), now=lambda: CLOCK) is False
+
+
+def test_stale_ntp_marker_prevents_source_get_and_writes_unassessed(monkeypatch, tmp_path):
+    mod = _mod(monkeypatch)
+    old = _marker(tmp_path, CLOCK.timestamp() - 9000)
+    state = tmp_path / "state"
+    result = mod.collect_once(
+        state, now=lambda: CLOCK,
+        synced=lambda: mod.ntp_is_synchronized(marker=old, now=lambda: CLOCK),
+        collector=lambda *_: pytest.fail("must not call OKX after stale sync"),
+    )
+    assert result["status"] == "UNASSESSED"
+    assert result["entry_market_date"] is None
+    with zipfile.ZipFile(state / "2026-09-15" / "original-source.zip") as z:
+        assert z.namelist() == ["error.json"]
+        assert json.loads(z.read("error.json"))["status"] == "UNASSESSED"
 
 def test_vps_service_and_timer_do_not_introduce_secrets_or_retry():
     service = SERVICE.read_text()
@@ -206,6 +247,7 @@ def test_non_aware_clock_fails_without_creating_observation(monkeypatch, tmp_pat
 def test_no_live_network_or_external_delivery_from_vps_module():
     source = SCRIPT.read_text()
     assert "httpx" not in source and "requests." not in source
-    assert "subprocess.run(" in source  # clock status only
-    assert '"timedatectl"' in source
+    assert "subprocess.run(" not in source  # no D-Bus process in the sandbox
+    assert "/run/systemd/timesync/synchronized" in source
+    assert "MAX_NTP_SYNC_AGE_SECONDS" in source
     assert "github.com" not in source
