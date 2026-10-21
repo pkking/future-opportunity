@@ -831,9 +831,105 @@ active plan.
   Explicit trusted sink, WORM retention and credentials require a
   separate security/operator decision. Do not report Stage 2 success.
 
+### Repo-side GitHub-only proof pipeline ready for CI
+
+- `scripts/publish_vps_funding_github_release.py`: only same-day
+  successful immutable VPS ZIP/manifest, strict local source replay,
+  no backfill/other time, GitHub Releases draft → two original assets
+  `digest,size,created_at` server checks → publish under deadline
+  with `immutable=true` and server `published_at` check.
+  No delete/overwrite/retry/market HTTP; no source collector changes.
+- `scripts/audit_github_vps_release.py`: independent unauthenticated
+  public GitHub API release lookup and original two-asset fetch with
+  GitHub server metadata and original ZIP strict replay; attestation
+  marked UNVERIFIED until separate `gh release verify` operation.
+- Isolated optional publisher systemd unit with `DynamicUser`,
+  `LoadCredential=github_token` and a separate post-success drop-in
+  **not installed automatically**. VPS capture stays separate,
+  and missing token/repo setting fails closed.
+- No-network GitHub API MockTransport tests include success, immutable
+  provenance and critical negative collision/timing/bad digest,
+  forged/changed asset, missing credential, no historical replay;
+  direct human rollout/config remains unassessed.
+- Runbook and research contract now use only GitHub free public repo
+  capability; Actions Artifact max 90-day retention is insufficient,
+  so Immutable Release is the proposed evidence store.
+- No actual GitHub Release was created, and no VPS secret installed,
+  repo admin immutability setting modified or original 2026-10-21
+  ZIP uploaded. Final CI and smoke **pending** in this checkpoint.
+
+## 2026-10-21 GitHub-only storage/trusted receipt decision (approved scope)
+
+**New explicit constraint:** User rejected external OBS/S3/TSA and requires
+**only GitHub's free features for open-source public repositories**.
+Do not re-propose third-party object storage or time authorities.
+Research of GitHub public docs confirms:
+- GitHub Actions standard hosted runners are free for public repos.
+- Public Actions Artifacts and logs have **1–90 day retention**, so they
+  cannot be the sole indefinite original source archive.
+- GitHub Immutable Releases can lock release assets and tag once a draft
+  is **published**, automatically creating a GitHub release attestation.
+  This is enabled under repo Settings → Releases for **future releases**
+  and requires repository admin privilege.
+- GitHub REST release asset metadata contains `digest`, `created_at`,
+  ID and server URL; published release metadata includes `published_at`
+  and `immutable`. A draft release is editable and not yet immutable.
+- GitHub REST write requires a repo-scoped Contents:write token issued
+  to an authorized uploader. **No actual token/installation was provided**.
+
+**Goal**: Build a GitHub-native, fail-closed **prospective** evidence
+publisher from the VPS's *already completed* source ZIP to a per-day
+immutable GitHub Release, plus an independent no-secrets public GitHub
+receipt verifier. It must complete before UTC 00:15 with no new OKX calls
+and no existing historical source rewrite. Deployment must remain
+DISABLED until an approved GitHub credential and repository
+"Enable release immutability" setting are available.
+
+Strict acceptance:
+- [ ] Publisher runs only for the **current** UTC day after local
+      `status=local_replay_only`; it verifies local ZIP SHA256 and
+      identity before outbound GitHub writes; UTC <00:15 is rechecked
+      at each phase. Does not backfill 2026-10-20 or -21.
+- [ ] REST sequence: create one daily **draft** release, upload exactly
+      `original-source.zip` and `manifest.json` without repacking,
+      confirm GitHub server-provided asset digest/created_at for both,
+      publish before 00:15; require `published_at` <00:15 and
+      `immutable=true` (else UNASSESSED, never falsely promote).
+      No delete, asset overwrite, release substitution, retry after
+      deadline or Github tag collision overwrite.
+- [ ] Credentials only injected by **explicitly configured** systemd
+      `LoadCredential` to a distinct post-capture publisher. Never
+      put token into source collector, repository files, logs,
+      release assets, manifest, or CI; narrow scope to GitHub
+      Contents:write. No service auto-enabled by PR alone.
+- [ ] Public read-only verifier can independently retrieve release
+      metadata and original bytes from GitHub and call the existing
+      strict VPS offline audit; checks release immutable, GitHub-hosted
+      asset digests, asset/server publish time before 00:15,
+      exactly two assets and matching UTC date/tag. Does not
+      pretend GitHub server creation time proves OKX dissemination.
+- [ ] Offline regression suite checks release collisions, duplicate
+      or partial uploads, late publish, forged digest/timestamp,
+      missing immutability, bad source, credentials missing, expired
+      window; no actual public releases or live OKX traffic from CI.
+- [ ] Runbook + GitHub-only ADR clarify data is **publicly downloadable**
+      and future repository Release immutability needs repository admin
+      enabling. Artifacts are ephemeral (<=90d); do not use as
+      long-term sole source. No external store/TSA.
+- [ ] Final PR head five CI jobs + Historical Backtest Smoke success,
+      merge, postmerge main CI, Issue #85 checkpoint. Stage 2 blocked
+      until actual verified future-day GitHub witness and independent
+      publication decision. No trading.
+
+**Boundary:** This agent can author and test code through GitHub, but
+cannot access VPS state, enable admin repository immutability settings
+or install a VPS GitHub credential without an operator. The current
+2026-10-21 local-only ZIP cannot retroactively gain before-entry
+Github server-time evidence.
+
 ## Resume from here
 
-Verify final documentation-head PR #130 5/5 CI plus Historical Smoke. If all succeed, squash-merge and verify postmerge main CI; record exact run/merge links in #85. Build out remaining storage/timestamping only after an explicitly selected independent destination, identity/retention and trust model. Do not assert independent observed as-of publication or promote the 2026-10-21 local observation.
+Check new GitHub-only PR exact final-head CI (five required plus Historical Smoke), repair any failures, merge on green and verify postmerge main CI. Then request only owner actions that cannot be automated with current permissions: enable GitHub Immutable Releases and configure restricted GitHub Contents:write credential on the VPS. Do not activate publisher until both gates are satisfied; existing local collector continues; #85 remains OPEN/BLOCKED_EVIDENCE.
 
 ## Completion
 
