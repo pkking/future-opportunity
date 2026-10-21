@@ -280,3 +280,45 @@ strong independent identity and trusted retention; the storage provider,
 credentials and publication-attestation policy remain an explicit
 separate security decision. No automatic external transmission or
 long-lived secret has been introduced.
+
+## GitHub-only public immutable release receipt (future days only)
+
+The user has explicitly rejected outside OBS/S3/WORM storage and TSA
+services. GitHub's **Immutable Releases** are the sole proposed
+durable repository-native storage/witness facility, conditional on
+the owner enabling immutability and issuing a minimally scoped
+GitHub Contents:write upload identity. GitHub's automatic Release
+Attestation and public API make asset identity independently reviewable.
+GitHub Actions standard hosted runner capacity for a public repo is
+free, but public workflow Artifacts are temporary (1–90 days), not
+durable original-archive custody.
+
+The optional `publish_vps_funding_github_release.py` cannot observe,
+backfill, or replay market requests; it only transfers the already
+stored original same-day VPS ZIP and manifest after successful local
+replay, before the **actual** UTC 00:15 deadline. It creates a
+new draft Release with exact per-day tag, uploads two untouched
+assets, verifies GitHub-provided SHA256 and `created_at`, and
+publishes only while still within the entry window. It requires
+published GitHub `immutable=true` and `published_at` within
+the same window. No overwrite/delete/re-publish/bypass is permitted;
+a partial draft or late publication is not a valid observation.
+
+`audit_github_vps_release.py` on an independent verifier
+fetches the official GitHub Release API, checks published immutable
+status, exact public two-asset identity, GitHub-created timestamps,
+SHA256 and original ZIP replay. GitHub CLI offers an additional
+cryptographic `gh release verify` and
+`gh release verify-asset` verification of the immutable Release
+Attestation. That signed binding is distinct from the exchange's
+publication time, and all research promotion/market signed
+booleans remain false. This is a **GitHub-hosted pre-entry existence
+claim** when run and verified on a future day, not proof of OKX
+original dissemination before entry. The existing 2026-10-21
+locally successful ZIP cannot receive retroactive in-window GitHub
+server metadata, and no empirical source observation is promoted.
+
+See the VPS operations runbook for the specific admin enablement
+and isolated systemd LoadCredential post-capture operator deployment
+steps. No GitHub token, repo administration change or VPS-side
+credential has been performed by the agent.
