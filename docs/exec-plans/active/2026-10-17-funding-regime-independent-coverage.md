@@ -751,23 +751,23 @@ regime, or (d) explicit original one-file UNASSESSED failure receipt,
 without using the GitHub-origin scheduled workflow auditor incorrectly.
 
 **Acceptance:**
-- [ ] Offline reviewer requires independently supplied archive digest and
+- [x] Offline reviewer requires independently supplied archive digest and
       UTC day, rejects mismatched original ZIP, forged/invalid/missing
       manifest, duplicate/surplus ZIP members, improper day/source identity,
       conflicting file/hash/regime/status and unsafe failure receipts.
-- [ ] Reviewer never elevates any self-reported VPS clock or digest into
+- [x] Reviewer never elevates any self-reported VPS clock or digest into
       independent provenance, never approves acquisition/promotion, trading,
       exchange signature or GitHub-origin attestation; output labels
       `offline_vps_replay_only` vs `failed_capture_unassessed`.
-- [ ] Reviewer writes an optional *new* read-only review receipt locally
+- [x] Reviewer writes an optional *new* read-only review receipt locally
       without overwriting earlier review; receipt time is review time and
       never reinterpreted as original capture time; no network calls.
-- [ ] Deterministic offline tests cover canonical success, failure-only,
+- [x] Deterministic offline tests cover canonical success, failure-only,
       host/identity tampering, ZIP tampering, manifest flag spoofing,
       wrong regime/hash/date, duplicate members, missing witness and
       exact 2026-10-21 manifest metadata as a frozen case without
       manufacturing actual raw source data.
-- [ ] Operations runbook documents operator copy out of private VPS
+- [x] Operations runbook documents operator copy out of private VPS
       state, independent SHA witness workflow and precise limitations.
       No long-lived credentials/token or silent transfer destination.
 - [ ] Final PR 5/5 CI and Historical Smoke green; merge on final SHA
@@ -785,9 +785,33 @@ Code touch list: `scripts/audit_vps_funding_capture.py` (new),
 `docs/research/funding-prospective-point-in-time-capture-contract.md`,
 active plan.
 
+### 2026-10-21 offline VPS original evidence review code checkpoint
+
+- New `scripts/audit_vps_funding_capture.py` reads **unmodified**
+  VPS manifest + original ZIP with an externally supplied expected SHA256
+  and market UTC date, checks bounded regular input files, duplicate
+  manifest keys, exact origin/schema/false provenance flags, strict local
+  start day, success-only three-file replay, manifest raw/canonical
+  hashes and regime, or verified error-only UNASSESSED.
+  It never passes VPS bytes to a GitHub-origin run auditor.
+- Optional owner-private independent-host `--receipt-out` creates a
+  new JSON review receipt with recorded review time **not** source capture
+  time and all external digest authentication/approval flags false.
+- Deterministic fixture tests for success/error and forged flags, hashes,
+  regime, dates, ZIP member lists, symlinks, size boundaries, duplicate
+  JSON keys, and frozen actual 2026-10-21 metadata correctly rejected
+  when matched to nonmatching synthetic ZIP bytes.
+- VPS operational runbook adds manual encrypted SSH handoff example and
+  independent review command with the operator-provided **real** ZIP
+  SHA256, emphasizing its known VPS origin. No automated push credentials
+  or remote storage choice and no claim of authenticated as-of time.
+- CI/Smoke **not yet verified** at this checkpoint; first 2026-10-21
+  source original ZIP has not been supplied to the reviewer and
+  source publication confidence remains UNASSESSED.
+
 ## Resume from here
 
-Implement offline independently digested VPS original-ZIP + manifest verifier and receipt, tests, and no-credentials handoff documentation. PR required final-head CI/Smoke, merge, postmerge CI, archive evidence checkpoint to #85. Do not claim source/publication independent verification or retroactive promotion.
+Open independent offline VPS evidence review PR; run final-head 5/5 CI + Historical Backtest Smoke and fix any failures, merge only when green, verify postmerge main CI. Issue #85 retains no evidence-based promotion or independent exchange publication proof. External pre-entry independent witness requires separate reviewed storage/credential/timestamp security decision; don't fake it.
 
 ## Completion
 
