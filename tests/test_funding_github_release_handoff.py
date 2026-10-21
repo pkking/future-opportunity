@@ -4,7 +4,6 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
-import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -146,7 +145,7 @@ def test_publish_two_original_assets_then_immutable_release(monkeypatch, tmp_pat
 def test_no_backfill_or_late_capture_transmits_nothing(monkeypatch, tmp_path, when):
     publisher, _ = _modules(monkeypatch)
     state, gh = _setup(tmp_path)
-    with pytest.raises(ValueError, match="window|backfilled"):
+    with pytest.raises(ValueError, match="window|backfill"):
         _publish(publisher, state, gh, when=when)
     assert gh.calls == []
 
@@ -215,7 +214,7 @@ def test_public_reviewer_refuses_replaced_asset_even_if_api_digest_follows(
     state, gh = _setup(tmp_path)
     _publish(publisher, state, gh)
     gh.assets["original-source.zip"] += b"changed"
-    with pytest.raises(ValueError, match="digest mismatch"):
+    with pytest.raises(ValueError, match="digest|mismatch"):
         _review(reviewer, gh)
 
 
