@@ -295,6 +295,119 @@ Until those independent claims and the missing
 negative-Funding/low-volatility regime are proven, #85 remains
 OPEN/BLOCKED_EVIDENCE; do not pin, promote, or enable trading.
 
+## GitHub-only prospective handoff (optional, operator opt-in)
+
+**Approved constraint:** use only GitHub public/open-source repository
+features; **no** OBS/S3, external TSA, other object store or third-party
+secret service. GitHub Actions Artifacts expire in at most 90 days for
+public repos and cannot be the sole long-term evidence store.
+
+**GitHub-native choice:** one per-day **Immutable Release** named
+`funding-vps-YYYY-MM-DD`. A distinct *post-capture* systemd service
+starts only upon the source recorder's successful exit; it creates a
+**draft** Release, uploads the original exact
+`original-source.zip` and `manifest.json`, checks GitHub's returned
+server-side `digest`, `created_at`, and `size` for each asset, and
+then publishes before the same day's 00:15:00 UTC deadline. The GitHub
+`published_at` must be in-window and the published release must report
+`immutable=true`. If GitHub replies late/incorrectly, nothing becomes
+a valid witnessed pre-entry observation. No source GET is retried, no
+previous date is published, and the uploader never deletes/updates a
+Release or uploads replacement assets. A partially created **draft**
+may remain after failure and requires operator review, not automatic
+destructive cleanup or retroactive publication.
+
+**Owner enablement is REQUIRED before installation:**
+
+1. Confirm this repository remains **public** and publication of the
+   unauthenticated OKX response ZIP is acceptable. Release assets
+   become publicly downloadable.
+2. In `pkking/future-opportunity` → **Settings → General → Releases**,
+   check **Enable release immutability**. It only applies to future
+   Releases. The account/repo owner must do this; an agent without repo
+   admin permissions cannot switch it on.
+3. Provision a dedicated GitHub-only, repository-restricted credential
+   with **Contents:write** and no other privilege, after reviewing how
+   it is issued and rotated. A fine-grained token is the simple
+   operational option; a narrow GitHub App installation credential is
+   preferable when lifecycle automation is available. Do **not**
+   place a token in Git, workflow input, environment variables, issue
+   comments, the source collector or source ZIP. The example isolated
+   systemd publisher reads it via `LoadCredential` only.
+   User must authorize/configure this identity; repository code
+   **never creates or stores a token**.
+
+**Optional VPS installation after exact reviewed merge SHA:**
+
+```bash
+cd /opt/future-opportunity
+git rev-parse HEAD
+sudo install -d -m 0700 /etc/future-opportunity
+# Operator installs an authorized, mode 0600 root-owned GitHub token at:
+#   /etc/future-opportunity/github-token
+# Do not echo/show/paste that token into command history or chat.
+sudo install -m 0644 \
+  deploy/systemd/future-opportunity-funding-github-publish.service \
+  /etc/systemd/system/future-opportunity-funding-github-publish.service
+sudo mkdir -p /etc/systemd/system/future-opportunity-funding-capture.service.d
+sudo install -m 0644 \
+  deploy/systemd/future-opportunity-funding-capture.service.d/10-github-publish.conf \
+  /etc/systemd/system/future-opportunity-funding-capture.service.d/10-github-publish.conf
+sudo systemd-analyze verify \
+  /etc/systemd/system/future-opportunity-funding-capture.service \
+  /etc/systemd/system/future-opportunity-funding-github-publish.service
+sudo systemctl daemon-reload
+sudo systemctl status future-opportunity-funding-capture.timer
+```
+
+**Do not install the opt-in drop-in until all three prerequisites pass.**
+There is no `[Install]` section on the publisher; it is not separately
+enabled or scheduled. A successful original collector makes systemd
+fire `OnSuccess` only after writing the original ZIP. This is an
+additional outbound GitHub transfer with a separate `DynamicUser`
+and dedicated token; GitHub failures do **not** alter collector
+success, trigger source retries, or overwrite the original receipt.
+No manual start outside the current-day 00:00–00:15 window.
+
+**Independent GitHub-only public review:**
+
+```bash
+PYTHONPATH=src .venv/bin/python scripts/audit_github_vps_release.py \
+  --entry-date YYYY-MM-DD
+
+# When gh CLI is installed on the verifier, verify GitHub's automatic
+# immutable Release provenance independently (read-only):
+gh release verify funding-vps-YYYY-MM-DD --repo pkking/future-opportunity
+# Download exact original source ZIP from that specific Release, then:
+gh release verify-asset funding-vps-YYYY-MM-DD original-source.zip \
+  --repo pkking/future-opportunity
+```
+
+The public auditor downloads original assets from the public GitHub
+Release, checks the official GitHub asset digest and server
+`created_at` for each, requires in-window `published_at` and
+`immutable=true`, and runs full original-source offline replay.
+The CLI attestation commands are **separate** validation operations;
+the Python auditor explicitly reports
+`github_release_attestation_verified=false` until a different actor
+checks the signed GitHub provenance. Any future verifier must compare
+the exact GitHub release/tag/asset content, not merely parse a copied
+JSON receipt. GitHub has operational control of its public server
+metadata; we trust it only to state that *GitHub* hosted these bytes
+before entry, **not** that OKX first disseminated them by then.
+
+Official GitHub docs:
+- https://docs.github.com/en/code-security/concepts/supply-chain-security/immutable-releases
+- https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/secure-your-dependencies/verify-release-integrity
+- https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository
+
+**No 2026-10-21 retroactive claim:** the original 2026-10-21 source
+was locally collected in time, but copying it to GitHub later
+cannot certify that a GitHub asset already existed before 00:15.
+This new pathway is prospective-only starting with a **future** UTC
+day after proper repo admin/credential configuration. Issue #85
+remains BLOCKED_EVIDENCE; Funding 32 and Cash 66 do not change.
+
 ## Rollback and security
 
 Disable only the VPS timer without deleting evidence:
