@@ -927,9 +927,59 @@ or install a VPS GitHub credential without an operator. The current
 2026-10-21 local-only ZIP cannot retroactively gain before-entry
 Github server-time evidence.
 
+## 2026-10-21 GitHub-native immutable Release published-event audit automation
+
+**Context:** [PR #131](https://github.com/pkking/future-opportunity/pull/131)
+merged `3a25bc3113efd4c8fa25bdf8764e0f8e5bab8288`,
+final head `d9d32f4189147c998362780d730a875a36c37549`,
+[CI #39639705795](https://github.com/pkking/future-opportunity/actions/runs/39639705795)
+five checks SUCCESS,
+[Historical Smoke #39639705544](https://github.com/pkking/future-opportunity/actions/runs/39639705544)
+SUCCESS,
+[main CI #39639890035](https://github.com/pkking/future-opportunity/actions/runs/39639890035)
+SUCCESS. Owner opt-in immutable Release setting and dedicated GitHub
+Contents:write credential for VPS are still **not configured by agent**;
+there has been **no real GitHub release upload**.
+
+**Problem:** a second-machine CLI `audit_github_vps_release.py` exists, but
+independent provenance check depends on a manual operator. A public GitHub
+`release.published` event can trigger a read-only
+`GITHUB_TOKEN`-scoped workflow for free, even when publication happens
+near entry and GitHub Actions itself runs late. The job MUST rely on the
+**Release server published/asset created timestamps**, not runner start
+or audit completion time. No additional OKX HTTP calls and no writes to
+Release or evidence source.
+
+**Acceptance:**
+- [ ] Workflow triggered exclusively by `release: published` for the
+      namespace `funding-vps-YYYY-MM-DD`; rejects malformed tags
+      and never trusts tag/context in unquoted shell code.
+- [ ] Permissions explicitly `contents: read`; job performs
+      strict public GitHub metadata+original ZIP offline replay;
+      separate GitHub `gh release verify` and `verify-asset`
+      cryptographic checks of immutable Release provenance.
+- [ ] Preserve explicit review success JSON and immutable Release
+      verification status as downstream workflow Artifact (90-day),
+      while original immutable Release retains the **source archive**.
+      Any workflow error emits an `UNASSESSED` receipt, not a positive
+      provenance or market/ROI flag.
+- [ ] No automatic sample promotion, exchanges credentials, write
+      permissions, token export, release/tag mutations or outside
+      storage; no reliance on cron on-time execution.
+- [ ] Deterministic offline test for workflow static policy including
+      event type, read-only scope, replay and attestation, failed
+      receipt, artifact retention. PR final-head five CI jobs plus
+      Historical Smoke and postmerge main CI success.
+
+**Implementation:** new
+`.github/workflows/audit-funding-vps-github-release.yml`,
+new `tests/test_funding_github_release_workflow.py`,
+update runbook and this plan; no host changes. Continue Issue #85
+OPEN/BLOCKED_EVIDENCE, source timestamps independent of OKX publication.
+
 ## Resume from here
 
-Check new GitHub-only PR exact final-head CI (five required plus Historical Smoke), repair any failures, merge on green and verify postmerge main CI. Then request only owner actions that cannot be automated with current permissions: enable GitHub Immutable Releases and configure restricted GitHub Contents:write credential on the VPS. Do not activate publisher until both gates are satisfied; existing local collector continues; #85 remains OPEN/BLOCKED_EVIDENCE.
+Create read-only release.published GitHub-native verifier workflow with policy tests and fail-closed audit artifacts. Require six final-head PR checks, merge only on green, verify postmerge main CI and record #85. Host upload still requires owner/admin enablement and an approved GitHub-only credential; no external OBS/S3/TSA.
 
 ## Completion
 
