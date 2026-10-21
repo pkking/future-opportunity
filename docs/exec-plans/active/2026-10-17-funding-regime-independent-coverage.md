@@ -809,9 +809,31 @@ active plan.
   source original ZIP has not been supplied to the reviewer and
   source publication confidence remains UNASSESSED.
 
+### 2026-10-21 independent offline reviewer implementation CI
+
+- [PR #130](https://github.com/pkking/future-opportunity/pull/130)
+  first implementation head `38068cd65ccb8800abfc385c323d3bf99bde60a9`
+  [CI #39632822364](https://github.com/pkking/future-opportunity/actions/runs/39632822364)
+  failed one new code-level regression: duplicate-key rejection correctly
+  failed closed but outer JSON error wrapper did not preserve the
+  `duplicate` cause; **667 other tests passed**. No tests were weakened.
+- Corrected the actual diagnostic wrapper to retain the rejection cause
+  and validated code head `8f56a8a3c596136385766c44f16544f902436ed9`:
+  [CI #39633016665](https://github.com/pkking/future-opportunity/actions/runs/39633016665)
+  **5/5 SUCCESS** and
+  [Historical Backtest Smoke #39633016682](https://github.com/pkking/future-opportunity/actions/runs/39633016682)
+  **SUCCESS**.
+- **This documentation checkpoint changes the final PR head**;
+  rerun and verify fresh 5-job CI + historical smoke for this later
+  head before any merge, and verify postmerge main CI afterward.
+- Real VPS ZIP bytes, independent source/publishing time evidence and
+  immutable external witness are **not yet available**.
+  Explicit trusted sink, WORM retention and credentials require a
+  separate security/operator decision. Do not report Stage 2 success.
+
 ## Resume from here
 
-Open independent offline VPS evidence review PR; run final-head 5/5 CI + Historical Backtest Smoke and fix any failures, merge only when green, verify postmerge main CI. Issue #85 retains no evidence-based promotion or independent exchange publication proof. External pre-entry independent witness requires separate reviewed storage/credential/timestamp security decision; don't fake it.
+Verify final documentation-head PR #130 5/5 CI plus Historical Smoke. If all succeed, squash-merge and verify postmerge main CI; record exact run/merge links in #85. Build out remaining storage/timestamping only after an explicitly selected independent destination, identity/retention and trust model. Do not assert independent observed as-of publication or promote the 2026-10-21 local observation.
 
 ## Completion
 
