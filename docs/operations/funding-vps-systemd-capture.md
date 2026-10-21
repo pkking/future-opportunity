@@ -401,6 +401,27 @@ Official GitHub docs:
 - https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/secure-your-dependencies/verify-release-integrity
 - https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository
 
+**Automatic GitHub-only post-publication review:** after a future
+`funding-vps-YYYY-MM-DD` Release is published, the repository's
+[`Audit Immutable VPS Funding Evidence Release`](../../.github/workflows/audit-funding-vps-github-release.yml)
+workflow triggers on GitHub's `release.published` event. It runs on
+a free standard GitHub public-repo runner with **read-only Contents**
+permission; fetches the public original ZIP and manifest, checks
+server-side immutable status, pre-entry `created_at` and
+`published_at`, exact hashes and original-source offline replay,
+then separately runs GitHub CLI `gh release verify` and
+`verify-asset`. A successful read-only workflow writes a derived
+provenance review with GitHub signature checks recorded as passed,
+while retaining `point_in_time_publication_verified=false`.
+Any error preserves a separate `UNASSESSED` workflow review
+artifact for up to 90 days; original bytes remain in the published
+Immutable Release. GitHub Actions audit queue delays cannot affect the
+original GitHub Release's server-side source receipt timing.
+`release.published` itself is best-effort for timely audit execution;
+if it is delayed or missed, the original Release remains independently
+downloadable for later manual verification. The workflow does not
+send market API requests, change the Release or write to the repository.
+
 **No 2026-10-21 retroactive claim:** the original 2026-10-21 source
 was locally collected in time, but copying it to GitHub later
 cannot certify that a GitHub asset already existed before 00:15.
