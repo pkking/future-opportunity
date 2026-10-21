@@ -213,6 +213,88 @@ Do not promote `local_replay_only` to
 reviewed cryptographic/provenance policy and genuine exchange publication
 proof. Repo CI and GitHub source attestation are different concepts.
 
+## Independent review of VPS-origin evidence (no collector credentials)
+
+The first successful local observation is the **2026-10-21** record; on the
+VPS the original ZIP SHA256 printed and recorded separately by the operator is:
+
+```text
+6adc7385b4e32aabd886abf27b53446c1ecab1b00ec23f664b69861a149bfd3a
+```
+
+This digest came from the **same VPS**, not an independently timestamped
+source witness. We have reviewed the user's journal, manifest and local
+sha256 output; the agent has **not** downloaded the actual ZIP.
+
+A reviewer on a **different trusted machine** can copy the two original
+files after the collection has already completed. For example, with a
+pre-established authenticated SSH host key and a locally authorized
+operator (who can read the owner-private VPS state), execute on the
+**reviewer** machine:
+
+```bash
+umask 077
+mkdir -p evidence/2026-10-21
+scp -p root@YOUR_VPS_HOST:/var/lib/future-opportunity-funding/2026-10-21/manifest.json \
+  evidence/2026-10-21/manifest.json
+scp -p root@YOUR_VPS_HOST:/var/lib/future-opportunity-funding/2026-10-21/original-source.zip \
+  evidence/2026-10-21/original-source.zip
+```
+
+The sample uses root SSH only if already authorized and configured; a
+dedicated read-only export account/SSH forced command is preferable
+for ongoing production operation. Never disable SSH host-key checks,
+put private keys in the repo, or copy files into Git history.
+Do not recompress, unzip/re-zip or mutate the originals.
+
+In an independent checkout of this repository (Python 3.12+ with installed
+project dependencies), review the original VPS ZIP and exact accompanying
+manifest **offline**, specifying the UTC day and the expected SHA-256
+**from a separately recorded channel**, not reading it back from
+the same manifest:
+
+```bash
+PYTHONPATH=src .venv/bin/python scripts/audit_vps_funding_capture.py \
+  --manifest evidence/2026-10-21/manifest.json \
+  --zip evidence/2026-10-21/original-source.zip \
+  --entry-date 2026-10-21 \
+  --expected-zip-sha256 6adc7385b4e32aabd886abf27b53446c1ecab1b00ec23f664b69861a149bfd3a \
+  --receipt-out evidence/2026-10-21/offhost-review.json
+```
+
+The reviewer replays all three original success JSON files through
+the existing anti-lookahead validator, checks exact owner-reported
+manifest identity, original ZIP SHA256, raw-file SHA256, canonical source
+SHA256 and regime. For any genuine error-only original ZIP, it instead
+returns `failed_capture_unassessed`, with null market date. Tampering
+with either original bytes or any manifest safety flags fails closed.
+`--receipt-out` creates a private JSON file **only if absent**:
+it never overwrites a prior independent review. The review includes
+`reviewed_at`, which is **the review time**, not the time the VPS first
+captured the response; `expected_digest_origin_authenticated=false`
+and all signing/publication/acquisition/promotion flags remain false.
+This workflow never sends requests to OKX, does not invoke GitHub
+attestation, and cannot create a retroactive trusted timestamp.
+
+For a genuinely credible **point-in-time availability witness** on future
+UTC days, the original bytes or a cryptographic commitment to them
+must reach an independently controlled, authenticated append-only
+sink *before* the 00:15 UTC research entry boundary, with externally
+verifiable time and retention. A transfer performed hours later
+can at best witness availability at **transfer time**, not at the
+earlier entry. Off-host storage choice, operator identity,
+credential/rotation, WORM retention, timestamp attestation and
+failure-recovery policy require their own security review/approval;
+they have intentionally not been silently provisioned here.
+GitHub's signed attestations to GitHub-origin runs do not authenticate
+a distinct VPS-origin HTTP response. In particular, never pass this
+VPS ZIP to `audit_scheduled_funding_capture.py` as if it came from
+a GitHub `schedule` workflow run.
+
+Until those independent claims and the missing
+negative-Funding/low-volatility regime are proven, #85 remains
+OPEN/BLOCKED_EVIDENCE; do not pin, promote, or enable trading.
+
 ## Rollback and security
 
 Disable only the VPS timer without deleting evidence:
