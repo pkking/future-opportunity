@@ -239,3 +239,44 @@ VPS-to-off-host/GitHub immutable-artifact transmission remains
 exchange and signed provenance policy are decided. A later GitHub
 attestation to a transferred VPS ZIP proves GitHub received the
 bytes, **not** that OKX published them before the entry cutoff.
+
+## VPS original archive handoff / independent-host offline replay (2026-10-21)
+
+Plan B produced its first **local** successful future UTC-day source on
+2026-10-21, with `origin=vps_systemd_local_only`,
+`entry_market_date=2026-10-21`,
+`regime=nonnegative_low_volatility`, and
+`status=local_replay_only`. The original ZIP SHA-256
+`6adc7385b4e32aabd886abf27b53446c1ecab1b00ec23f664b69861a149bfd3a`
+matches the operator's independent *command invocation* on that same VPS.
+The actual three-file ZIP bytes have not been transferred to this review
+agent. The date adds **no** pinned record, no missing negative-low-regime
+observation and no independently certified publication timestamp.
+
+`scripts/audit_vps_funding_capture.py` is a separate offline review
+entrypoint for original VPS `manifest.json` + `original-source.zip`.
+Unlike the GitHub-source run auditor, it understands
+`vps_systemd_local_only`, requires an externally **supplied** digest
+rather than silently trusting the manifest, validates the exact original
+manifest and ZIP identity, refuses unknown/tampered fields and prevents
+any change to signing, publication, acquisition, promotion or trading
+flags. On local success, it calls the same strict three-source-file ZIP
+replay and compares original raw digest, canonical source digest, UTC
+day and classified regime to the VPS manifest. On a real failure it
+accepts only the fail-closed single `error.json` and yields
+`failed_capture_unassessed`, no date. Reviewer output reports
+`expected_digest_origin_authenticated=false`, even on a digest match,
+because a string supplied by a reviewer is not authenticated itself.
+Review receipts carry a post-collection `reviewed_at`, never a claimed
+original publication or capture witness time.
+
+See [the VPS operations runbook](../operations/funding-vps-systemd-capture.md)
+for a concrete secure operator copy and second-machine replay. Such a
+**later** offline review verifies data consistency and custody *from the
+time the independent reviewer obtained the bytes onward*, not source
+publication before the entry boundary. A prospective pre-entry trust
+claim would require externally witnessed timely upload/commitment plus
+strong independent identity and trusted retention; the storage provider,
+credentials and publication-attestation policy remain an explicit
+separate security decision. No automatic external transmission or
+long-lived secret has been introduced.
