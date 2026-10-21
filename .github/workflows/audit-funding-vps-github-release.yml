@@ -1,0 +1,112 @@
+name: Audit Immutable VPS Funding Evidence Release
+
+# Only a GitHub server-side publication event, not a market-source request.
+# The audit runner may start late: its own start time is NOT source evidence.
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    if: startsWith(github.event.release.tag_name, 'funding-vps-')
+    name: Verify immutable Release and original VPS evidence (read-only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ github.event.release.tag_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - name: Validate exact event tag syntax; never run an OKX collector
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! "$RELEASE_TAG" =~ ^funding-vps-[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+            echo "Invalid VPS evidence release tag" >&2
+            exit 1
+          fi
+          echo "ENTRY_DAY=${RELEASE_TAG#funding-vps-}" >> "$GITHUB_ENV"
+      - name: Fetch real public GitHub Release and replay original bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/github-vps-release-review
+          uv run python scripts/audit_github_vps_release.py \
+            --entry-date "$ENTRY_DAY" \
+            > artifacts/github-vps-release-review/offline-source-review.json
+      - name: Verify GitHub release immutable attestation (cryptographic)
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release verify "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY"
+      - name: Verify original ZIP is exactly the attested Release asset
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/github-vps-release-original
+          gh release download "$RELEASE_TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --pattern original-source.zip \
+            --dir artifacts/github-vps-release-original
+          gh release verify-asset "$RELEASE_TAG" \
+            artifacts/github-vps-release-original/original-source.zip \
+            --repo "$GITHUB_REPOSITORY"
+      - name: Record separately verified GitHub provenance, not OKX publication
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          source = Path("artifacts/github-vps-release-review/offline-source-review.json")
+          checked = json.loads(source.read_text())
+          if checked["status"] != "github_immutable_release_metadata_and_offline_replay_only":
+              raise SystemExit("GitHub original ZIP replay not verified")
+          receipt = {
+              "status": "github_immutable_release_and_asset_verified_only",
+              "repo": checked["repo"],
+              "tag": checked["tag"],
+              "archive_sha256": checked["archive_sha256"],
+              "github_release_attestation_verified": True,
+              "github_hosted_preentry_source_verified": True,
+              "exchange_signed": False,
+              "point_in_time_publication_verified": False,
+              "acquisition_approved": False,
+              "promotion_approved": False,
+              "note": "Verified GitHub immutable release and byte identity; not OKX dissemination time.",
+          }
+          Path("artifacts/github-vps-release-review/provenance-review.json").write_text(
+              json.dumps(receipt, indent=2, sort_keys=True) + "\n"
+          )
+          PY
+      - name: Explicit UNASSESSED receipt on any audit failure
+        if: failure()
+        shell: bash
+        run: |
+          mkdir -p artifacts/github-vps-release-review
+          printf '%s\n' \
+            '{"status":"UNASSESSED","reason":"GitHub Release immutable provenance and original ZIP audit incomplete or failed","github_release_attestation_verified":false,"point_in_time_publication_verified":false,"acquisition_approved":false,"promotion_approved":false}' \
+            > artifacts/github-vps-release-review/error.json
+      - name: Preserve derived review, never duplicate original Release source
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: github-vps-funding-release-review
+          path: artifacts/github-vps-release-review/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Explain limits of evidence
+        if: always()
+        shell: bash
+        run: |
+          echo "Only GitHub hosted immutable Release source presence is reviewed." >> "$GITHUB_STEP_SUMMARY"
+          echo "The attested original ZIP remains in GitHub Releases, not workflow Artifacts." >> "$GITHUB_STEP_SUMMARY"
+          echo "OKX publication provenance, acquisition, promotion and trading remain unapproved." >> "$GITHUB_STEP_SUMMARY"
