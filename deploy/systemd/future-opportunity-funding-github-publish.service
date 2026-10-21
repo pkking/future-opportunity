@@ -1,0 +1,36 @@
+[Unit]
+Description=OPTIONAL GitHub-only immutable Release publisher for original VPS Funding evidence
+Documentation=https://github.com/pkking/future-opportunity
+Wants=network-online.target time-sync.target
+After=network-online.target time-sync.target
+# No Install section: only run after successful read-only collector, once
+# explicitly enabled by root installing the separate OnSuccess drop-in.
+
+[Service]
+Type=oneshot
+DynamicUser=yes
+StateDirectory=future-opportunity-funding
+StateDirectoryMode=0700
+WorkingDirectory=/opt/future-opportunity
+Environment=PYTHONPATH=/opt/future-opportunity/src
+Environment=PYTHONDONTWRITEBYTECODE=1
+# Operator must provision an owner-protected GitHub-only Contents:write token
+# into this file. systemd injects it as a private credential, not an env var.
+LoadCredential=github_token:/etc/future-opportunity/github-token
+ExecStart=/opt/future-opportunity/.venv/bin/python /opt/future-opportunity/scripts/publish_vps_funding_github_release.py --state-dir /var/lib/future-opportunity-funding
+TimeoutStartSec=120s
+Restart=no
+UMask=0077
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+LockPersonality=yes
+RestrictSUIDSGID=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
