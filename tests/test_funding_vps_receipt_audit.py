@@ -152,7 +152,7 @@ def test_failure_is_error_only_without_market_date(monkeypatch, tmp_path):
     ("started_at", "2026-09-16T00:00:01+00:00", "start on expected"),
     ("raw_file_sha256", "a" * 64, "disagrees"),
     ("canonical_source_sha256", "b" * 64, "disagrees"),
-    ("regime", "negative_low_volatility", "disagrees"),
+    ("regime", "forged_regime", "disagrees"),
 ])
 def test_rejects_forged_manifest_fields(monkeypatch, tmp_path, name, value, pattern):
     module = _auditor(monkeypatch)
