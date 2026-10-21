@@ -233,7 +233,7 @@ def test_source_collector_does_not_gain_credentials_or_http_upload():
     assert "ProtectSystem=strict" in service
     assert "Restart=no" in service
     assert "OnSuccess=future-opportunity-funding-github-publish.service" in optin
-    assert "Install" not in service
+    assert "[Install]" not in service
     assert "capture_today" not in script
     assert "capture_today" in source
     assert "client.post(" in script
