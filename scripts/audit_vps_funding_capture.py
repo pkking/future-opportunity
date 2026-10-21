@@ -58,7 +58,7 @@ def _json_object(data: bytes, name: str) -> dict[str, Any]:
     try:
         value = json.loads(data, object_pairs_hook=_unique_fields)
     except (ValueError, UnicodeError) as exc:
-        raise ValueError(f"invalid {name} JSON") from exc
+        raise ValueError(f"invalid {name} JSON: {exc}") from exc
     if not isinstance(value, dict):
         raise ValueError(f"{name} must be a JSON object")
     return value
