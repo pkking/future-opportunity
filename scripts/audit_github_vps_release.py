@@ -12,7 +12,7 @@ import json
 import tempfile
 from datetime import UTC, datetime, time, timedelta
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import httpx
 
