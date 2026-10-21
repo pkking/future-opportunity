@@ -726,9 +726,68 @@ Expected edits: `scripts/run_vps_funding_preentry.py`,
 - CI and actual sandbox marker probe **not yet verified** at this
   checkpoint. Do not infer VPS host behavior solely from offline tests.
 
+## 2026-10-21 VPS source independent offline handoff / review (#85)
+
+**Observed production evidence:** The first Plan B local SUCCESS at
+2026-10-21T00:00:10..00:00:13Z contains the VPS-local original three-file
+source ZIP with `local_replay_only` in its dated manifest:
+`archive_sha256=6adc7385b4e32aabd886abf27b53446c1ecab1b00ec23f664b69861a149bfd3a`;
+`raw_file_sha256=5e753951d8317eb1e32265554d17b13cc515d293dda6108690f7c2f3a4828c0e`,
+`canonical_source_sha256=88365202bc78791c4cc8f2339cb356ea44f9fc36551ba065280affbefe813609`,
+`regime=nonnegative_low_volatility`, `entry_market_date=2026-10-21`.
+The operator provided original `manifest.json`, systemd journal and a
+separate local `sha256sum` matching the manifest. Original ZIP bytes are
+**not** available to the agent, nor any off-host storage/authentication.
+All promotion and independent publication flags remain false.
+Separately, GitHub's scheduled [run #39530434373](https://github.com/pkking/future-opportunity/actions/runs/39530434373)
+created too late at 01:59:11Z and failed closed; no substitute observation.
+
+**Goal:** build the next *credential-free* verification boundary so an
+independent reviewer who securely obtains unmodified VPS files can
+deterministically validate (a) an externally supplied ZIP digest, (b)
+the exact VPS manifest/source identity and allowed UTC metadata,
+(c) success-only three-file original ZIP replay and all expected hashes/
+regime, or (d) explicit original one-file UNASSESSED failure receipt,
+without using the GitHub-origin scheduled workflow auditor incorrectly.
+
+**Acceptance:**
+- [ ] Offline reviewer requires independently supplied archive digest and
+      UTC day, rejects mismatched original ZIP, forged/invalid/missing
+      manifest, duplicate/surplus ZIP members, improper day/source identity,
+      conflicting file/hash/regime/status and unsafe failure receipts.
+- [ ] Reviewer never elevates any self-reported VPS clock or digest into
+      independent provenance, never approves acquisition/promotion, trading,
+      exchange signature or GitHub-origin attestation; output labels
+      `offline_vps_replay_only` vs `failed_capture_unassessed`.
+- [ ] Reviewer writes an optional *new* read-only review receipt locally
+      without overwriting earlier review; receipt time is review time and
+      never reinterpreted as original capture time; no network calls.
+- [ ] Deterministic offline tests cover canonical success, failure-only,
+      host/identity tampering, ZIP tampering, manifest flag spoofing,
+      wrong regime/hash/date, duplicate members, missing witness and
+      exact 2026-10-21 manifest metadata as a frozen case without
+      manufacturing actual raw source data.
+- [ ] Operations runbook documents operator copy out of private VPS
+      state, independent SHA witness workflow and precise limitations.
+      No long-lived credentials/token or silent transfer destination.
+- [ ] Final PR 5/5 CI and Historical Smoke green; merge on final SHA
+      and verify postmerge main CI; Issue #85 stays OPEN/BLOCKED_EVIDENCE
+      until separately reviewed source publication policy and real
+      deficient regime evidence exist.
+
+No premature choice of cloud account/secret/bucket, retention policy,
+S3 object lock or automatic remote upload. Transport is a *separate
+security decision*. Missing independent historical timestamp is not
+retroactively solved by copying the 2026-10-21 archive later.
+Code touch list: `scripts/audit_vps_funding_capture.py` (new),
+`tests/test_funding_vps_receipt_audit.py` (new),
+`docs/operations/funding-vps-systemd-capture.md`,
+`docs/research/funding-prospective-point-in-time-capture-contract.md`,
+active plan.
+
 ## Resume from here
 
-Open VPS sandbox NTP hotfix PR; require final-head 5/5 CI and Historical Smoke, merge and verify postmerge main CI. On VPS separately verify recent timesync marker is readable under DynamicUser, update to pinned merge SHA, then observe next genuine UTC-day capture. Preserve 2026-10-20 UNASSESSED, #85 research remains BLOCKED_EVIDENCE.
+Implement offline independently digested VPS original-ZIP + manifest verifier and receipt, tests, and no-credentials handoff documentation. PR required final-head CI/Smoke, merge, postmerge CI, archive evidence checkpoint to #85. Do not claim source/publication independent verification or retroactive promotion.
 
 ## Completion
 
