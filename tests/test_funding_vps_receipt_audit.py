@@ -4,7 +4,6 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
-import os
 import sys
 import zipfile
 from datetime import UTC, datetime
@@ -191,7 +190,7 @@ def test_requires_independent_digest_not_own_manifest_or_bytes(monkeypatch, tmp_
         _review(module, manifest, archive, "a" * 64)
     with pytest.raises(ValueError, match="lowercase"):
         _review(module, manifest, archive, "not-a-hex-digest")
-    with pytest.raises(ValueError, match="entry date"):
+    with pytest.raises(ValueError, match="origin, day, digest"):
         _review(module, manifest, archive, digest, day="2026-09-16")
     with pytest.raises(ValueError, match="invalid"):
         _review(module, manifest, archive, digest, day="2026-13-16")
