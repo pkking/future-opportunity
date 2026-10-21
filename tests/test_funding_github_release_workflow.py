@@ -52,7 +52,7 @@ def test_failure_is_unassessed_and_original_archive_never_uploaded_as_actions_ar
     assert '"promotion_approved": False' in text
     assert "on:\n  release:" in text
     assert "github-vps-funding-release-review" in text
-    assert "github-vps-funding-release-original" in text
+    assert "github-vps-release-original" in text
 
 
 def test_no_new_market_capture_or_github_release_write_actions():
