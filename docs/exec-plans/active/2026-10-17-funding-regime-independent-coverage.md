@@ -831,6 +831,33 @@ active plan.
   Explicit trusted sink, WORM retention and credentials require a
   separate security/operator decision. Do not report Stage 2 success.
 
+### Repo-side GitHub-only proof pipeline ready for CI
+
+- `scripts/publish_vps_funding_github_release.py`: only same-day
+  successful immutable VPS ZIP/manifest, strict local source replay,
+  no backfill/other time, GitHub Releases draft → two original assets
+  `digest,size,created_at` server checks → publish under deadline
+  with `immutable=true` and server `published_at` check.
+  No delete/overwrite/retry/market HTTP; no source collector changes.
+- `scripts/audit_github_vps_release.py`: independent unauthenticated
+  public GitHub API release lookup and original two-asset fetch with
+  GitHub server metadata and original ZIP strict replay; attestation
+  marked UNVERIFIED until separate `gh release verify` operation.
+- Isolated optional publisher systemd unit with `DynamicUser`,
+  `LoadCredential=github_token` and a separate post-success drop-in
+  **not installed automatically**. VPS capture stays separate,
+  and missing token/repo setting fails closed.
+- No-network GitHub API MockTransport tests include success, immutable
+  provenance and critical negative collision/timing/bad digest,
+  forged/changed asset, missing credential, no historical replay;
+  direct human rollout/config remains unassessed.
+- Runbook and research contract now use only GitHub free public repo
+  capability; Actions Artifact max 90-day retention is insufficient,
+  so Immutable Release is the proposed evidence store.
+- No actual GitHub Release was created, and no VPS secret installed,
+  repo admin immutability setting modified or original 2026-10-21
+  ZIP uploaded. Final CI and smoke **pending** in this checkpoint.
+
 ## 2026-10-21 GitHub-only storage/trusted receipt decision (approved scope)
 
 **New explicit constraint:** User rejected external OBS/S3/TSA and requires
@@ -902,7 +929,7 @@ Github server-time evidence.
 
 ## Resume from here
 
-Build fail-closed GitHub-only immutable-release evidence publisher and public verifier, deterministic offline tests, on-success unit example and operator handoff; run CI, merge when fully green, archive on #85. Do not auto-enable credentials or release publication. Require explicit admin to enable future Immutable Releases and operator to inject repo-scoped GitHub token before first live upload.
+Check new GitHub-only PR exact final-head CI (five required plus Historical Smoke), repair any failures, merge on green and verify postmerge main CI. Then request only owner actions that cannot be automated with current permissions: enable GitHub Immutable Releases and configure restricted GitHub Contents:write credential on the VPS. Do not activate publisher until both gates are satisfied; existing local collector continues; #85 remains OPEN/BLOCKED_EVIDENCE.
 
 ## Completion
 
