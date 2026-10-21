@@ -123,9 +123,14 @@ def publish_today(
     client: httpx.Client,
 ) -> dict[str, Any]:
     """Create one new GitHub Release; fail closed without deleting/replacing it."""
-    day = _date_guard(now().astimezone(UTC).date().isoformat(), now)
+    current = now()
+    if not isinstance(current, datetime) or current.tzinfo is None:
+        raise ValueError("publisher requires aware UTC clock")
+    day = _date_guard(current.astimezone(UTC).date().isoformat(), lambda: current)
     date_str = day.date().isoformat()
     receipt_dir = state_dir / date_str
+    if not receipt_dir.is_dir() or receipt_dir.is_symlink():
+        raise ValueError("no current UTC-day local receipt; cannot backfill")
     originals = {
         name: _bounded_original(receipt_dir / name, MAX_ZIP_BYTES if name.endswith(".zip")
                                 else MAX_MANIFEST_BYTES)
