@@ -171,10 +171,10 @@ def audit_vps_receipt(
     except ValueError as exc:
         raise ValueError("independently expected UTC entry date is invalid") from exc
 
-    manifest = _json_object(
-        _regular_file_bytes(manifest_path, max_bytes=MAX_MANIFEST_BYTES, name="VPS manifest"),
-        "VPS manifest",
+    manifest_bytes = _regular_file_bytes(
+        manifest_path, max_bytes=MAX_MANIFEST_BYTES, name="VPS manifest",
     )
+    manifest = _json_object(manifest_bytes, "VPS manifest")
     archive_bytes = _regular_file_bytes(
         archive_path, max_bytes=MAX_ORIGINAL_ZIP_BYTES, name="original VPS ZIP",
     )
@@ -230,9 +230,7 @@ def audit_vps_receipt(
         "original_zip_sha256": digest,
         "expected_digest_match": True,
         "expected_digest_origin_authenticated": False,
-        "manifest_sha256": hashlib.sha256(
-            manifest_path.read_bytes()
-        ).hexdigest(),
+        "manifest_sha256": hashlib.sha256(manifest_bytes).hexdigest(),
         "raw_file_sha256": replay["raw_file_sha256"] if replay is not None else None,
         "canonical_source_sha256": (
             replay["canonical_source_sha256"] if replay is not None else None
