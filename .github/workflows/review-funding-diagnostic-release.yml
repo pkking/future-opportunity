@@ -1,0 +1,175 @@
+name: Recheck Existing Funding Diagnostic Release (Read-only)
+
+# A one-time initial main-branch check plus optional repeatable manual audit.
+# No new source collection, Release creation, tag push or backdating.
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/review-funding-diagnostic-release.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Audit immutable diagnostic originals on independent GitHub runner
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: pkking/future-opportunity
+      TAG: diagnostic-funding-vps-2026-10-21
+      ENTRY_DAY: '2026-10-21'
+      SOURCE_SHA256: 6adc7385b4e32aabd886abf27b53446c1ecab1b00ec23f664b69861a149bfd3a
+      MANIFEST_SHA256: 96e16bde5e29e4c53360988c0f2a29ce1c0ce3727e2401fa779f16c1228d8fdb
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+
+      - name: Read-only inspect immutable diagnostic GitHub Release metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          mkdir -p artifacts/diagnostic-review artifacts/diagnostic-originals
+          gh api "repos/$REPO/releases/tags/$TAG" > artifacts/diagnostic-review/release-metadata.json
+          python - <<'PY'
+          import json
+          from datetime import datetime, UTC
+          from pathlib import Path
+          import os
+
+          release = json.loads(Path("artifacts/diagnostic-review/release-metadata.json").read_text())
+          assert release["tag_name"] == os.environ["TAG"]
+          assert release["draft"] is False
+          assert release["prerelease"] is True
+          assert release["immutable"] is True
+          assert release["target_commitish"] == "0c6990ec88319f8b33ef97e13560034f56b9b863"
+          expected = {
+              "original-source.zip": os.environ["SOURCE_SHA256"],
+              "manifest.json": os.environ["MANIFEST_SHA256"],
+          }
+          assets = release["assets"]
+          assert len(assets) == 2
+          assert {asset["name"] for asset in assets} == set(expected)
+          def parse_time(value):
+              dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+              if dt.tzinfo is None:
+                  raise ValueError("missing timezone")
+              return dt.astimezone(UTC)
+          published = parse_time(release["published_at"])
+          start = parse_time("2026-10-21T00:15:00Z")
+          assert published > start, "diagnostic must never count as a pre-entry source"
+          for asset in assets:
+              assert asset["state"] == "uploaded"
+              assert asset["digest"] == "sha256:" + expected[asset["name"]]
+              assert asset["size"] > 0
+              assert parse_time(asset["created_at"]) <= published
+              assert asset["browser_download_url"] == (
+                  "https://github.com/" + os.environ["REPO"] +
+                  "/releases/download/" + os.environ["TAG"] + "/" + asset["name"]
+              )
+          PY
+
+      - name: Download already-published immutable original assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release download "$TAG" --repo "$REPO" \
+            --pattern original-source.zip \
+            --pattern manifest.json \
+            --dir artifacts/diagnostic-originals
+          printf '%s  %s\n' \
+            "$SOURCE_SHA256" artifacts/diagnostic-originals/original-source.zip \
+            "$MANIFEST_SHA256" artifacts/diagnostic-originals/manifest.json \
+            | sha256sum --check
+
+      - name: Cryptographically verify GitHub Release and both original assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release verify "$TAG" --repo "$REPO"
+          gh release verify-asset "$TAG" \
+            artifacts/diagnostic-originals/original-source.zip --repo "$REPO"
+          gh release verify-asset "$TAG" \
+            artifacts/diagnostic-originals/manifest.json --repo "$REPO"
+
+      - name: Independently replay both GitHub-downloaded original source files
+        shell: bash
+        run: |
+          set -euo pipefail
+          uv run python scripts/audit_vps_funding_capture.py \
+            --manifest artifacts/diagnostic-originals/manifest.json \
+            --zip artifacts/diagnostic-originals/original-source.zip \
+            --entry-date "$ENTRY_DAY" \
+            --expected-zip-sha256 "$SOURCE_SHA256" \
+            --receipt-out artifacts/diagnostic-review/offline-original-replay.json
+
+      - name: Issue explicit diagnostic-only success receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          source = json.loads(Path("artifacts/diagnostic-review/offline-original-replay.json").read_text())
+          assert source["status"] == "offline_vps_replay_only"
+          assert source["entry_market_date"] == "2026-10-21"
+          assert source["original_zip_sha256"] == "6adc7385b4e32aabd886abf27b53446c1ecab1b00ec23f664b69861a149bfd3a"
+          assert source["manifest_sha256"] == "96e16bde5e29e4c53360988c0f2a29ce1c0ce3727e2401fa779f16c1228d8fdb"
+          assert source["regime"] == "nonnegative_low_volatility"
+          assert source["point_in_time_publication_verified"] is False
+          assert source["acquisition_approved"] is False
+          assert source["promotion_approved"] is False
+          receipt = {
+              "status": "diagnostic_only_github_hosted_offline_replay_verified",
+              "entry_market_date": "2026-10-21",
+              "tag": "diagnostic-funding-vps-2026-10-21",
+              "github_release_attestation_cli_verified": True,
+              "github_original_zip_and_manifest_asset_attestations_cli_verified": True,
+              "vps_original_offline_replay_verified": True,
+              "original_zip_sha256": source["original_zip_sha256"],
+              "manifest_sha256": source["manifest_sha256"],
+              "regime": source["regime"],
+              "github_hosted_preentry_source_verified": False,
+              "point_in_time_publication_verified": False,
+              "exchange_signed": False,
+              "acquisition_approved": False,
+              "promotion_approved": False,
+              "note": "GitHub runner verifies a LATE immutable diagnostic Release; no valid entry-time publication proof.",
+          }
+          Path("artifacts/diagnostic-review/diagnostic-verification.json").write_text(
+              json.dumps(receipt, indent=2, sort_keys=True) + "\n"
+          )
+          PY
+
+      - name: Fail closed with an UNASSESSED receipt on any validation failure
+        if: failure()
+        shell: bash
+        run: |
+          mkdir -p artifacts/diagnostic-review
+          printf '%s\n' \
+            '{"status":"UNASSESSED","github_hosted_preentry_source_verified":false,"point_in_time_publication_verified":false,"acquisition_approved":false,"promotion_approved":false,"reason":"independent GitHub-hosted diagnostic replay failed or incomplete"}' \
+            > artifacts/diagnostic-review/error.json
+
+      - name: Retain only derived diagnostic audit files, never reupload originals
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: funding-vps-existing-diagnostic-replay
+          path: artifacts/diagnostic-review/
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Explain strict non-promotion limitations
+        if: always()
+        shell: bash
+        run: |
+          echo "This audits an EXISTING late diagnostic immutable Release on a separate GitHub runner." >> "$GITHUB_STEP_SUMMARY"
+          echo "No market GET, tag/Release write, source substitution, pre-entry evidence or acquisition approval." >> "$GITHUB_STEP_SUMMARY"
