@@ -996,9 +996,54 @@ OPEN/BLOCKED_EVIDENCE, source timestamps independent of OKX publication.
 - No external OBS/TSA, no GitHub token issuance or automated
   VPS publisher enablement. **CI final head pending**.
 
+## 2026-10-22 GitHub Immutable Release diagnostic: success, tag-push fanout bug
+
+**Production evidence** for the existing `diagnostic-funding-vps-2026-10-21`
+GitHub Release: release published **2026-10-22T15:29:02Z** with
+`immutable=true` and original ZIP SHA256
+`6adc7385b4e32aabd886abf27b53446c1ecab1b00ec23f664b69861a149bfd3a`
+matching the VPS original. `manifest.json` SHA256
+`96e16bde5e29e4c53360988c0f2a29ce1c0ce3727e2401fa779f16c1228d8fdb`.
+Operator ran `gh release verify` and `gh release verify-asset`:
+**success** for release and original ZIP. This is **late diagnostic**
+publication, not evidence that GitHub or OKX held/published bytes
+before entry 2026-10-21T00:15Z. Do not promote the case.
+The read-only `release.published` GitHub verifier workflow
+[run #39805253453](https://github.com/pkking/future-opportunity/actions/runs/39805253453)
+was **SKIPPED**, as intended, because the diagnostic tag is not a
+production `funding-vps-YYYY-MM-DD` tag.
+
+**New observed regression:** creating the diagnostic Release tag
+accidentally triggered **30** path-filtered GitHub Actions `push`
+workflows, including historical research preparation/probe/promotion
+jobs, at around 2026-10-22T15:29Z; some failed and others ran
+unrelated to this release. GitHub explicitly documents
+[`push.paths` is not evaluated on tag push](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow).
+Thus public daily immutable release creation can cause a large
+unintended CI fanout. This must be fixed before scheduled real
+GitHub-origin evidence publication causes daily noise.
+
+**Acceptance — minimal safe fix:**
+- [ ] Add `push.tags-ignore: ['**']` to all existing workflow
+  YAMLs which have path-filtered `push` and no explicit branch/tag
+  restrictions, preserving their branch push/path semantics,
+  `workflow_dispatch`, PR triggers and source/research gates.
+  Keep intentionally branch-restricted or tag-specific triggers as-is.
+- [ ] Add repository-wide deterministic test detecting every
+  path-filtered `push` lacking tag exclusion or restrictive
+  `push.branches`; fail closed for newly introduced susceptible jobs.
+- [ ] No historical corpus/ROI/trading action or actual Release upload.
+  No token, external store or market source GET. No backfill.
+- [ ] Verify final PR head five required checks + Historical Backtest
+  Smoke and postmerge main CI, record in Issue #85.
+- [ ] Future diagnostic release is still not treated as official
+  `funding-vps-YYYY-MM-DD`; `release.published` audit correctly
+  skips it. Need explicit real future-day owner-approved uploader to
+  prove end-to-end automated receipt.
+
 ## Resume from here
 
-Open GitHub-only release.published CI audit PR, run all final-head CI/Smoke, fix regressions, squash merge on green, verify postmerge main CI, record #85. Host prerequisite unchanged: admin must enable immutable releases + operator configure repo-only token; no actual release published until that setup.
+Fix tag-push CI fanout observed from 2026-10-22 GitHub diagnostic immutable Release. Add tags-ignore to path-filtered push triggers while preserving branch behavior, add global regression tests, CI→merge→postmerge→#85. No historical promotion. The old successful diagnostic Release is frozen; do not republish/relabel.
 
 ## Completion
 
