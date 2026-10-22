@@ -3,6 +3,7 @@ name: Evaluate Prepared Historical Fixture
 on:
   workflow_dispatch:
   push:
+    tags-ignore: ['**']
     paths:
       - .github/workflows/evaluate-historical-fixture.yml
       - scripts/run_historical_backtest.py

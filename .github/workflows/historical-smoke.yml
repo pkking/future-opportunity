@@ -3,6 +3,7 @@ name: Historical Backtest Smoke
 on:
   pull_request:
   push:
+    tags-ignore: ['**']
     branches: [main]
     paths:
       - "src/future_opportunity/application/backtest/**"

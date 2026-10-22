@@ -3,6 +3,7 @@ name: Cash Stage-2 Source Capacity
 on:
   workflow_dispatch:
   push:
+    tags-ignore: ['**']
     paths:
       - "scripts/plan_okx_cash_stage2_capacity.py"
       - "src/future_opportunity/backtest/cash_stage2_capacity.py"

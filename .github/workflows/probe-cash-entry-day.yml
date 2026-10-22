@@ -3,6 +3,7 @@ name: Cash Entry Day Historical Probe
 on:
   workflow_dispatch:
   push:
+    tags-ignore: ['**']
     paths:
       - scripts/probe_okx_cash_entry_day.py
       - .github/workflows/probe-cash-entry-day.yml

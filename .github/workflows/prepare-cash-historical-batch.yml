@@ -7,6 +7,7 @@ on:
         description: JSON array of {entry_at,exit_at,future_id,expiry_at}
         required: true
   push:
+    tags-ignore: ['**']
     paths:
       - ".github/workflows/prepare-cash-historical-batch.yml"
 

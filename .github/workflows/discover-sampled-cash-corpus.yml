@@ -18,6 +18,7 @@ on:
         required: true
         type: string
   push:
+    tags-ignore: ['**']
     paths:
       - ".github/workflows/discover-sampled-cash-corpus.yml"
 

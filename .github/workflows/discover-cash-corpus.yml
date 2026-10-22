@@ -8,6 +8,7 @@ on:
         required: true
         default: '["2026-06-02","2026-06-03"]'
   push:
+    tags-ignore: ['**']
     paths:
       - scripts/discover_okx_cash_history.py
       - src/future_opportunity/backtest/cash_discovery.py

@@ -3,6 +3,7 @@ name: Probe Cash 2025 Quarter Capacity
 on:
   workflow_dispatch:
   push:
+    tags-ignore: ['**']
     paths:
       - "scripts/probe_cash_2025_quarter_capacity.py"
       - "src/future_opportunity/backtest/cash_prior_quarter_readiness.py"

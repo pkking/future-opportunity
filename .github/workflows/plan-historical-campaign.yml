@@ -10,6 +10,7 @@ on:
         description: Safe identifier for generated review-only campaign waves
         required: true
   push:
+    tags-ignore: ['**']
     paths:
       - ".github/workflows/plan-historical-campaign.yml"
   workflow_run:

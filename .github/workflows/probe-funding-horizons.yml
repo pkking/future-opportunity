@@ -3,6 +3,7 @@ name: Funding Horizon Feasibility Probe
 on:
   workflow_dispatch:
   push:
+    tags-ignore: ['**']
     paths:
       - scripts/probe_okx_funding_horizon_feasibility.py
       - .github/workflows/probe-funding-horizons.yml
