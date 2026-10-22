@@ -1,7 +1,7 @@
 # Immutable Funding diagnostic Release — independent GitHub runner replay
 
 Issue: #85
-Status: IN_PROGRESS
+Status: VERIFYING
 Owner: agent
 Started: 2026-10-22
 
@@ -71,6 +71,38 @@ None: existing raw source, signing, GitHub releases and risk policy
 already approved. No extra user action needed to test on normal
 main branch push; external provider/credentials, new market observations
 or promotion would require separate authorization.
+
+## Implementation slices
+
+- [x] Confirm frozen existing diagnostic SHA-256 and GitHub server
+      publication strictly later than the 2026-10-21 entry boundary.
+- [x] Add read-only `workflow_dispatch` and scoped main-push
+      independent GitHub-hosted source/Release attestation checker.
+- [x] Reuse unmodified existing original-ZIP offline anti-lookahead
+      replay, with separate non-promotable diagnostic-only receipt.
+- [x] Add policy regression tests rejecting new market capture,
+      tags/releases changes, expanded CI privileges and false promotion.
+- [ ] Run final-head full CI and Historical Smoke, fix failures.
+- [ ] Squash merge, verify postmerge main CI and independently executed
+      read-only GitHub hosted diagnostic Release replay.
+
+## Verification matrix
+
+| Gate | Expected evidence | Current status |
+| --- | --- | --- |
+| Source ZIP SHA256 | Exact VPS SHA-256 and GitHub downloaded bytes | Operator verified; independent GitHub runner pending |
+| Manifest SHA256 | Exact known original 825-byte manifest digest | Operator verified; independent GitHub runner pending |
+| Immutable Release | GitHub metadata, release+both asset signatures | Operator verified ZIP; GH-hosted both pending |
+| Offline replay | `offline_vps_replay_only` from authentic original ZIP | VPS verified; GH-hosted pending |
+| Non-promotion | `point_in_time_publication_verified=false` and all approvals false | Deterministic tests added, CI pending |
+| Repository PR gates | Five CI jobs + Historical Backtest Smoke | CI pending |
+| Post-merge main | CI and separate read-only diagnostic job | Pending |
+
+## Completion
+
+Incomplete: GitHub-hosted runner validation and final merge gate
+not yet verified. Never mark this diagnostic as pre-entry proof.
+Issue #85 remains OPEN/BLOCKED_EVIDENCE. No acquisition/promotion/trading.
 
 ## Resume from here
 
