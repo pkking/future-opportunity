@@ -1,7 +1,7 @@
 # Immutable Funding diagnostic Release — independent GitHub runner replay
 
 Issue: #85
-Status: VERIFYING
+Status: COMPLETED
 Owner: agent
 Started: 2026-10-22
 
@@ -35,26 +35,26 @@ existing production `release.published` workflow.
 
 ## Acceptance criteria
 
-- [ ] Add a distinct GitHub Actions workflow which only uses
+- [x] Add a distinct GitHub Actions workflow which only uses
       `workflow_dispatch` and a **one-time initial main workflow-file
       push path** trigger, explicit `contents: read`; no Release
       publication, tag push, market capture or new credentials.
       Future `workflow_dispatch` is *read-only*.
-- [ ] Workflow pins exact diagnostic tag, GitHub server immutable metadata,
+- [x] Workflow pins exact diagnostic tag, GitHub server immutable metadata,
       prerelease and late publication time, exact two original asset
       hashes, server asset times, and expected release target.
-- [ ] A GitHub-hosted runner downloads both original assets from the
+- [x] A GitHub-hosted runner downloads both original assets from the
       old Release. SHA256 verify, `gh release verify`, and
       `gh release verify-asset` for both originals must pass.
-- [ ] Run *unchanged* strict original `audit_vps_funding_capture.py`
+- [x] Run *unchanged* strict original `audit_vps_funding_capture.py`
       on downloaded original ZIP+manifest, write an explicit
-      `diagnostic_only_not_preentry` report, never promote.
-- [ ] Failure is `UNASSESSED`; derived report alone is a 90-day
+      `diagnostic_only_github_hosted_offline_replay_verified` receipt, never promote.
+- [x] Failure is `UNASSESSED`; derived report alone is a 90-day
       Actions Artifact. Source ZIP persists in existing Release.
-- [ ] Deterministic CI regression tests ensure workflow is read-only,
+- [x] Deterministic CI regression tests ensure workflow is read-only,
       scoped to the frozen old diagnostic and never changes
       source/publishing production gates.
-- [ ] Final PR-head CI 5/5 + Historical Smoke green; squash merge
+- [x] Final PR-head CI 5/5 + Historical Smoke green; squash merge
       and verify postmerge main CI **and** independent diagnostic
       runner result. Record in #85. Do not report external replay
       successful until it actually succeeds on GitHub-hosted runner.
@@ -82,31 +82,31 @@ or promotion would require separate authorization.
       replay, with separate non-promotable diagnostic-only receipt.
 - [x] Add policy regression tests rejecting new market capture,
       tags/releases changes, expanded CI privileges and false promotion.
-- [ ] Run final-head full CI and Historical Smoke, fix failures.
-- [ ] Squash merge, verify postmerge main CI and independently executed
+- [x] Run final-head full CI and Historical Smoke, fix failures.
+- [x] Squash merge, verify postmerge main CI and independently executed
       read-only GitHub hosted diagnostic Release replay.
 
 ## Verification matrix
 
-| Gate | Expected evidence | Current status |
+| Gate | Independent evidence | Result |
 | --- | --- | --- |
-| Source ZIP SHA256 | Exact VPS SHA-256 and GitHub downloaded bytes | Operator verified; independent GitHub runner pending |
-| Manifest SHA256 | Exact known original 825-byte manifest digest | Operator verified; independent GitHub runner pending |
-| Immutable Release | GitHub metadata, release+both asset signatures | Operator verified ZIP; GH-hosted both pending |
-| Offline replay | `offline_vps_replay_only` from authentic original ZIP | VPS verified; GH-hosted pending |
-| Non-promotion | `point_in_time_publication_verified=false` and all approvals false | Deterministic tests added, CI pending |
-| Repository PR gates | Five CI jobs + Historical Backtest Smoke | CI pending |
-| Post-merge main | CI and separate read-only diagnostic job | Pending |
+| Source ZIP SHA256 | GitHub-hosted runner downloaded original ZIP, checked original SHA256 | SUCCESS |
+| Manifest SHA256 | GitHub-hosted runner downloaded original manifest and checked expected SHA256 | SUCCESS |
+| Immutable Release | Github server immutable+late timing, `gh release verify`, `verify-asset` for BOTH files | SUCCESS |
+| Offline replay | Unmodified `audit_vps_funding_capture.py` on downloaded original bytes | SUCCESS |
+| Non-promotion | `github_hosted_preentry_source_verified=false`, `point_in_time_publication_verified=false`, both approvals false | SUCCESS |
+| PR gates | [CI #39811638024](https://github.com/pkking/future-opportunity/actions/runs/39811638024) 5/5 and [Historical Smoke #39811638032](https://github.com/pkking/future-opportunity/actions/runs/39811638032) | SUCCESS |
+| Post-merge main | [CI #39811808392](https://github.com/pkking/future-opportunity/actions/runs/39811808392) and [independent GitHub diagnostic replay #39811808493](https://github.com/pkking/future-opportunity/actions/runs/39811808493) | SUCCESS |
 
 ## Completion
 
-Incomplete: GitHub-hosted runner validation and final merge gate
-not yet verified. Never mark this diagnostic as pre-entry proof.
-Issue #85 remains OPEN/BLOCKED_EVIDENCE. No acquisition/promotion/trading.
+Final commit: `bd2d8ba0276f0aaa31e27b680be3524b23f6ad6a` (squash merge of PR #134).
+CI run: https://github.com/pkking/future-opportunity/actions/runs/39811638024 (5/5 PASS); https://github.com/pkking/future-opportunity/actions/runs/39811638032 (Historical Smoke PASS); https://github.com/pkking/future-opportunity/actions/runs/39811808392 (postmerge main PASS).
+Independent real-GitHub replay: https://github.com/pkking/future-opportunity/actions/runs/39811808493 (PASS).
+Derived review artifact: `funding-vps-existing-diagnostic-replay`, ID `12440307395`, SHA256 `8b3a3f820ad490428c0bc04ac55921b8062c0d9539d8845eb2912dc1e0332a9e`, 90-day retention; original source remains in previously published immutable GitHub Release.
+Issue evidence checkpoint: https://github.com/pkking/future-opportunity/issues/85#issuecomment-6345510967.
+Remaining unassessed items: The original 2026-10-21 data was published to GitHub only on 2026-10-22T15:29:02Z (late); this proves neither GitHub-hosted pre-entry existence on Oct 21, independent OKX publication time, the production timed OnSuccess release path, nor adequate negative-low Funding regime historical coverage. Funding 32/Cash 66 unchanged; no acquisition/promotion/trading approval. Issue #85 stays OPEN/BLOCKED_EVIDENCE.
 
 ## Resume from here
 
-Add the restricted GitHub-only audit workflow and static guard tests;
-create PR linked to this plan, validate final head, merge when green,
-inspect actual first GitHub-hosted diagnostic audit run. Keep #85
-OPEN/BLOCKED_EVIDENCE irrespective of test success.
+Diagnostic-only independent GitHub-runner replay slice is **complete**. Continue Issue #85 with true future-day timed `funding-vps-YYYY-MM-DD` release/published-event workflow review and missing regime evidence; do not reclassify the late diagnostic as a valid prospective sample.
