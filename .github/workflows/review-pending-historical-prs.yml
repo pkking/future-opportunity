@@ -3,6 +3,7 @@ name: Review Pending Historical Corpus PRs
 on:
   workflow_dispatch:
   push:
+    tags-ignore: ['**']
     paths:
       - ".github/workflows/review-pending-historical-prs.yml"
 

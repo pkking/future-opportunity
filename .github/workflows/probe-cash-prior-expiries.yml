@@ -3,6 +3,7 @@ name: Probe Prior Cash Expiry Cohorts
 on:
   workflow_dispatch:
   push:
+    tags-ignore: ['**']
     paths:
       - "src/future_opportunity/backtest/cash_expiry_probe.py"
       - "scripts/probe_cash_prior_expiries.py"

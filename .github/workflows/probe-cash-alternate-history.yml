@@ -3,6 +3,7 @@ name: Probe Cash Alternate Historical Evidence
 on:
   workflow_dispatch:
   push:
+    tags-ignore: ['**']
     paths:
       - "scripts/probe_okx_cash_alternate_history.py"
       - "src/future_opportunity/backtest/cash_alternate_history.py"

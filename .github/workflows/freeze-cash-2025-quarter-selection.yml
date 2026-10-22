@@ -3,6 +3,7 @@ name: Freeze Cash 2025 Quarter Selection
 on:
   workflow_dispatch:
   push:
+    tags-ignore: ['**']
     paths:
       - "docs/historical-acquisition-plans/cash-2025-q3q4-24day-preregistration-v1.json"
       - "src/future_opportunity/backtest/cash_prior_quarter_selection.py"

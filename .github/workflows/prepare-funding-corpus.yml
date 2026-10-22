@@ -8,6 +8,7 @@ on:
         required: true
         default: '["2026-09-02","2026-09-03"]'
   push:
+    tags-ignore: ['**']
     paths:
       - .github/workflows/prepare-funding-corpus.yml
 

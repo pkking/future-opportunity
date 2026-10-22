@@ -3,6 +3,7 @@ name: Probe OKX History Publication Frontier
 on:
   workflow_dispatch:
   push:
+    tags-ignore: ['**']
     paths:
       - "scripts/probe_okx_history_publication_frontier.py"
       - "src/future_opportunity/backtest/history_publication_frontier.py"

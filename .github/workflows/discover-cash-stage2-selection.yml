@@ -3,6 +3,7 @@ name: Discover Cash Stage-2 Selected Dates
 on:
   workflow_dispatch:
   push:
+    tags-ignore: ['**']
     paths:
       - "docs/historical-acquisition-plans/cash-stage2-30day-wave-001.json"
       - ".github/workflows/discover-cash-stage2-selection.yml"

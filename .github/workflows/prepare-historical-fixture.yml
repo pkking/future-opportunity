@@ -23,6 +23,7 @@ on:
         type: string
         default: ""
   push:
+    tags-ignore: ['**']
     paths:
       - scripts/prepare_okx_funding_history_fixture.py
       - scripts/finalize_funding_compact_fixture.py

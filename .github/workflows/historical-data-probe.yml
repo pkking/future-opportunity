@@ -3,6 +3,7 @@ name: Historical Data Schema Probe
 on:
   workflow_dispatch:
   push:
+    tags-ignore: ['**']
     paths:
       - scripts/probe_okx_historical_archive.py
       - .github/workflows/historical-data-probe.yml

@@ -3,6 +3,7 @@ name: Probe Cash Independent Expiry L2
 on:
   workflow_dispatch:
   push:
+    tags-ignore: ['**']
     paths:
       - "scripts/probe_cash_independent_l2.py"
       - ".github/workflows/probe-cash-independent-l2.yml"

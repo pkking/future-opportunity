@@ -10,6 +10,7 @@ on:
         description: Last UTC market date (YYYY-MM-DD), inclusive
         required: true
   push:
+    tags-ignore: ['**']
     paths:
       - ".github/workflows/discover-cash-historical-batch.yml"
 

@@ -10,6 +10,7 @@ on:
         description: Exact compact artifact name from the source run
         required: true
   push:
+    tags-ignore: ['**']
     paths:
       - ".github/workflows/promote-historical-compact.yml"
 

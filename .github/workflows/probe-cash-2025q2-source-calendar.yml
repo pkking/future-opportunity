@@ -3,6 +3,7 @@ name: Probe Cash 2025Q2 Source Calendar
 on:
   workflow_dispatch:
   push:
+    tags-ignore: ['**']
     paths:
       - "scripts/probe_cash_2025q2_source_calendar.py"
       - ".github/workflows/probe-cash-2025q2-source-calendar.yml"

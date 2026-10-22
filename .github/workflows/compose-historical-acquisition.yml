@@ -67,6 +67,7 @@ on:
         description: Normalized acquisition identifier
         value: ${{ jobs.compose.outputs.acquisition_id }}
   push:
+    tags-ignore: ['**']
     paths:
       - ".github/workflows/compose-historical-acquisition.yml"
 

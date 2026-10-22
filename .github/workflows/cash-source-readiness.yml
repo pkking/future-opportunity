@@ -5,6 +5,7 @@ on:
   schedule:
     - cron: "17 3 * * *"
   push:
+    tags-ignore: ['**']
     paths:
       - "scripts/check_okx_cash_source_readiness.py"
       - "src/future_opportunity/backtest/cash_source_readiness.py"
