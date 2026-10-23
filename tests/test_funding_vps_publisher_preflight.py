@@ -159,6 +159,7 @@ def test_auth_network_errors_never_claim_write_scope(monkeypatch, tmp_path, stat
 def test_offline_and_wrong_repository_fail_closed(monkeypatch, tmp_path):
     report, _ = _run(monkeypatch, tmp_path, disconnect=True)
     assert report["status"] == "UNASSESSED"
+    (tmp_path / "other").mkdir()
     report, _ = _run(
         monkeypatch, tmp_path / "other",
         identity={"full_name": "somebody/other", "private": False},
