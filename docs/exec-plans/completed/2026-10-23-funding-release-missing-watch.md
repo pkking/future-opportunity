@@ -1,7 +1,7 @@
 # Prospective Funding GitHub Release missing-day and audit-failure watch
 
 Issue: #85
-Status: IMPLEMENTING
+Status: COMPLETED
 Owner: agent
 Started: 2026-10-23
 
@@ -35,42 +35,42 @@ selection, corpus promotion, trading action or external storage.
 
 ## Acceptance criteria
 
-- [ ] New `scripts/check_funding_release_watch.py` supports an
+- [x] New `scripts/check_funding_release_watch.py` supports an
       injectable aware UTC clock, read-only public GitHub client, UTC
       date validation, latest three *completed* entry windows,
       go-live floor of 2026-10-23 and optional fixed day for review.
-- [ ] Fetch exact official GitHub Release tag. A genuine Release 404
+- [x] Fetch exact official GitHub Release tag. A genuine Release 404
       means no **published** Release is visible; record
       `MISSING_PUBLISHED_RELEASE` and fail watcher run; never
       silently report a zero-return/no opportunity.
-- [ ] Reuse `audit_github_vps_release.verify_release` to enforce
+- [x] Reuse `audit_github_vps_release.verify_release` to enforce
       original ZIP+manifest correct bytes, immutable status and
       GitHub server timestamps before **same-day** 00:15 UTC.
       Late/altered/incomplete source is `INVALID_RELEASE`; transport
       / authentication / API failures are `UNASSESSED`, not missing.
-- [ ] Require a `release.published` GitHub Actions audit run
+- [x] Require a `release.published` GitHub Actions audit run
       associated with the **same exact tag** and `success`; report
       `AUDIT_PENDING`, `AUDIT_MISSING`, `AUDIT_FAILED` otherwise.
       Never infer a successful audit from presence of Release.
-- [ ] Workflow fires daily at **00:41 UTC** best-effort, and
+- [x] Workflow fires daily at **00:41 UTC** best-effort, and
       `workflow_dispatch`, plus a one-off path-scoped **main branch**
       trigger for first validation; read-only `contents: read`
       and `actions: read`, no GitHub writes, additional secrets,
       source market HTTP, exchange APIs or downloads to source corpus.
-- [ ] Each execution writes exact bounded JSON (including failures),
+- [x] Each execution writes exact bounded JSON (including failures),
       always uploads **derived** review as 90-day Actions Artifact,
       job nonzero on missing/invalid/pending/failed/unassessed,
       preserving false exchange/signature/source approval flags.
       Workflow job failure can be surfaced via GitHub Actions
       notification preferences, without a separate notification
       provider or automatic Issue writes.
-- [ ] Offline deterministic MockTransport tests for legitimate same-day
+- [x] Offline deterministic MockTransport tests for legitimate same-day
       GitHub Release+successful audit, absent release, late publish,
       altered ZIP, malformed release, pending/failed/missing audit,
       403/5xx/network errors, premature check, date boundaries,
       3-day late/skipped schedule recovery, and no retrospective
       before-rollout false alert. Static workflow policy tests.
-- [ ] PR final-head all five CI checks + Historical Backtest Smoke,
+- [x] PR final-head all five CI checks + Historical Backtest Smoke,
       squash merge, postmerge main CI and genuine read-only
       first-run watcher success against existing 2026-10-23 Release.
       Record results in Issue #85 without claiming OKX first-publication
@@ -78,21 +78,21 @@ selection, corpus promotion, trading action or external storage.
 
 ## Implementation slices
 
-- [ ] New deterministic release + audit state classifier and JSON CLI.
-- [ ] Read-only daily/dispatch workflow with safe failure artifact.
-- [ ] No-network edge-case and workflow policy tests.
-- [ ] Operator runbook and complete validation.
-- [ ] Merge, postmerge and live health watcher verification.
+- [x] New deterministic release + audit state classifier and JSON CLI.
+- [x] Read-only daily/dispatch workflow with safe failure artifact.
+- [x] No-network edge-case and workflow policy tests.
+- [x] Operator runbook and complete validation.
+- [x] Merge, postmerge and live health watcher verification.
 
 ## Verification matrix
 
 | Scope | Method | State |
 |---|---|---|
-| Offline checker | `uv run pytest tests/test_funding_release_watch.py` | Pending |
-| GitHub only permissions and event rules | `uv run pytest tests/test_funding_release_watch_workflow.py` | Pending |
-| Full static, API, code, E2E, historic | Five CI jobs + Historical Smoke | Pending |
-| Published 2026-10-23 health | Real GitHub-hosted watcher on main | Pending |
-| Postmerge base | Main CI | Pending |
+| Offline checker | `uv run pytest tests/test_funding_release_watch.py` | Completed |
+| GitHub only permissions and event rules | `uv run pytest tests/test_funding_release_watch_workflow.py` | Completed |
+| Full static, API, code, E2E, historic | Five CI jobs + Historical Smoke | Completed |
+| Published 2026-10-23 health | Real GitHub-hosted watcher on main | Completed |
+| Postmerge base | Main CI | Completed |
 
 ## Decision gates
 
@@ -103,14 +103,35 @@ out of scope because only GitHub-native capabilities are allowed.
 
 ## Resume from here
 
-Implement pure read-only health checker and reproducible tests, wire
-safe read-only daily workflow, review final-head CI/Smoke, squash
-merge if green and verify the initial real main watcher run. Leave
-Issue #85 OPEN/BLOCKED_EVIDENCE: no independently proven OKX
-publication time, no negative-funding/low-volatility cohort, no
-research sample promotion.
+Slice completed and archived. The next scheduled check may run
+2026-10-24 UTC 00:41 (best-effort GitHub cron). Continue the
+parent Issue #85's independent source-publication and missing
+Funding-regime evidence. No historical backfill, promotion or trades.
 
 ## Completion
 
-In progress. No new API market source request, Release, tag or
-original ZIP mutation authorized.
+Final commit: `3bc07fae40733280e01b53ad879ef7bac9d2e2aa`
+(squash-merged PR #136).
+CI run: https://github.com/pkking/future-opportunity/actions/runs/39981311214
+(five checks SUCCESS), and
+https://github.com/pkking/future-opportunity/actions/runs/39981311338
+(Historical Backtest Smoke SUCCESS).
+Postmerge CI:
+https://github.com/pkking/future-opportunity/actions/runs/39981492989
+(SUCCESS).
+Live independent GitHub runner health:
+https://github.com/pkking/future-opportunity/actions/runs/39981492769
+(SUCCESS; `HEALTHY` for `funding-vps-2026-10-23`; source ZIP
+SHA256 `bbf7bb90e6d95fd12573d92943ddac682bb5ac2d4c5538fcb9906b97ebff3068`;
+matching independent audit Run #39875400476).
+Derived report Artifact: `funding-vps-daily-release-health`,
+artifact ID `12513737067`, SHA256
+`2bd488969de6709eb82e468aa7454f291980058fee66a6824e72a1eda0cef69c`.
+Remaining unassessed items: a genuine **cron-triggered** execution
+of this new watcher has not yet occurred; the first eligible event
+is 2026-10-24 00:41 UTC and GitHub may delay/drop it. GitHub-hosted
+source custody does not independently authenticate OKX first-
+publication timing or qualify new research samples; negative Funding
+and low volatility coverage is still missing. Funding 32/Cash 66
+pinned samples unchanged, no acquisition/promotion/trade approvals;
+parent Issue #85 remains OPEN/BLOCKED_EVIDENCE.
