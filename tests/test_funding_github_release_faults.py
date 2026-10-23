@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import hashlib
 from datetime import UTC, datetime
-from pathlib import Path
 
 import httpx
 import pytest
@@ -54,10 +53,12 @@ def _attempt(monkeypatch, tmp_path, *, phase, failure, clock=None):
         return orig(request)
 
     if clock is None:
-        now = lambda: CLOCK
+        def now():
+            return CLOCK
     else:
         times = iter(clock)
-        now = lambda: next(times)
+        def now():
+            return next(times)
 
     with httpx.Client(transport=httpx.MockTransport(handler)) as client:
         with pytest.raises((httpx.RequestError, httpx.HTTPStatusError, ValueError)) as exc:
