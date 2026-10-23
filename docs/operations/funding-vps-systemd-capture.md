@@ -515,3 +515,72 @@ changes `point_in_time_publication_verified=false`,
 `exchange_signed=false`, `acquisition_approved=false` or
 `promotion_approved=false`. No Stage-2 corpus eligibility, trade,
 historical backfill, or market-profit inference is authorized.
+
+
+## Optional, no-write VPS publisher preflight
+
+Before future daily captures, an operator may execute a **read-only**
+self-check on the already configured VPS without starting any collector,
+publisher or systemd timer, and **without creating a GitHub Draft Release**.
+
+```bash
+cd /opt/future-opportunity
+
+# Reads root-owned 0600 /etc/future-opportunity/github-token internally;
+# prints a redacted report, never the Token.
+sudo env PYTHONPATH=src .venv/bin/python \
+  scripts/preflight_vps_funding_github_publisher.py \
+  --source-day 2026-10-23
+```
+
+The optional `--source-day` must be a **real, already published**
+prospective source day. To check host configuration only, omit this
+flag. Do **not** pass the historical diagnostic
+`diagnostic-funding-vps-2026-10-21`, since its tag and late
+publication were not eligible for prospective source qualification.
+The check is safe outside the UTC 00:00..00:15 capture window.
+No `sudo systemctl start`, replay of missing exchange HTTP data
+or manual Release publishing is required.
+
+Preflight is **not enabled as an ExecStartPre or timer dependency**:
+the existing proven original collector/OnSuccess runtime is unchanged.
+The script verifies:
+
+- recent `/run/systemd/timesync/synchronized` marker using the
+  same local NTP freshness guard as the collector (not externally
+  authenticated clock evidence);
+- a private existing systemd Funding `StateDirectory`, plus local
+  publisher unit and `OnSuccess` drop-in configuration files;
+- root-owned, ordinary `0600` credential file; missing, symlinked,
+  empty, newline-terminated, wrong-owner or over-permissive files
+  are rejected. **Never print the Token**;
+- an authenticated **HTTPS GET only** to the expected **public**
+  GitHub repository with the existing Token; this checks current
+  read-only credential acceptance, **NOT** `Contents:write`;
+- if requested, independent *public* metadata and original ZIP+
+  manifest offline replay of the selected prior immutable Release.
+
+Report status is `PREFLIGHT_READ_ONLY_PASS` only when all required
+checks pass. A false/missing prerequisite or unavailable GitHub
+API is explicitly `UNASSESSED` and causes a nonzero exit. Every
+report conservatively retains
+`github_contents_write_permission_verified=false`,
+`publisher_dynamic_user_runtime_verified=false`,
+`github_release_immutability_setting_verified=false`,
+`point_in_time_publication_verified=false` and all acquisition,
+promotion and trading approvals disabled. File metadata cannot prove
+that systemd has reloaded configurations, the future ephemeral UID
+has directory access, GitHub's write grants are valid, or the
+next real API call will succeed. Those remain covered by actual
+post-capture and independent Release health monitoring.
+
+Separate **offline MockTransport tests** inject GitHub draft,
+first/second asset upload, and final publication errors/timeouts,
+plus UTC deadline transitions after partial upload. A partially
+created GitHub **Draft** may remain on the server after a failure;
+it must **not** be confused with an immutable, published, signed
+Release, and the collector must not be restarted to backfill it.
+The daily [GitHub-only Release health watcher](../../.github/workflows/watch-funding-vps-release-health.yml)
+will treat a missing *published* Release as missing evidence after
+the cutoff. No automated cleanup, retry, overwrite or promotion
+is authorized by the preflight or failure-injection suite.
