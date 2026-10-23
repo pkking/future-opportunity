@@ -448,3 +448,70 @@ alert on missing daily directories or `systemctl --failed`.
 References: systemd `systemd.timer(5)`, `systemd.exec(5)`;
 GitHub Actions `schedule` best-effort documentation and
 `docs/research/funding-prospective-point-in-time-capture-contract.md`.
+
+
+## Daily GitHub-only missing-release and audit-health watch (Issue #85)
+
+A **separate** GitHub Actions
+[`Watch Funding VPS Immutable Release Health (Read-only)`](../../.github/workflows/watch-funding-vps-release-health.yml)
+checks whether an expected **published** `funding-vps-YYYY-MM-DD`
+Immutable Release exists and was uploaded/published within UTC
+00:00..00:15. It only uses GitHub's built-in free public repository
+features, `contents: read` and `actions: read`. There is **no**
+new VPS service, no OKX requests, and no GitHub Release/tag writes.
+
+The watcher also runs the existing **strict original ZIP + manifest
+offline replay** from GitHub and requires a **successful**
+`Audit Immutable VPS Funding Evidence Release` `release.published`
+workflow run matching that **exact same tag**. A Release alone is NOT
+enough to claim that independent GitHub attestation checks succeeded.
+
+- `RELEASE_AND_INDEPENDENT_AUDIT_VERIFIED`: complete source and
+  independent Release audit evidence, **only** GitHub-side pre-entry
+  custody, **not** exchange publication timing.
+- `MISSING_PUBLISHED_RELEASE`: public GitHub returned 404 for the
+  expected exact tag **after** the 00:15 UTC deadline.
+- `INVALID_RELEASE`: existed but original ZIP/manifest replay, hash,
+  immutable attribute, or signed server publication-time condition
+  failed. A historical late diagnostic tag is NOT a substitute.
+- `AUDIT_MISSING`, `AUDIT_PENDING`, `AUDIT_FAILED`: the
+  independent `release.published` auditor for the exact tag did
+  not exist, had not finished, or failed respectively.
+- `UNASSESSED`: GitHub API/transport/permission failure or evidence
+  not available yet; **never** silently call that a missing or empty
+  market observation.
+
+Scheduled daily at **00:41 UTC**, the watcher examines up to three
+recent completed UTC entry days. The first production monitoring day
+is **2026-10-23**; earlier diagnostics are explicitly excluded from
+missing-day alerts. GitHub Actions cron is best-effort; delayed or
+dropped executions remain possible, so the rolling review improves
+recovery but does **not** ensure zero undetected gaps when GitHub
+itself is unavailable. The full offline verifier can be re-run
+manually without market GET or altering source:
+
+```bash
+# GitHub Actions → Watch Funding VPS Immutable Release Health (Read-only)
+# → Run workflow, optional entry_day: YYYY-MM-DD
+# Or from a trusted local checkout using a read-only GH_TOKEN:
+PYTHONPATH=src .venv/bin/python scripts/check_funding_release_watch.py \
+  --days 3 \
+  --output /tmp/funding-release-health.json
+```
+
+Each workflow attempt retains a **derived** JSON report, including
+explicit `UNASSESSED` on failure, under Actions Artifact
+`funding-vps-daily-release-health` for at most 90 days.
+**The workflow itself fails** if any target day lacks the required
+Release or completed successful independent audit. Look at GitHub
+Actions run history and enable repository notification preferences
+to see these failures; a new external notification service is
+intentionally out of scope. If no GitHub scheduled job starts at
+all, this GitHub-only approach cannot send an external alert.
+
+Original immutable ZIPs live in the corresponding GitHub Releases;
+neither the watcher nor its report modifies them. The watcher never
+changes `point_in_time_publication_verified=false`,
+`exchange_signed=false`, `acquisition_approved=false` or
+`promotion_approved=false`. No Stage-2 corpus eligibility, trade,
+historical backfill, or market-profit inference is authorized.
