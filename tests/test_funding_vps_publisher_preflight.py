@@ -5,7 +5,6 @@ import importlib.util
 import json
 import os
 from datetime import UTC, datetime
-from pathlib import Path
 
 import httpx
 import pytest
@@ -195,7 +194,9 @@ def test_source_day_future_and_invalid_inputs(monkeypatch, tmp_path):
     assert report["status"] == "UNASSESSED"
     for bad in ("2026-10-35", "2026-1-23", "tomorrow"):
         with pytest.raises(ValueError, match="source day"):
-            p = tmp_path / bad.replace("/", "_")\n            p.mkdir()\n            _run(monkeypatch, p, source_day=bad)
+            p = tmp_path / bad.replace("/", "_")
+            p.mkdir()
+            _run(monkeypatch, p, source_day=bad)
 
 
 def test_unaware_clock_rejected_and_no_write_functions_in_script(monkeypatch, tmp_path):
