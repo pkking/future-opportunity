@@ -1,0 +1,77 @@
+name: Watch Funding VPS Immutable Release Health (Read-only)
+
+# The release.published reviewer never fires when the Release is MISSING.
+# This independently checks closed UTC entry windows without sending market
+# requests. GitHub schedule can be late or dropped: review three recent days.
+on:
+  schedule:
+    - cron: '41 0 * * *'
+  workflow_dispatch:
+    inputs:
+      entry_day:
+        description: Optional specific UTC day YYYY-MM-DD for a read-only review
+        required: false
+        type: string
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/watch-funding-vps-release-health.yml
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: funding-vps-release-health-watch
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Verify expected immutable Releases and independent audits
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      ENTRY_DAY: ${{ inputs.entry_day || '' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - name: Inspect up to three already closed UTC windows (read-only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/funding-release-watch
+          args=(--days 3 --output artifacts/funding-release-watch/health.json)
+          if [[ -n "$ENTRY_DAY" ]]; then
+            args+=(--entry-day "$ENTRY_DAY")
+          fi
+          uv run python scripts/check_funding_release_watch.py "${args[@]}"
+      - name: Preserve explicit UNASSESSED on setup or API failure
+        if: failure()
+        shell: bash
+        run: |
+          mkdir -p artifacts/funding-release-watch
+          if [[ ! -f artifacts/funding-release-watch/health.json ]]; then
+            printf '%s\n' \
+              '{"status":"UNASSESSED","reason":"watcher failed before producing report","exchange_signed":false,"point_in_time_publication_verified":false,"acquisition_approved":false,"promotion_approved":false}' \
+              > artifacts/funding-release-watch/health.json
+          fi
+      - name: Upload derived health report, not original source bytes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: funding-vps-daily-release-health
+          path: artifacts/funding-release-watch/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Explain watch and scheduling limitations
+        if: always()
+        shell: bash
+        run: |
+          echo "Missing/late/invalid immutable Funding Releases cause a FAILED watcher with UNASSESSED evidence, never an automatic capture." >> "$GITHUB_STEP_SUMMARY"
+          echo "GitHub schedules can be delayed or dropped; the three-day lookback mitigates but cannot guarantee independent monitoring." >> "$GITHUB_STEP_SUMMARY"
+          echo "GitHub source receipt does not authenticate OKX publication time or approve acquisition, promotion, or trading." >> "$GITHUB_STEP_SUMMARY"
