@@ -123,24 +123,24 @@ def check_preflight(
     if not isinstance(instant, datetime) or instant.tzinfo is None:
         raise ValueError("preflight requires a timezone-aware clock")
     instant = instant.astimezone(UTC)
+    synced = ntp_is_synchronized(marker=ntp_marker, now=lambda: instant)
+    state_ok = _state_safe(state_dir)
+    unit_ok = _installed_units_ok(unit, dropin)
     checks = {
         "ntp_recent": _result(
-            PASS if ntp_is_synchronized(marker=ntp_marker, now=lambda: instant) else FAIL,
+            PASS if synced else FAIL,
             "recent local timesync marker (not independent UTC attestation)"
-            if ntp_is_synchronized(marker=ntp_marker, now=lambda: instant)
-            else "recent local timesync marker missing or stale",
+            if synced else "recent local timesync marker missing or stale",
         ),
         "local_state_metadata": _result(
-            PASS if _state_safe(state_dir) else FAIL,
-            "private local state directory metadata"
-            if _state_safe(state_dir)
-            else "state directory absent or unsafe; runtime UID access not proven",
+            PASS if state_ok else FAIL,
+            "private local state directory metadata; runtime UID access not proven"
+            if state_ok else "state directory absent or unsafe; runtime UID access not proven",
         ),
         "installed_systemd_units": _result(
-            PASS if _installed_units_ok(unit, dropin) else FAIL,
+            PASS if unit_ok else FAIL,
             "publisher and OnSuccess configuration files match expected contract"
-            if _installed_units_ok(unit, dropin)
-            else "publisher service or OnSuccess configuration is missing or divergent",
+            if unit_ok else "publisher service or OnSuccess configuration is missing or divergent",
         ),
     }
     token: str | None = None
@@ -193,9 +193,12 @@ def check_preflight(
         )
     else:
         day = _entry_day(source_day)
-        if day >= instant.date().isoformat():
+        if day > instant.date().isoformat() or (
+            day == instant.date().isoformat()
+            and instant.hour == 0 and instant.minute < 15
+        ):
             checks["prior_immutable_source"] = _result(
-                UNASSESSED, "prior-day source is not older than the current UTC day"
+                UNASSESSED, "source day's entry deadline has not completed"
             )
         else:
             try:
@@ -220,8 +223,9 @@ def check_preflight(
         "credential_file", "github_authenticated_read",
     )
     ok = all(checks[name]["status"] == PASS for name in required)
-    # Prior-day is diagnostic-only: missing old evidence must not falsely
-    # fail a host that is otherwise ready, but must be stated explicitly.
+    # If an explicit source day was requested, it is a required check.
+    if source_day is not None:
+        ok = ok and checks["prior_immutable_source"]["status"] == PASS
     return {
         "status": "PREFLIGHT_READ_ONLY_PASS" if ok else "UNASSESSED",
         "checked_at": instant.isoformat(),
