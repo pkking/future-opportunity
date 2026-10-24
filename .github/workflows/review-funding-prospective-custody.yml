@@ -1,0 +1,73 @@
+name: Review Prospective Funding Custody Window (Read-only)
+
+# Manual source-custody research diagnostic. A single scoped main-push run
+# checks the already-published 2026-10-23..24 rollout days on first merge.
+# No schedule, exchange GET, source publication or historical promotion.
+on:
+  workflow_dispatch:
+    inputs:
+      start_date:
+        description: Inclusive prospective UTC date (YYYY-MM-DD)
+        required: true
+        type: string
+      end_date:
+        description: Inclusive prospective UTC date (YYYY-MM-DD, max 90 days)
+        required: true
+        type: string
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/review-funding-prospective-custody.yml
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  review:
+    name: Replay existing GitHub Releases and independent audits
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+      START_DATE: ${{ inputs.start_date || '2026-10-23' }}
+      END_DATE: ${{ inputs.end_date || '2026-10-24' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - name: Verify existing exact-day GitHub custody only
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/funding-prospective-custody
+          uv run python scripts/report_funding_prospective_custody_ledger.py \
+            --start-date "$START_DATE" \
+            --end-date "$END_DATE" \
+            --output artifacts/funding-prospective-custody/ledger.json
+      - name: Preserve explicit UNASSESSED when setup/replay fails
+        if: failure()
+        shell: bash
+        run: |
+          mkdir -p artifacts/funding-prospective-custody
+          if [[ ! -e artifacts/funding-prospective-custody/ledger.json ]]; then
+            printf '%s\n' \
+              '{"status":"UNASSESSED","reason":"source history audit did not produce verified evidence","exchange_signed":false,"point_in_time_publication_verified":false,"acquisition_approved":false,"promotion_approved":false}' \
+              > artifacts/funding-prospective-custody/ledger.json
+          fi
+      - name: Upload derived custody report, never original market source
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: funding-prospective-audited-custody
+          path: artifacts/funding-prospective-custody/
+          retention-days: 90
+          if-no-files-found: error
+      - name: State provenance limits
+        if: always()
+        run: |
+          echo "GitHub custody verification is not OKX as-of dissemination proof." >> "$GITHUB_STEP_SUMMARY"
+          echo "No exchange queries, sample promotion, profitability threshold, or trading." >> "$GITHUB_STEP_SUMMARY"
