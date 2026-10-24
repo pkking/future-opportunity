@@ -1080,22 +1080,17 @@ repeat them without reconciling merged HEAD and GitHub evidence.
   Missing **negative Funding + low volatility** still unobserved in these
   narrow source studies. Stage-2 economics gate remains disabled.
 
+## 2026-10-24 — bounded 2–90-day source continuity merged and real-replayed
+
+- [PR #148](https://github.com/pkking/future-opportunity/pull/148) merged `7a42ec32fd8275cff9868d15bd5697500003e6f0` after exact-head [CI #40109183719](https://github.com/pkking/future-opportunity/actions/runs/40109183719) all five SUCCESS and [Historical Smoke #40109183569](https://github.com/pkking/future-opportunity/actions/runs/40109183569) SUCCESS. Postmerge [main CI #40109242716](https://github.com/pkking/future-opportunity/actions/runs/40109242716) SUCCESS.
+- `scripts/report_funding_source_continuity.py` and manual [workflow](../../.github/workflows/review-funding-source-continuity.yml) extend two-day source-overlap analysis to **2–90 fully completed consecutive UTC days**, one indexed per-day independent GitHub Release/audit custody inspection per UTC day, one extra SHA256-checked original ZIP read per validated day, constant previous/current raw snapshots, and explicit results for all N-1 adjacent calendar pairs (including missing audit gaps). No extra OKX market GET and no recurring polling.
+- Actual immutable source rollout [run #40109242759](https://github.com/pkking/future-opportunity/actions/runs/40109242759) SUCCESS: 2026-10-23/24 originals checked `2/2`; one adjacent pair `1/1` consistent; 284 common settled Funding rates and 98 previously confirmed spot closes had zero numeric revision; one expected 0→1 confirmation advance, zero 1→0 regressions. Exact derived artifact ID `12565966816` SHA256 `d1c1e24d656b52a74a64c4501e219d7a3389889f1408df6a1446b56b3adb1ce0`.
+- This is **a two-real-day production verification** of a bounded 90-day capable tool, NOT 90 verified real market dates. No immutable Release newer than `funding-vps-2026-10-24` existed at the start of this slice. Funding 32 pinned, Cash 66 pinned, missing negative-low regime; Stage-2 economics threshold off. No exchange-publisher signature or exchange-source availability at historical entry time is proven.
+- Completed plan: `docs/exec-plans/completed/2026-10-24-funding-original-continuity.md`.
+
 ## Resume from here
 
-**Next concrete action:** reconcile the latest genuine prospective
-`funding-vps-YYYY-MM-DD` immutable Releases with independently successful
-`release.published` audit and source-overlap reports, recording actual
-source/regime coverage without filling any missing date or retroactively
-promoting research-only observations. Then research **independent OKX
-published-as-of-entry evidence** and objectively pre-registered future
-negative/low-regime coverage; continue only when such evidence actually
-exists. In the absence of it, maintain `BLOCKED_EVIDENCE` and
-`point_in_time_publication_verified=false` rather than fabricate a
-market opportunity rate or infer exchange signatures from GitHub timestamps.
-Before any new implementation, inspect current main/PR/CI and do not
-repeat the older 2026-10-22 tag-push fanout task from stale historical
-text. No historical/corpus promotion, numerical economics gate or trading
-without separately approved decisions.
+**Next action:** first inspect `main`, Issues, PRs, new `funding-vps-YYYY-MM-DD` immutable Releases, and matching successful `release.published` audit runs. If **new completed actual dates** exist, run the GitHub-only continuity workflow with explicit consecutive UTC start/end for all real days; preserve any missing day as UNASSESSED, never bridge it or call missing evidence zero economic outcome. Investigate independent exchange **published-as-of-entry** authentication as a separate evidence requirement. If no new qualifying external proof exists, retain Issue #85 `BLOCKED_EVIDENCE` and the frozen Funding 32 / Cash 66 pinned counts; do not derive market-wide opportunities, activate Stage-2 numerical economics, acquire historical samples from GitHub custody-only reports, or enable trading. Do not repeat already-merged prior tasks from historical sections.
 
 ## Completion
 
