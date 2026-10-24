@@ -1041,9 +1041,61 @@ GitHub-origin evidence publication causes daily noise.
   skips it. Need explicit real future-day owner-approved uploader to
   prove end-to-end automated receipt.
 
+## 2026-10-24 — reconciled main checkpoint after PRs #141–#146
+
+This section supersedes the old chronological `Resume from here` below the
+2026-10-22 diagnostic notes. Old unchecked proposal checkboxes elsewhere in
+this long-running plan are historical review context, **not** a command to
+repeat them without reconciling merged HEAD and GitHub evidence.
+
+- Main code after source-overlap confirmation fix PR #146:
+  `eb43c13e18e3f376ee09a8b8a184c5eecdabefdc`. Exact-head
+  [CI #40102242986](https://github.com/pkking/future-opportunity/actions/runs/40102242986)
+  5/5 SUCCESS; [Historical #40102242958](https://github.com/pkking/future-opportunity/actions/runs/40102242958)
+  SUCCESS; [postmerge main CI #40102318332](https://github.com/pkking/future-opportunity/actions/runs/40102318332)
+  SUCCESS. Prior PR #145 implementation `58d281cc8b129e62f9e1c76e07d704a8b7470c3d`
+  also passed CI/Smoke but its first real source-overlap diagnostic
+  identified a classification false positive.
+- Real production 2026-10-23/24 Immutable GitHub Releases and independent
+  `release.published` audits already exist; 2/2 daily GitHub custody
+  observations were independently replayed in [run #40099438927](https://github.com/pkking/future-opportunity/actions/runs/40099438927)
+  (both nonnegative/high). They do **not** prove OKX first dissemination
+  time, independent exchange signing, or research-acquisition eligibility.
+- Original overlap [Run #40101911029](https://github.com/pkking/future-opportunity/actions/runs/40101911029)
+  FAILED CLOSED: zero changes across 284 common Funding `realizedRate`
+  and 98 already-confirmed spot closes, but a routine first-day in-progress
+  `1Dutc` candle changed `confirm=0→1`. Its failed Artifact #12563356664
+  is retained, not rewritten.
+- PR #146 corrected this transition without relaxing genuine revisions.
+  The [real corrected GitHub-only audit #40102318270](https://github.com/pkking/future-opportunity/actions/runs/40102318270)
+  **SUCCESS** reported `OVERLAP_VALUES_CONSISTENT_ONLY`, exactly 284
+  common settlements and 98 common previously confirmed spot closes with
+  zero numeric revisions, one expected 0→1 advance, zero regression.
+  Derived Artifact #12563576192 SHA256
+  `f62a0930352a7db609599e1f818d03603baee3a3d70e4886e7173d289cae7720`.
+- Scope remains read-only GitHub-held originals, bounded source-history
+  ledger and source-ambiguity diagnostics. No new market GET, historical
+  fixture pinning, source promotion, economic target or live trading.
+  Funding pinned 32 / Cash 66; preferred Funding 90 days remains 58 short.
+  Missing **negative Funding + low volatility** still unobserved in these
+  narrow source studies. Stage-2 economics gate remains disabled.
+
 ## Resume from here
 
-Fix tag-push CI fanout observed from 2026-10-22 GitHub diagnostic immutable Release. Add tags-ignore to path-filtered push triggers while preserving branch behavior, add global regression tests, CI→merge→postmerge→#85. No historical promotion. The old successful diagnostic Release is frozen; do not republish/relabel.
+**Next concrete action:** reconcile the latest genuine prospective
+`funding-vps-YYYY-MM-DD` immutable Releases with independently successful
+`release.published` audit and source-overlap reports, recording actual
+source/regime coverage without filling any missing date or retroactively
+promoting research-only observations. Then research **independent OKX
+published-as-of-entry evidence** and objectively pre-registered future
+negative/low-regime coverage; continue only when such evidence actually
+exists. In the absence of it, maintain `BLOCKED_EVIDENCE` and
+`point_in_time_publication_verified=false` rather than fabricate a
+market opportunity rate or infer exchange signatures from GitHub timestamps.
+Before any new implementation, inspect current main/PR/CI and do not
+repeat the older 2026-10-22 tag-push fanout task from stale historical
+text. No historical/corpus promotion, numerical economics gate or trading
+without separately approved decisions.
 
 ## Completion
 
