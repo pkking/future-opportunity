@@ -46,10 +46,10 @@ Fix a fail-open edge in the already released read-only Funding original ZIP cons
 
 | Gate | Evidence | Status |
 | --- | --- | --- |
-| Targeted | `uv run pytest tests/test_funding_overlap_revision_audit.py tests/test_funding_source_continuity.py` | pending |
-| Static | `uv run ruff check .` | pending |
-| Code/API/E2E/plan | GitHub CI five jobs | pending |
-| Historical | Historical Backtest Smoke | pending |
+| Targeted | CI #40143217480 code-level tests cover both cases, implementation head | PASS |
+| Static | CI #40143217480 static/architecture SUCCESS | PASS |
+| Code/API/E2E/plan | #40143217480 five SUCCESS on implementation head, final checkpoint needs new head checks | VERIFYING |
+| Historical | #40143217487 SUCCESS on implementation head; final checkpoint needs fresh run | VERIFYING |
 | Real source | existing 2026-10-23/24 immutable ZIPs; no new source | pending |
 
 ## Decision gates
@@ -58,13 +58,15 @@ None. This is a semantic correctness guard internal to the already accepted read
 
 ## Evidence log
 
+- 2026-10-24: Initial PR #150 implementation head `37baf3e403732fe15a7df87321656b2ad11b7499` passed [CI #40143217480](https://github.com/pkking/future-opportunity/actions/runs/40143217480) all five jobs SUCCESS and [Historical Smoke #40143217487](https://github.com/pkking/future-opportunity/actions/runs/40143217487) SUCCESS. E2E artifact ID `12580011169` SHA256 `0ca3f3577fc957552ca2a0602d7a70014cef4ea73dd52c12bccd3e336ba361ce`; historical artifact ID `12580026247` SHA256 `e0f0ecf80eaa4eff35901422ab0d794cc1c9dc189e2cf71b2b28ab80174f16ad`. Also scoped existing GitHub-only original-overlap workflow for a one-time first-merge recheck of exactly the same 2026-10-23/24 originals, commit `0e2e30f246d58f433244d26a7b57379b92e44e3a`. Retest required on final PR HEAD after this checkpoint; no new source or exchange GET.
+
 - 2026-10-24: Implemented exact canonical adjacent original capture days in shared `compare_overlapping_sources`, scoped benign `confirm=0→1` to first snapshot's current UTC candle, added `unexpected_historical_confirmation_advances` fail-closed and kept true 1→0 regressions separate. Two-day MockTransport tests, three-day chain failure test, and operator runbook updated. No live exchange request or original ZIP write. CI is pending.
 
 - 2026-10-24: Base main verified. Shared function currently treats every 0→1 as benign; actual production first-day 0→1 is valid and must remain so.
 
 ## Resume from here
 
-Submit PR with this active plan and test against full five CI jobs and Historical Backtest Smoke. Fix failures from logs, verify final exact-head checks, merge, then inspect main CI and **actual same immutable originals** using scope-limited no-schedule GitHub review. Archive only after those gates. Keep Issue #85 OPEN/BLOCKED_EVIDENCE.
+Confirm exact FINAL checkpoint head passes all five CI and Historical Smoke, squash merge with expected SHA, inspect postmerge main CI and actual scope-limited read-only GitHub immutable original ZIP audit (unchanged 2026-10-23/24), record run and artifact. Then archive this plan separately, leave Issue #85 OPEN/BLOCKED_EVIDENCE.
 
 ## Completion
 
