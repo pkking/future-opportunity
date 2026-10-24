@@ -28,20 +28,20 @@ Determine whether successive, already independently audited immutable GitHub pro
 
 ## Acceptance criteria
 
-- [ ] Validate consecutive complete UTC days, within rollout, before any GET.
-- [ ] Both days use existing GitHub Release + independent signed-audit health, strict replay, exact original ZIP digest as independently recorded; reject stale/partial/modified ZIP and malformed source.
-- [ ] Reuse the existing typed OKX source index validators to classify common funding events and fully confirmed UTC daily spot candles; preserve unique missing/new key counts without calling them revisions.
-- [ ] Report exact semantic changes in overlapping settled funding rates and confirmed spot closes using `Decimal`, not float; include sorted event keys and source archive hashes.
-- [ ] Fail closed on actual changed overlapping values or insufficient overlap; never assert exchange-signed publication, acquisition, promotion, profit or trading.
-- [ ] Deterministic no-network regression covers stable pair, funding revision, candle revision, no overlap, SHA mismatch, missing independent audit and invalid dates; confirm requests remain GitHub-only GET.
-- [ ] Add a manually dispatchable and one-time main-push-only read-only GitHub diagnostic for actual 2026-10-23/24 evidence; no cron.
+- [x] Validate consecutive complete UTC days, within rollout, before any GET.
+- [x] Both days use existing GitHub Release + independent signed-audit health, strict replay, exact original ZIP digest as independently recorded; reject stale/partial/modified ZIP and malformed source.
+- [x] Reuse the existing typed OKX source index validators to classify common funding events and fully confirmed UTC daily spot candles; preserve unique missing/new key counts without calling them revisions.
+- [x] Report exact semantic changes in overlapping settled funding rates and confirmed spot closes using `Decimal`, not float; include sorted event keys and source archive hashes.
+- [x] Fail closed on actual changed overlapping values or insufficient overlap; never assert exchange-signed publication, acquisition, promotion, profit or trading.
+- [x] Deterministic no-network regression covers stable pair, funding revision, candle revision, no overlap, SHA mismatch, missing independent audit and invalid dates; confirm requests remain GitHub-only GET.
+- [x] Add a manually dispatchable and one-time main-push-only read-only GitHub diagnostic for actual 2026-10-23/24 evidence; no cron.
 - [ ] Final PR-head five CI jobs + Historical Backtest Smoke success; merge and check postmerge main CI + actual GitHub-only diagnostic run; archive plan separately.
 
 ## Implementation slices
 
-- [ ] 1. Build audited-original GitHub pair comparison module and report.
-- [ ] 2. Add no-network tests including end-to-end original ZIP identity and fail-closed cases.
-- [ ] 3. Add manual GitHub-only workflow and operator documentation.
+- [x] 1. Build audited-original GitHub pair comparison module and report.
+- [x] 2. Add no-network tests including end-to-end original ZIP identity and fail-closed cases.
+- [x] 3. Add manual GitHub-only workflow and operator documentation.
 - [ ] 4. Final-head verification, merge, inspect actual original results, record Issue checkpoint and archive.
 
 ## Verification matrix
@@ -60,11 +60,13 @@ None for read-only consistency diagnostics. A decision about historical acquisit
 
 ## Evidence log
 
+- 2026-10-24: Implemented original ZIP hash-gated comparison in `scripts/audit_funding_source_revision.py`, no-network MockTransport source/audit failure tests, opt-in `.github/workflows/audit-funding-original-overlap.yml`, operator runbook. Actual CI/source comparison is **not yet verified**. No GitHub Release source, original capture, corpus, trading or economics change.
+
 - 2026-10-24: official repository `audit_github_vps_release.py` original ZIP and `check_funding_release_watch.py` independent release.published verification are available. Historical provenance issue #85 remains BLOCKED_EVIDENCE.
 
 ## Resume from here
 
-Implement two-date safe source comparison from already-vetted GitHub immutable Release originals and deterministic no-network MockTransport ZIP tests. Check results before submitting PR, never change source evidence or corpus.
+Run exact PR-head CI and Historical Backtest Smoke; fix genuine regression failures, then verify final-head gates, merge, verify postmerge CI and actual original source comparison workflow before separate plan archival. Never change source evidence or corpus.
 
 ## Completion
 
