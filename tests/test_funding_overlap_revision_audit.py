@@ -237,3 +237,30 @@ def test_invalid_pair_fails_before_network(monkeypatch, old, new, when):
             client=client, token="test-token", verify=verify,
         )
     assert not requests
+
+
+
+def test_manual_workflow_is_read_only_without_a_new_market_capture(monkeypatch):
+    _module(monkeypatch)
+    workflow = (
+        ROOT / ".github/workflows/audit-funding-original-overlap.yml"
+    ).read_text()
+    assert "\n  workflow_dispatch:" in workflow
+    assert "\n  push:" in workflow
+    assert "branches: [main]" in workflow
+    assert "\n  schedule:" not in workflow
+    assert "permissions:\n  contents: read\n  actions: read" in workflow
+    assert "persist-credentials: false" in workflow
+    assert "scripts/audit_funding_source_revision.py" in workflow
+    assert "if: always()" in workflow
+    assert "if: failure()" in workflow
+    assert "retention-days: 90" in workflow
+    assert "acquisition_approved" in workflow
+    assert "promotion_approved" in workflow
+    for forbidden in (
+        "gh release create", "gh release upload", "curl ",
+        "capture_funding_preentry_source.py", "run_vps_funding_preentry.py",
+        "api/v5/public/", "api/v5/market/",
+        "contents: write", "actions: write",
+    ):
+        assert forbidden not in workflow
