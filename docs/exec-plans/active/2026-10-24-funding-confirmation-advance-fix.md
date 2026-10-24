@@ -23,18 +23,18 @@ No change to OKX collection or exchange timestamp authentication; no new market 
 
 ## Acceptance criteria
 
-- [ ] Distinguish `0→1` normal confirmation advances (report explicit timestamp list) from `1→0` confirmation regressions (fail-closed source revision).
-- [ ] Keep both-previously-confirmed candle close and common settled funding rate revisions failing closed; do not compare an unfinished candle as if it were a completed close.
-- [ ] Offline tests for actual 0→1 transition with stable overlap SUCCESS, 1→0 regression FAIL, already-confirmed close/settlement changes FAIL, no overlap UNASSESSED.
-- [ ] Workflow original read-only permissions, no new market GET and mandatory original SHA256/audit gate unchanged.
+- [x] Distinguish `0→1` normal confirmation advances (report explicit timestamp list) from `1→0` confirmation regressions (fail-closed source revision).
+- [x] Keep both-previously-confirmed candle close and common settled funding rate revisions failing closed; do not compare an unfinished candle as if it were a completed close.
+- [x] Offline tests for actual 0→1 transition with stable overlap SUCCESS, 1→0 regression FAIL, already-confirmed close/settlement changes FAIL, no overlap UNASSESSED.
+- [x] Workflow original read-only permissions, no new market GET and mandatory original SHA256/audit gate unchanged.
 - [ ] Verify exact final-head CI five SUCCESS, Historical Backtest Smoke SUCCESS; merge and verify postmerge main CI.
 - [ ] Independently rerun the existing read-only workflow against 2026-10-23/24 originals; report actual run and artifact before archival. Do not treat the old failure as passing.
 - [ ] Move plan to completed with final evidence and explicitly retain parent Issue #85 OPEN/BLOCKED_EVIDENCE.
 
 ## Implementation slices
 
-- [ ] 1. Fix expected confirmation-state progression in overlap comparison.
-- [ ] 2. Add deterministic regression tests and clarify runbook.
+- [x] 1. Fix expected confirmation-state progression in overlap comparison.
+- [x] 2. Add deterministic regression tests and clarify runbook.
 - [ ] 3. CI/Historical Smoke, merge, real GitHub-only diagnostic, independently archive.
 
 ## Verification matrix
@@ -52,11 +52,13 @@ None. Correcting a current-day candle's normal confirmation transition is eviden
 
 ## Evidence log
 
+- 2026-10-24: Code now separately records `confirmation_state_advances` (0→1, nonfailure) and `confirmation_state_regressions` (1→0, fail-closed) and keeps `confirmation_state_conflicts` for the latter compatibility. Added no-network tests reproducing the actual 2026-10-23 UTC still-open candle and unchanged negative regressions; updated runbook. **CI and real second audit not yet executed**.
+
 - 2026-10-24: Original rollout failed closed on a false positive; no contradictory settled funding values or completed spot closes observed. Keep original failure run visible.
 
 ## Resume from here
 
-Implement 0→1 expected `confirmation_state_advances` and 1→0 `confirmation_state_regressions` distinction with tests, then PR CI, merge, real read-only workflow_dispatch and archival.
+Run PR tests, including final-head five CI and Historical Smoke. Merge only if exact revision passes; then verify actual read-only workflow_dispatch against original 2026-10-23/24 immutable assets and postmerge CI, record both old failure and corrected run, archive completed plan separately.
 
 ## Completion
 
