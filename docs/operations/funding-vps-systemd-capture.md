@@ -615,3 +615,50 @@ For a specific earlier production day, run the existing read-only watcher
 with `--entry-day YYYY-MM-DD`. To inspect a different bounded rolling
 window locally, use `--days 1..7`. Both read existing GitHub evidence
 only, and neither backfills missing days or changes source evidence.
+
+
+## Longitudinal prospective Funding source custody ledger (Issue #85)
+
+For retrospective operational coverage across an explicit date interval, run
+the **read-only** ledger against already existing immutable GitHub Releases:
+
+```bash
+GH_TOKEN="$(gh auth token)" PYTHONPATH=src uv run python \
+  scripts/report_funding_prospective_custody_ledger.py \
+  --start-date 2026-10-23 --end-date 2026-10-24 \
+  --output artifacts/funding-prospective-ledger-2026-10-23-24.json
+```
+
+The token is used only for GitHub Actions history **GET** (needs
+Actions:read); original Release metadata and archives are public.
+The script never accesses OKX, changes GitHub releases, creates a
+historical market fixture, or publishes an audit receipt. The output
+path must not already exist; changing the window requires an explicit
+new report file. Never commit credentials or raw HTTP response bodies.
+
+The requested UTC window is inclusive, starts **no earlier than
+2026-10-23** (first prospective Release), must contain **1–90**
+completed calendar days, and cannot include today's not-yet-closed
+00:00–00:15 UTC entry window. The tool paginates GitHub's newest-first
+independent release-audit workflow history (bounded to 20 pages)
+instead of assuming a single 100-run response covers months of activity.
+Unreachable/truncated/malformed audit history yields explicit
+`UNASSESSED` for every checked day, not fabricated zero observations.
+
+Every requested date produces a status. Verified days must pass the
+**existing** strict original ZIP replay plus corresponding successful
+`release.published` audit. Missing, late, invalid and unreviewed days
+remain outside the four fixed 100bps regime buckets. The overall
+ledger exits nonzero and reports `UNASSESSED` unless **every**
+requested day has complete independent GitHub audit evidence.
+The result includes the same four-regime coverage summary, individual
+GitHub run evidence links, exact dates and shortfalls; even a fully
+healthy report is only `AUDITED_GITHUB_CUSTODY_ONLY`.
+
+Do not interpret the ledger as proof of OKX publication time, exchange
+signature, market-wide opportunity rate, historically sampled Funding
+return, acquisition eligibility, promotion, or trading approval.
+Missing/empty dates are source-availability states, not negative
+investment returns. **Funding pinned-day count remains unchanged.**
+The daily rolling monitor continues independently; this ledger is
+manual, bounded, and does not install a new recurring capture job.
