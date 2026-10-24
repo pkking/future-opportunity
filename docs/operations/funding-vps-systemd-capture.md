@@ -708,10 +708,25 @@ not a claim that an old field was rewritten. Confirmation-state changes are spli
 still-open `confirm=0` candle in the earlier source becomes completed
 `confirm=1` on the next day) and **regressions** (a previously
 `confirm=1` completed candle later claims `confirm=0`).
-The former is recorded in `confirmation_state_advances` but does
-not fail the review or compare interim close with final close;
-the latter remains a fail-closed `confirmation_state_regressions`
-and `confirmation_state_conflicts`.
+Only the earlier snapshot's **current UTC source date**
+(`earlier_capture.start_date`, midnight UTC) may complete as an
+expected 0→1 transition: it is recorded in
+`confirmation_state_advances` but does not fail the review or
+compare interim close with final close. If a candle from a **different
+date** was unconfirmed in the earlier snapshot and then becomes
+confirmed, the audit instead records it in
+`unexpected_historical_confirmation_advances` and
+`confirmation_state_conflicts`, with fail-closed
+`SOURCE_REVISION_DETECTED`; a previously closed UTC daily candle
+should not be silently treated as a current-day one. This indicates
+delayed/inconsistent source completeness, **not proof** of intentional
+exchange manipulation or signed first-publication time.
+
+Similarly, confirmed-to-unconfirmed 1→0 changes remain
+`confirmation_state_regressions` and
+`confirmation_state_conflicts` and fail closed.
+The report distinguishes all three transitions; neither late
+confirmation nor normal 0→1 is a new eligible historical source.
 
 - `OVERLAP_VALUES_CONSISTENT_ONLY`: no detected numeric revision in the
   overlapping records, with at least one common funding settlement and

@@ -310,3 +310,68 @@ def test_already_confirmed_candle_must_not_become_unconfirmed_later(monkeypatch)
     ]
     assert changed["confirmation_state_advances"] == []
     assert report["acquisition_approved"] is False
+
+
+
+def test_stale_prior_day_confirm_advancing_is_source_anomaly(monkeypatch):
+    """A day already closed before prior snapshot cannot be silently exempted."""
+    mod = _module(monkeypatch)
+    first = _source(OLD)
+    later = _source(NEW)
+    # 2026-10-20 was fully closed before the earlier 2026-10-23 entry.
+    first["spot_response"]["data"][1][8] = "0"
+    later["spot_response"]["data"][1][8] = "1"
+    first["spot_response"]["data"][1][4] = "89000"
+    later["spot_response"]["data"][1][4] = "90000"
+    client, verify, _ = _client(old=first, new=later)
+    with client:
+        report = _audit(mod, client, verify)
+    assert report["status"] == "SOURCE_REVISION_DETECTED"
+    spot = report["comparison"]["spot"]
+    assert spot["confirmation_state_advances"] == []
+    assert spot["unexpected_historical_confirmation_advances"] == [
+        "2026-10-20T00:00:00+00:00",
+    ]
+    assert spot["confirmation_state_conflicts"] == spot[
+        "unexpected_historical_confirmation_advances"
+    ]
+    assert spot["confirmation_state_regressions"] == []
+    assert report["point_in_time_publication_verified"] is False
+    assert report["acquisition_approved"] is False
+
+
+def test_prior_day_and_current_day_progress_must_be_separate(monkeypatch):
+    mod = _module(monkeypatch)
+    first = _source(OLD)
+    later = _source(NEW)
+    first["spot_response"]["data"][0][8] = "0"  # prior 2026-10-19
+    first["spot_response"]["data"][1][0] = _ms(OLD)
+    later["spot_response"]["data"][1][0] = _ms(OLD)
+    first["spot_response"]["data"][1][8] = "0"  # current 2026-10-23
+    client, verify, _ = _client(old=first, new=later)
+    with client:
+        report = _audit(mod, client, verify)
+    assert report["status"] == "SOURCE_REVISION_DETECTED"
+    spot = report["comparison"]["spot"]
+    assert spot["confirmation_state_advances"] == [f"{OLD}T00:00:00+00:00"]
+    assert spot["unexpected_historical_confirmation_advances"] == [
+        "2026-10-19T00:00:00+00:00",
+    ]
+
+
+@pytest.mark.parametrize("bad_first,bad_second", [
+    ("2026-10-2x", NEW),
+    (OLD, "2026-10-26"),
+    (NEW, OLD),
+    (OLD, OLD),
+])
+def test_source_comparison_rejects_noncanonical_or_nonadjacent_original_day(
+    monkeypatch, bad_first, bad_second,
+):
+    mod = _module(monkeypatch)
+    first = _source(OLD)
+    second = _source(NEW)
+    first["start_date"] = bad_first
+    second["start_date"] = bad_second
+    with pytest.raises(ValueError):
+        mod.compare_overlapping_sources(first, second)

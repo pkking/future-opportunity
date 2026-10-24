@@ -259,3 +259,30 @@ def test_continuity_workflow_is_manual_read_only_and_does_not_spawn_collector():
         "capture_funding_preentry_source.py", "run_vps_funding_preentry.py",
     ):
         assert bad not in workflow
+
+
+
+def test_longitudinal_prior_day_late_confirmation_fails_specific_adjacent_pair(
+    monkeypatch,
+):
+    mod = _module(monkeypatch)
+    raw = {day: _raw(day) for day in DAYS}
+    # This 2026-10-22 candle was already a *historical* day at the
+    # 2026-10-23 capture. It cannot get the current-day 0→1 exemption.
+    raw[DAYS[0]] = _raw(DAYS[0])
+    raw[DAYS[0]]["spot_response"]["data"][1][8] = "0"
+    client, verify, _ = _mock(records=raw)
+    with client:
+        report = _check(mod, client, verify)
+    assert report["status"] == "SOURCE_REVISION_DETECTED"
+    assert report["revision_pair_count"] == 1
+    assert report["consistent_pair_count"] == 1
+    assert report["unassessed_pair_count"] == 0
+    assert report["pairs"][0]["comparison"]["spot"][
+        "unexpected_historical_confirmation_advances"
+    ] == ["2026-10-22T00:00:00+00:00"]
+    assert report["pairs"][0]["comparison"]["spot"][
+        "confirmation_state_advances"
+    ] == []
+    assert report["pairs"][1]["status"] == "OVERLAP_VALUES_CONSISTENT_ONLY"
+    assert report["promotion_approved"] is False

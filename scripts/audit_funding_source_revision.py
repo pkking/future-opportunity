@@ -18,6 +18,7 @@ from typing import Any, Callable
 
 import httpx
 
+from check_funding_release_watch import _day
 from audit_vps_funding_capture import (
     MAX_ORIGINAL_ZIP_BYTES,
     SOURCE_MEMBERS,
@@ -95,6 +96,14 @@ def compare_overlapping_sources(
     later_capture: dict[str, Any],
 ) -> dict[str, Any]:
     """Report semantic revisions only where the *same* source keys overlap."""
+    # Lower-level callers must not be able to treat a stale historical daily
+    # candle as an ordinary current-day 0→1 completion. Capture dates are
+    # also verified against immutable GitHub Release identities upstream.
+    earlier_day = _day(earlier_capture["start_date"])
+    later_day = _day(later_capture["start_date"])
+    if later_day - earlier_day != timedelta(days=1):
+        raise ValueError("source comparison requires adjacent UTC original captures")
+
     old_funding = _funding_index(earlier_capture["funding_response"])
     new_funding = _funding_index(later_capture["funding_response"])
     old_spot = _spot_index(earlier_capture["spot_response"])
@@ -115,15 +124,22 @@ def compare_overlapping_sources(
     s_common = sorted(old_spot.keys() & new_spot.keys())
     candle_changes: list[dict[str, str]] = []
     confirmation_advances: list[str] = []
+    unexpected_historical_advances: list[str] = []
     confirmation_regressions: list[str] = []
     confirmed_overlap_count = 0
     for moment in s_common:
         prev, next_ = old_spot[moment], new_spot[moment]
         if prev[8] == "0" and next_[8] == "1":
-            # The first snapshot was taken while this UTC daily candle was
-            # still open. Its normal next-day close is *not* a revision of
-            # previously confirmed evidence, even if the price also moved.
-            confirmation_advances.append(moment.isoformat())
+            if moment.date() == earlier_day:
+                # Only the first snapshot's *current UTC daily* candle can
+                # normally advance from still-open to confirmed next day.
+                # Its interim close is intentionally not compared.
+                confirmation_advances.append(moment.isoformat())
+            else:
+                # A date outside that first snapshot's current UTC day
+                # should not be silently reclassified as normal candle
+                # completion. Preserve the abnormal source status as evidence.
+                unexpected_historical_advances.append(moment.isoformat())
         elif prev[8] == "1" and next_[8] == "0":
             # Once confirmed, a later response must not make it unconfirmed.
             confirmation_regressions.append(moment.isoformat())
@@ -137,7 +153,8 @@ def compare_overlapping_sources(
                     "earlier_confirmed_close": str(old_close),
                     "later_confirmed_close": str(new_close),
                 })
-    if funding_changes or candle_changes or confirmation_regressions:
+    if (funding_changes or candle_changes or confirmation_regressions
+            or unexpected_historical_advances):
         status = "SOURCE_REVISION_DETECTED"
     elif f_common and confirmed_overlap_count:
         status = "OVERLAP_VALUES_CONSISTENT_ONLY"
@@ -157,10 +174,13 @@ def compare_overlapping_sources(
             "only_in_earlier_count": len(old_spot.keys() - new_spot.keys()),
             "only_in_later_count": len(new_spot.keys() - old_spot.keys()),
             "confirmation_state_advances": confirmation_advances,
+            "unexpected_historical_confirmation_advances": unexpected_historical_advances,
             "confirmation_state_regressions": confirmation_regressions,
-            # Compatibility with first rollout report: only genuine
-            # regressions are conflicting historical confirmation claims.
-            "confirmation_state_conflicts": confirmation_regressions,
+            # Preserve the compatibility key for genuine confirmation
+            # anomalies, never normal first-day candle advancement.
+            "confirmation_state_conflicts": sorted(
+                confirmation_regressions + unexpected_historical_advances
+            ),
             "confirmed_close_revisions": candle_changes,
         },
     }
