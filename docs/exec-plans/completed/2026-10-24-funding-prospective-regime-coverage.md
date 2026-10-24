@@ -79,4 +79,4 @@ This narrow observability slice is completed. Continue the parent active plan `d
 Final commit: `2d17b86e27dccc6326cff5fbbcbeb255e4e4d78e` (squash PR #141; final test head `959edef6a45c5773537ad834b4223b5379e94d10`)
 CI run: #40098056397 (final PR head, five jobs SUCCESS); Historical Backtest Smoke #40098056394 SUCCESS; postmerge main CI #40098438043 SUCCESS
 E2E artifact: ID `12562225002`, SHA-256 `0a5188d218f49118766ff1263aacbc1a914cb5a313dce0d48e163cbe070da9aa`; Historical artifact ID `12560799200`, SHA-256 `aa87de015962d611f2bee583adefa59b6920c6499d72789ad5c06aa2c793f897`
-Remaining unassessed: independent OKX publication time, true acquisition eligibility, missing negative/low regime and operator VPS preflight.
+Remaining unassessed items: independent OKX publication time, true acquisition eligibility, missing negative/low regime and operator VPS preflight.
