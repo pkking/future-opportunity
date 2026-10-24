@@ -26,19 +26,19 @@ Fix a fail-open edge in the already released read-only Funding original ZIP cons
 
 ## Acceptance criteria
 
-- [ ] Same-UTC-day 0→1 transition remains benign and explicitly listed in `confirmation_state_advances`.
-- [ ] 0→1 change for a UTC daily candle before or after earlier snapshot entry day is distinct `unexpected_historical_confirmation_advances` and fails closed, even with unchanged numerical rates and completed closes.
-- [ ] Previously confirmed→unconfirmed (1→0) continues to fail, with `confirmation_state_regressions` and `confirmation_state_conflicts`; comparable completed close/rate numeric revisions still fail.
-- [ ] Source capture `start_date` used for temporal classification is canonical, valid and identical to earlier source identity already validated by immutable-source replay; malformed capture date cannot silently classify a status as benign.
-- [ ] Both two-day and three-day longitudinal scripts inherit the guard with regression tests; missing middle day and SHA-digest mismatch still fail closed. Original GitHub sources never rewritten.
-- [ ] Runbook describes expected current-candle 0→1 and delayed historical confirmation anomalies without implying signed exchange publication.
+- [x] Same-UTC-day 0→1 transition remains benign and explicitly listed in `confirmation_state_advances`.
+- [x] 0→1 change for a UTC daily candle before or after earlier snapshot entry day is distinct `unexpected_historical_confirmation_advances` and fails closed, even with unchanged numerical rates and completed closes.
+- [x] Previously confirmed→unconfirmed (1→0) continues to fail, with `confirmation_state_regressions` and `confirmation_state_conflicts`; comparable completed close/rate numeric revisions still fail.
+- [x] Source capture `start_date` used for temporal classification is canonical, valid and identical to earlier source identity already validated by immutable-source replay; malformed capture date cannot silently classify a status as benign.
+- [x] Both two-day and three-day longitudinal scripts inherit the guard with regression tests; missing middle day and SHA-digest mismatch still fail closed. Original GitHub sources never rewritten.
+- [x] Runbook describes expected current-candle 0→1 and delayed historical confirmation anomalies without implying signed exchange publication.
 - [ ] Final-head five CI SUCCESS and Historical Backtest Smoke SUCCESS, merge and postmerge main CI SUCCESS, then real read-only GitHub original-source two-day recheck on unchanged originals.
 - [ ] Completion-only PR archives a validated plan with original failing/passing evidence, all checksums and same parent Issue #85 OPEN/BLOCKED_EVIDENCE.
 
 ## Implementation slices
 
-- [ ] 1. Add strict prior entry date classification and an explicit delayed historical confirmation evidence list.
-- [ ] 2. Add targeted offline 2-day/3-day tests and documentation.
+- [x] 1. Add strict prior entry date classification and an explicit delayed historical confirmation evidence list.
+- [x] 2. Add targeted offline 2-day/3-day tests and documentation.
 - [ ] 3. Final-head CI/Historical Smoke, merge, verify actual original source with no new market GET.
 - [ ] 4. Record complete audit and archive plan separately after gates.
 
@@ -58,11 +58,13 @@ None. This is a semantic correctness guard internal to the already accepted read
 
 ## Evidence log
 
+- 2026-10-24: Implemented exact canonical adjacent original capture days in shared `compare_overlapping_sources`, scoped benign `confirm=0→1` to first snapshot's current UTC candle, added `unexpected_historical_confirmation_advances` fail-closed and kept true 1→0 regressions separate. Two-day MockTransport tests, three-day chain failure test, and operator runbook updated. No live exchange request or original ZIP write. CI is pending.
+
 - 2026-10-24: Base main verified. Shared function currently treats every 0→1 as benign; actual production first-day 0→1 is valid and must remain so.
 
 ## Resume from here
 
-Implement exact earlier capture day classification, add regression tests and sync runbook; run PR-level CI + Historical Smoke. Keep historical raw source and all promotion/approval flags unchanged.
+Submit PR with this active plan and test against full five CI jobs and Historical Backtest Smoke. Fix failures from logs, verify final exact-head checks, merge, then inspect main CI and **actual same immutable originals** using scope-limited no-schedule GitHub review. Archive only after those gates. Keep Issue #85 OPEN/BLOCKED_EVIDENCE.
 
 ## Completion
 
