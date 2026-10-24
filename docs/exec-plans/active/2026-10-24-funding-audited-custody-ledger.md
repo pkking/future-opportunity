@@ -13,7 +13,7 @@ Provide a **reproducible, bounded longitudinal inventory** of existing prospecti
 ## Non-goals
 
 - No OKX requests, historical acquisition, campaign promotion, publication backfill, strategy profitability/market arrival claims, source modification, authenticated trading or changed 100bps regime definitions.
-- No new scheduled polling/job, persisted corpus, automatically generated historical fixture or external storage.
+- No new scheduled polling/job (one-time path-triggered GitHub read-only diagnostic is allowed), persisted corpus, automatically generated historical fixture or external storage.
 - No new exchange provenance policy, automatic Stage-2 admission or acceptance criteria.
 
 ## Current facts
@@ -42,7 +42,7 @@ Obey repository AGENTS.md, ADR-0008, current active parent plan (Issue #85), des
 
 - [x] 1. Implement bounded GitHub-only 90-day audit and regime-history script.
 - [x] 2. Add deterministic unit and integration-style MockTransport tests.
-- [x] 3. Document safe manual use, freshness limitations and interpretation.
+- [x] 3. Document safe manual use, freshness limitations and interpretation, including opt-in GitHub Actions diagnostic.
 - [ ] 4. Final-head CI/Historical Smoke, merge/reconcile main CI, then archive independently.
 
 ## Verification matrix
@@ -59,6 +59,8 @@ Obey repository AGENTS.md, ADR-0008, current active parent plan (Issue #85), des
 No decision to approve new source standards is made. A future explicit ADR/human gate remains required before changing historical source publication policy or funding economics. This is an auditable *diagnostic ledger* only, not an acceptance protocol.
 
 ## Evidence log
+
+- 2026-10-24: Added opt-in `review-funding-prospective-custody.yml` read-only Actions diagnostic (workflow_dispatch + one-time main path-triggered preview; no schedule), bounded pagination negative tests, original source remains an immutable GitHub Release. Real external diagnostic has NOT run yet; verification is pending. Implementation commit `e52a546b4ec451fa286ea4655a66ce2eb3153c06`, tests `85e685a03ebb7ccaaab151de96bb098d79526c36`.
 
 - 2026-10-24: First implementation committed on branch: `scripts/report_funding_prospective_custody_ledger.py` commit `6c8fbb3db010ab33f2fb4981e4b4cf5abf045324`, offline MockTransport tests `4fe54223cfc1b78b16ed0e046470b6af2ac2fe11`, operator runbook `a9e06e5aad04acad5c05efd1593ec9d9c048239e`. All verification remains PENDING until CI executes; no live source request performed.
 
