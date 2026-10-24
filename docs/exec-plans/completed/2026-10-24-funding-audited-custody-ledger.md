@@ -1,7 +1,7 @@
 # Bounded prospective Funding audited-custody history report
 
 Issue: #85
-Status: IMPLEMENTING
+Status: COMPLETED
 Owner: agent
 Started: 2026-10-24
 Last checkpoint: 2026-10-24
@@ -35,15 +35,15 @@ Obey repository AGENTS.md, ADR-0008, current active parent plan (Issue #85), des
 - [x] Exact date-by-date source status, total audited/checked/missing counts and four stable regime buckets; no sampling/returns inference, false provenance/promote flags.
 - [x] CLI emits review artifact without overwriting an existing report; report remains UNASSESSED on incomplete or failed evidence.
 - [x] Offline no-network regression tests for clean 2+ day report, missing day, independent audit failure, pagination boundary/truncation, time range invalid, no POST/exchange calls.
-- [ ] Final exact-head CI five jobs + Historical Backtest Smoke all SUCCESS; up-to-date README/runbook and PR with valid Issue/Plan.
-- [ ] Human review then merge, postmerge CI; separate completed plan archival.
+- [x] Final exact-head CI five jobs + Historical Backtest Smoke all SUCCESS; up-to-date README/runbook and PR with valid Issue/Plan.
+- [x] Human review then merge, postmerge CI; separate completed plan archival.
 
 ## Implementation slices
 
 - [x] 1. Implement bounded GitHub-only 90-day audit and regime-history script.
 - [x] 2. Add deterministic unit and integration-style MockTransport tests.
 - [x] 3. Document safe manual use, freshness limitations and interpretation, including opt-in GitHub Actions diagnostic.
-- [ ] 4. Final-head CI/Historical Smoke, merge/reconcile main CI, then archive independently.
+- [x] 4. PR #143 exact-head CI/Smoke SUCCESS, squash merged; main CI SUCCESS; actual read-only rollout diagnostic SUCCESS; independent completion-only archive PR.
 
 ## Verification matrix
 
@@ -51,14 +51,17 @@ Obey repository AGENTS.md, ADR-0008, current active parent plan (Issue #85), des
 | --- | --- | --- |
 | Source offline | Covered by code-level tests in CI #40099281056 on implementation head `332860b` | PASS |
 | Ruff/architecture | CI #40099281056 static architecture | PASS |
-| CI code/API/E2E/plan | CI #40099281056 five SUCCESS on implementation head `332860b`; checkpoint commit will require its own fresh CI | IN PROGRESS |
-| Historical | #40099281118 SUCCESS on implementation head `332860b`; checkpoint commit requires its own smoke | IN PROGRESS |
+| CI code/API/E2E/plan | PR #143 final head `1c3ee15` CI #40099380637 five SUCCESS | PASS |
+| Historical | PR #143 final-head Historical Backtest Smoke #40099380579 SUCCESS | PASS |
 
 ## Decision gates
 
 No decision to approve new source standards is made. A future explicit ADR/human gate remains required before changing historical source publication policy or funding economics. This is an auditable *diagnostic ledger* only, not an acceptance protocol.
 
 ## Evidence log
+
+- 2026-10-24: PR #143 implementation final head `1c3ee15e30d9d6a0b132aa3c5dd89489ac317cee`; CI https://github.com/pkking/future-opportunity/actions/runs/40099380637 all five SUCCESS; Historical https://github.com/pkking/future-opportunity/actions/runs/40099380579 SUCCESS. Squash merge `4d71b4d5572ce1c1fca1048f84f5e38c86138658`; postmerge main CI https://github.com/pkking/future-opportunity/actions/runs/40099438931 SUCCESS.
+- 2026-10-24: **Actual** read-only GitHub main-push audit https://github.com/pkking/future-opportunity/actions/runs/40099438927 SUCCESS. Artifact `funding-prospective-audited-custody` ID `12562301246`, ZIP `sha256:320bb719233757072e4ae710dd472ffd15c5ea62dec4a01fd180a2852ba628ce`. Original dates 2026-10-23 & 2026-10-24 each independently replayed with matching release.published audits, both `nonnegative_high_volatility`. Counts 2/2 source custody audited, 1/4 regimes present, 0 unassessed within these two days. `point_in_time_publication_verified=false`, `exchange_signed=false`, `acquisition_approved=false`, `promotion_approved=false`, market-wide opportunity-rate null. This is an actual live GitHub custody check, NOT an OKX publisher signature or source-acquisition approval.
 
 - 2026-10-24: Implementation HEAD `332860b000b121cc904f24e6b82ef8e2ca59dfa9` passed all five CI jobs https://github.com/pkking/future-opportunity/actions/runs/40099281056 and Historical Backtest Smoke https://github.com/pkking/future-opportunity/actions/runs/40099281118. E2E artifact ID `12562590506` / `sha256:b2097e1df1700abd8eb531db40061062fcf839f6b49892a3a18df6a1389af6c0`; historical artifact ID `12562501008` / `sha256:243647bf18cd79348cf255bbf1c781f7dac6f24c5df508df00cd4becb5a57eda`. After this evidence-only checkpoint commit, CI and Smoke must be verified afresh on the exact PR head. No real longitudinal workflow has executed yet.
 
@@ -70,11 +73,11 @@ No decision to approve new source standards is made. A future explicit ADR/human
 
 ## Resume from here
 
-Verify the new checkpoint-only PR #143 head against all five CI jobs and Historical Smoke, then merge if green. After merge independently verify main CI and the new actual read-only GitHub rollout diagnostic (2026-10-23..24). Record actual evidence, then archive in a separate completion PR. No promotion.
+This bounded evidence-ledger slice is complete. Continue parent active Issue #85 plan with original-source publication authenticity research and objectively sampled negative/low-volatility cohorts; do not admit GitHub-custody-only data into historical acquisition or Stage-2 economics. The optional VPS read-only manual preflight remains unexecuted by this agent.
 
 ## Completion
 
-Final commit: pending
-CI run: pending
-E2E artifact: pending
+Final commit: `4d71b4d5572ce1c1fca1048f84f5e38c86138658` (PR #143 squash; tested head `1c3ee15e30d9d6a0b132aa3c5dd89489ac317cee`)
+CI run: #40099380637 (5 SUCCESS), Historical #40099380579 SUCCESS, postmerge main #40099438931 SUCCESS, actual GitHub custody diagnostic #40099438927 SUCCESS
+E2E artifact: ID `12562062988`, SHA256 `af755d9194d3aacf6a011cba365b770edb9b1a11aa165e2e1fb455059ede69d8`; historical ID `12561839079`, SHA256 `7b2c63efd7a9252fc5d74d68be1a10b840b825dd22740add190795b01b972e76`
 Remaining unassessed items: OKX independently signed as-of publication and negative/low-volatility coverage; historical acquisition remains blocked.
