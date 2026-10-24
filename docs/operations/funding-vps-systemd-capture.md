@@ -662,3 +662,14 @@ Missing/empty dates are source-availability states, not negative
 investment returns. **Funding pinned-day count remains unchanged.**
 The daily rolling monitor continues independently; this ledger is
 manual, bounded, and does not install a new recurring capture job.
+
+
+A second invocation path is
+[Review Prospective Funding Custody Window (Read-only)](../../.github/workflows/review-funding-prospective-custody.yml)
+under GitHub Actions → Run workflow, with exact `start_date` and
+`end_date`. It creates only a derived Actions Artifact
+`funding-prospective-audited-custody/ledger.json`, retained up to 90 days.
+A single first-merge `main` path-triggered diagnostic uses the already
+completed 2026-10-23..24 dates. It is **not scheduled** and never
+publishes/repackages an immutable original. Failed verification preserves
+an explicit `UNASSESSED` artifact, not a passing dataset.
