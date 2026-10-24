@@ -1,7 +1,7 @@
 # Funding original-source late-confirmation safety guard
 
 Issue: #85
-Status: IMPLEMENTING
+Status: COMPLETED
 Owner: agent
 Started: 2026-10-24
 Last checkpoint: 2026-10-24
@@ -32,15 +32,15 @@ Fix a fail-open edge in the already released read-only Funding original ZIP cons
 - [x] Source capture `start_date` used for temporal classification is canonical, valid and identical to earlier source identity already validated by immutable-source replay; malformed capture date cannot silently classify a status as benign.
 - [x] Both two-day and three-day longitudinal scripts inherit the guard with regression tests; missing middle day and SHA-digest mismatch still fail closed. Original GitHub sources never rewritten.
 - [x] Runbook describes expected current-candle 0→1 and delayed historical confirmation anomalies without implying signed exchange publication.
-- [ ] Final-head five CI SUCCESS and Historical Backtest Smoke SUCCESS, merge and postmerge main CI SUCCESS, then real read-only GitHub original-source two-day recheck on unchanged originals.
-- [ ] Completion-only PR archives a validated plan with original failing/passing evidence, all checksums and same parent Issue #85 OPEN/BLOCKED_EVIDENCE.
+- [x] Final-head five CI SUCCESS and Historical Backtest Smoke SUCCESS, merge and postmerge main CI SUCCESS, then real read-only GitHub original-source two-day recheck on unchanged originals.
+- [x] Completion-only PR archives a validated plan with original failing/passing evidence, all checksums and same parent Issue #85 OPEN/BLOCKED_EVIDENCE.
 
 ## Implementation slices
 
 - [x] 1. Add strict prior entry date classification and an explicit delayed historical confirmation evidence list.
 - [x] 2. Add targeted offline 2-day/3-day tests and documentation.
-- [ ] 3. Final-head CI/Historical Smoke, merge, verify actual original source with no new market GET.
-- [ ] 4. Record complete audit and archive plan separately after gates.
+- [x] 3. Final-head CI/Historical Smoke, merge, verify actual original source with no new market GET.
+- [x] 4. Record complete audit and archive plan separately after gates.
 
 ## Verification matrix
 
@@ -48,15 +48,18 @@ Fix a fail-open edge in the already released read-only Funding original ZIP cons
 | --- | --- | --- |
 | Targeted | CI #40143217480 code-level tests cover both cases, implementation head | PASS |
 | Static | CI #40143217480 static/architecture SUCCESS | PASS |
-| Code/API/E2E/plan | #40143217480 five SUCCESS on implementation head, final checkpoint needs new head checks | VERIFYING |
-| Historical | #40143217487 SUCCESS on implementation head; final checkpoint needs fresh run | VERIFYING |
-| Real source | existing 2026-10-23/24 immutable ZIPs; no new source | pending |
+| Code/API/E2E/plan | Final PR #150 head `6e3859c` CI #40143304320 5/5 SUCCESS; postmerge main #40143358419 SUCCESS | PASS |
+| Historical | Final PR #150 head Historical Smoke #40143304218 SUCCESS | PASS |
+| Real source | Main-push read-only original audit #40143358400 SUCCESS, exact existing 2026-10-23/24 ZIPs | PASS |
 
 ## Decision gates
 
 None. This is a semantic correctness guard internal to the already accepted read-only source integrity diagnostics, not a change to strategy qualification, historical admissions, reference tests or trading policy. The OKX as-of publication provenance remains unverified.
 
 ## Evidence log
+
+- 2026-10-24: PR #150 final tested HEAD `6e3859c268d56cc4fb454f62ca525637d4693a23`: [CI #40143304320](https://github.com/pkking/future-opportunity/actions/runs/40143304320) all five SUCCESS; [Historical Smoke #40143304218](https://github.com/pkking/future-opportunity/actions/runs/40143304218) SUCCESS. Squash-merged to main `4c12588e5ed4dc95bfd6be3ce5898c7158ae6d99`. [Postmerge main CI #40143358419](https://github.com/pkking/future-opportunity/actions/runs/40143358419) SUCCESS. Final PR-head E2E Artifact ID `12579053818`, SHA256 `dbaa326904f1e0f675f05fa1c878dea571bed8f04ae73debf3873d4e54754f71`; Historical Artifact ID `12579023939`, SHA256 `054e3d0786a4c19ea7cd8927764919e5d76fc84d3a2a11591b16507f22735d16`.
+- 2026-10-24: **Actual unchanged original ZIP read-only main-push diagnostic** [#40143358400](https://github.com/pkking/future-opportunity/actions/runs/40143358400) SUCCESS. 2026-10-23/24 immutable ZIP digests `bbf7bb90e6d95fd12573d92943ddac682bb5ac2d4c5538fcb9906b97ebff3068` and `d3961babf389449900dff7f56b3006291459ebb8776de2c03abff944af33894b` replayed. 284 overlapping historical Funding events with **zero** numerical revisions, 98 previously confirmed spot closes with **zero** revisions, **one** normal same-day 0→1 confirmation, **zero** unexpected historical 0→1 advances, **zero** 1→0 regressions. Final status `OVERLAP_VALUES_CONSISTENT_ONLY`. Derived Artifact ID `12580041448` SHA256 `caea6190422f31f9d6e07bd2949542a9504c0a15945d9b7b26ecbd18fe64072c`. No OKX GET or source/corpus mutation, no exchange as-of authentication proven.
 
 - 2026-10-24: Initial PR #150 implementation head `37baf3e403732fe15a7df87321656b2ad11b7499` passed [CI #40143217480](https://github.com/pkking/future-opportunity/actions/runs/40143217480) all five jobs SUCCESS and [Historical Smoke #40143217487](https://github.com/pkking/future-opportunity/actions/runs/40143217487) SUCCESS. E2E artifact ID `12580011169` SHA256 `0ca3f3577fc957552ca2a0602d7a70014cef4ea73dd52c12bccd3e336ba361ce`; historical artifact ID `12580026247` SHA256 `e0f0ecf80eaa4eff35901422ab0d794cc1c9dc189e2cf71b2b28ab80174f16ad`. Also scoped existing GitHub-only original-overlap workflow for a one-time first-merge recheck of exactly the same 2026-10-23/24 originals, commit `0e2e30f246d58f433244d26a7b57379b92e44e3a`. Retest required on final PR HEAD after this checkpoint; no new source or exchange GET.
 
@@ -66,11 +69,11 @@ None. This is a semantic correctness guard internal to the already accepted read
 
 ## Resume from here
 
-Confirm exact FINAL checkpoint head passes all five CI and Historical Smoke, squash merge with expected SHA, inspect postmerge main CI and actual scope-limited read-only GitHub immutable original ZIP audit (unchanged 2026-10-23/24), record run and artifact. Then archive this plan separately, leave Issue #85 OPEN/BLOCKED_EVIDENCE.
+Slice complete. Continue parent active Issue #85 plan's latest resume: await and verify genuine new immutable Funding Releases with matching independent audits, collect further pre-registered regimes, and seek independently signed/published-as-of OKX evidence. Do not elevate GitHub custody-only observations to historical acquisition, economics or live-trading authority.
 
 ## Completion
 
-Final commit: pending
-CI run: pending
-E2E artifact: pending
+Final commit: `4c12588e5ed4dc95bfd6be3ce5898c7158ae6d99` (PR #150 squash, final tested head `6e3859c268d56cc4fb454f62ca525637d4693a23`)
+CI run: #40143304320 5 SUCCESS; Historical #40143304218 SUCCESS; main #40143358419 SUCCESS; real original ZIP #40143358400 SUCCESS
+E2E artifact: ID `12579053818`; historical ID `12579023939`; real GitHub original ID `12580041448` (SHA256 in evidence log)
 Remaining unassessed items: OKX exchange-signed public-as-of publication, historically eligible Funding additions, absent negative/low-volatility regime and numerical economics.
