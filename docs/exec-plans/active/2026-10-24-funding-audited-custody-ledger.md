@@ -29,20 +29,20 @@ Obey repository AGENTS.md, ADR-0008, current active parent plan (Issue #85), des
 
 ## Acceptance criteria
 
-- [ ] Explicit canonical inclusive UTC start/end, within prospective first date 2026-10-23, at most 90 complete days; reject invalid/future/out-of-bounds windows before HTTP.
-- [ ] Read-only GitHub audit-run pagination with bounded pages and no silent truncation; fail closed when the relevant run list cannot be established.
-- [ ] Reuse existing day-level Release asset hash/original ZIP replay and matching successful independent release.published verification; duplicate/invalid/unassessed days excluded from verified regimes.
-- [ ] Exact date-by-date source status, total audited/checked/missing counts and four stable regime buckets; no sampling/returns inference, false provenance/promote flags.
-- [ ] CLI emits review artifact without overwriting an existing report; report remains UNASSESSED on incomplete or failed evidence.
-- [ ] Offline no-network regression tests for clean 2+ day report, missing day, independent audit failure, pagination boundary/truncation, time range invalid, no POST/exchange calls.
+- [x] Explicit canonical inclusive UTC start/end, within prospective first date 2026-10-23, at most 90 complete days; reject invalid/future/out-of-bounds windows before HTTP.
+- [x] Read-only GitHub audit-run pagination with bounded pages and no silent truncation; fail closed when the relevant run list cannot be established.
+- [x] Reuse existing day-level Release asset hash/original ZIP replay and matching successful independent release.published verification; duplicate/invalid/unassessed days excluded from verified regimes.
+- [x] Exact date-by-date source status, total audited/checked/missing counts and four stable regime buckets; no sampling/returns inference, false provenance/promote flags.
+- [x] CLI emits review artifact without overwriting an existing report; report remains UNASSESSED on incomplete or failed evidence.
+- [x] Offline no-network regression tests for clean 2+ day report, missing day, independent audit failure, pagination boundary/truncation, time range invalid, no POST/exchange calls.
 - [ ] Final exact-head CI five jobs + Historical Backtest Smoke all SUCCESS; up-to-date README/runbook and PR with valid Issue/Plan.
 - [ ] Human review then merge, postmerge CI; separate completed plan archival.
 
 ## Implementation slices
 
-- [ ] 1. Implement bounded GitHub-only 90-day audit and regime-history script.
-- [ ] 2. Add deterministic unit and integration-style MockTransport tests.
-- [ ] 3. Document safe manual use, freshness limitations and interpretation.
+- [x] 1. Implement bounded GitHub-only 90-day audit and regime-history script.
+- [x] 2. Add deterministic unit and integration-style MockTransport tests.
+- [x] 3. Document safe manual use, freshness limitations and interpretation.
 - [ ] 4. Final-head CI/Historical Smoke, merge/reconcile main CI, then archive independently.
 
 ## Verification matrix
@@ -60,11 +60,13 @@ No decision to approve new source standards is made. A future explicit ADR/human
 
 ## Evidence log
 
+- 2026-10-24: First implementation committed on branch: `scripts/report_funding_prospective_custody_ledger.py` commit `6c8fbb3db010ab33f2fb4981e4b4cf5abf045324`, offline MockTransport tests `4fe54223cfc1b78b16ed0e046470b6af2ac2fe11`, operator runbook `a9e06e5aad04acad5c05efd1593ec9d9c048239e`. All verification remains PENDING until CI executes; no live source request performed.
+
 - 2026-10-24: Starting from merged and CI-validated main `10ca4ea53e8a91486b68e19754be198f9f8a0a32`. Independent published Release audit runs 2026-10-23/#39875400476 and 2026-10-24/#40042736659 are successful. Previous 90-day retention limit applies to derived Actions Artifacts, not immutable Releases.
 
 ## Resume from here
 
-Implement strict bounded-range CLI by reusing `check_day` and `summarize_audited_regimes`, then add offline MockTransport tests. Do not call an exchange or promote any prospective case.
+Review the targeted offline tests/CI of this implementation, fix any real failures, then inspect final PR-head five checks and Historical Smoke; merge only on success. Do not call an exchange or promote any prospective case.
 
 ## Completion
 
