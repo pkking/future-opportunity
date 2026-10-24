@@ -584,3 +584,34 @@ The daily [GitHub-only Release health watcher](../../.github/workflows/watch-fun
 will treat a missing *published* Release as missing evidence after
 the cutoff. No automated cleanup, retry, overwrite or promotion
 is authorized by the preflight or failure-injection suite.
+
+
+## Audited prospective Funding 2×2 regime inventory (Issue #85)
+
+The daily `funding-vps-daily-release-health` artifact's `health.json` now includes
+`regime_coverage`. It is computed exclusively from the **exact UTC days
+checked by that watcher invocation** (three by default, maximum seven).
+No market HTTP request is made to assemble the summary.
+
+- `strata` fixes the four existing Funding-sign × 100bps trailing-volatility
+  classes. Each bucket contains `count` and exact sorted UTC `dates`.
+- `github_audited_day_count` includes a date **only** after original ZIP
+  offline replay and a matching successful independent `release.published`
+  audit; this is GitHub source custody, **not** OKX-authenticated publication.
+- `checked_day_count` and `non_audited_days` preserve dates with missing,
+  invalid, pending or failed Release/audit evidence. An unverified regime
+  string cannot fill an empty bucket. An unknown verified regime or
+  contradictory source flags causes explicit `UNASSESSED`, not HEALTHY.
+- `empty_strata` describes *the checked window only*. It is **not**
+  evidence of zero market opportunities, nor a stable cross-month regime
+  distribution. Dates outside the bounded lookback were not inspected.
+- `market_wide_opportunity_arrival_rate=null` and
+  `point_in_time_publication_verified=false`, `exchange_signed=false`,
+  `acquisition_approved=false`, `promotion_approved=false` remain
+  unchanged. Do **not** add these days to pinned Funding history or Stage-2
+  readiness using the inventory.
+
+For a specific earlier production day, run the existing read-only watcher
+with `--entry-day YYYY-MM-DD`. To inspect a different bounded rolling
+window locally, use `--days 1..7`. Both read existing GitHub evidence
+only, and neither backfills missing days or changes source evidence.
