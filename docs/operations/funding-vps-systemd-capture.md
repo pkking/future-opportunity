@@ -704,16 +704,23 @@ The report compares exact common `BTC-USDT-SWAP` settled
 `1Dutc` candle timestamp → numeric close. Decimals are compared exactly;
 representation-only zeros are not a numeric revision. New/expired records
 outside the timestamp intersection count as **coverage differences**,
-not a claim that an old field was rewritten. Confirmation-state
-contradictions are reported separately.
+not a claim that an old field was rewritten. Confirmation-state changes are split into **normal advances** (a
+still-open `confirm=0` candle in the earlier source becomes completed
+`confirm=1` on the next day) and **regressions** (a previously
+`confirm=1` completed candle later claims `confirm=0`).
+The former is recorded in `confirmation_state_advances` but does
+not fail the review or compare interim close with final close;
+the latter remains a fail-closed `confirmation_state_regressions`
+and `confirmation_state_conflicts`.
 
 - `OVERLAP_VALUES_CONSISTENT_ONLY`: no detected numeric revision in the
   overlapping records, with at least one common funding settlement and
   confirmed closed spot candle. A stable observation **does not prove**
   OKX first publication time, a source exchange signature, or market-wide
   stability.
-- `SOURCE_REVISION_DETECTED`: the same settlement rate, confirmed close,
-  or confirmation state disagrees across reviewed days; the workflow
+- `SOURCE_REVISION_DETECTED`: the same settlement rate, an already
+  confirmed close, or confirmed-to-unconfirmed state **regresses**
+  across reviewed days; the workflow
   returns nonzero with the changed event keys and old/new values.
 - `UNASSESSED_INSUFFICIENT_OVERLAP`: not enough common event records.
   Missing authenticated independent Release/audit, changed ZIP SHA256 or
@@ -735,3 +742,21 @@ in their immutable GitHub Releases.
 `market_wide_opportunity_arrival_rate=null`. This comparison is a
 source-consistency diagnostic, **not** historical acquisition, a 90-day
 pinned corpus increment, a Stage-2 economics gate or trading authority.
+
+
+### 2026-10-24 genuine cross-day source evidence and classification correction
+
+The initial [real overlap review Run #40101911029](https://github.com/pkking/future-opportunity/actions/runs/40101911029)
+failed closed and preserved original review Artifact ID `12563356664`.
+It independently found **284 common settled funding records with zero
+`realizedRate` revisions** and **98 common already-confirmed daily candles
+with zero close revisions**, but reported a `SOURCE_REVISION_DETECTED`
+on `2026-10-23T00:00:00Z` because a `1Dutc` daily candle
+changed from `confirm=0` to `confirm=1`. This was an overly broad
+classification rule: at 2026-10-23 00:00 UTC the current daily candle
+was still in progress, and on 2026-10-24 it could normally be
+confirmed. This result must not be described as a revised *settled*
+rate or *already-confirmed* candle close. New regression checks
+separate normal `0→1` advances from unsafe `1→0` reversals.
+The old failed audit remains a genuine record of the old classifier;
+it is not rewritten or silently treated as a passing Run.
