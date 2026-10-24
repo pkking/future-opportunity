@@ -94,7 +94,7 @@ def _client(*, old=None, new=None, audits=None, later_bytes=None):
             day = req.url.path[-10:]
             return httpx.Response(200, json={"tag_name": f"funding-vps-{day}"})
         if "/releases/download/" in req.url.path:
-            day = req.url.path.split("/")[4].removeprefix("funding-vps-")
+            day = req.url.path.split("/")[5].removeprefix("funding-vps-")
             return httpx.Response(
                 200, content=(
                     later_bytes if day == NEW and later_bytes is not None
