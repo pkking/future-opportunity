@@ -264,3 +264,49 @@ def test_manual_workflow_is_read_only_without_a_new_market_capture(monkeypatch):
         "contents: write", "actions: write",
     ):
         assert forbidden not in workflow
+
+
+
+def test_realistic_current_utc_candle_progresses_from_open_to_confirmed(monkeypatch):
+    """The first day's still-open 1Dutc candle normally confirms next day."""
+    mod = _module(monkeypatch)
+    first = _source(OLD)
+    second = _source(NEW)
+    current_day_open_ms = _ms("2026-10-23")
+    first["spot_response"]["data"][1][0] = current_day_open_ms
+    second["spot_response"]["data"][1][0] = current_day_open_ms
+    first["spot_response"]["data"][1][8] = "0"
+    second["spot_response"]["data"][1][8] = "1"
+    # An unfinished candle's interim close can evolve before confirmation.
+    first["spot_response"]["data"][1][4] = "91000"
+    second["spot_response"]["data"][1][4] = "91500"
+    client, verify, _ = _client(old=first, new=second)
+    with client:
+        report = _audit(mod, client, verify)
+    assert report["status"] == "OVERLAP_VALUES_CONSISTENT_ONLY"
+    assert report["comparison"]["spot"]["confirmed_close_overlap_count"] == 2
+    assert report["comparison"]["spot"]["confirmation_state_advances"] == [
+        "2026-10-23T00:00:00+00:00",
+    ]
+    assert report["comparison"]["spot"]["confirmation_state_regressions"] == []
+    assert report["comparison"]["spot"]["confirmation_state_conflicts"] == []
+    assert report["comparison"]["spot"]["confirmed_close_revisions"] == []
+    assert report["point_in_time_publication_verified"] is False
+    assert report["promotion_approved"] is False
+
+
+def test_already_confirmed_candle_must_not_become_unconfirmed_later(monkeypatch):
+    mod = _module(monkeypatch)
+    client, verify, _ = _client(new=_source(NEW, confirmed="0"))
+    with client:
+        report = _audit(mod, client, verify)
+    assert report["status"] == "SOURCE_REVISION_DETECTED"
+    changed = report["comparison"]["spot"]
+    assert changed["confirmation_state_regressions"] == [
+        "2026-10-20T00:00:00+00:00",
+    ]
+    assert changed["confirmation_state_conflicts"] == changed[
+        "confirmation_state_regressions"
+    ]
+    assert changed["confirmation_state_advances"] == []
+    assert report["acquisition_approved"] is False
