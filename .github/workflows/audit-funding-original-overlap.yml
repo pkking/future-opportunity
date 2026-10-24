@@ -1,0 +1,74 @@
+name: Audit Funding Original Source Overlap (Read-only)
+
+# Compare only two already immutable GitHub prospective Release originals.
+# One scoped main push diagnostic on introduction; operator re-runs are manual.
+# Never access OKX market endpoints, mutate Releases or promote source data.
+on:
+  workflow_dispatch:
+    inputs:
+      earlier_day:
+        description: First already-audited UTC date YYYY-MM-DD
+        required: true
+        type: string
+      later_day:
+        description: Next consecutive already-audited UTC date YYYY-MM-DD
+        required: true
+        type: string
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/audit-funding-original-overlap.yml
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  compare:
+    name: Recheck original SHA256 and overlapping settled Funding / confirmed spot
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      EARLIER_DAY: ${{ inputs.earlier_day || '2026-10-23' }}
+      LATER_DAY: ${{ inputs.later_day || '2026-10-24' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - name: Read already signed-audit-verified GitHub original ZIPs only
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/funding-original-overlap
+          uv run python scripts/audit_funding_source_revision.py \
+            --earlier-day "$EARLIER_DAY" \
+            --later-day "$LATER_DAY" \
+            --output artifacts/funding-original-overlap/revision-review.json
+      - name: Keep explicit UNASSESSED if review did not produce a report
+        if: failure()
+        shell: bash
+        run: |
+          mkdir -p artifacts/funding-original-overlap
+          if [[ ! -f artifacts/funding-original-overlap/revision-review.json ]]; then
+            printf '%s\n' \
+              '{"status":"UNASSESSED","reason":"original GitHub custody/revision review incomplete","exchange_signed":false,"point_in_time_publication_verified":false,"acquisition_approved":false,"promotion_approved":false}' \
+              > artifacts/funding-original-overlap/revision-review.json
+          fi
+      - name: Preserve derived review without duplicating immutable originals
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: funding-original-overlap-revision-review
+          path: artifacts/funding-original-overlap/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Explain limits of consistent overlapping API snapshots
+        if: always()
+        shell: bash
+        run: |
+          echo "Stable overlapping values are not OKX source signatures or first-publication proof." >> "$GITHUB_STEP_SUMMARY"
+          echo "Missing/revised evidence fails closed. No API market fetch, source promotion or trading." >> "$GITHUB_STEP_SUMMARY"
