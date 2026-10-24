@@ -206,6 +206,78 @@ def check_day(
     )
 
 
+# Fixed research strata: Funding sign × trailing spot volatility (100bps).
+# These labels are already emitted by the original-source replay auditor.
+REGIME_STRATA = (
+    "negative_low_volatility",
+    "negative_high_volatility",
+    "nonnegative_low_volatility",
+    "nonnegative_high_volatility",
+)
+
+
+def summarize_audited_regimes(records: list[dict[str, Any]]) -> dict[str, Any]:
+    """Inventory audited GitHub-held prospective sources, never historical eligibility.
+
+    A Release that exists without its matching successful independent audit
+    remains unassessed. In particular, a regime attached to an AUDIT_FAILED
+    result must NEVER be counted as a verified observation.
+    """
+    strata: dict[str, dict[str, Any]] = {
+        regime: {"count": 0, "dates": []} for regime in REGIME_STRATA
+    }
+    non_audited: list[dict[str, str]] = []
+    seen: set[str] = set()
+    for record in records:
+        if not isinstance(record, dict):
+            raise ValueError("invalid daily record")
+        raw_day = record.get("entry_market_date")
+        if not isinstance(raw_day, str):
+            raise ValueError("daily record missing canonical UTC date")
+        _day(raw_day)
+        if raw_day in seen:
+            raise ValueError("duplicate daily record in audited regime window")
+        seen.add(raw_day)
+
+        status = record.get("status")
+        if status == VALID_STATUS:
+            if (
+                record.get("github_hosted_preentry_source_verified") is not True
+                or record.get("github_release_attestation_verified") is not True
+            ):
+                raise ValueError("verified regime needs audited original GitHub source")
+            regime = record.get("regime")
+            if not isinstance(regime, str) or regime not in strata:
+                raise ValueError("verified source has unknown Funding regime")
+            strata[regime]["dates"].append(raw_day)
+        elif status in FAIL_STATES:
+            # Never use an unverified regime even if raw replay returned one.
+            non_audited.append({"date": raw_day, "status": status})
+        else:
+            raise ValueError("unknown daily Release audit status")
+
+    for value in strata.values():
+        value["dates"].sort()
+        value["count"] = len(value["dates"])
+    non_audited.sort(key=lambda item: item["date"])
+    audited_count = sum(value["count"] for value in strata.values())
+    return {
+        "status": "AUDITED_GITHUB_CUSTODY_ONLY" if not non_audited else "PARTIAL",
+        "scope": "checked_utc_release_days_only",
+        "regime_boundary": "existing_frozen_100bps",
+        "checked_day_count": len(records),
+        "github_audited_day_count": audited_count,
+        "non_audited_days": non_audited,
+        "strata": strata,
+        "empty_strata": [name for name, value in strata.items() if value["count"] == 0],
+        "exchange_signed": False,
+        "point_in_time_publication_verified": False,
+        "acquisition_approved": False,
+        "promotion_approved": False,
+        "market_wide_opportunity_arrival_rate": None,
+    }
+
+
 def watch(
     *, now: Callable[[], datetime], client: httpx.Client,
     token: str, days: int = 3, entry_day: str | None = None,
@@ -235,8 +307,22 @@ def watch(
             for d in targets
         ]
     ok = bool(results) and all(rec["status"] == VALID_STATUS for rec in results)
+    try:
+        coverage = summarize_audited_regimes(results)
+    except (ValueError, TypeError) as exc:
+        # A contradictory or unknown source regime is an evidence error, not
+        # a reason to silently omit an observation or claim healthy custody.
+        ok = False
+        coverage = {
+            "status": "UNASSESSED",
+            "reason": str(exc)[:256],
+            "point_in_time_publication_verified": False,
+            "acquisition_approved": False,
+            "promotion_approved": False,
+        }
     return {
         "status": "HEALTHY" if ok else "UNASSESSED",
+        "regime_coverage": coverage,
         "checked_at": instant.isoformat(),
         "repo": REPO,
         "lookback_days": days,

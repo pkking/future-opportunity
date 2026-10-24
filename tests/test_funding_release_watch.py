@@ -266,3 +266,130 @@ def test_report_shape_is_json_serializable_and_always_nonpromotion(monkeypatch):
     encoded = json.dumps(result, sort_keys=True)
     assert json.loads(encoded)["days"][0]["status"] == "MISSING_PUBLISHED_RELEASE"
     assert json.loads(encoded)["promotion_approved"] is False
+
+
+
+def _daily_record(mod, day, regime, *, status=None, attested=True):
+    if status is None:
+        status = mod.VALID_STATUS
+    return {
+        "entry_market_date": day,
+        "status": status,
+        "regime": regime,
+        "github_hosted_preentry_source_verified": True,
+        "github_release_attestation_verified": attested,
+    }
+
+
+def test_audited_release_regime_inventory_has_fixed_2x2_and_dates(monkeypatch):
+    mod = _watch(monkeypatch)
+    records = [
+        _daily_record(mod, "2026-10-24", "negative_high_volatility"),
+        _daily_record(mod, "2026-10-23", "nonnegative_high_volatility"),
+    ]
+    coverage = mod.summarize_audited_regimes(records)
+    assert coverage["status"] == "AUDITED_GITHUB_CUSTODY_ONLY"
+    assert coverage["checked_day_count"] == 2
+    assert coverage["github_audited_day_count"] == 2
+    assert coverage["non_audited_days"] == []
+    assert coverage["strata"]["negative_high_volatility"] == {
+        "count": 1, "dates": ["2026-10-24"],
+    }
+    assert coverage["strata"]["nonnegative_high_volatility"] == {
+        "count": 1, "dates": ["2026-10-23"],
+    }
+    assert coverage["empty_strata"] == [
+        "negative_low_volatility", "nonnegative_low_volatility",
+    ]
+    assert len(coverage["strata"]) == 4
+    assert coverage["market_wide_opportunity_arrival_rate"] is None
+    for flag in ("exchange_signed", "point_in_time_publication_verified",
+                 "acquisition_approved", "promotion_approved"):
+        assert coverage[flag] is False
+
+
+def test_failed_and_missing_release_are_not_fabricated_as_audited_days(monkeypatch):
+    mod = _watch(monkeypatch)
+    records = [
+        _daily_record(mod, "2026-10-25", "negative_low_volatility",
+                      status="AUDIT_FAILED", attested=False),
+        _daily_record(mod, "2026-10-24", "nonnegative_low_volatility",
+                      status="MISSING_PUBLISHED_RELEASE", attested=False),
+        _daily_record(mod, "2026-10-23", "nonnegative_high_volatility"),
+    ]
+    coverage = mod.summarize_audited_regimes(records)
+    assert coverage["status"] == "PARTIAL"
+    assert coverage["checked_day_count"] == 3
+    assert coverage["github_audited_day_count"] == 1
+    assert coverage["strata"]["negative_low_volatility"]["count"] == 0
+    assert coverage["strata"]["nonnegative_low_volatility"]["count"] == 0
+    assert coverage["non_audited_days"] == [
+        {"date": "2026-10-24", "status": "MISSING_PUBLISHED_RELEASE"},
+        {"date": "2026-10-25", "status": "AUDIT_FAILED"},
+    ]
+
+
+@pytest.mark.parametrize("records", [
+    [
+        {"entry_market_date": "2026-10-23", "status": "UNKNOWN"},
+    ],
+    [
+        {"entry_market_date": "2026-10-23", "status": "AUDIT_FAILED"},
+        {"entry_market_date": "2026-10-23", "status": "AUDIT_FAILED"},
+    ],
+    [
+        {"entry_market_date": "2026-2-03", "status": "AUDIT_FAILED"},
+    ],
+])
+def test_regime_inventory_rejects_unknown_duplicate_or_noncanonical_days(
+    monkeypatch, records,
+):
+    mod = _watch(monkeypatch)
+    with pytest.raises(ValueError):
+        mod.summarize_audited_regimes(records)
+
+
+@pytest.mark.parametrize("regime,attested", [
+    ("negative_below_volatility", True),
+    ("nonnegative_high_volatility", False),
+    (None, True),
+])
+def test_no_healthy_watch_with_untrusted_or_unknown_verified_regime(
+    monkeypatch, regime, attested,
+):
+    mod = _watch(monkeypatch)
+
+    def verified(day, *, client):
+        return {**_verified(day, client=client), "regime": regime}
+
+    with _mock()[0] as client:
+        result = mod.watch(
+            now=lambda: _stamp(), client=client, token="test-only",
+            entry_day=DAY, verify=verified,
+        )
+    if attested:
+        assert result["status"] == "UNASSESSED"
+        assert result["regime_coverage"]["status"] == "UNASSESSED"
+    else:
+        result["days"][0]["github_release_attestation_verified"] = False
+        with pytest.raises(ValueError, match="audited original"):
+            mod.summarize_audited_regimes(result["days"])
+    assert result["point_in_time_publication_verified"] is False
+    assert result["acquisition_approved"] is False
+
+
+def test_watch_success_includes_bounded_regime_inventory(monkeypatch):
+    mod = _watch(monkeypatch)
+    with _mock()[0] as client:
+        result = mod.watch(
+            now=lambda: _stamp(), client=client, token="test-only",
+            entry_day=DAY, verify=_verified,
+        )
+    assert result["status"] == "HEALTHY"
+    inv = result["regime_coverage"]
+    assert inv["github_audited_day_count"] == 1
+    assert inv["strata"]["nonnegative_high_volatility"]["dates"] == [DAY]
+    assert inv["empty_strata"] == [
+        "negative_low_volatility", "negative_high_volatility",
+        "nonnegative_low_volatility",
+    ]
