@@ -31,21 +31,21 @@ The 90-day prospective custody inventory already exists, but the cross-day stabl
 
 ## Acceptance criteria
 
-- [ ] Validate canonical inclusive 2–90 complete UTC days before network; strict chronological days, each adjacent pair included even if missing.
-- [ ] Independently audit each day's GitHub immutable original exactly once via current custody ledger; no comparison if one day lacks full independent source/audit flags.
-- [ ] Reuse original SHA256-checked raw snapshots at most once per day, bounded rolling memory; compare only adjacent calendar dates; no re-fetch for overlapping pairs.
-- [ ] Preserve per-pair numeric Funding, confirmed candle and confirmation-transition evidence and precise missing/unassessed states, with counts whose denominators match all expected pairs.
-- [ ] Fail nonzero if any pair has source revision, insufficient overlap, ZIP mismatch or missing audit. Distinguish genuine source revisions from insufficient evidence and do not mask one by the other.
-- [ ] Every output contains original day/digest identity, source-custody count, four-regime inventory, all pair statuses and hard-false exchange publication/acquisition/promotion fields.
-- [ ] Deterministic offline no-network tests for three-day complete chain, middle missing day, later-day revision, benign confirmation advance, ZIP hash failure, insufficient overlap, duplicate/future/too-wide dates and GET-only.
-- [ ] Manual GitHub Actions invocation for two explicit UTC endpoints, plus one first-merge diagnostic of already-existing 2026-10-23/24 originals, no schedule, derived artifact only.
+- [x] Validate canonical inclusive 2–90 complete UTC days before network; strict chronological days, each adjacent pair included even if missing.
+- [x] Independently audit each day's GitHub immutable original exactly once via current custody ledger; no comparison if one day lacks full independent source/audit flags.
+- [x] Reuse original SHA256-checked raw snapshots at most once per day, bounded rolling memory; compare only adjacent calendar dates; no re-fetch for overlapping pairs.
+- [x] Preserve per-pair numeric Funding, confirmed candle and confirmation-transition evidence and precise missing/unassessed states, with counts whose denominators match all expected pairs.
+- [x] Fail nonzero if any pair has source revision, insufficient overlap, ZIP mismatch or missing audit. Distinguish genuine source revisions from insufficient evidence and do not mask one by the other.
+- [x] Every output contains original day/digest identity, source-custody count, four-regime inventory, all pair statuses and hard-false exchange publication/acquisition/promotion fields.
+- [x] Deterministic offline no-network tests for three-day complete chain, middle missing day, later-day revision, benign confirmation advance, ZIP hash failure, insufficient overlap, duplicate/future/too-wide dates and GET-only.
+- [x] Manual GitHub Actions invocation for two explicit UTC endpoints, plus one first-merge diagnostic of already-existing 2026-10-23/24 originals, no schedule, derived artifact only.
 - [ ] CI all five jobs and Historical Backtest Smoke on exact final PR head; merge, verify main CI and actual production diagnostic, then separate completed-plan archive with Issue #85 checkpoint.
 
 ## Implementation slices
 
-- [ ] 1. Introduce validated source continuity report that reuses both existing audit layers.
-- [ ] 2. Add comprehensive no-network regression tests and static workflow policy tests.
-- [ ] 3. Add manual-only/one-time path-push GitHub Action and operator runbook.
+- [x] 1. Introduce validated source continuity report that reuses both existing audit layers.
+- [x] 2. Add comprehensive no-network regression tests and static workflow policy tests.
+- [x] 3. Add manual-only/one-time path-push GitHub Action and operator runbook.
 - [ ] 4. Full final-head CI/Smoke, merge, actual GitHub source run and explicit archival.
 
 ## Verification matrix
@@ -64,11 +64,13 @@ None. New report is a read-only diagnostic over accepted original-source audit f
 
 ## Evidence log
 
+- 2026-10-24: Initial implementation: `scripts/report_funding_source_continuity.py`, `tests/test_funding_source_continuity.py`, `.github/workflows/review-funding-source-continuity.yml` and operator runbook. Tests are synthetic MockTransport only; final-head CI and genuine GitHub evidence remain pending. No live OKX request and no historical sample change.
+
 - 2026-10-24: Source and contracts inspected at main `fdba089fc1bab561ab75f8cb495af168a9bcebe2`. No new genuine source days available after 2026-10-24.
 
 ## Resume from here
 
-Implement the bounded day-range and strict day/pair semantics, then deterministic mock original GitHub Release tests, operator workflow and docs. CI and real-source execution are not yet verified.
+Open PR against current main with this active plan. Inspect first CI + Historical Backtest Smoke; fix code/tests from actual logs if needed. For final-head green checks merge PR; independently inspect postmerge main CI and actual GitHub-original two-day workflow run. Record exact artifacts and archive this child plan in a separate completion-only PR. Issue #85 stays OPEN/BLOCKED_EVIDENCE.
 
 ## Completion
 
