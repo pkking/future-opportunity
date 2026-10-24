@@ -1,7 +1,10 @@
 name: Audit Funding Original Source Overlap (Read-only)
 
 # Compare only two already immutable GitHub prospective Release originals.
-# One scoped main push diagnostic on introduction; operator re-runs are manual.
+# One scoped main push diagnostic on introduction or reviewed workflow change.
+# The 2026-10-24 fix replays the SAME immutable 2026-10-23/24 originals
+# to independently validate normal 0->1 confirmation advancement, with no
+# new source or market calls. Operator re-runs remain manual.
 # Never access OKX market endpoints, mutate Releases or promote source data.
 on:
   workflow_dispatch:
