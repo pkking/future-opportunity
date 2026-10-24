@@ -228,3 +228,47 @@ def test_read_only_api_calls_never_contact_exchange(monkeypatch):
     assert len(calls) == 3
     assert all(method == "GET" and url.startswith("https://api.github.com/")
                for method, url in calls)
+
+
+
+def test_audit_run_history_beyond_bounded_pages_is_unassessed(monkeypatch):
+    mod = _module(monkeypatch)
+    calls = []
+    # All 20 pages contain only newer records; pretending that older runs
+    # were absent would silently erase potentially verified historical days.
+    newest = [
+        {**_audit(END), "id": i, "created_at": "2026-10-24T01:00:00Z"}
+        for i in range(100)
+    ]
+    def handler(request):
+        calls.append(request)
+        assert request.method == "GET"
+        assert "/actions/workflows/" in request.url.path
+        return httpx.Response(200, json={"workflow_runs": newest})
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        report = mod.build_report(
+            START, END, now=lambda: NOW,
+            client=client, token="synthetic", verify=_verified,
+        )
+    assert len(calls) == mod.MAX_AUDIT_PAGES
+    assert report["status"] == "UNASSESSED"
+    assert report["github_audited_day_count"] == 0
+    assert all(item["status"] == "UNASSESSED" for item in report["days"])
+
+
+def test_source_history_workflow_is_opt_in_read_only(monkeypatch):
+    _module(monkeypatch)
+    policy = (ROOT / ".github/workflows/review-funding-prospective-custody.yml").read_text()
+    assert "\n  workflow_dispatch:" in policy
+    assert "\n  push:" in policy
+    assert "\n  schedule:" not in policy
+    assert "contents: read" in policy and "actions: read" in policy
+    assert "persist-credentials: false" in policy
+    assert "scripts/report_funding_prospective_custody_ledger.py" in policy
+    assert "Upload derived custody report" in policy
+    assert "if: always()" in policy
+    assert "acquisition_approved" in policy and "promotion_approved" in policy
+    assert "gh release create" not in policy
+    assert "curl " not in policy
+    assert "api/v5/" not in policy
