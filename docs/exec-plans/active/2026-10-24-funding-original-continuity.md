@@ -52,10 +52,10 @@ The 90-day prospective custody inventory already exists, but the cross-day stabl
 
 | Gate | Evidence | Status |
 | --- | --- | --- |
-| Targeted | `uv run pytest tests/test_funding_source_continuity.py` | pending |
-| Static | `uv run ruff check .` | pending |
-| CI | full CI five jobs (plan/static/code/API/E2E) | pending |
-| Historical | Historical Backtest Smoke | pending |
+| Targeted | Covered by CI #40109100122 code-level tests, implementation head `f7bfa4c` | PASS |
+| Static | CI #40109100122 architecture/static check | PASS |
+| CI | #40109100122 five SUCCESS on implementation head `f7bfa4c`; repeat on final checkpoint commit | VERIFYING |
+| Historical | #40109100128 SUCCESS on implementation head `f7bfa4c`; repeat on final checkpoint | VERIFYING |
 | Production | genuine existing immutable source two-day continuity run | pending |
 
 ## Decision gates
@@ -64,13 +64,15 @@ None. New report is a read-only diagnostic over accepted original-source audit f
 
 ## Evidence log
 
+- 2026-10-24: PR #148 implementation HEAD `f7bfa4c7a375c8c5ac7ba6e86d4f4284f74b7ae2` passed complete [CI #40109100122](https://github.com/pkking/future-opportunity/actions/runs/40109100122) five SUCCESS and [Historical Smoke #40109100128](https://github.com/pkking/future-opportunity/actions/runs/40109100128) SUCCESS. CI E2E artifact ID `12565549091`, SHA256 `d0d428071cb870a9a24b1d99adfd8c40c06045f072615b1826bc1abefd06e1d3`; Historical artifact ID `12565303099`, SHA256 `8bd26b668a2e291f94a3f9336f5ecf0e0f53069fc32923e5ab2cc2c59d38b0dc`. The evidence-only checkpoint that adds this record changes PR head; exact final-head CI + Historical Smoke must be verified again before merge.
+
 - 2026-10-24: Initial implementation: `scripts/report_funding_source_continuity.py`, `tests/test_funding_source_continuity.py`, `.github/workflows/review-funding-source-continuity.yml` and operator runbook. Tests are synthetic MockTransport only; final-head CI and genuine GitHub evidence remain pending. No live OKX request and no historical sample change.
 
 - 2026-10-24: Source and contracts inspected at main `fdba089fc1bab561ab75f8cb495af168a9bcebe2`. No new genuine source days available after 2026-10-24.
 
 ## Resume from here
 
-Open PR against current main with this active plan. Inspect first CI + Historical Backtest Smoke; fix code/tests from actual logs if needed. For final-head green checks merge PR; independently inspect postmerge main CI and actual GitHub-original two-day workflow run. Record exact artifacts and archive this child plan in a separate completion-only PR. Issue #85 stays OPEN/BLOCKED_EVIDENCE.
+Verify all 5 CI jobs and Historical Smoke succeed on the new final PR #148 checkpoint SHA, then squash merge with expected head. Observe main push CI AND new workflow's one-time real immutable source run. Record exact actual pair counts, real artifact identities, and negative/empty status in this plan; archive via separate completion PR. Parent Issue #85 remains OPEN/BLOCKED_EVIDENCE.
 
 ## Completion
 
