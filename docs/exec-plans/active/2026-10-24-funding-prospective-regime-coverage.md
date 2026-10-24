@@ -34,18 +34,18 @@ An inventory entry is verified only when the **same day** has `RELEASE_AND_INDEP
 
 ## Acceptance criteria
 
-- [ ] Deterministic 2x2 counts and exact unique observed day lists from strict audited daily watcher records, no double count, no bucket manipulation.
-- [ ] Explicit checked count, audited count, non-audited dates/status, and empty strata; no unsupported research/promotion eligibility.
-- [ ] Fail closed for unknown regime or inconsistent verified flags, without concealing that day's broken evidence; watcher must not incorrectly return HEALTHY.
-- [ ] Deterministic offline regression covering one/multiple days, missing/failed audits, unverified regime labels, duplicates, wrong status flags, and 4 fixed classes; no network or exchange credential.
+- [x] Deterministic 2x2 counts and exact unique observed day lists from strict audited daily watcher records, no double count, no bucket manipulation.
+- [x] Explicit checked count, audited count, non-audited dates/status, and empty strata; no unsupported research/promotion eligibility.
+- [x] Fail closed for unknown regime or inconsistent verified flags, without concealing that day's broken evidence; watcher must not incorrectly return HEALTHY.
+- [x] Deterministic offline regression covering one/multiple days, missing/failed audits, unverified regime labels, duplicates, wrong status flags, and 4 fixed classes; no network or exchange credential.
 - [ ] Run targeted tests and repository CI including five required checks + Historical Backtest Smoke on final head. No corpus changes.
-- [ ] Update operational runbook to document the output and its limitations.
+- [x] Update operational runbook to document the output and its limitations.
 
 ## Implementation slices
 
-- [ ] 1. Add a strictly guarded audited-release regime inventory to the existing watcher report.
-- [ ] 2. Add deterministic tests for complete and partial windows, malformed records and non-promotion invariants.
-- [ ] 3. Update runbook; exact-head CI + Historical Smoke; PR review/merge and separately archive plan once verified.
+- [x] 1. Add a strictly guarded audited-release regime inventory to the existing watcher report.
+- [x] 2. Add deterministic tests for complete and partial windows, malformed records and non-promotion invariants.
+- [ ] 3. Run final-head CI + Historical Smoke, review/merge, and separately archive the plan only after CI evidence. Runbook updated.
 
 ## Verification matrix
 
@@ -62,11 +62,13 @@ None: this is read-only additive operational observability inside accepted Issue
 
 ## Evidence log
 
+- 2026-10-24: Implementation commit `2b51fe4431df14e6af494a6f7b42e59690a983ef` adds strict audited 2x2 summary; test commit `f7049c5678702190ae7fefa45c96baff0a2f4a2d` covers trusted/untrusted regimes; runbook commit `ef8a9afb56fdf5fc674ced89c50a8eb6a8ec9ffa`. Runtime verification remains PENDING CI.
+
 - 2026-10-24: GitHub Releases API independently showed 2026-10-24 immutable publication at 00:00:15Z. Audit #40042736659 and watcher #40064545177 concluded SUCCESS on main `10b9ccb`. Historical exchange-publication authenticity remains UNASSESSED.
 
 ## Resume from here
 
-After this plan is committed, implement bounded audited regime summary in the watcher, add failing and passing deterministic tests, then run the exact-head CI and Historical Smoke.
+Implementation and deterministic tests are committed on the task branch; next inspect exact PR-head CI and Historical Backtest Smoke. Fix real failures without relaxing the safety assertions. Do not merge or archive until the final head passes.
 
 ## Completion
 
