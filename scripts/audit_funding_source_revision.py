@@ -114,12 +114,19 @@ def compare_overlapping_sources(
 
     s_common = sorted(old_spot.keys() & new_spot.keys())
     candle_changes: list[dict[str, str]] = []
-    confirmation_conflicts: list[str] = []
+    confirmation_advances: list[str] = []
+    confirmation_regressions: list[str] = []
     confirmed_overlap_count = 0
     for moment in s_common:
         prev, next_ = old_spot[moment], new_spot[moment]
-        if prev[8] != next_[8]:
-            confirmation_conflicts.append(moment.isoformat())
+        if prev[8] == "0" and next_[8] == "1":
+            # The first snapshot was taken while this UTC daily candle was
+            # still open. Its normal next-day close is *not* a revision of
+            # previously confirmed evidence, even if the price also moved.
+            confirmation_advances.append(moment.isoformat())
+        elif prev[8] == "1" and next_[8] == "0":
+            # Once confirmed, a later response must not make it unconfirmed.
+            confirmation_regressions.append(moment.isoformat())
         if prev[8] == next_[8] == "1":
             confirmed_overlap_count += 1
             old_close = _finite(prev[4], "old confirmed close", positive=True)
@@ -130,7 +137,7 @@ def compare_overlapping_sources(
                     "earlier_confirmed_close": str(old_close),
                     "later_confirmed_close": str(new_close),
                 })
-    if funding_changes or candle_changes or confirmation_conflicts:
+    if funding_changes or candle_changes or confirmation_regressions:
         status = "SOURCE_REVISION_DETECTED"
     elif f_common and confirmed_overlap_count:
         status = "OVERLAP_VALUES_CONSISTENT_ONLY"
@@ -149,7 +156,11 @@ def compare_overlapping_sources(
             "confirmed_close_overlap_count": confirmed_overlap_count,
             "only_in_earlier_count": len(old_spot.keys() - new_spot.keys()),
             "only_in_later_count": len(new_spot.keys() - old_spot.keys()),
-            "confirmation_state_conflicts": confirmation_conflicts,
+            "confirmation_state_advances": confirmation_advances,
+            "confirmation_state_regressions": confirmation_regressions,
+            # Compatibility with first rollout report: only genuine
+            # regressions are conflicting historical confirmation claims.
+            "confirmation_state_conflicts": confirmation_regressions,
             "confirmed_close_revisions": candle_changes,
         },
     }
