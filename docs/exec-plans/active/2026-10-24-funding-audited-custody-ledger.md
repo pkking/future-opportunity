@@ -49,16 +49,18 @@ Obey repository AGENTS.md, ADR-0008, current active parent plan (Issue #85), des
 
 | Gate | Evidence | Status |
 | --- | --- | --- |
-| Source offline | `uv run pytest tests/test_funding_prospective_custody_ledger.py` | pending |
-| Ruff/architecture | `uv run ruff check .` | pending |
-| CI code/API/E2E/plan | GitHub CI five required jobs | pending |
-| Historical | GitHub Historical Backtest Smoke | pending |
+| Source offline | Covered by code-level tests in CI #40099281056 on implementation head `332860b` | PASS |
+| Ruff/architecture | CI #40099281056 static architecture | PASS |
+| CI code/API/E2E/plan | CI #40099281056 five SUCCESS on implementation head `332860b`; checkpoint commit will require its own fresh CI | IN PROGRESS |
+| Historical | #40099281118 SUCCESS on implementation head `332860b`; checkpoint commit requires its own smoke | IN PROGRESS |
 
 ## Decision gates
 
 No decision to approve new source standards is made. A future explicit ADR/human gate remains required before changing historical source publication policy or funding economics. This is an auditable *diagnostic ledger* only, not an acceptance protocol.
 
 ## Evidence log
+
+- 2026-10-24: Implementation HEAD `332860b000b121cc904f24e6b82ef8e2ca59dfa9` passed all five CI jobs https://github.com/pkking/future-opportunity/actions/runs/40099281056 and Historical Backtest Smoke https://github.com/pkking/future-opportunity/actions/runs/40099281118. E2E artifact ID `12562590506` / `sha256:b2097e1df1700abd8eb531db40061062fcf839f6b49892a3a18df6a1389af6c0`; historical artifact ID `12562501008` / `sha256:243647bf18cd79348cf255bbf1c781f7dac6f24c5df508df00cd4becb5a57eda`. After this evidence-only checkpoint commit, CI and Smoke must be verified afresh on the exact PR head. No real longitudinal workflow has executed yet.
 
 - 2026-10-24: Added opt-in `review-funding-prospective-custody.yml` read-only Actions diagnostic (workflow_dispatch + one-time main path-triggered preview; no schedule), bounded pagination negative tests, original source remains an immutable GitHub Release. Real external diagnostic has NOT run yet; verification is pending. Implementation commit `e52a546b4ec451fa286ea4655a66ce2eb3153c06`, tests `85e685a03ebb7ccaaab151de96bb098d79526c36`.
 
@@ -68,7 +70,7 @@ No decision to approve new source standards is made. A future explicit ADR/human
 
 ## Resume from here
 
-Review the targeted offline tests/CI of this implementation, fix any real failures, then inspect final PR-head five checks and Historical Smoke; merge only on success. Do not call an exchange or promote any prospective case.
+Verify the new checkpoint-only PR #143 head against all five CI jobs and Historical Smoke, then merge if green. After merge independently verify main CI and the new actual read-only GitHub rollout diagnostic (2026-10-23..24). Record actual evidence, then archive in a separate completion PR. No promotion.
 
 ## Completion
 
