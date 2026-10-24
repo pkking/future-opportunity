@@ -673,3 +673,65 @@ A single first-merge `main` path-triggered diagnostic uses the already
 completed 2026-10-23..24 dates. It is **not scheduled** and never
 publishes/repackages an immutable original. Failed verification preserves
 an explicit `UNASSESSED` artifact, not a passing dataset.
+
+
+## Prospective Funding original-source overlapping-value revision check (Issue #85)
+
+Two already published, independently audited adjacent-day GitHub immutable
+Funding Releases may contain the **same** settled Funding records and completed
+spot daily candles. A read-only recheck can detect discrepancies in the
+previously returned fields, without making a new exchange request:
+
+```bash
+GH_TOKEN="$(gh auth token)" PYTHONPATH=src uv run python \
+  scripts/audit_funding_source_revision.py \
+  --earlier-day 2026-10-23 --later-day 2026-10-24 \
+  --output artifacts/funding-overlap-2026-10-23-24.json
+```
+
+This requires two **consecutive, completed UTC 00:15 entry windows**, beginning
+no earlier than the 2026-10-23 prospective source rollout. It reuses the
+existing read-only longitudinal ledger to demand that **both** daily original
+ZIPs passed independent GitHub-hosted Release/audit checks. Only after that
+gate does it re-download the precise GitHub Release original ZIP, match its
+SHA-256 to the independently reviewed archive digest, and parse the exact raw
+`raw-api-capture.json`. It does not use the current live OKX API; GitHub
+Actions:read plus public Releases are sufficient. It does not overwrite an
+existing output file.
+
+The report compares exact common `BTC-USDT-SWAP` settled
+`fundingTime` → numeric `realizedRate` and confirmed `BTC-USDT`
+`1Dutc` candle timestamp → numeric close. Decimals are compared exactly;
+representation-only zeros are not a numeric revision. New/expired records
+outside the timestamp intersection count as **coverage differences**,
+not a claim that an old field was rewritten. Confirmation-state
+contradictions are reported separately.
+
+- `OVERLAP_VALUES_CONSISTENT_ONLY`: no detected numeric revision in the
+  overlapping records, with at least one common funding settlement and
+  confirmed closed spot candle. A stable observation **does not prove**
+  OKX first publication time, a source exchange signature, or market-wide
+  stability.
+- `SOURCE_REVISION_DETECTED`: the same settlement rate, confirmed close,
+  or confirmation state disagrees across reviewed days; the workflow
+  returns nonzero with the changed event keys and old/new values.
+- `UNASSESSED_INSUFFICIENT_OVERLAP`: not enough common event records.
+  Missing authenticated independent Release/audit, changed ZIP SHA256 or
+  malformed sources instead yield `UNASSESSED`; no source is silently
+  accepted or artificially declared zero.
+
+GitHub Actions also exposes
+[Audit Funding Original Source Overlap (Read-only)](../../.github/workflows/audit-funding-original-overlap.yml)
+for manual dispatch with `earlier_day` and `later_day`. A one-time
+`main` workflow-file push trigger examines the existing 2026-10-23/24
+originals after introduction. There is **no schedule** or additional market
+collector. The derived `funding-original-overlap-revision-review` artifact
+is retained for up to 90 days; the independently hosted raw originals remain
+in their immutable GitHub Releases.
+
+**All** outcomes preserve `exchange_signed=false`,
+`point_in_time_publication_verified=false`, `acquisition_approved=false`,
+`promotion_approved=false` and
+`market_wide_opportunity_arrival_rate=null`. This comparison is a
+source-consistency diagnostic, **not** historical acquisition, a 90-day
+pinned corpus increment, a Stage-2 economics gate or trading authority.
