@@ -760,3 +760,72 @@ rate or *already-confirmed* candle close. New regression checks
 separate normal `0→1` advances from unsafe `1→0` reversals.
 The old failed audit remains a genuine record of the old classifier;
 it is not rewritten or silently treated as a passing Run.
+
+
+## Bounded 2–90 UTC-day Funding original-source continuity inventory
+
+The single-pair `audit_funding_source_revision.py` is a focused
+diagnostic. For multiple consecutive prospective immutable GitHub source
+dates, the **read-only multi-day continuity report** covers every
+adjacent calendar pair without manually launching N-1 individual jobs:
+
+```bash
+GH_TOKEN="$(gh auth token)" uv run python \
+  scripts/report_funding_source_continuity.py \
+  --start-date 2026-10-23 --end-date 2026-10-24 \
+  --output artifacts/funding-continuity-2026-10-23-24.json
+```
+
+Use 2–90 **inclusive, canonical, fully completed** UTC source days
+starting on/after 2026-10-23. Invalid, premature, reversed and
+out-of-range dates are rejected **before any HTTP request**. The token
+needs GitHub Actions:read; no OKX credentials are used.
+
+For each date, the tool first reuses the established 90-day custody
+ledger's independently completed `release.published` audit and
+immutable GitHub Release original ZIP replay. It then downloads
+`original-source.zip` once more **per verified day** and enforces the
+SHA-256 from that independently audited record. It holds only the
+previous/current original parsed payloads while comparing each adjacent
+pair using the established exact Decimal settled Funding and
+already-confirmed spot candle validators. It never silently connects
+across a missing date or re-downloads the same day for both neighboring
+pairs. For long histories, this avoids redundant day audits and
+N-1 separate workflow invocations. There is no timer, exchange GET,
+evidence repacking, sample backfill or raw artifact upload.
+
+The report includes `source_days` (UTC date, audit state, original ZIP
+SHA-256, source read status), all `pairs`, fixed four-regime audited
+custody coverage, and summary counts:
+
+- `expected_pair_count = checked_day_count - 1`, including gaps.
+- `consistent_pair_count` counts pairs with verified overlapping
+  settled Funding rates and confirmed spot closes, no revisions.
+- `revision_pair_count` counts pairs with actual same-event
+  numeric changes or confirmed-to-unconfirmed candle regressions.
+- `unassessed_pair_count` counts missing/invalid ZIP, unaudited
+  releases and insufficient common records. A blank date remains
+  explicitly unassessed, **never zero opportunity**.
+
+A detected revision takes precedence over missing evidence in the
+top-level `SOURCE_REVISION_DETECTED` status; the unassessed count still
+remains visible. Otherwise `UNASSESSED` indicates incomplete pair
+coverage. Only an entirely verified chain with every adjacent pair
+consistent gets `OVERLAP_VALUES_CONSISTENT_ONLY`. CLI exits nonzero
+for either anomaly. This label refers **only to the overlapping
+values**, never all OKX market data or historical publication time.
+
+Operators can also dispatch
+[Review Funding Source Continuity (Read-only)](../../.github/workflows/review-funding-source-continuity.yml)
+with explicit `start_date` and `end_date`. The initial main merge of
+this workflow runs one 2026-10-23..24 exact-original smoke diagnostic
+via a narrow workflow-file-only push filter, after which it is
+**manual**, with no recurring schedule. It uploads *only the derived
+JSON report* to `funding-source-continuity-review` (max 90-day Actions
+Artifact retention); original raw ZIPs remain in immutable Releases.
+
+A consistent chain establishes no exchange-signed source proof,
+independent OKX first-publication time, acquisition/promotion
+eligibility, economic return, market-wide opportunity arrival rate
+or trading authority. All these flags remain false/UNASSESSED. Funding
+historical pinned-case count remains unchanged by these diagnostics.

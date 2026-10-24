@@ -1,0 +1,74 @@
+name: Review Funding Source Continuity (Read-only)
+
+# 2..90 completed prospective UTC source days; read-only exact GitHub originals.
+# Workflow file's first merge runs just the already-audited 2026-10-23..24
+# pair once. Explicit operator dispatch can later cover longer real windows.
+# No cron, market capture, external sink, Release writes, corpus or trading.
+on:
+  workflow_dispatch:
+    inputs:
+      start_date:
+        description: Inclusive first completed UTC day YYYY-MM-DD
+        required: true
+        type: string
+      end_date:
+        description: Inclusive last completed UTC day YYYY-MM-DD (2-90 days)
+        required: true
+        type: string
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/review-funding-source-continuity.yml
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  review:
+    name: Authenticate daily originals and compare all adjacent source pairs
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+      START_DATE: ${{ inputs.start_date || '2026-10-23' }}
+      END_DATE: ${{ inputs.end_date || '2026-10-24' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --dev
+      - name: Read only original source ZIPs with matching independent GitHub audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/funding-source-continuity
+          uv run python scripts/report_funding_source_continuity.py \
+            --start-date "$START_DATE" --end-date "$END_DATE" \
+            --output artifacts/funding-source-continuity/continuity.json
+      - name: Preserve explicit incomplete review when evidence cannot be produced
+        if: failure()
+        shell: bash
+        run: |
+          mkdir -p artifacts/funding-source-continuity
+          if [[ ! -f artifacts/funding-source-continuity/continuity.json ]]; then
+            printf '%s\n' \
+              '{"status":"UNASSESSED","reason":"continuity review could not establish trusted evidence","exchange_signed":false,"point_in_time_publication_verified":false,"acquisition_approved":false,"promotion_approved":false}' \
+              > artifacts/funding-source-continuity/continuity.json
+          fi
+      - name: Upload only derived continuity report; never original raw source
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: funding-source-continuity-review
+          path: artifacts/funding-source-continuity/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Describe inference boundary
+        if: always()
+        shell: bash
+        run: |
+          echo "Consistent overlapping original GitHub custody is not independently signed OKX publication time." >> "$GITHUB_STEP_SUMMARY"
+          echo "The fixed four-regime inventory is observational only, not historical acquisition or opportunity arrival rate." >> "$GITHUB_STEP_SUMMARY"
