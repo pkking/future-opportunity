@@ -48,10 +48,10 @@ Determine whether successive, already independently audited immutable GitHub pro
 
 | Gate | Command/evidence | Status |
 | --- | --- | --- |
-| Targeted | `uv run pytest tests/test_funding_overlap_revision_audit.py` | pending |
-| Static | `uv run ruff check .` | pending |
-| Code/API/E2E/plan | GitHub CI exact final PR head | pending |
-| Historical | Historical Backtest Smoke on exact final head | pending |
+| Targeted | Included in CI code-level tests #40101759024 on implementation head `adfa596` | PASS |
+| Static | CI #40101759024 static architecture safety | PASS |
+| Code/API/E2E/plan | CI #40101759024 five SUCCESS, implementation head `adfa596`; retest after this evidence-only commit | VERIFYING |
+| Historical | #40101759025 SUCCESS on implementation head; retest after this evidence-only commit | VERIFYING |
 | Real source | GitHub-only read-only one-time rollout review, actual original Releases | pending |
 
 ## Decision gates
@@ -60,13 +60,15 @@ None for read-only consistency diagnostics. A decision about historical acquisit
 
 ## Evidence log
 
+- 2026-10-24: PR #145 implementation head `adfa5962a934d21a433b30cb685e1cbe502efd20` passed all five CI jobs https://github.com/pkking/future-opportunity/actions/runs/40101759024 and Historical Backtest Smoke https://github.com/pkking/future-opportunity/actions/runs/40101759025. E2E artifact `12562624455` digest `52d5815eda73ff1d8a1c041427651ff07abc6522024beb719883ddf69262fa89`; Historical artifact `12563540128` digest `1ea001638341bca6bf0378c78b5ad3b7d4838bb514dec921f8c694d209704273`. Because this checkpoint changes head, fresh final-head CI and Historical Smoke must be verified before merge.
+
 - 2026-10-24: Implemented original ZIP hash-gated comparison in `scripts/audit_funding_source_revision.py`, no-network MockTransport source/audit failure tests, opt-in `.github/workflows/audit-funding-original-overlap.yml`, operator runbook. Actual CI/source comparison is **not yet verified**. No GitHub Release source, original capture, corpus, trading or economics change.
 
 - 2026-10-24: official repository `audit_github_vps_release.py` original ZIP and `check_funding_release_watch.py` independent release.published verification are available. Historical provenance issue #85 remains BLOCKED_EVIDENCE.
 
 ## Resume from here
 
-Run exact PR-head CI and Historical Backtest Smoke; fix genuine regression failures, then verify final-head gates, merge, verify postmerge CI and actual original source comparison workflow before separate plan archival. Never change source evidence or corpus.
+Confirm the new evidence-only checkpoint final PR #145 head passes all five CI and Historical Smoke, then squash merge with expected SHA. Inspect main CI and the actual GitHub-only 2026-10-23/24 original-source overlap workflow, write real output in Issue #85, then archive completed subplan in a separate checked PR. No source or corpus modifications.
 
 ## Completion
 
