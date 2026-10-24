@@ -21,7 +21,7 @@ Produce a source-backed decision-quality research note distinguishing (a) retros
 
 No new market API polling, real/fake signing, network witness, sidecar, storage vendor, irreversible data migration, GitHub scheduler, retrospective backfill, historical fixture admission, strategy gate, trading or exchange credentials. This subplan delivers **research specification only**, not evidence acquisition or approval.
 
-## Acceptance
+## Acceptance criteria
 
 - [x] Cite verified official OKX docs and separate `fundingTime`, `realizedRate`, candle `confirm`, client request signature and third-party custody semantics.
 - [x] Explain why late historical reconstruction and cross-day byte consistency do **not** prove when OKX published source values.
@@ -30,7 +30,7 @@ No new market API polling, real/fake signing, network witness, sidecar, storage 
 - [x] Identify which design choices need explicit human approval (new source standard / independent collection/storage / economic gate); keep current flags and 32 pinned cases unchanged.
 - [ ] Submit docs-only PR linked to Issue/Plan, pass five CI jobs + Historical Smoke on final head, merge, verify main CI, then independently archive completed plan and update parent Issue #85 checkpoint.
 
-## Implementation
+## Implementation slices
 
 - [x] 1. Research official docs and repository current source contract, draft sourced feasibility note.
 - [ ] 2. CI/Smoke final-head review, merge, postmerge main CI.
