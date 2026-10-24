@@ -234,3 +234,28 @@ def test_exact_90day_window_is_allowed_after_deadline(monkeypatch):
         DAYS[0], last.isoformat(), datetime(2027, 2, 1, tzinfo=UTC)
     )) == 90
     assert mod.MAX_CONTINUITY_DAYS == 90
+
+
+
+def test_continuity_workflow_is_manual_read_only_and_does_not_spawn_collector():
+    workflow = (
+        ROOT / ".github/workflows/review-funding-source-continuity.yml"
+    ).read_text()
+    assert "\n  workflow_dispatch:" in workflow
+    assert "\n  push:" in workflow and "branches: [main]" in workflow
+    assert "\n  schedule:" not in workflow
+    assert "permissions:\n  contents: read\n  actions: read" in workflow
+    assert "persist-credentials: false" in workflow
+    assert "scripts/report_funding_source_continuity.py" in workflow
+    assert "funding-source-continuity-review" in workflow
+    assert "if: failure()" in workflow and "if: always()" in workflow
+    assert "retention-days: 90" in workflow
+    assert '"point_in_time_publication_verified":false' in workflow
+    assert '"acquisition_approved":false' in workflow
+    for bad in (
+        "  schedule:", "api/v5/", "curl ", "gh release create",
+        "gh release edit", "gh release delete",
+        "contents: write", "actions: write",
+        "capture_funding_preentry_source.py", "run_vps_funding_preentry.py",
+    ):
+        assert bad not in workflow
