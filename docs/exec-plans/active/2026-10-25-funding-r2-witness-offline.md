@@ -27,19 +27,19 @@ Respond to the user's explicit rejection of Option A as the preferred way forwar
 
 ## Acceptance criteria
 
-- [ ] Provide B design with explicit separation of observer operator/network, trust anchor, tamper evidence, independent trusted timestamp, 00:15Z deadline, raw body hash, and prior-to-entry bounded clock error.
-- [ ] Implement manual **offline-only** `scripts/review_funding_witness_draft.py` accepting separate observer declared receipt, exact raw Funding/spot JSON bytes and existing R1 source JSON. No import of network SDK nor REST GET.
-- [ ] Require schema-exact declared receipt, rigid official fixed GET endpoint/query, separate declared observer and original collector, canonical UTC entry day, strictly ordered and before-entry bounded request/response/receipt times, zero/finite bounded clock error, binary raw body digest checks, duplicate-key detection and bounded file sizes.
-- [ ] Reuse `validate_preentry_source` and `_funding_index` / `_spot_index` to independently recompute candidate entry features, compare relevant decision-input semantic evidence with the R1 source. Require a full set of settled prior Funding and eight completed prior UTC daily closes, not merely any overlap; mismatched values, missing records, divergent cache returns or future records result in **UNASSESSED** or **CONFLICT** rather than zero opportunity.
-- [ ] Even when all offline checks pass, emit `CANDIDATE_MATCH_UNATTESTED` (not R2 verified), with `observer_identity_attested=false`, `trusted_time_attested=false`, `exchange_signed=false`, `point_in_time_publication_verified=false`, `acquisition_approved=false`, `promotion_approved=false`. If checks fail, no promotion and nonzero CLI exit, preserve external inputs unchanged.
-- [ ] Offline deterministic tests for same-source candidate, forged same-operator IDs, late reply/receipt, clock uncertainty straddling entry, changed body, duplicate key, wrong endpoint/query, incomplete candles, funding/close disagreement, missing dates and file permissions. No new exchange GET in CI.
-- [ ] A self-contained design/operating document records why a *future* real independent receipt, third-party trust authority, unique key ownership and policy approval must be separately deployed and reviewed.
+- [x] Provide B design with explicit separation of observer operator/network, trust anchor, tamper evidence, independent trusted timestamp, 00:15Z deadline, raw body hash, and prior-to-entry bounded clock error.
+- [x] Implement manual **offline-only** `scripts/review_funding_witness_draft.py` accepting separate observer declared receipt, exact raw Funding/spot JSON bytes and existing R1 source JSON. No import of network SDK nor REST GET.
+- [x] Require schema-exact declared receipt, rigid official fixed GET endpoint/query, separate declared observer and original collector, canonical UTC entry day, strictly ordered and before-entry bounded request/response/receipt times, zero/finite bounded clock error, binary raw body digest checks, duplicate-key detection and bounded file sizes.
+- [x] Reuse `validate_preentry_source` and `_funding_index` / `_spot_index` to independently recompute candidate entry features, compare relevant decision-input semantic evidence with the R1 source. Require a full set of settled prior Funding and eight completed prior UTC daily closes, not merely any overlap; mismatched values, missing records, divergent cache returns or future records result in **UNASSESSED** or **CONFLICT** rather than zero opportunity.
+- [x] Even when all offline checks pass, emit `CANDIDATE_MATCH_UNATTESTED` (not R2 verified), with `observer_identity_attested=false`, `trusted_time_attested=false`, `exchange_signed=false`, `point_in_time_publication_verified=false`, `acquisition_approved=false`, `promotion_approved=false`. If checks fail, no promotion and nonzero CLI exit, preserve external inputs unchanged.
+- [x] Offline deterministic tests for same-source candidate, forged same-operator IDs, late reply/receipt, clock uncertainty straddling entry, changed body, duplicate key, wrong endpoint/query, incomplete candles, funding/close disagreement, missing dates and file permissions. No new exchange GET in CI.
+- [x] A self-contained design/operating document records why a *future* real independent receipt, third-party trust authority, unique key ownership and policy approval must be separately deployed and reviewed.
 - [ ] Final PR-head five CI checks + Historical Smoke PASS, merge, main CI PASS. Archive completed plan separately and leave Issue #85 OPEN/BLOCKED_EVIDENCE.
 
 ## Implementation slices
 
-- [ ] 1. Add offline candidate source-integrity + temporal/semantic verifier, no SDK/network.
-- [ ] 2. Add deterministic offline positive/negative tests and design/ops docs.
+- [x] 1. Add offline candidate source-integrity + temporal/semantic verifier, no SDK/network.
+- [x] 2. Add deterministic offline positive/negative tests and design/ops docs.
 - [ ] 3. Final-head CI + Historical Smoke, merge and main CI.
 - [ ] 4. Complete plan archive and parent Issue checkpoint.
 
@@ -59,11 +59,13 @@ User rejected A as preferred route. This authorizes design/offline preparation u
 
 ## Evidence log
 
+- 2026-10-25: Added `scripts/review_funding_witness_draft.py` pure offline candidate reviewer, `tests/test_funding_witness_draft.py` deterministic synthetic fixtures, `docs/design/funding-independent-witness-r2.md` trust/deployment design and explicit 2026-10-25 supersession of A-first research recommendation. The reviewer never authenticates an independent signature/time root, so even positive output is `CANDIDATE_MATCH_UNATTESTED`; all source/approval/trading flags hard-false. **CI and actual observer evidence not yet verified**.
+
 - 2026-10-25: GitHub third prospective immutable original 2026-10-25 with matching successful release.published audit; still R1-only. Main existing code and ADR read. Official OKX contract cross-checked against current endpoint docs.
 
 ## Resume from here
 
-Implement a pure offline candidate reviewer, mock fixtures and operator design; submit Issue/Plan-linked PR, correct CI failures from run logs, merge only after final-head gates, then archive in separate checked PR. The verifier cannot prove real observer independence by trusting its own metadata.
+Open PR linked to Issue #85 and this active plan. Run code-level offline tests, all five CI and Historical Smoke. Fix actual CI errors from logs. Upon exact final-head green checks squash merge, verify main CI, and archive the child plan separately. Parent Issue #85 stays open; do not deploy witness or promote candidate output.
 
 ## Completion
 
