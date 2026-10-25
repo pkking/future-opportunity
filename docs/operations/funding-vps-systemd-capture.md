@@ -844,3 +844,41 @@ independent OKX first-publication time, acquisition/promotion
 eligibility, economic return, market-wide opportunity arrival rate
 or trading authority. All these flags remain false/UNASSESSED. Funding
 historical pinned-case count remains unchanged by these diagnostics.
+
+
+## 2026-10-25 — three genuine immutable originals and an unrelated late cron
+
+A **third** actual immutable `funding-vps-2026-10-25` source Release
+was published at **2026-10-25 00:00:15 UTC** and its separate
+`release.published` GitHub Actions [#40144972278](https://github.com/pkking/future-opportunity/actions/runs/40144972278)
+**succeeded**. As a finite production verification of the extended
+source-continuity audit, the workflow-file-only main-push diagnostic
+now reads **2026-10-23 through 2026-10-25** (three real completed UTC
+source days, two exact adjacent pairs). It retrieves each already
+independently audited immutable original source ZIP with its expected
+SHA-256 and compares overlapping settled Funding and confirmed daily
+spot values. It uploads **derived JSON only** and does not make OKX
+requests or capture/publish an alternative source. A later operator
+may still use manual dispatch with any valid explicit 2–90 complete UTC
+source dates. Do **not** describe this three-day production execution
+as a verified 90-day corpus or an authenticated exchange first-publish
+timestamp.
+
+The separate best-effort **GitHub scheduled source capture**
+[run #40151260280](https://github.com/pkking/future-opportunity/actions/runs/40151260280)
+**failed for the correct safety reason** on 2026-10-25:
+the GitHub schedule job was created at **01:35:55 UTC**, and the
+pre-entry guard rejected its execution at **01:36:04 UTC**, long
+**after the 00:00–00:15 UTC capture deadline**. The scheduled job
+preserved a small failure receipt as Actions artifact
+`12582930677`; the separate downstream scheduled-artifact audit
+completed successfully on that failure-state evidence. This is a
+**GitHub cron scheduling/liveness gap**, not proof that the separate
+VPS collector failed or that there was a zero-opportunity market day.
+Do not re-run that delayed job as a fresh source, increase the allowed
+clock window, substitute a later market GET or promote the failed
+schedule's artifact to an eligible historical observation. The
+GitHub-only scheduled collector is **diagnostic and best effort**;
+the already approved option A VPS→immutable GitHub Release pipeline
+is the current prospective source chain. Independent upstream OKX
+first-publication and exchange signing remain unverified.
