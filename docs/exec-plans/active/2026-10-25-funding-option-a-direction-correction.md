@@ -20,16 +20,16 @@ Apply the user's explicit 2026-10-25 correction **"说错了 仍然用 方案 A"
 
 ## Acceptance criteria
 
-- [ ] Research note visibly records the *later correction* restoring Option A, explicitly superseding previous B-first statements without erasing historical decision trace.
-- [ ] B-only design doc visibly marked **NOT SELECTED / INACTIVE**, offline prototype retained as research artifact; no implicit approval to deploy B.
-- [ ] Parent active Issue #85 plan's **latest** `Resume from here` directs future agents to A GitHub immutable original custody, valid independent release audits, growing genuine dates and evidence gaps — not a B provider/trust-key decision.
+- [x] Research note visibly records the *later correction* restoring Option A, explicitly superseding previous B-first statements without erasing historical decision trace.
+- [x] B-only design doc visibly marked **NOT SELECTED / INACTIVE**, offline prototype retained as research artifact; no implicit approval to deploy B.
+- [x] Parent active Issue #85 plan's **latest** `Resume from here` directs future agents to A GitHub immutable original custody, valid independent release audits, growing genuine dates and evidence gaps — not a B provider/trust-key decision.
 - [ ] Issue #85 updated with explicit user correction and full tested merge evidence; issue remains open BLOCKED_EVIDENCE.
-- [ ] No production code, scheduled collector workflow, source evidence, historical samples, economics or trading changed.
+- [x] No production code, scheduled collector workflow, source evidence, historical samples, economics or trading changed.
 - [ ] PR final-head all five CI checks + Historical Backtest Smoke SUCCESS, merge and postmerge main CI SUCCESS, separately archive this plan with proof.
 
 ## Implementation slices
 
-- [ ] 1. Correct research priority, B design status and parent active recovery checkpoint.
+- [x] 1. Correct research priority, B design status and parent active recovery checkpoint.
 - [ ] 2. Verify exact PR-head five CI checks and Historical Backtest Smoke; merge only after success.
 - [ ] 3. Verify postmerge main CI, archive this completed plan in a separate checked PR, and record issue comment.
 
@@ -37,7 +37,7 @@ Apply the user's explicit 2026-10-25 correction **"说错了 仍然用 方案 A"
 
 | Gate | Evidence | Status |
 | --- | --- | --- |
-| Correct latest directive | Three updated markdown files, no runtime changes | pending |
+| Correct latest directive | Research note, B draft and parent active plan updated on branch; implementation unchanged | PASS (reviewed) |
 | CI five jobs | final PR head | pending |
 | Historical | final PR head smoke | pending |
 | Main | postmerge CI | pending |
@@ -48,11 +48,13 @@ This is already resolved by the user's newer explicit correction: **Option A sel
 
 ## Evidence log
 
+- 2026-10-25: Corrected the research note with a prominent latest Option A decision and labelled the earlier B-first guidance as withdrawn; marked `docs/design/funding-independent-witness-r2.md` as inactive/unselected; superseded B's parent `Resume from here` with A's existing VPS/immutable Release/independent `release.published` audit and bounded continuity. No runtime change or altered provenance/economic approvals. PR final-head tests and archival still pending.
+
 - 2026-10-25: User superseded prior "反感A" with "说错了 仍然用 方案 A". Current main and no PRs verified. Work is decision-record correction, not technical source promotion.
 
 ## Resume from here
 
-Update the three documents so A is current and B is historical/inactive, then PR/CI/merge/issue/archival. Preserve older completed B research plan unmodified as historically valid evidence, but make sure the parent resume points only to A.
+Open one Issue #85-linked docs-only PR, verify exact-head five CI jobs and Historical Smoke, merge and check main CI, then separately archive this child plan after recording facts. Add final decision correction to the parent Issue before completion; Issue #85 remains OPEN/BLOCKED_EVIDENCE.
 
 ## Completion
 
