@@ -1,7 +1,7 @@
 # R2 independent Funding witness — offline evidence verifier (no deployment)
 
 Issue: #85
-Status: IMPLEMENTING
+Status: COMPLETED
 Owner: agent
 Started: 2026-10-25
 Last checkpoint: 2026-10-25
@@ -34,14 +34,14 @@ Respond to the user's explicit rejection of Option A as the preferred way forwar
 - [x] Even when all offline checks pass, emit `CANDIDATE_MATCH_UNATTESTED` (not R2 verified), with `observer_identity_attested=false`, `trusted_time_attested=false`, `exchange_signed=false`, `point_in_time_publication_verified=false`, `acquisition_approved=false`, `promotion_approved=false`. If checks fail, no promotion and nonzero CLI exit, preserve external inputs unchanged.
 - [x] Offline deterministic tests for same-source candidate, forged same-operator IDs, late reply/receipt, clock uncertainty straddling entry, changed body, duplicate key, wrong endpoint/query, incomplete candles, funding/close disagreement, missing dates and file permissions. No new exchange GET in CI.
 - [x] A self-contained design/operating document records why a *future* real independent receipt, third-party trust authority, unique key ownership and policy approval must be separately deployed and reviewed.
-- [ ] Final PR-head five CI checks + Historical Smoke PASS, merge, main CI PASS. Archive completed plan separately and leave Issue #85 OPEN/BLOCKED_EVIDENCE.
+- [x] Final PR-head five CI checks + Historical Smoke PASS, merge, main CI PASS. Archive completed plan separately and leave Issue #85 OPEN/BLOCKED_EVIDENCE.
 
 ## Implementation slices
 
 - [x] 1. Add offline candidate source-integrity + temporal/semantic verifier, no SDK/network.
 - [x] 2. Add deterministic offline positive/negative tests and design/ops docs.
-- [ ] 3. Final-head CI + Historical Smoke, merge and main CI.
-- [ ] 4. Complete plan archive and parent Issue checkpoint.
+- [x] 3. Final-head CI + Historical Smoke, merge and main CI.
+- [x] 4. Complete plan archive and parent Issue checkpoint.
 
 ## Verification matrix
 
@@ -49,8 +49,8 @@ Respond to the user's explicit rejection of Option A as the preferred way forwar
 | --- | --- | --- |
 | Targeted | Covered by CI #40191788592 Code-level tests, offline synthetic verifier tests SUCCESS | PASS |
 | Static | #40191788592 static/architecture SUCCESS | PASS |
-| Code, API, E2E and Plan | CI #40191788592 all five SUCCESS on implementation head `d2ec93e`; evidence-only checkpoint changes head; retest required | VERIFYING |
-| Historical | #40191788604 SUCCESS on implementation head; retest required after checkpoint | VERIFYING |
+| Code, API, E2E and Plan | PR #154 final head `f1fd0d05` CI #40191883971 5/5 SUCCESS; postmerge main CI #40191956004 SUCCESS | PASS |
+| Historical | PR #154 final head Historical Backtest Smoke #40191883969 SUCCESS | PASS |
 | Actual R2 | real independent observation, trusted timestamp and authorization | NOT IMPLEMENTED, requires later decision |
 
 ## Decision gates
@@ -58,6 +58,8 @@ Respond to the user's explicit rejection of Option A as the preferred way forwar
 User rejected A as preferred route. This authorizes design/offline preparation under B's previously proposed limited scope, **not** actual collector provisioning, a new storage/provider/trust anchor or a changed historical admission policy. Those choices require separately approved ADR and explicit decision. No reason to stop design/CI for routine implementation details.
 
 ## Evidence log
+
+- 2026-10-25: PR #154 exact final tested head `f1fd0d05e425dd991ba64edd8cce7d22a264817d`, [CI #40191883971](https://github.com/pkking/future-opportunity/actions/runs/40191883971) **all five SUCCESS**, [Historical Backtest Smoke #40191883969](https://github.com/pkking/future-opportunity/actions/runs/40191883969) **SUCCESS**; squash merged to main `0d911c0297586385e4d9398e043e0de6851dbdd8`; postmerge [main CI #40191956004](https://github.com/pkking/future-opportunity/actions/runs/40191956004) **SUCCESS**. Final E2E artifact ID `12597893337`, SHA256 `119d10d4661d5b8e4e9ba09d9ca4c921a6d08ce08587fb2dad661b7293e0d4ba`; Historical artifact ID `12598127974`, SHA256 `754263d2f9a71646c053b120a39ddd848b76cc45c6a411c363421ab61851508d`. This proves only the offline synthetic validator/contract and existing paper trading regressions. No independent R2 signature/time root was tested or installed.
 
 - 2026-10-25: Initial PR #154 head `e31966dc074b200bd5dbbf9440d57054986771bb` failed static and code-level CI #40191703541; root causes were unused imports in new tests (ruff F401) and using missing `is_file()` on an `os.stat_result`. Fixed source using `stat.S_ISREG(lstat.st_mode)` and test imports without relaxing gates. Fresh implementation HEAD `d2ec93eebacb0e5b1f8c935592661b7e1823a4c2` passed [CI #40191788592](https://github.com/pkking/future-opportunity/actions/runs/40191788592) 5/5 SUCCESS and [Historical Smoke #40191788604](https://github.com/pkking/future-opportunity/actions/runs/40191788604) SUCCESS. Final E2E evidence Artifact ID `12598457118`, SHA256 `84ef4dfd55ff7b4a36b32ae1181d3bcdf5c84202ec6a3f7aaa9438c023189445`; Historical artifact ID `12598442245`, SHA256 `837df1a20c0e8bb971df79eb131b695470b0b625daaf42ad0412139f09ff2051`. These prove **offline-only synthetic checks**, not real independent R2 observer provenance.
 
@@ -67,11 +69,11 @@ User rejected A as preferred route. This authorizes design/offline preparation u
 
 ## Resume from here
 
-Confirm PR #154 exact new checkpoint HEAD passes five CI jobs and Historical Smoke, squash merge with expected SHA, inspect main CI. Archive completed child plan in separately tested PR, record result in Issue #85 and current parent active plan. Do not deploy a witness or upgrade any source status. The source reviewer can never assert independently trusted R2 identity/time.
+This offline prototype subtask is complete. Resume the parent active Issue #85 plan, using `docs/design/funding-independent-witness-r2.md` and the offline verifier as candidate criteria; the next **actual** R2 independent observer design/deployment/trust-provider decision remains explicit. No new observer, third-party timestamp or historical source admission exists. User explicitly dislikes A as the forward solution; do not revert to recommending A.
 
 ## Completion
 
-Final commit: pending
-CI run: pending
-E2E artifact: pending
+Final commit: `0d911c0297586385e4d9398e043e0de6851dbdd8` (PR #154; exact final tested head `f1fd0d05e425dd991ba64edd8cce7d22a264817d`)
+CI run: #40191883971 5/5 SUCCESS; Historical #40191883969 SUCCESS; postmerge main #40191956004 SUCCESS
+E2E artifact: ID `12597893337`; Historical artifact: ID `12598127974` (sha256 hashes in Evidence log)
 Remaining unassessed items: actual independent time/observer attestation, approved source acquisition, negative Funding low-volatility and 90 pinned days, economic gating.
