@@ -1114,9 +1114,55 @@ repeat them without reconciling merged HEAD and GitHub evidence.
 - Completed slice plan: `docs/exec-plans/completed/2026-10-25-funding-r2-witness-offline.md`. Real Option B provisioning, administrative/trust-domain ownership, externally anchored witness signing/time and **any** modification to historical source admission still require a separate human-reviewed design/ADR decision.
 
 
+## 2026-10-25 — LATEST USER DECISION: OPTION A RESTORED
+
+The user's newer explicit correction **"说错了 仍然用 方案 A"**
+supersedes the earlier mistaken interpretation of "反感A" and the
+temporary B-first guidance recorded in historical checkpoints above.
+
+**Active implementation direction: Option A**, i.e. the existing
+prospectively timed VPS-source observation, immutable GitHub `funding-vps-YYYY-MM-DD`
+Release, independently successful `release.published` audit and read-only
+source custody, 2×2 regime coverage and adjacent-day continuity reports.
+Continue actual new-day evidence checks, source completeness and robust
+failure classification on **this existing approved pipeline**, without
+fabricating missed days, zero opportunities, historical entries or signatures.
+A third real GitHub-custody source date exists on 2026-10-25 with successful
+Release audit run #40144972278; its separate GitHub scheduled collector
+failure #40151260280 must not be conflated with this real independent audit.
+
+The B observer architecture and `scripts/review_funding_witness_draft.py`
+from PRs #154–155 remain **inactive, unselected offline research artifacts**.
+They do **not** justify provisioning an observer, independent signing/time
+authority, external storage or changes to historical source admission.
+This later decision controls all future agents; old B-first instructions in
+archival subsections are explicitly superseded. This decision does **not**
+resolve the gap between verified **GitHub custody of VPS-provided bytes**
+and independently verified **first OKX upstream publication time**:
+`exchange_signed`, `point_in_time_publication_verified`,
+`acquisition_approved` and `promotion_approved` remain false.
+Funding 32 pinned (preferred 90), Cash 66; negative/low regime not yet
+observed in this narrow source research, economic Stage-2 gate off.
+
 ## Resume from here
 
-**Option B is the preferred next engineering direction, not A.** First reconcile `main`, open PRs, CI and the active Issue #85. The offline B design/validator is complete; do not repeat it. The next material step is a **reviewed Option B trust/deployment decision** identifying independent observer operator/network, signing key ownership and rotation, trustworthy timestamp/append-only receipt authority, before-entry scheduling/recovery, provider/storage/licensing and cost. This would cross a new external source/trust boundary and requires a separate explicit ADR approval **before deploying live observer infrastructure**. After such approval, implement a staged **no-admission shadow observer**: independent public GETs and signed/timed raw artifact custody; compare against already independently audited R1 without changing historical acquisition/promotion flags. The offline `CANDIDATE_MATCH_UNATTESTED` is NOT R2 authentication. Independently of this B planning, existing R1 immutable Release + release.published audits may continue as separate operational context; the new 2026-10-25 Release is R1-only. Never call missing calendar windows zero opportunity, fabricate samples, infer OKX signatures, activate Stage-2 numerical economics or live trading. Issue #85 remains `BLOCKED_EVIDENCE` until actual new independent evidence and approved policy exist.
+**Follow Option A only; the former Option B priority was withdrawn by the
+user.** Reconcile current main HEAD, open PRs and CI. Next, independently
+check newly available genuine immutable `funding-vps-YYYY-MM-DD` Releases,
+their matching successful release event audits and strict GitHub original ZIP
+verification. Where there are **two or more consecutive, fully completed real
+days**, use the existing manual GitHub-only 2–90-day source continuity review
+to record all adjacent pairs, numeric revisions, normal or abnormal spot
+confirmation changes, four-regime evidence and any missing/unaudited date.
+Do not bridge missing days or treat an unavailable historical outcome as zero.
+Prioritize reliability, source provenance and quality gaps **inside the
+existing VPS→GitHub Release→independent audit flow**. **Do not start Option B
+deployment or an independent-witness trust/provider decision.**
+Keep Issue #85 OPEN/BLOCKED_EVIDENCE: GitHub custody is not exchange-signed
+first publication, and neither historical pinned acquisition, numerical
+economics, nor trading is approved. Follow accepted ADRs and obtain a
+separate explicit human decision only if a future proposal actually
+changes an architectural/source-admission boundary.
 
 
 ## Completion
