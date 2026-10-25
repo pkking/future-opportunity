@@ -286,3 +286,25 @@ def test_longitudinal_prior_day_late_confirmation_fails_specific_adjacent_pair(
     ] == []
     assert report["pairs"][1]["status"] == "OVERLAP_VALUES_CONSISTENT_ONLY"
     assert report["promotion_approved"] is False
+
+
+def test_released_three_day_main_push_review_and_manual_range_remain_strict():
+    """The bounded main-push diagnostic reflects actual 23/24/25 Releases."""
+    workflow = (
+        ROOT / ".github/workflows/review-funding-source-continuity.yml"
+    ).read_text()
+    assert "START_DATE: ${{ inputs.start_date || '2026-10-23' }}" in workflow
+    assert "END_DATE: ${{ inputs.end_date || '2026-10-25' }}" in workflow
+    assert "2026-10-23..25" in workflow
+    assert "workflow_dispatch:" in workflow
+    assert "start_date:" in workflow and "end_date:" in workflow
+    assert "inputs.start_date" in workflow and "inputs.end_date" in workflow
+    assert "    paths:" in workflow and "      - .github/workflows/review-funding-source-continuity.yml" in workflow
+    assert "branches: [main]" in workflow
+    assert "permissions:" in workflow and "  contents: read" in workflow and "  actions: read" in workflow
+    assert "persist-credentials: false" in workflow
+    assert "schedule:" not in workflow
+    assert "gh release " not in workflow
+    assert "capture_funding_preentry_source.py" not in workflow
+    assert '"point_in_time_publication_verified":false' in workflow
+    assert '"acquisition_approved":false' in workflow
