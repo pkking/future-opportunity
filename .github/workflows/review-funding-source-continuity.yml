@@ -1,8 +1,10 @@
 name: Review Funding Source Continuity (Read-only)
 
 # 2..90 completed prospective UTC source days; read-only exact GitHub originals.
-# Workflow file's first merge runs just the already-audited 2026-10-23..24
-# pair once. Explicit operator dispatch can later cover longer real windows.
+# This workflow-file-only main push now replays all three actually published
+# immutable originals, 2026-10-23..25 (two adjacent pairs), once. The older
+# two-day production result remains unchanged. Manual dispatch still accepts
+# explicit 2..90 completed UTC days. No recurring schedule.
 # No cron, market capture, external sink, Release writes, corpus or trading.
 on:
   workflow_dispatch:
@@ -32,7 +34,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       START_DATE: ${{ inputs.start_date || '2026-10-23' }}
-      END_DATE: ${{ inputs.end_date || '2026-10-24' }}
+      END_DATE: ${{ inputs.end_date || '2026-10-25' }}
     steps:
       - uses: actions/checkout@v4
         with:
