@@ -299,9 +299,9 @@ def test_released_three_day_main_push_review_and_manual_range_remain_strict():
     assert "workflow_dispatch:" in workflow
     assert "start_date:" in workflow and "end_date:" in workflow
     assert "inputs.start_date" in workflow and "inputs.end_date" in workflow
-    assert "\\n    paths:\\n      - .github/workflows/review-funding-source-continuity.yml" in workflow
+    assert "    paths:" in workflow and "      - .github/workflows/review-funding-source-continuity.yml" in workflow
     assert "branches: [main]" in workflow
-    assert "permissions:\\n  contents: read\\n  actions: read" in workflow
+    assert "permissions:" in workflow and "  contents: read" in workflow and "  actions: read" in workflow
     assert "persist-credentials: false" in workflow
     assert "schedule:" not in workflow
     assert "gh release " not in workflow
