@@ -5,6 +5,20 @@ Review date: 2026-10-24 UTC
 Tracking: [Issue #85](https://github.com/pkking/future-opportunity/issues/85)  
 Existing policies: [ADR-0008](../adr/0008-funding-stage2-historical-distribution-gate.md), [V0 baseline](../design-baseline-v0.1.md).
 
+## Direction update — 2026-10-25
+
+The user **rejected Option A as the preferred forward solution** for the
+independent-as-of-publication proof gap. The earlier "A now" priority below
+is retained only as a historical snapshot of the 2026-10-24 assessment and
+is **superseded** for new engineering planning: prioritize **Option B**
+independent observer design and offline validation
+([draft design](../design/funding-independent-witness-r2.md)).
+This preference does **not** approve a deployed observer, new trust/storage
+provider, acquisition-grade R2 evidence or historical sample promotion;
+those still require a separate reviewed ADR. Existing R1 collector/Release
+audit may operate without being promoted as the answer to the missing
+independent-source question.
+
 ## Conclusion
 
 The repository can already verify that an exact VPS-origin raw OKX API response
