@@ -1,13 +1,29 @@
 # Funding R2 independent pre-entry witness — detailed design (offline prototype)
 
-Status: **DRAFT / NOT DEPLOYED / NO EVIDENCE STANDARD APPROVAL**  
+Status: **HISTORICAL RESEARCH — OPTION B NOT SELECTED / INACTIVE / NOT DEPLOYED**  
 Updated: 2026-10-25  
 Tracking: [Issue #85](https://github.com/pkking/future-opportunity/issues/85), [parent research](../research/okx-funding-asof-source-provenance-feasibility.md)  
 Safety: existing V0 paper-only baseline and ADR-0008 remain binding.
 
-## Scope and direction
+## Latest decision — 2026-10-25 (supersedes B-first direction)
 
-User feedback on 2026-10-25 explicitly rejected **Option A as the preferred future solution** for the missing independent source. Accordingly, **Option B** (independent pre-entry witness) is the engineering design direction. This authorizes **design and fully offline test preparation only**; it does **not** authorize deploying an external observer, trusting any timestamp/signature, changing the historical source-admission standard, or executing trades. Existing R1 GitHub immutable Releases may remain operational as **reference data**, not the solution to independent OKX publication provenance.
+The user corrected their prior "反感A" statement with **"说错了 仍然用 方案 A"**.
+**Option A is the selected way forward:** existing prospectively timed VPS
+captures, immutable GitHub Releases and independently checked
+`release.published` audits. **Do not proceed with Option B deployment,
+collector provisioning, new observer operator, signing keys, external timestamp
+provider or external storage.** The offline B source-comparison prototype
+is retained for historical reproducibility and may be run manually against
+synthetic/local files, but is **not** a selected production roadmap.
+
+Everything below documents the **earlier superseded B-design proposal**, not
+a currently approved requirement. No R2 independent witness, cryptographic
+trust anchor or verified external clock has been deployed. The active
+recovery point lives in `docs/exec-plans/active/2026-10-17-funding-regime-independent-coverage.md`.
+
+## Historical superseded Option B proposal — scope and direction
+
+An earlier, now withdrawn user statement on 2026-10-25 appeared to reject **Option A as the preferred future solution** for the missing independent source. At that superseded checkpoint, **Option B** (independent pre-entry witness) was temporarily the engineering design direction. This authorizes **design and fully offline test preparation only**; it does **not** authorize deploying an external observer, trusting any timestamp/signature, changing the historical source-admission standard, or executing trades. Existing R1 GitHub immutable Releases may remain operational as **reference data**, not the solution to independent OKX publication provenance.
 
 The missing claim is: could a separately controlled observer have obtained the relevant public OKX settled Funding and completed UTC daily spot features **before UTC 00:15 entry**, independently of the current VPS? A future R2 witness could corroborate that claim, but would **not prove the exchange's first-publication time or an OKX signature**.
 
@@ -119,8 +135,8 @@ Tests use synthetic 2026-10-25 public response envelopes, never stored real raw 
 - **Cost/risks:** two read-only requests per day, one independent execution environment and additional audit/storage/time-authority expense. Availability, network partition, cache drift, key compromise or provider downtime are research evidence gaps, not zero-return observations.
 - **Governance:** pre-register success/equality, acceptable clock uncertainty and trusted time authority *before* seeing outcomes. A future approved ADR must decide whether R2 independent observation suffices for any historical acquisition, with strict separation from R3 exchange-signed first publication.
 
-**User-approved now:** direction B for detailed design/offline feasibility, while explicitly disliking direction A.  
-**Not approved now:** provisioning observer infrastructure, writing to third-party storage, assigning a new cryptographic trust root, changing the admissible historical source standard, enabling numeric Stage-2 economics or real trading.
+**Historical approval, now superseded:** temporary direction B for detailed design/offline feasibility; the later explicit correction restored Option A.  
+**Still not approved:** provisioning observer infrastructure, writing to third-party storage, assigning a new cryptographic trust root, changing the admissible historical source standard, enabling numeric Stage-2 economics or real trading.
 
 ## Actual evidence checkpoint
 
