@@ -26,18 +26,18 @@ Re-check the existing immutable GitHub/VPS Funding originals and independent suc
 
 ## Acceptance criteria
 
-- [ ] Verify Release 2026-10-25 exists immutable, was published before 00:15 UTC with separately successful release event audit; keep 23/24 original SHA constraints unchanged.
-- [ ] Narrow workflow code change expands actual one-time main-push fallback to 2026-10-23..25, preserving explicit manual 2..90 date inputs, no schedule and all read-only permissions.
-- [ ] Add offline workflow contract tests to assert exact current three-day default, manual override, no market GET/Release creation, non-promotion flags; inspect existing continuity regression tests.
-- [ ] Document objective root cause for GitHub scheduled collector delay; do not infer VPS collector outage or waive UTC fail-closed window.
+- [x] Verify Release 2026-10-25 exists immutable, was published before 00:15 UTC with separately successful release event audit; keep 23/24 original SHA constraints unchanged.
+- [x] Narrow workflow code change expands actual one-time main-push fallback to 2026-10-23..25, preserving explicit manual 2..90 date inputs, no schedule and all read-only permissions.
+- [x] Add offline workflow contract tests to assert exact current three-day default, manual override, no market GET/Release creation, non-promotion flags; inspect existing continuity regression tests.
+- [x] Document objective root cause for GitHub scheduled collector delay; do not infer VPS collector outage or waive UTC fail-closed window.
 - [ ] Final-head five CI gates, Historical Smoke all SUCCESS, squash-merge and verify postmerge main CI.
 - [ ] **Actual source review** GitHub workflow on main-push succeeded or failed closed, report expected 2 date pairs, exact per-pair values/digests, source regimes, derived Artifact ID and SHA256. Failure must be honestly recorded, not silently fixed.
 - [ ] Archive verified plan with evidence in separate completed PR and append Issue #85 checkpoint, while issue remains OPEN/BLOCKED_EVIDENCE.
 
 ## Implementation slices
 
-- [ ] 1. Update the scope-limited no-schedule workflow's built-in main-push diagnostic to three actually existing release dates.
-- [ ] 2. Add regression safety assertions and update runbook including GitHub delayed-cron failure semantics.
+- [x] 1. Update the scope-limited no-schedule workflow's built-in main-push diagnostic to three actually existing release dates.
+- [x] 2. Add regression safety assertions and update runbook including GitHub delayed-cron failure semantics.
 - [ ] 3. Full final-head CI/Smoke; merge; inspect real GitHub original-source review and postmerge CI.
 - [ ] 4. Archive plan separately and record actual primary evidence and remaining blocking limitations.
 
@@ -57,11 +57,13 @@ None. The user explicitly selected A, the existing GitHub-only immutable source 
 
 ## Evidence log
 
+- 2026-10-25: Implemented no-schedule workflow default `2026-10-23..25` only on workflow-file-scoped main push, preserving manual 2..90 inputs, read-only permissions and derived-JSON-only upload. Added `test_released_three_day_main_push_review_and_manual_range_remain_strict` and runbook section covering real Release audit success and separate late GHA cron failure. The workflow runs automatically on first merge; no production 3-day comparison result is claimed before that run completes.
+
 - 2026-10-25: Latest main/PR/release checked. Independent event audit #40144972278 SUCCESS, 2026-10-25 Release immutable published 00:00:15 UTC. Scheduled GHA capture #40151260280 START 01:35:55 UTC (80 min after close of capture window) and correctly refused past-deadline source; separate audit job completed SUCCESS for the failure receipt. Missing scheduled source is not a market-negative sample. No real 3-day compare claimed yet.
 
 ## Resume from here
 
-Implement scoped three-day GitHub original review with test and runbook, submit tracked PR; run exact-head 5/5 CI and Historical Smoke; merge and *inspect actual production 3-day source artifact* before marking complete. Keep Issue #85 OPEN/BLOCKED_EVIDENCE.
+Open tracked PR. Verify five exact-head CI and Historical Smoke, squash merge, then read actual three-day source comparison workflow including all pair counts/source hashes and derived-artifact digest. Archive after actual output, without retroactively accepting any market sample. Issue #85 remains OPEN/BLOCKED_EVIDENCE.
 
 ## Completion
 
