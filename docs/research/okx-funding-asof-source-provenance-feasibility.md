@@ -5,12 +5,35 @@ Review date: 2026-10-24 UTC
 Tracking: [Issue #85](https://github.com/pkking/future-opportunity/issues/85)  
 Existing policies: [ADR-0008](../adr/0008-funding-stage2-historical-distribution-gate.md), [V0 baseline](../design-baseline-v0.1.md).
 
-## Direction update — 2026-10-25
+## Current chosen direction — latest correction, 2026-10-25
 
-The user **rejected Option A as the preferred forward solution** for the
+**Option A is selected.** The user explicitly corrected their previous
+statement on 2026-10-25: **"说错了 仍然用 方案 A"** ("I misspoke;
+continue with Option A"). This **supersedes** the earlier same-day
+"B preferred / A rejected" direction in the historical section below.
+
+Continue the existing, prospectively timed **VPS → immutable GitHub
+Release → independent `release.published` audit → GitHub-only
+source custody and adjacent-day continuity review**. Prefer incremental
+hardening of this path and accumulation of *real*, independently audited
+prospective Funding source dates/regimes. **Do not initiate, schedule,
+provision or prioritize the Option B observer** without a separate
+future request. The B offline-only proof-of-concept and design remain
+as archival research, not the chosen implementation direction.
+
+Choosing A does not by itself prove an OKX exchange-signature or the
+exchange's independently attested *first publication time*.
+Keep `exchange_signed=false`,
+`point_in_time_publication_verified=false`,
+`acquisition_approved=false` and `promotion_approved=false`;
+no historical sample promotion, numerical Stage-2 gate or trading.
+
+## Historical direction update (superseded) — 2026-10-25
+
+The user **initially said they rejected Option A as the preferred forward solution**, but subsequently corrected this and explicitly chose A again for the
 independent-as-of-publication proof gap. The earlier "A now" priority below
 is retained only as a historical snapshot of the 2026-10-24 assessment and
-is **superseded** for new engineering planning: prioritize **Option B**
+was **temporarily superseded** for engineering planning by **Option B**, itself superseded by the current Option A direction above
 independent observer design and offline validation
 ([draft design](../design/funding-independent-witness-r2.md)).
 This preference does **not** approve a deployed observer, new trust/storage
