@@ -47,10 +47,10 @@ Respond to the user's explicit rejection of Option A as the preferred way forwar
 
 | Gate | Evidence | Status |
 | --- | --- | --- |
-| Targeted | `uv run pytest tests/test_funding_witness_draft.py` | pending |
-| Static | `uv run ruff check .` | pending |
-| Code, API, E2E and Plan | exact final PR head full CI 5/5 | pending |
-| Historical | exact final PR head Historical Backtest Smoke | pending |
+| Targeted | Covered by CI #40191788592 Code-level tests, offline synthetic verifier tests SUCCESS | PASS |
+| Static | #40191788592 static/architecture SUCCESS | PASS |
+| Code, API, E2E and Plan | CI #40191788592 all five SUCCESS on implementation head `d2ec93e`; evidence-only checkpoint changes head; retest required | VERIFYING |
+| Historical | #40191788604 SUCCESS on implementation head; retest required after checkpoint | VERIFYING |
 | Actual R2 | real independent observation, trusted timestamp and authorization | NOT IMPLEMENTED, requires later decision |
 
 ## Decision gates
@@ -59,13 +59,15 @@ User rejected A as preferred route. This authorizes design/offline preparation u
 
 ## Evidence log
 
+- 2026-10-25: Initial PR #154 head `e31966dc074b200bd5dbbf9440d57054986771bb` failed static and code-level CI #40191703541; root causes were unused imports in new tests (ruff F401) and using missing `is_file()` on an `os.stat_result`. Fixed source using `stat.S_ISREG(lstat.st_mode)` and test imports without relaxing gates. Fresh implementation HEAD `d2ec93eebacb0e5b1f8c935592661b7e1823a4c2` passed [CI #40191788592](https://github.com/pkking/future-opportunity/actions/runs/40191788592) 5/5 SUCCESS and [Historical Smoke #40191788604](https://github.com/pkking/future-opportunity/actions/runs/40191788604) SUCCESS. Final E2E evidence Artifact ID `12598457118`, SHA256 `84ef4dfd55ff7b4a36b32ae1181d3bcdf5c84202ec6a3f7aaa9438c023189445`; Historical artifact ID `12598442245`, SHA256 `837df1a20c0e8bb971df79eb131b695470b0b625daaf42ad0412139f09ff2051`. These prove **offline-only synthetic checks**, not real independent R2 observer provenance.
+
 - 2026-10-25: Added `scripts/review_funding_witness_draft.py` pure offline candidate reviewer, `tests/test_funding_witness_draft.py` deterministic synthetic fixtures, `docs/design/funding-independent-witness-r2.md` trust/deployment design and explicit 2026-10-25 supersession of A-first research recommendation. The reviewer never authenticates an independent signature/time root, so even positive output is `CANDIDATE_MATCH_UNATTESTED`; all source/approval/trading flags hard-false. **CI and actual observer evidence not yet verified**.
 
 - 2026-10-25: GitHub third prospective immutable original 2026-10-25 with matching successful release.published audit; still R1-only. Main existing code and ADR read. Official OKX contract cross-checked against current endpoint docs.
 
 ## Resume from here
 
-Open PR linked to Issue #85 and this active plan. Run code-level offline tests, all five CI and Historical Smoke. Fix actual CI errors from logs. Upon exact final-head green checks squash merge, verify main CI, and archive the child plan separately. Parent Issue #85 stays open; do not deploy witness or promote candidate output.
+Confirm PR #154 exact new checkpoint HEAD passes five CI jobs and Historical Smoke, squash merge with expected SHA, inspect main CI. Archive completed child plan in separately tested PR, record result in Issue #85 and current parent active plan. Do not deploy a witness or upgrade any source status. The source reviewer can never assert independently trusted R2 identity/time.
 
 ## Completion
 
