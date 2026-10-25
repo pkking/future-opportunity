@@ -11,6 +11,7 @@ import argparse
 import hashlib
 import json
 import re
+import stat
 from datetime import UTC, date, datetime, time, timedelta
 from pathlib import Path
 from typing import Any
@@ -45,7 +46,7 @@ RECEIPT_FIELDS = frozenset({
 
 def _read_object(path: Path, *, limit: int, label: str) -> tuple[bytes, dict[str, Any]]:
     info = path.lstat()
-    if not info.is_file() or info.is_symlink() or not 0 < info.st_size <= limit:
+    if not stat.S_ISREG(info.st_mode) or not 0 < info.st_size <= limit:
         raise ValueError(f"{label}: require bounded regular non-symlink file")
     content = path.read_bytes()
     if len(content) != info.st_size or len(content) > limit:
