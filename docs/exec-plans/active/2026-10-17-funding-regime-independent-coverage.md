@@ -1144,25 +1144,18 @@ and independently verified **first OKX upstream publication time**:
 Funding 32 pinned (preferred 90), Cash 66; negative/low regime not yet
 observed in this narrow source research, economic Stage-2 gate off.
 
+## 2026-10-25 — three real Option A original dates audited end-to-end
+
+- [PR #158](https://github.com/pkking/future-opportunity/pull/158) squash-merged `a09d4da9cce055e34ee37c71083405d8fde5f654` after final-head [CI #40209260277](https://github.com/pkking/future-opportunity/actions/runs/40209260277) all five SUCCESS and [Historical Smoke #40209260269](https://github.com/pkking/future-opportunity/actions/runs/40209260269) SUCCESS; [postmerge main CI #40209332407](https://github.com/pkking/future-opportunity/actions/runs/40209332407) SUCCESS. Completed child plan `docs/exec-plans/completed/2026-10-25-funding-three-day-original-continuity.md`.
+- **Real main-push GitHub immutable-original continuity [run #40209332389](https://github.com/pkking/future-opportunity/actions/runs/40209332389) SUCCESS:** 3/3 genuine complete UTC 2026-10-23..25 source days with independently successful release event audits and exact verified SHA256 original ZIPs; 2/2 exact adjacent pairs consistent, **0** numeric revisions, **0** unassessed pairs, 0 historical late confirmations and 0 confirmation regressions. Pair 23→24: 284 matching settled Funding rates and 98 previously confirmed spot closes, one normal current-day 0→1. Pair 24→25: 286 matching settled Funding rates and 98 previously confirmed spot closes, one normal current-day 0→1. Derived artifact `12604489489`, SHA256 `bfd772a78e7cb02213173a22695267882c828dafb3f009243439fb0f8a609eb1`.
+- Per-day source ZIP SHA256: 23rd `bbf7bb90e6d95fd12573d92943ddac682bb5ac2d4c5538fcb9906b97ebff3068`; 24th `d3961babf389449900dff7f56b3006291459ebb8776de2c03abff944af33894b`; 25th `932431486e42b0620df7b73ab23b3d7a2c9bdcb6800f2c755748a3c746d1119c`. **R1 GitHub custody only**; no independently signed OKX first-publication proof.
+- 2×2 regime count across these **three observed** dates: nonnegative-high-volatility=3; negative-low=0, negative-high=0, nonnegative-low=0. No qualifying negative-low evidence or market-wide arrival-rate estimate. Funding 32/90 pinned and Cash 66 pinned **unchanged**; no historical acquisition, economic gates or trading.
+- Distinct GitHub **scheduled collector** [#40151260280](https://github.com/pkking/future-opportunity/actions/runs/40151260280) started 01:35:55 UTC and correctly failed its 00:00–00:15 UTC pre-entry guard at 01:36:04 UTC, retaining failure receipt. This was a **best-effort GitHub scheduling delay**, not an outage of the separate VPS-to-immutable-Release pipeline, and must not be backfilled with a late market GET. The latter's source/audit for the 25th succeeded.
+
+
 ## Resume from here
 
-**Follow Option A only; the former Option B priority was withdrawn by the
-user.** Reconcile current main HEAD, open PRs and CI. Next, independently
-check newly available genuine immutable `funding-vps-YYYY-MM-DD` Releases,
-their matching successful release event audits and strict GitHub original ZIP
-verification. Where there are **two or more consecutive, fully completed real
-days**, use the existing manual GitHub-only 2–90-day source continuity review
-to record all adjacent pairs, numeric revisions, normal or abnormal spot
-confirmation changes, four-regime evidence and any missing/unaudited date.
-Do not bridge missing days or treat an unavailable historical outcome as zero.
-Prioritize reliability, source provenance and quality gaps **inside the
-existing VPS→GitHub Release→independent audit flow**. **Do not start Option B
-deployment or an independent-witness trust/provider decision.**
-Keep Issue #85 OPEN/BLOCKED_EVIDENCE: GitHub custody is not exchange-signed
-first publication, and neither historical pinned acquisition, numerical
-economics, nor trading is approved. Follow accepted ADRs and obtain a
-separate explicit human decision only if a future proposal actually
-changes an architectural/source-admission boundary.
+**Stay on user-selected Option A; B is inactive/withdrawn.** Reconcile main/PR/CI and later truly published `funding-vps-YYYY-MM-DD` immutable Releases with independent successful `release.published` audits. The existing 2026-10-23..25 originals are fully audited in [#40209332389](https://github.com/pkking/future-opportunity/actions/runs/40209332389); do **not** repeat the completed three-day smoke solely to generate another artifact. When **new** fully completed real days appear, use manual GitHub-only 2–90-day continuity checks to expand the strict consecutive date window, preserving unavailable dates as UNASSESSED, numerical source revisions and any abnormal confirmation changes. Continue current VPS→GitHub Release reliability/source-completeness hardening. GitHub cron is best-effort and is not proof of a VPS failure or a zero-opportunity date. Never deploy B, infer venue-signed OKX first publication from GitHub custody, promote historical source, activate Stage-2 numeric economics or trade without separately approved evidence and decisions. Issue #85 stays OPEN/BLOCKED_EVIDENCE; Funding pinned 32 and Cash pinned 66.
 
 
 ## Completion
