@@ -1,7 +1,7 @@
 # Bounded multi-page GitHub Release audit discovery
 
 Issue: #85
-Status: IMPLEMENTING
+Status: VERIFYING
 Owner: agent
 Started: 2026-10-28
 Last checkpoint: 2026-10-28
@@ -39,16 +39,16 @@ No additional OKX requests, new clocks, historical acquisitions/promotions, Fund
 
 ## Acceptance criteria
 
-- [ ] Retrieve older matching Release audit from page 2+ using read-only GitHub workflow-run pagination.
-- [ ] Report `AUDIT_MISSING` only when all relevant pages have been consumed, and `UNASSESSED` when the configured maximum is reached without an audit.
-- [ ] Preserve correctness for multiple target days, HTTP outages, malformed responses, disabled promotion and existing release/audit status semantics.
+- [x] Retrieve older matching Release audit from page 2+ using read-only GitHub workflow-run pagination.
+- [x] Report `AUDIT_MISSING` only when all relevant pages have been consumed, and `UNASSESSED` when the configured maximum is reached without an audit.
+- [x] Preserve correctness for multiple target days, HTTP outages, malformed responses, disabled promotion and existing release/audit status semantics.
 - [ ] Targeted no-network regression tests pass.
 - [ ] Final PR head passes all five CI checks and Historical Smoke; record actual run URLs and artifact evidence.
 
 ## Implementation slices
 
-- [ ] 1. Add bounded targeted audit pagination and definitive vs incomplete search classification.
-- [ ] 2. Add deterministic tests for page-2 success, complete absence, capped uncertainty, multi-day partial match and error on later page.
+- [x] 1. Add bounded targeted audit pagination and definitive vs incomplete search classification.
+- [x] 2. Add deterministic tests for page-2 success, complete absence, capped uncertainty, multi-day partial match and error on later page.
 - [ ] 3. Submit scoped PR and observe exact-head CI / Historical Smoke before completion/archival.
 
 ## Verification matrix
@@ -66,6 +66,7 @@ None: this is a conservative read-only diagnostics correction inside approved Op
 
 ## Evidence log
 
+- 2026-10-28: PR #160 opened from branch `agent/funding-watch-bounded-audit-pages-85`; source change `3ba3faa129d8cdf8b0b39edc6567b001f01db4ce`, offline tests `7a953293c02c032a14e02c81f83a9921bcaa6e93`. Initial exact-head CI `40731295246` and Historical Smoke `40731295260` triggered; results still pending at this checkpoint.
 - 2026-10-28: GitHub connector inspected `main`, Issue #85 OPEN/BLOCKED_EVIDENCE, PR #159 merged and current watcher source/test; latest baseline `81d5517520f1f8b68aa742c736c09b904cca54cb`.
 
 ## Deviations and discoveries
@@ -74,7 +75,7 @@ None.
 
 ## Resume from here
 
-Implement the bounded multi-page audit lookup in `scripts/check_funding_release_watch.py`, then add no-network tests and push a PR against main.
+Inspect CI and Historical Smoke on this exact updated PR head; diagnose and fix failures if any, then record final-head evidence. Keep the parent issue open.
 
 ## Completion
 
