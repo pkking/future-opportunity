@@ -26,6 +26,8 @@ FIRST_DAY = date(2026, 10, 23)
 ENTRY_MINUTE = 15
 AUDIT_WORKFLOW = "audit-funding-vps-github-release.yml"
 AUDIT_WORKFLOW_NAME = "Audit Immutable VPS Funding Evidence Release"
+AUDIT_PAGE_SIZE = 100
+MAX_AUDIT_PAGES = 10
 VALID_STATUS = "RELEASE_AND_INDEPENDENT_AUDIT_VERIFIED"
 FAIL_STATES = frozenset({
     "MISSING_PUBLISHED_RELEASE", "INVALID_RELEASE", "AUDIT_MISSING",
@@ -94,24 +96,59 @@ def _api_failure(exc: Exception) -> str:
     return type(exc).__name__
 
 
-def _get_audits(client: httpx.Client, token: str) -> list[dict[str, Any]]:
-    # A targeted workflow endpoint prevents older runs from being crowded out
-    # by unrelated CI. GitHub Actions read permission is mandatory.
-    resp = client.get(
-        f"{API}/actions/workflows/{AUDIT_WORKFLOW}/runs",
-        params={"event": "release", "per_page": 100},
-        headers={
-            "Authorization": f"Bearer {token}",
-            "Accept": "application/vnd.github+json",
-        },
-    )
-    resp.raise_for_status()
-    data = resp.json()
-    if not isinstance(data, dict) or not isinstance(data.get("workflow_runs"), list):
-        raise ValueError("invalid GitHub audit runs response")
-    if len(data["workflow_runs"]) > 100:
-        raise ValueError("GitHub returned too many audit runs")
-    return data["workflow_runs"]
+def _get_audits(
+    client: httpx.Client, token: str, tags: set[str],
+) -> tuple[list[dict[str, Any]], bool]:
+    """Find relevant release audits using bounded GitHub pagination.
+
+    A matching audit can fall off the first 100 runs. A search that hits its
+    cap is NOT proof of absence; callers must mark unmatched days UNASSESSED.
+    """
+    if not tags:
+        return [], True
+
+    relevant: list[dict[str, Any]] = []
+    found: set[str] = set()
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json",
+    }
+    for page in range(1, MAX_AUDIT_PAGES + 1):
+        response = client.get(
+            f"{API}/actions/workflows/{AUDIT_WORKFLOW}/runs",
+            params={"event": "release", "per_page": AUDIT_PAGE_SIZE, "page": page},
+            headers=headers,
+        )
+        response.raise_for_status()
+        data = response.json()
+        if not isinstance(data, dict) or not isinstance(data.get("workflow_runs"), list):
+            raise ValueError("invalid GitHub audit runs response")
+        runs = data["workflow_runs"]
+        if len(runs) > AUDIT_PAGE_SIZE or any(not isinstance(run, dict) for run in runs):
+            raise ValueError("invalid GitHub audit runs page")
+        count = data.get("total_count")
+        if count is not None and (type(count) is not int or count < 0):
+            raise ValueError("invalid GitHub audit runs total_count")
+        for run in runs:
+            tag = run.get("head_branch")
+            if tag not in tags:
+                continue
+            relevant.append(run)
+            if (
+                run.get("event") == "release"
+                and run.get("name") == AUDIT_WORKFLOW_NAME
+                and type(run.get("id")) is int
+            ):
+                found.add(tag)
+        # Matching runs are returned newest-first by the GitHub workflow-run
+        # listing; older pages cannot supersede the newest matching run.
+        if tags <= found:
+            return relevant, True
+        if len(runs) < AUDIT_PAGE_SIZE or (
+            count is not None and page * AUDIT_PAGE_SIZE >= count
+        ):
+            return relevant, True
+    return relevant, False
 
 
 def _find_audit(
@@ -143,6 +180,7 @@ def _find_audit(
 def check_day(
     day: date, *, now: datetime, client: httpx.Client, audits: list[dict[str, Any]],
     verify: Callable[..., dict[str, Any]] = verify_release,
+    audit_search_exhaustive: bool = True,
 ) -> dict[str, Any]:
     """Validate the *actual published release* and the exact release audit."""
     if not _eligible(day, now):
@@ -192,6 +230,12 @@ def check_day(
         "github_hosted_preentry_source_verified": True,
     }
     if run is None:
+        if not audit_search_exhaustive:
+            return _receipt(
+                day, "UNASSESSED",
+                "matching release audit not found before bounded search limit",
+                **evidence,
+            )
         return _receipt(day, "AUDIT_MISSING", "no matching release.published audit", **evidence)
     run_id = run["id"]
     evidence["audit_run_id"] = run_id
@@ -295,7 +339,9 @@ def watch(
             "acquisition_approved": False, "promotion_approved": False,
         }
     try:
-        audits = _get_audits(client, token)
+        audits, audit_search_exhaustive = _get_audits(
+            client, token, {f"funding-vps-{day.isoformat()}" for day in targets}
+        )
     except (httpx.HTTPError, ValueError, TypeError, json.JSONDecodeError) as exc:
         audits = None
         failed_reason = _api_failure(exc)
@@ -303,7 +349,10 @@ def watch(
         results = [_receipt(d, "UNASSESSED", failed_reason) for d in targets]
     else:
         results = [
-            check_day(d, now=instant, client=client, audits=audits, verify=verify)
+            check_day(
+                d, now=instant, client=client, audits=audits, verify=verify,
+                audit_search_exhaustive=audit_search_exhaustive,
+            )
             for d in targets
         ]
     ok = bool(results) and all(rec["status"] == VALID_STATUS for rec in results)
