@@ -393,3 +393,134 @@ def test_watch_success_includes_bounded_regime_inventory(monkeypatch):
         "negative_low_volatility", "negative_high_volatility",
         "nonnegative_low_volatility",
     ]
+
+
+def _paged_client(*, pages, failed_page=None):
+    """Offline GitHub REST simulation: each page holds at most 100 audit runs."""
+    calls = []
+
+    def handler(request: httpx.Request):
+        assert request.method == "GET"
+        calls.append(request.url)
+        if "/actions/workflows/" in request.url.path:
+            assert request.url.params["event"] == "release"
+            assert request.url.params["per_page"] == "100"
+            page = int(request.url.params["page"])
+            if page == failed_page:
+                return httpx.Response(503, json={"message": "unavailable"})
+            return httpx.Response(200, json={"workflow_runs": pages.get(page, [])})
+        if "/releases/tags/" in request.url.path:
+            tag = request.url.path.rsplit("/", 1)[-1]
+            day = tag.removeprefix("funding-vps-")
+            return httpx.Response(200, json={
+                "tag_name": tag, "immutable": True,
+                "published_at": f"{day}T00:00:15+00:00",
+            })
+        return httpx.Response(404)
+
+    return httpx.Client(transport=httpx.MockTransport(handler)), calls
+
+
+def _unrelated_audits(count=100):
+    return [_audit(tag=f"unrelated-tag-{i}") for i in range(count)]
+
+
+def test_page_two_audit_is_verified_without_false_missing(monkeypatch):
+    mod = _watch(monkeypatch)
+    client, calls = _paged_client(pages={
+        1: _unrelated_audits(), 2: [_audit()],
+    })
+    with client:
+        result = mod.watch(
+            now=lambda: _stamp(), client=client, token="test-only",
+            entry_day=DAY, verify=_verified,
+        )
+    assert result["status"] == "HEALTHY"
+    assert result["days"][0]["status"] == mod.VALID_STATUS
+    assert [int(url.params["page"]) for url in calls if "/workflows/" in url.path] == [1, 2]
+    assert all(url.host == "api.github.com" for url in calls)
+
+
+def test_exhausted_pages_allow_definitive_audit_missing(monkeypatch):
+    mod = _watch(monkeypatch)
+    client, calls = _paged_client(pages={1: _unrelated_audits(), 2: []})
+    with client:
+        result = mod.watch(
+            now=lambda: _stamp(), client=client, token="test-only",
+            entry_day=DAY, verify=_verified,
+        )
+    assert result["status"] == "UNASSESSED"
+    assert result["days"][0]["status"] == "AUDIT_MISSING"
+    assert len([url for url in calls if "/workflows/" in url.path]) == 2
+
+
+def test_bounded_search_never_labels_unseen_audit_as_missing(monkeypatch):
+    mod = _watch(monkeypatch)
+    # Every page is full: no evidence that another page does not contain the audit.
+    client, calls = _paged_client(pages={
+        i: _unrelated_audits() for i in range(1, mod.MAX_AUDIT_PAGES + 1)
+    })
+    with client:
+        result = mod.watch(
+            now=lambda: _stamp(), client=client, token="test-only",
+            entry_day=DAY, verify=_verified,
+        )
+    rec = result["days"][0]
+    assert rec["status"] == "UNASSESSED"
+    assert "bounded search limit" in rec["reason"]
+    assert rec["github_release_attestation_verified"] is False
+    assert len([url for url in calls if "/workflows/" in url.path]) == mod.MAX_AUDIT_PAGES
+    assert result["regime_coverage"]["github_audited_day_count"] == 0
+    assert result["point_in_time_publication_verified"] is False
+    assert result["promotion_approved"] is False
+
+
+def test_partial_multiday_audit_lookup_keeps_only_verified_day(monkeypatch):
+    mod = _watch(monkeypatch)
+    verified_day = "2026-10-25"
+    missing_day = "2026-10-24"
+    audits = [_audit(
+        tag=f"funding-vps-{verified_day}",
+        started=f"{verified_day}T00:00:17Z",
+    )] + _unrelated_audits(99)
+    client, calls = _paged_client(pages={
+        i: audits if i == 1 else _unrelated_audits()
+        for i in range(1, mod.MAX_AUDIT_PAGES + 1)
+    })
+
+    def verify(day, *, client):
+        return {
+            "status": "github_immutable_release_metadata_and_offline_replay_only",
+            "tag": f"funding-vps-{day}",
+            "published_at": f"{day}T00:00:15+00:00",
+            "archive_sha256": ZIP_SHA,
+            "regime": "nonnegative_high_volatility",
+        }
+
+    with client:
+        result = mod.watch(
+            now=lambda: datetime(2026, 10, 25, 1, tzinfo=UTC),
+            client=client, token="test-only", days=2, verify=verify,
+        )
+    by_day = {record["entry_market_date"]: record for record in result["days"]}
+    assert by_day[verified_day]["status"] == mod.VALID_STATUS
+    assert by_day[missing_day]["status"] == "UNASSESSED"
+    assert result["status"] == "UNASSESSED"
+    assert result["regime_coverage"]["github_audited_day_count"] == 1
+    assert len([url for url in calls if "/workflows/" in url.path]) == mod.MAX_AUDIT_PAGES
+
+
+@pytest.mark.parametrize("failed_page", [1, 2])
+def test_pagination_api_failure_cannot_be_reported_as_missing(monkeypatch, failed_page):
+    mod = _watch(monkeypatch)
+    client, _ = _paged_client(
+        pages={1: _unrelated_audits()}, failed_page=failed_page,
+    )
+    with client:
+        result = mod.watch(
+            now=lambda: _stamp(), client=client, token="test-only",
+            entry_day=DAY, verify=_verified,
+        )
+    assert result["status"] == "UNASSESSED"
+    assert result["days"][0]["status"] == "UNASSESSED"
+    assert result["days"][0]["github_release_attestation_verified"] is False
