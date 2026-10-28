@@ -6,7 +6,7 @@ import importlib.util
 import io
 import json
 import zipfile
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 import httpx
@@ -288,14 +288,16 @@ def test_longitudinal_prior_day_late_confirmation_fails_specific_adjacent_pair(
     assert report["promotion_approved"] is False
 
 
-def test_released_three_day_main_push_review_and_manual_range_remain_strict():
-    """The bounded main-push diagnostic reflects actual 23/24/25 Releases."""
+def test_released_six_day_main_push_review_and_manual_range_remain_strict():
+    """One-shot main-push default covers exactly six published UTC releases."""
     workflow = (
         ROOT / ".github/workflows/review-funding-source-continuity.yml"
     ).read_text()
     assert "START_DATE: ${{ inputs.start_date || '2026-10-23' }}" in workflow
-    assert "END_DATE: ${{ inputs.end_date || '2026-10-25' }}" in workflow
-    assert "2026-10-23..25" in workflow
+    assert "END_DATE: ${{ inputs.end_date || '2026-10-28' }}" in workflow
+    assert "2026-10-23..28" in workflow
+    assert (date(2026, 10, 28) - date(2026, 10, 23)).days + 1 == 6
+    assert (date(2026, 10, 28) - date(2026, 10, 23)).days == 5
     assert "workflow_dispatch:" in workflow
     assert "start_date:" in workflow and "end_date:" in workflow
     assert "inputs.start_date" in workflow and "inputs.end_date" in workflow
