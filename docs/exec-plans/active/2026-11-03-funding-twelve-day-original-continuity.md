@@ -46,14 +46,14 @@ No exchange GETs beyond those already captured in immutable GitHub Releases, new
 - [ ] After merge, actual main-push GitHub original ZIP report confirms all 12 day statuses and 11 adjacent comparison states; report exact pair populations, numerical/confirmation revision findings, unassessed count and original/derived SHA256; do not assume consistency ahead of time.
 - [ ] Record audited outcome in Issue #85, then archive evidence and update parent plan in a separate completion-only PR; parent Issue remains open.
 
-## Slices
+## Implementation slices
 
 - [ ] 1. Modify workflow bounded default date only.
 - [ ] 2. Modify exact-date governance regression test.
 - [ ] 3. PR, final-head CI/Historical Smoke, merge if authorized, verify real 12-day source report.
 - [ ] 4. Comment Issue #85 and archive in separately verified PR.
 
-## Verification
+## Verification matrix
 
 | Gate | State |
 |---|---|
