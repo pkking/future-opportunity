@@ -251,11 +251,14 @@ def main() -> None:
         # The cache transport deduplicates the custody pass's immutable
         # release-asset downloads for the continuity pass's refetch, halving
         # per-day downloads so 31..90-day reviews stay inside GitHub
-        # secondary rate limits.
+        # secondary rate limits. Every request is authenticated so per-day
+        # tag checks never fall into the shared 60/hour unauthenticated
+        # per-IP API bucket.
         transport = _AssetCacheTransport(httpx.HTTPTransport())
         with httpx.Client(
             timeout=httpx.Timeout(12.0), follow_redirects=False,
             transport=transport,
+            headers={"Authorization": f"Bearer {token}"},
         ) as client:
             report = audit_continuity(
                 args.start_date, args.end_date,
