@@ -141,7 +141,7 @@ def test_api_failure_is_unassessed_for_all_days(monkeypatch, error):
     assert report["github_audited_day_count"] == 0
     # Throttling-class failures get one bounded retry pass; permanent 401s
     # do not. Both paths end fail-closed UNASSESSED.
-    expected_calls = 3 if error in (403, 429, 500) else 1
+    expected_calls = 4 if error in (403, 429, 500) else 1
     assert len(calls) == expected_calls
 
 
@@ -338,3 +338,4 @@ def test_persistent_403_exhausts_retries_and_stays_unassessed(monkeypatch):
     assert all(item["status"] == "UNASSESSED" for item in report["days"])
     assert paced.count(mod.RETRY_BACKOFF_SECONDS[0]) == 2
     assert paced.count(mod.RETRY_BACKOFF_SECONDS[1]) == 2
+    assert paced.count(mod.RETRY_BACKOFF_SECONDS[2]) == 2

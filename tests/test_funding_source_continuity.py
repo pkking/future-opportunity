@@ -397,6 +397,7 @@ def test_persistent_fetch_403_keeps_pairs_unassessed(monkeypatch):
     )
     assert paced.count(mod.FETCH_RETRY_BACKOFF_SECONDS[0]) == 3
     assert paced.count(mod.FETCH_RETRY_BACKOFF_SECONDS[1]) == 3
+    assert paced.count(mod.FETCH_RETRY_BACKOFF_SECONDS[2]) == 3
 
 
 def test_asset_cache_transport_dedupes_immutable_release_downloads(monkeypatch):
