@@ -30,12 +30,13 @@ from report_funding_prospective_custody_ledger import (
 MAX_CONTINUITY_DAYS = 90
 PAIRED_STATUS = "OVERLAP_VALUES_CONSISTENT_ONLY"
 REVISION_STATUS = "SOURCE_REVISION_DETECTED"
-# One immutable original ZIP is fetched per audited day. Downloading many
-# originals back-to-back can trip GitHub secondary rate limits (HTTP 403);
-# pace the fetches and retry transient transport errors a bounded number of
-# times. Integrity failures (digest/shape mismatch) still fail immediately.
+# One immutable original ZIP is fetched per audited day (already deduplicated
+# against the custody pass by the asset cache). Pacing plus bounded retry
+# keeps the review inside GitHub secondary rate limits; integrity failures
+# (digest/shape mismatch) still fail immediately. The final backoff exceeds
+# the observed ~3-minute secondary-limit drain time.
 FETCH_PACE_SECONDS = 2.0
-FETCH_RETRY_BACKOFF_SECONDS: tuple[float, ...] = (30.0, 60.0)
+FETCH_RETRY_BACKOFF_SECONDS: tuple[float, ...] = (30.0, 60.0, 180.0)
 
 
 def _immediate(_: float) -> None:

@@ -36,8 +36,11 @@ AUDIT_PAGE_SIZE = 100
 # A bounded 2..90-day review issues several read-only GitHub requests per
 # day. Sustained bursts trip GitHub secondary rate limits (HTTP 403), which
 # must surface as bounded-retry evidence, never as silently missing days.
-DAY_PACE_SECONDS = 5.0
-RETRY_BACKOFF_SECONDS: tuple[float, ...] = (30.0, 60.0)
+# Observed threshold: ~3 rolling minutes; pacing spreads requests so a
+# window holds far fewer calls, and the final backoff exceeds the observed
+# drain time so a throttled tail day can still recover honestly.
+DAY_PACE_SECONDS = 10.0
+RETRY_BACKOFF_SECONDS: tuple[float, ...] = (30.0, 60.0, 180.0)
 
 
 def _immediate(_: float) -> None:
