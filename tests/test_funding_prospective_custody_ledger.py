@@ -139,7 +139,10 @@ def test_api_failure_is_unassessed_for_all_days(monkeypatch, error):
     assert report["status"] == "UNASSESSED"
     assert [x["status"] for x in report["days"]] == ["UNASSESSED", "UNASSESSED"]
     assert report["github_audited_day_count"] == 0
-    assert len(calls) == 1
+    # Throttling-class failures get one bounded retry pass; permanent 401s
+    # do not. Both paths end fail-closed UNASSESSED.
+    expected_calls = 3 if error in (403, 429, 500) else 1
+    assert len(calls) == expected_calls
 
 
 @pytest.mark.parametrize("start,end,now", [
@@ -272,3 +275,66 @@ def test_source_history_workflow_is_opt_in_read_only(monkeypatch):
     assert "gh release create" not in policy
     assert "curl " not in policy
     assert "api/v5/" not in policy
+
+
+def test_transient_403_is_retried_then_recovers_with_pacing(monkeypatch):
+    """A secondary-rate-limit 403 is retried, not recorded as a missing day."""
+    mod = _module(monkeypatch)
+    throttle_state = {"count": 0}
+    paced = []
+
+    def handler(request):
+        assert request.method == "GET"
+        if "/actions/workflows/" in request.url.path:
+            return httpx.Response(200, json={"workflow_runs": [_audit(END), _audit(START)]})
+        if "/releases/tags/" in request.url.path:
+            if throttle_state["count"] < 1:
+                throttle_state["count"] += 1
+                return httpx.Response(403, json={"message": "rate limit exceeded"})
+            day = request.url.path[-10:]
+            return httpx.Response(200, json={
+                "tag_name": f"funding-vps-{day}",
+                "immutable": True, "draft": False,
+                "published_at": f"{day}T00:00:15Z",
+            })
+        return httpx.Response(404)
+
+    def pause(seconds):
+        paced.append(seconds)
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        report = mod.build_report(
+            START, END, now=lambda: NOW, client=client,
+            token="synthetic", verify=_verified, pause=pause,
+        )
+    assert report["status"] == "AUDITED_GITHUB_CUSTODY_ONLY"
+    assert report["github_audited_day_count"] == 2
+    # One 403 backoff was injected, and each completed day paces the next.
+    assert mod.RETRY_BACKOFF_SECONDS[0] in paced
+    assert paced.count(mod.DAY_PACE_SECONDS) == 2
+
+
+def test_persistent_403_exhausts_retries_and_stays_unassessed(monkeypatch):
+    """Retry exhaustion must keep the fail-closed UNASSESSED outcome."""
+    mod = _module(monkeypatch)
+    paced = []
+
+    def handler(request):
+        assert request.method == "GET"
+        if "/actions/workflows/" in request.url.path:
+            return httpx.Response(200, json={"workflow_runs": [_audit(END), _audit(START)]})
+        return httpx.Response(403, json={"message": "rate limit exceeded"})
+
+    def pause(seconds):
+        paced.append(seconds)
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        report = mod.build_report(
+            START, END, now=lambda: NOW, client=client,
+            token="synthetic", verify=_verified, pause=pause,
+        )
+    assert report["status"] == "UNASSESSED"
+    assert report["github_audited_day_count"] == 0
+    assert all(item["status"] == "UNASSESSED" for item in report["days"])
+    assert paced.count(mod.RETRY_BACKOFF_SECONDS[0]) == 2
+    assert paced.count(mod.RETRY_BACKOFF_SECONDS[1]) == 2

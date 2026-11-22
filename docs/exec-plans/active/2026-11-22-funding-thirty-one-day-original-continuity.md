@@ -82,14 +82,20 @@ None for bounded read-only Option A extension. New trust authorities, alternate 
 ## Evidence log
 
 - 2026-11-22: Confirmed 31 consecutive immutable `funding-vps-*` Releases 2026-10-23..2026-11-22 via GitHub API; all 19 new-day independent release audits SUCCESS; main CI green on `dbe197d1b3f0d996b2176020cbbb8ab419cf1dde`; zero open PRs. Classified 11-20 watcher failure as transient watcher-only API incident (re-verified by 11-21/11-22 successful watchers). New adjacent-pair overlap consistency remains unassessed.
+- 2026-11-22: [PR #169](https://github.com/pkking/future-opportunity/pull/169) merged `469cd852` after final-head [CI #45037753837](https://github.com/pkking/future-opportunity/actions/runs/45037753837) all five required checks SUCCESS and [Historical Smoke #45037753956](https://github.com/pkking/future-opportunity/actions/runs/45037753956) SUCCESS. Postmerge [main CI pending verification](https://github.com/pkking/future-opportunity/actions).
+- 2026-11-22: **Real main-push 31-day review [run #45037830949](https://github.com/pkking/future-opportunity/actions/runs/45037830949) FAILED — genuine new engineering fact.** The derived artifact (ID `14759204926`) shows `26/30` pairs consistent, `0` revisions, `4` UNASSESSED pairs; days 2026-11-19..22 were classified "missing matching successful independent original-source audit" although all four independent audits are SUCCESS with matching `head_branch`/`event`/timestamps. Root cause diagnosed by local reproduction: after ~26 days of consecutive per-day requests (release metadata + two asset downloads each, plus one original-ZIP fetch in the continuity pass), GitHub returned intermittent HTTP 403 secondary rate limiting; `check_day`/`verify_release` convert 403 into per-day UNASSESSED receipts, which the custody ledger then reported as missing audits. The prior 12-day run (~60 requests) never tripped the threshold; 31 days (~150+ requests in ~20s) did. Local full-range reruns confirmed intermittent 403s with abundant core quota (5000/h, 4600+ remaining), i.e. secondary abuse-rate limiting, not quota exhaustion.
 
 ## Deviations and discoveries
 
-None yet.
+- **2026-11-22 secondary rate limit fix (in progress).** The 12-day-proven request pattern does not scale to 31 days. Fix design, preserving all fail-closed semantics:
+  - `scripts/report_funding_prospective_custody_ledger.py`: per-day pace (`DAY_PACE_SECONDS=5`, injected `pause`, default no-op for tests/library callers), bounded retry with 30s/60s backoff for retryable transport failures (HTTP 403/429/5xx, request errors) and for `check_day` receipts whose reason is a GitHub API HTTP failure; retry exhaustion keeps the day UNASSESSED exactly as before; audit-history fetch also retried.
+  - `scripts/report_funding_source_continuity.py`: per-day original-ZIP fetch pace (`FETCH_PACE_SECONDS=2`) and bounded retry on transport-level errors only; digest/shape integrity failures still fail immediately.
+  - New offline tests: transient 403 recovers with exactly one backoff and pacing; persistent 403 exhausts retries and stays UNASSESSED; existing parametrized audit-failure test updated for retryable codes (3 calls) vs permanent 401 (1 call).
+  - CI `timeout-minutes: 25` unchanged: worst-case wall time = 31×(5+2)s pace + bounded retries ≪ 25 min; local live run in progress to confirm end-to-end behavior before the fix PR.
 
 ## Resume from here
 
-Implementing: change `.github/workflows/review-funding-source-continuity.yml` default `END_DATE` and header comment to 2026-11-22, update `tests/test_funding_source_continuity.py` governance test to thirty-one days / thirty pairs, run offline tests and ruff, then open the PR with `Issue: #85` and this plan as `Plan:`.
+Verify the in-progress local live 31-day run (with pacing+retry) completes; then open the rate-limit fix PR (`Issue: #85`, same Plan), get final-head 5/5 CI + Historical Smoke, merge, and verify the real main-push 31-day source report turns fully assessed; then archive. If the local run still shows genuine UNASSESSED days after retry exhaustion, record them honestly instead of re-running to green.
 
 ## Completion
 

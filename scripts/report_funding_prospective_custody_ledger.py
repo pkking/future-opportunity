@@ -12,6 +12,7 @@ import json
 import os
 from datetime import UTC, date, datetime, time, timedelta
 from pathlib import Path
+from time import sleep
 from typing import Any, Callable
 
 import httpx
@@ -31,6 +32,16 @@ from publish_vps_funding_github_release import API, REPO
 MAX_WINDOW_DAYS = 90
 MAX_AUDIT_PAGES = 20
 AUDIT_PAGE_SIZE = 100
+
+# A bounded 2..90-day review issues several read-only GitHub requests per
+# day. Sustained bursts trip GitHub secondary rate limits (HTTP 403), which
+# must surface as bounded-retry evidence, never as silently missing days.
+DAY_PACE_SECONDS = 5.0
+RETRY_BACKOFF_SECONDS: tuple[float, ...] = (30.0, 60.0)
+
+
+def _immediate(_: float) -> None:
+    """Default no-throttle used by tests and direct library callers."""
 
 
 def eligible_days(start_date: str, end_date: str, now: datetime) -> list[date]:
@@ -106,16 +117,84 @@ def fetch_window_audits(
     raise ValueError("GitHub audit history pagination exceeded safe limit")
 
 
+def _is_retryable(exc: Exception) -> bool:
+    if isinstance(exc, httpx.HTTPStatusError):
+        status = exc.response.status_code
+        return status == 403 or status == 429 or status >= 500
+    return isinstance(exc, httpx.RequestError)
+
+
+def _is_transient_receipt(result: Any) -> bool:
+    """Detect check_day receipts produced by GitHub throttling/transport faults.
+
+    check_day converts HTTP 403/429/5xx and request errors into UNASSESSED
+    receipts with the shared `_api_failure` reason; those are the only
+    day-level outcomes worth a bounded retry. Integrity failures (missing
+    release, invalid replay) and absent audits are permanent facts.
+    """
+    return (
+        isinstance(result, dict)
+        and result.get("status") == "UNASSESSED"
+        and isinstance(result.get("reason"), str)
+        and result["reason"].startswith("GitHub API returned HTTP")
+    )
+
+
+def _check_day_with_retry(
+    day: date, *, now: datetime, client: httpx.Client,
+    audits: list[dict[str, Any]], verify: Callable[..., dict[str, Any]] | None,
+    pause: Callable[[float], None],
+) -> dict[str, Any]:
+    """Read-only day check with bounded retry on transient GitHub throttling.
+
+    A retried-and-recovered read fetches the same immutable public evidence;
+    retry exhaustion keeps the day UNASSESSED exactly as before.
+    """
+    kwargs = {"verify": verify} if verify is not None else {}
+    for attempt in range(len(RETRY_BACKOFF_SECONDS) + 1):
+        try:
+            result = check_day(
+                day, now=now, client=client, audits=audits, **kwargs,
+            )
+        except httpx.HTTPError as exc:
+            if not _is_retryable(exc) or attempt == len(RETRY_BACKOFF_SECONDS):
+                raise
+            pause(RETRY_BACKOFF_SECONDS[attempt])
+            continue
+        if attempt < len(RETRY_BACKOFF_SECONDS) and _is_transient_receipt(result):
+            pause(RETRY_BACKOFF_SECONDS[attempt])
+            continue
+        return result
+    raise AssertionError("unreachable")
+
+
+def _fetch_audits_with_retry(
+    client: httpx.Client, token: str, *, start_day: date,
+    pause: Callable[[float], None],
+) -> list[dict[str, Any]]:
+    for attempt in range(len(RETRY_BACKOFF_SECONDS) + 1):
+        try:
+            return fetch_window_audits(client, token, start_day=start_day)
+        except httpx.HTTPError as exc:
+            if not _is_retryable(exc) or attempt == len(RETRY_BACKOFF_SECONDS):
+                raise
+            pause(RETRY_BACKOFF_SECONDS[attempt])
+    raise AssertionError("unreachable")
+
+
 def build_report(
     start_date: str, end_date: str, *, now: Callable[[], datetime],
     client: httpx.Client, token: str,
     verify: Callable[..., dict[str, Any]] | None = None,
+    pause: Callable[[float], None] = _immediate,
 ) -> dict[str, Any]:
     """Return auditable exact-day results; missing evidence remains UNASSESSED."""
     instant = _utc_now(now)
     days = eligible_days(start_date, end_date, instant)
     try:
-        audits = fetch_window_audits(client, token, start_day=days[0])
+        audits = _fetch_audits_with_retry(
+            client, token, start_day=days[0], pause=pause,
+        )
     except (httpx.HTTPError, ValueError, TypeError, json.JSONDecodeError) as exc:
         reason = f"independent audit history unavailable: {_api_failure(exc)}"
         results = [_receipt(day, "UNASSESSED", reason) for day in days]
@@ -123,14 +202,17 @@ def build_report(
         results = []
         for day in days:
             try:
-                options = {"verify": verify} if verify is not None else {}
                 results.append(
-                    check_day(day, now=instant, client=client, audits=audits, **options)
+                    _check_day_with_retry(
+                        day, now=instant, client=client, audits=audits,
+                        verify=verify, pause=pause,
+                    )
                 )
             except (httpx.HTTPError, ValueError, TypeError, KeyError) as exc:
                 # Keep every requested date in the ledger, even when replay
                 # unexpectedly fails or one source is unavailable.
                 results.append(_receipt(day, "UNASSESSED", _api_failure(exc)))
+            pause(DAY_PACE_SECONDS)
     try:
         coverage = summarize_audited_regimes(results)
         healthy = coverage["github_audited_day_count"] == len(days)
@@ -175,7 +257,7 @@ def main() -> None:
         with httpx.Client(timeout=httpx.Timeout(12.0), follow_redirects=False) as client:
             report = build_report(
                 args.start_date, args.end_date, now=lambda: datetime.now(UTC),
-                client=client, token=token,
+                client=client, token=token, pause=sleep,
             )
     except ValueError as exc:
         parser.error(str(exc))
