@@ -397,3 +397,76 @@ def test_persistent_fetch_403_keeps_pairs_unassessed(monkeypatch):
     )
     assert paced.count(mod.FETCH_RETRY_BACKOFF_SECONDS[0]) == 3
     assert paced.count(mod.FETCH_RETRY_BACKOFF_SECONDS[1]) == 3
+
+
+def test_asset_cache_transport_dedupes_immutable_release_downloads(monkeypatch):
+    """The continuity refetch must not re-download a custody-fetched asset."""
+    mod = _module(monkeypatch)
+    hits = []
+
+    def inner_handler(request):
+        hits.append(str(request.url))
+        if "objects.githubusercontent.com" in str(request.url):
+            return httpx.Response(200, content=b"immutable-original-bytes")
+        return httpx.Response(
+            302,
+            headers={
+                "location": "https://objects.githubusercontent.com/signed?sig=abc",
+            },
+        )
+
+    transport = mod._AssetCacheTransport(httpx.MockTransport(inner_handler))
+    with httpx.Client(transport=transport, follow_redirects=True) as client:
+        first = client.get(
+            "https://github.com/pkking/future-opportunity/releases/download/"
+            "funding-vps-2026-10-23/original-source.zip"
+        )
+        second = client.get(
+            "https://github.com/pkking/future-opportunity/releases/download/"
+            "funding-vps-2026-10-23/original-source.zip"
+        )
+    assert first.status_code == second.status_code == 200
+    assert first.content == second.content == b"immutable-original-bytes"
+    # Exactly one github.com redirect plus one objects fetch; the second
+    # client GET replayed cached bytes without touching the network.
+    assert len(hits) == 2
+
+
+def test_asset_cache_transport_never_caches_api_or_error_responses(monkeypatch):
+    mod = _module(monkeypatch)
+    hits = []
+
+    def inner_handler(request):
+        hits.append(str(request.url))
+        if "releases/download" in str(request.url):
+            if len([u for u in hits if "releases/download" in u]) == 1:
+                return httpx.Response(403, json={"message": "rate limit exceeded"})
+            return httpx.Response(200, content=b"bytes-later")
+        return httpx.Response(200, json={"served": len(hits)})
+
+    transport = mod._AssetCacheTransport(httpx.MockTransport(inner_handler))
+    with httpx.Client(transport=transport) as client:
+        api_one = client.get("https://api.github.com/repos/pkking/future-opportunity")
+        api_two = client.get("https://api.github.com/repos/pkking/future-opportunity")
+        denied = client.get(
+            "https://github.com/pkking/future-opportunity/releases/download/"
+            "funding-vps-2026-10-23/original-source.zip"
+        )
+        recovered = client.get(
+            "https://github.com/pkking/future-opportunity/releases/download/"
+            "funding-vps-2026-10-23/original-source.zip"
+        )
+    # API responses always pass through uncached.
+    assert api_one.json() != api_two.json()
+    # A throttled download is not cached; a later recovery is served fresh.
+    assert denied.status_code == 403
+    assert recovered.status_code == 200
+    assert recovered.content == b"bytes-later"
+    assert len(hits) == 4
+
+
+def test_main_wires_asset_cache_transport(monkeypatch):
+    """Production main() must deduplicate immutable asset downloads."""
+    source = SCRIPT.read_text()
+    assert "transport = _AssetCacheTransport(httpx.HTTPTransport())" in source
+    assert "transport=transport," in source

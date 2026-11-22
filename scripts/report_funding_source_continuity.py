@@ -42,6 +42,57 @@ def _immediate(_: float) -> None:
     """Default no-throttle used by tests and direct library callers."""
 
 
+class _AssetCacheTransport(httpx.BaseTransport):
+    """Deduplicate immutable release-asset downloads within one review run.
+
+    The custody pass and the continuity pass both fetch the same immutable
+    original ZIP for each audited day. Replaying the cached response bytes
+    halves release-asset downloads so a bounded 31..90-day review stays
+    below GitHub secondary rate limits. Only ``releases/download`` GET
+    responses are cached; every digest/shape validation still runs on the
+    exact bytes that GitHub served. API and error responses always pass
+    through uncached.
+    """
+
+    def __init__(self, inner: httpx.BaseTransport) -> None:
+        self._inner = inner
+        self._finals: dict[str, tuple[int, dict[str, str], bytes]] = {}
+        self._pending: dict[str, str] = {}
+
+    def handle_request(self, request: httpx.Request) -> httpx.Response:
+        url = str(request.url)
+        if request.method == "GET" and url in self._finals:
+            status, headers, content = self._finals[url]
+            return httpx.Response(
+                status, headers=headers, content=content, request=request,
+            )
+        response = self._inner.handle_request(request)
+        response.read()
+        if request.method != "GET":
+            return response
+        if url in self._pending:
+            original = self._pending.pop(url)
+            if response.status_code == 200:
+                self._finals[original] = (
+                    response.status_code,
+                    {k: v for k, v in response.headers.items()},
+                    response.content,
+                )
+            return response
+        if response.status_code in (301, 302, 303, 307, 308):
+            location = response.headers.get("location", "")
+            if location:
+                self._pending[location] = url
+            return response
+        if response.status_code == 200 and "/releases/download/" in url:
+            self._finals[url] = (
+                response.status_code,
+                {k: v for k, v in response.headers.items()},
+                response.content,
+            )
+        return response
+
+
 def _is_retryable(exc: Exception) -> bool:
     if isinstance(exc, httpx.HTTPStatusError):
         status = exc.response.status_code
@@ -196,7 +247,15 @@ def main() -> None:
     if not token:
         parser.error("a read-only GitHub Actions:read GH_TOKEN is required")
     try:
-        with httpx.Client(timeout=httpx.Timeout(12.0), follow_redirects=False) as client:
+        # The cache transport deduplicates the custody pass's immutable
+        # release-asset downloads for the continuity pass's refetch, halving
+        # per-day downloads so 31..90-day reviews stay inside GitHub
+        # secondary rate limits.
+        transport = _AssetCacheTransport(httpx.HTTPTransport())
+        with httpx.Client(
+            timeout=httpx.Timeout(12.0), follow_redirects=False,
+            transport=transport,
+        ) as client:
             report = audit_continuity(
                 args.start_date, args.end_date,
                 now=lambda: datetime.now(UTC),
