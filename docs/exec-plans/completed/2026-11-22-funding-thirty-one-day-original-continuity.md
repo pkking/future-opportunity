@@ -1,7 +1,7 @@
 # Extend Option A Funding immutable original-source continuity to thirty-one days
 
 Issue: #85
-Status: IMPLEMENTING
+Status: COMPLETED
 Owner: agent
 Started: 2026-11-22
 Last checkpoint: 2026-11-22
@@ -53,27 +53,27 @@ No exchange GETs beyond those already captured in immutable GitHub Releases, new
 
 ## Acceptance criteria
 
-- [ ] Extend one-shot workflow main-push default to `2026-10-23..2026-11-22` inclusive (31 original days, 30 adjacent pairs).
-- [ ] Offline regression test enforces exact 31 days, 30 pairs and unchanged manual read-only/safety constraints.
-- [ ] Exact final PR head has all 5 required CI checks plus Historical Smoke SUCCESS.
-- [ ] After merge, actual main-push GitHub original ZIP report confirms all 31 day statuses and 30 adjacent comparison states; report exact pair populations, numerical/confirmation revision findings, unassessed count and original/derived SHA256; do not assume consistency ahead of time.
-- [ ] Record audited outcome in Issue #85, then archive evidence and update parent plan in a separate completion-only PR; parent Issue remains open.
+- [x] Extend one-shot workflow main-push default to `2026-10-23..2026-11-22` inclusive (31 original days, 30 adjacent pairs).
+- [x] Offline regression test enforces exact 31 days, 30 pairs and unchanged manual read-only/safety constraints.
+- [x] Exact final PR head has all 5 required CI checks plus Historical Smoke SUCCESS.
+- [x] After merge, actual main-push GitHub original ZIP report confirms all 31 day statuses and 30 adjacent comparison states; report exact pair populations, numerical/confirmation revision findings, unassessed count and original/derived SHA256; do not assume consistency ahead of time.
+- [x] Record audited outcome in Issue #85, then archive evidence and update parent plan in a separate completion-only PR; parent Issue remains open.
 
 ## Implementation slices
 
-- [ ] 1. Modify workflow bounded default date only.
-- [ ] 2. Modify exact-date governance regression test.
-- [ ] 3. PR, final-head CI/Historical Smoke, merge if authorized, verify real 31-day source report.
-- [ ] 4. Comment Issue #85 and archive in separately verified PR.
+- [x] 1. Modify workflow bounded default date only.
+- [x] 2. Modify exact-date governance regression test.
+- [x] 3. PR, final-head CI/Historical Smoke, merge if authorized, verify real 31-day source report.
+- [x] 4. Comment Issue #85 and archive in separately verified PR.
 
 ## Verification matrix
 
 | Gate | State |
 |---|---|
-| Final PR head 5 required CI checks | pending |
-| Final PR head Historical Smoke | pending |
-| Real source continuity main-push report | not triggered |
-| Postmerge main CI | pending |
+| Final PR head 5 required CI checks | SUCCESS, [CI #45037753837](https://github.com/pkking/future-opportunity/actions/runs/45037753837) (PR #169) |
+| Final PR head Historical Smoke | SUCCESS, [run #45037753956](https://github.com/pkking/future-opportunity/actions/runs/45037753956) |
+| Real source continuity main-push report | SUCCESS, [run #45053416810](https://github.com/pkking/future-opportunity/actions/runs/45053416810): 31/31 days, 30/30 consistent pairs, 0 revisions, 0 unassessed |
+| Postmerge main CI | SUCCESS, [#45037830948](https://github.com/pkking/future-opportunity/actions/runs/45037830948), [#45040654647](https://github.com/pkking/future-opportunity/actions/runs/45040654647), [#45043683723](https://github.com/pkking/future-opportunity/actions/runs/45043683723), [#45044742588](https://github.com/pkking/future-opportunity/actions/runs/45044742588), [#45053344096](https://github.com/pkking/future-opportunity/actions/runs/45053344096) |
 
 ## Decision gates
 
@@ -99,10 +99,45 @@ None for bounded read-only Option A extension. New trust authorities, alternate 
   - New offline tests: transient 403 recovers with exactly one backoff and pacing; persistent 403 exhausts retries and stays UNASSESSED; existing parametrized audit-failure test updated for retryable codes (3 calls) vs permanent 401 (1 call).
   - CI `timeout-minutes: 25` unchanged: worst-case wall time = 31×(5+2)s pace + bounded retries ≪ 25 min; local live run in progress to confirm end-to-end behavior before the fix PR.
 
+## 2026-11-22 — authoritative thirty-one-day evidence and outcome
+
+- Final authoritative read-only review [run #45053416810](https://github.com/pkking/future-opportunity/actions/runs/45053416810) SUCCESS on main `2913dc1` (workflow_dispatch after the authenticated-client fix merged): `checked_day_count=31`, `github_audited_day_count=31`, `expected_pair_count=30`, `consistent_pair_count=30`, `revision_pair_count=0`, `unassessed_pair_count=0`, `every_adjacent_pair_assessed=true`, status `OVERLAP_VALUES_CONSISTENT_ONLY`. Derived artifact ID `14766557435`.
+- Outcome recorded on [Issue #85](https://github.com/pkking/future-opportunity/issues/85#issuecomment-7083479816).
+- Engineering chain that made it possible, each step forced by genuine CI evidence: [#169](https://github.com/pkking/future-opportunity/pull/169) window extension (CI 5/5 + Smoke), [#170](https://github.com/pkking/future-opportunity/pull/170) pacing+bounded retry, [#171](https://github.com/pkking/future-opportunity/pull/171) immutable asset-download dedupe, [#172](https://github.com/pkking/future-opportunity/pull/172) longer tail backoff, [#173](https://github.com/pkking/future-opportunity/pull/173) authenticated every GitHub read (root cause: ~62 unauthenticated per-day tag calls vs the shared 60/hour per-IP bucket). Intermediate real review runs [#45037830949](https://github.com/pkking/future-opportunity/actions/runs/45037830949), [#45040702446](https://github.com/pkking/future-opportunity/actions/runs/45040702446), [#45043774200](https://github.com/pkking/future-opportunity/actions/runs/45043774200) and [#45044821371](https://github.com/pkking/future-opportunity/actions/runs/45044821371) each failed closed and are retained as honest engineering evidence; none was reinterpreted as market data.
+
+Full 30-pair adjacent overlap table (overlapping settled Funding records, zero numeric revisions each pair):
+
+| UTC adjacent pair | Overlap | UTC adjacent pair | Overlap |
+|---|---:|---|---:|
+| 10-23→24 | 284 | 11-03→04 | 275 |
+| 10-24→25 | 286 | 11-04→05 | 278 |
+| 10-25→26 | 290 | 11-05→06 | 281 |
+| 10-26→27 | 293 | 11-06→07 | 274 |
+| 10-27→28 | 275 | 11-07→08 | 277 |
+| 10-28→29 | 277 | 11-08→09 | 281 |
+| 10-29→30 | 281 | 11-09→10 | 284 |
+| 10-30→31 | 284 | 11-10→11 | 275 |
+| 10-31→11-01 | 287 | 11-11→12 | 277 |
+| 11-01→02 | 290 | 11-12→13 | 280 |
+| 11-02→03 | 292 | 11-13→14 | 283 |
+| | | 11-14→15 | 286 |
+| | | 11-15→16 | 289 |
+| | | 11-16→17 | 292 |
+| | | 11-17→18 | 275 |
+| | | 11-18→19 | 278 |
+| | | 11-19→20 | 275 |
+| | | 11-20→21 | 277 |
+| | | 11-21→22 | 280 |
+
+- Fixed source regime classification over the 31 observed days: `nonnegative_high_volatility=29`, `negative_high_volatility=2` (**2026-11-18, 2026-11-20 — first negative-Funding observations in this prospective source research**), `negative_low_volatility=0`, `nonnegative_low_volatility=0`.
+- **Unresolved**: this is GitHub custody of VPS-supplied bytes with stable overlap, not exchange-signed OKX first-publication proof; `exchange_signed=false`, `point_in_time_publication_verified=false`, `acquisition_approved=false`, `promotion_approved=false`. Funding pinned 32/90, Cash 66; Stage-2 economics gate disabled; real trading prohibited. Negative/low stratum still unobserved; Issue #85 stays OPEN/BLOCKED_EVIDENCE.
+
 ## Resume from here
 
-Verify the in-progress local live 31-day run (with pacing+retry) completes; then open the rate-limit fix PR (`Issue: #85`, same Plan), get final-head 5/5 CI + Historical Smoke, merge, and verify the real main-push 31-day source report turns fully assessed; then archive. If the local run still shows genuine UNASSESSED days after retry exhaustion, record them honestly instead of re-running to green.
+Verified and archived. Continue from parent Issue #85's long-lived Option A plan for genuinely new completed UTC source days (next extension: any new dates after 2026-11-22). Do not replay this completed 31-day window solely to create new artifacts; no backdating, no late GETs, no reinterpretation of absent days.
 
 ## Completion
 
-In progress.
+Final commits: `469cd852` (#169), `d429357` (#170), `dd31a4f` (#171), `549d324` (#172), `2913dc1` (#173).
+Authoritative evidence: [run #45053416810](https://github.com/pkking/future-opportunity/actions/runs/45053416810) SUCCESS, derived artifact ID `14766557435`.
+Remaining unassessed: independent OKX first-publication timing/signatures, three missing prospective market-state strata (including the first-ever negative/low observation), Funding 32/90 pinned days, Cash 66; no historical source promotion, numeric Stage-2 economics approval, market-wide opportunity-frequency inference or real trading.
