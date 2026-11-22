@@ -139,5 +139,6 @@ Verified and archived. Continue from parent Issue #85's long-lived Option A plan
 ## Completion
 
 Final commit: `2913dc1` (#173, authenticated reads — the change that made the authoritative 31-day review pass). Full chain: `469cd852` (#169), `d429357` (#170), `dd31a4f` (#171), `549d324` (#172), `2913dc1` (#173).
+CI run: [final PR head CI #45053267737](https://github.com/pkking/future-opportunity/actions/runs/45053267737) all five required jobs SUCCESS on PR #173 head; [Historical Smoke #45053267717](https://github.com/pkking/future-opportunity/actions/runs/45053267717) SUCCESS; [postmerge main CI #45053344096](https://github.com/pkking/future-opportunity/actions/runs/45053344096) SUCCESS; authoritative [31-day source review #45053416810](https://github.com/pkking/future-opportunity/actions/runs/45053416810) SUCCESS
 Authoritative evidence: [run #45053416810](https://github.com/pkking/future-opportunity/actions/runs/45053416810) SUCCESS, derived artifact ID `14766557435`.
 Remaining unassessed: independent OKX first-publication timing/signatures, three missing prospective market-state strata (including the first-ever negative/low observation), Funding 32/90 pinned days, Cash 66; no historical source promotion, numeric Stage-2 economics approval, market-wide opportunity-frequency inference or real trading.
