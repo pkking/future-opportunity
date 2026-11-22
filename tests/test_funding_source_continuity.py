@@ -288,16 +288,16 @@ def test_longitudinal_prior_day_late_confirmation_fails_specific_adjacent_pair(
     assert report["promotion_approved"] is False
 
 
-def test_released_twelve_day_main_push_review_and_manual_range_remain_strict():
-    """One-shot main-push default covers exactly twelve published UTC releases."""
+def test_released_thirty_one_day_main_push_review_and_manual_range_remain_strict():
+    """One-shot main-push default covers exactly thirty-one published UTC releases."""
     workflow = (
         ROOT / ".github/workflows/review-funding-source-continuity.yml"
     ).read_text()
     assert "START_DATE: ${{ inputs.start_date || '2026-10-23' }}" in workflow
-    assert "END_DATE: ${{ inputs.end_date || '2026-11-03' }}" in workflow
-    assert "2026-10-23..2026-11-03" in workflow
-    assert (date(2026, 11, 3) - date(2026, 10, 23)).days + 1 == 12
-    assert (date(2026, 11, 3) - date(2026, 10, 23)).days == 11
+    assert "END_DATE: ${{ inputs.end_date || '2026-11-22' }}" in workflow
+    assert "2026-10-23..2026-11-22" in workflow
+    assert (date(2026, 11, 22) - date(2026, 10, 23)).days + 1 == 31
+    assert (date(2026, 11, 22) - date(2026, 10, 23)).days == 30
     assert "workflow_dispatch:" in workflow
     assert "start_date:" in workflow and "end_date:" in workflow
     assert "inputs.start_date" in workflow and "inputs.end_date" in workflow
