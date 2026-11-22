@@ -339,3 +339,16 @@ def test_persistent_403_exhausts_retries_and_stays_unassessed(monkeypatch):
     assert paced.count(mod.RETRY_BACKOFF_SECONDS[0]) == 2
     assert paced.count(mod.RETRY_BACKOFF_SECONDS[1]) == 2
     assert paced.count(mod.RETRY_BACKOFF_SECONDS[2]) == 2
+
+
+def test_production_main_clients_authenticate_every_request(monkeypatch):
+    """Tag/asset checks must never hit the 60/hour unauthenticated IP bucket."""
+    _module(monkeypatch)
+    for script in (
+        "report_funding_prospective_custody_ledger.py",
+        "report_funding_source_continuity.py",
+    ):
+        source = (ROOT / "scripts" / script).read_text()
+        assert 'headers={"Authorization": f"Bearer {token}"}' in source, (
+            f"{script} must authenticate its read-only client"
+        )

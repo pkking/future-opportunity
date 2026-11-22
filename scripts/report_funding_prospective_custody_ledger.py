@@ -47,6 +47,26 @@ def _immediate(_: float) -> None:
     """Default no-throttle used by tests and direct library callers."""
 
 
+def build_authenticated_client(token: str) -> httpx.Client:
+    """Read-only GitHub client whose every request is authenticated.
+
+    Per-day tag/asset checks previously reached api.github.com unauthenticated
+    (only the audit-history listing carried the token). Unauthenticated
+    requests share a 60/hour per-IP bucket: a 31-day review issues ~62 such
+    calls and hard-fails with 403 "API rate limit exceeded" (observed on
+    shared Actions runner IPs and via local proxies). Authenticating every
+    request lifts the per-request class to the token's 5000/hour core quota;
+    permissions stay `contents: read` + `actions: read`.
+    """
+    if not token:
+        raise ValueError("read-only GitHub token required")
+    return httpx.Client(
+        timeout=httpx.Timeout(12.0),
+        follow_redirects=False,
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+
 def eligible_days(start_date: str, end_date: str, now: datetime) -> list[date]:
     """Canonical inclusive date range; strictly completed UTC source windows."""
     first, last = _day(start_date), _day(end_date)
@@ -257,7 +277,7 @@ def main() -> None:
     if not token:
         parser.error("a read-only GH_TOKEN (Actions:read) is required")
     try:
-        with httpx.Client(timeout=httpx.Timeout(12.0), follow_redirects=False) as client:
+        with build_authenticated_client(token) as client:
             report = build_report(
                 args.start_date, args.end_date, now=lambda: datetime.now(UTC),
                 client=client, token=token, pause=sleep,
