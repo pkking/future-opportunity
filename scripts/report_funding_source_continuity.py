@@ -12,6 +12,7 @@ import json
 import os
 from datetime import UTC, datetime
 from pathlib import Path
+from time import sleep
 from typing import Any, Callable
 
 import httpx
@@ -29,12 +30,44 @@ from report_funding_prospective_custody_ledger import (
 MAX_CONTINUITY_DAYS = 90
 PAIRED_STATUS = "OVERLAP_VALUES_CONSISTENT_ONLY"
 REVISION_STATUS = "SOURCE_REVISION_DETECTED"
+# One immutable original ZIP is fetched per audited day. Downloading many
+# originals back-to-back can trip GitHub secondary rate limits (HTTP 403);
+# pace the fetches and retry transient transport errors a bounded number of
+# times. Integrity failures (digest/shape mismatch) still fail immediately.
+FETCH_PACE_SECONDS = 2.0
+FETCH_RETRY_BACKOFF_SECONDS: tuple[float, ...] = (30.0, 60.0)
+
+
+def _immediate(_: float) -> None:
+    """Default no-throttle used by tests and direct library callers."""
+
+
+def _is_retryable(exc: Exception) -> bool:
+    if isinstance(exc, httpx.HTTPStatusError):
+        status = exc.response.status_code
+        return status == 403 or status == 429 or status >= 500
+    return isinstance(exc, httpx.RequestError)
+
+
+def _fetch_with_retry(
+    day: str, digest: str, *, client: httpx.Client,
+    pause: Callable[[float], None],
+) -> dict[str, Any]:
+    for attempt in range(len(FETCH_RETRY_BACKOFF_SECONDS) + 1):
+        try:
+            return fetch_original_capture(day, digest, client=client)
+        except httpx.HTTPError as exc:
+            if not _is_retryable(exc) or attempt == len(FETCH_RETRY_BACKOFF_SECONDS):
+                raise
+            pause(FETCH_RETRY_BACKOFF_SECONDS[attempt])
+    raise AssertionError("unreachable")
 
 
 def audit_continuity(
     start_date: str, end_date: str, *, now: Callable[[], datetime],
     client: httpx.Client, token: str,
     verify: Callable[..., dict[str, Any]] | None = None,
+    pause: Callable[[float], None] = _immediate,
 ) -> dict[str, Any]:
     """Classify every chronological edge without retaining all raw snapshots."""
     at = now()
@@ -45,7 +78,7 @@ def audit_continuity(
     kwargs = {"verify": verify} if verify is not None else {}
     custody = build_report(
         start_date, end_date, now=lambda: at,
-        client=client, token=token, **kwargs,
+        client=client, token=token, pause=pause, **kwargs,
     )
     records = custody.get("days")
     if not isinstance(records, list) or len(records) != len(days):
@@ -76,7 +109,7 @@ def audit_continuity(
         reason: str | None = None
         if source_verified:
             try:
-                current = fetch_original_capture(day, digest, client=client)
+                current = _fetch_with_retry(day, digest, client=client, pause=pause)
                 load_status = "AUDITED_GITHUB_CUSTODY_ONLY"
             except (ValueError, KeyError, TypeError, httpx.HTTPError) as exc:
                 # Preserve the audited status and original hash, but a
@@ -91,6 +124,7 @@ def audit_continuity(
             "source_status": load_status,
             "reason": reason,
         })
+        pause(FETCH_PACE_SECONDS)
 
         if previous_day is not None:
             pair: dict[str, Any] = {
@@ -166,7 +200,7 @@ def main() -> None:
             report = audit_continuity(
                 args.start_date, args.end_date,
                 now=lambda: datetime.now(UTC),
-                client=client, token=token,
+                client=client, token=token, pause=sleep,
             )
     except ValueError as exc:
         parser.error(str(exc))

@@ -310,3 +310,90 @@ def test_released_thirty_one_day_main_push_review_and_manual_range_remain_strict
     assert "capture_funding_preentry_source.py" not in workflow
     assert '"point_in_time_publication_verified":false' in workflow
     assert '"acquisition_approved":false' in workflow
+
+
+def test_transient_fetch_403_is_retried_and_recovers_with_pacing(monkeypatch):
+    """A throttled original-ZIP fetch is retried; integrity still governs."""
+    mod = _module(monkeypatch)
+    throttle = {"count": 0}
+    paced = []
+
+    def handler(request):
+        assert request.method == "GET"
+        if "/actions/workflows/" in request.url.path:
+            return httpx.Response(200, json={"workflow_runs": [_audit(d) for d in reversed(DAYS)]})
+        if "/releases/tags/" in request.url.path:
+            day = request.url.path[-10:]
+            return httpx.Response(200, json={"tag_name": f"funding-vps-{day}"})
+        if "/releases/download/" in request.url.path:
+            if throttle["count"] < 1:
+                throttle["count"] += 1
+                return httpx.Response(403, json={"message": "rate limit exceeded"})
+            day = request.url.path.split("/")[5].removeprefix("funding-vps-")
+            return httpx.Response(200, content=_zip(_raw(day)))
+        return httpx.Response(404)
+
+    def verify(day, *, client):
+        return {
+            "status": "github_immutable_release_metadata_and_offline_replay_only",
+            "tag": f"funding-vps-{day}",
+            "published_at": f"{day}T00:00:15Z",
+            "archive_sha256": hashlib.sha256(_zip(_raw(day))).hexdigest(),
+            "regime": "nonnegative_high_volatility",
+        }
+
+    def pause(seconds):
+        paced.append(seconds)
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        report = mod.audit_continuity(
+            DAYS[0], DAYS[-1], now=lambda: NOW,
+            client=client, token="synthetic-read-only",
+            verify=verify, pause=pause,
+        )
+    assert report["status"] == mod.PAIRED_STATUS
+    assert report["consistent_pair_count"] == 2
+    assert mod.FETCH_RETRY_BACKOFF_SECONDS[0] in paced
+    # Pacing fires after each audited original fetch and inside the ledger.
+    assert paced.count(mod.FETCH_PACE_SECONDS) == 3
+
+
+def test_persistent_fetch_403_keeps_pairs_unassessed(monkeypatch):
+    """Retry exhaustion leaves the affected day and pairs UNASSESSED."""
+    mod = _module(monkeypatch)
+    paced = []
+
+    def handler(request):
+        assert request.method == "GET"
+        if "/actions/workflows/" in request.url.path:
+            return httpx.Response(200, json={"workflow_runs": [_audit(d) for d in reversed(DAYS)]})
+        if "/releases/tags/" in request.url.path:
+            day = request.url.path[-10:]
+            return httpx.Response(200, json={"tag_name": f"funding-vps-{day}"})
+        return httpx.Response(403, json={"message": "rate limit exceeded"})
+
+    def verify(day, *, client):
+        return {
+            "status": "github_immutable_release_metadata_and_offline_replay_only",
+            "tag": f"funding-vps-{day}",
+            "published_at": f"{day}T00:00:15Z",
+            "archive_sha256": "a" * 64,
+            "regime": "nonnegative_high_volatility",
+        }
+
+    def pause(seconds):
+        paced.append(seconds)
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        report = mod.audit_continuity(
+            DAYS[0], DAYS[-1], now=lambda: NOW,
+            client=client, token="synthetic-read-only",
+            verify=verify, pause=pause,
+        )
+    assert report["status"] == "UNASSESSED"
+    assert report["unassessed_pair_count"] == 2
+    assert all(
+        day["source_status"] == "UNASSESSED" for day in report["source_days"]
+    )
+    assert paced.count(mod.FETCH_RETRY_BACKOFF_SECONDS[0]) == 3
+    assert paced.count(mod.FETCH_RETRY_BACKOFF_SECONDS[1]) == 3
