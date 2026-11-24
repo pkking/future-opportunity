@@ -1,8 +1,8 @@
 name: Review Funding Source Continuity (Read-only)
 
 # 2..90 completed prospective UTC source days; read-only exact GitHub originals.
-# A workflow-file-only main push replays thirty-one genuinely published originals,
-# 2026-10-23..2026-11-22 (thirty adjacent pairs), once. Prior shorter
+# A workflow-file-only main push replays thirty-three genuinely published originals,
+# 2026-10-23..2026-11-24 (thirty-two adjacent pairs), once. Prior shorter
 # production evidence remains unchanged. Manual dispatch still accepts
 # explicit 2..90 completed UTC days. No recurring schedule.
 # No cron, market capture, external sink, Release writes, corpus or trading.
@@ -34,7 +34,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       START_DATE: ${{ inputs.start_date || '2026-10-23' }}
-      END_DATE: ${{ inputs.end_date || '2026-11-22' }}
+      END_DATE: ${{ inputs.end_date || '2026-11-24' }}
     steps:
       - uses: actions/checkout@v4
         with:
